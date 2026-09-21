@@ -27,6 +27,7 @@ Le répertoire `.agents/` héberge les directives et compétences modulaires pou
 - `.agents/rules/` : Règles permanentes de qualité logicielle, de style de code et de rigueur d'ingénierie. Consulter systématiquement `01-engineering-standards.md`.
 - `.agents/skills/` : Protocoles procéduraux déclenchés sur demande ou selon le besoin technique.
   - Déclencheur hygiène (`code-hygiene`) : invoquer lors des revues de code, des nettoyages post-implémentation ou avant validation d'un composant/module.
+- `.agents/plugins/presence-stack/` : Équipe de sous-agents spécialisée pour la stack technique (Lucas, Nora, Marc, Chloé, Victor). Consulter le `README.md` du plugin.
 
 ## Garde-fous inviolables
 
