@@ -24,7 +24,12 @@ Projet web monopage réactif avec persistance locale et synchronisation distante
 
 Le répertoire `.agents/` héberge les directives et compétences modulaires pour éviter la surcharge cognitive du contexte :
 
-- `.agents/rules/` : Règles permanentes de qualité logicielle, de style de code et de rigueur d'ingénierie. Consulter systématiquement `01-engineering-standards.md`.
+- `.agents/rules/` : Règles permanentes de qualité logicielle et d'intégrité architecturale. Consulter systématiquement :
+  - `01-engineering-standards.md` : standards généraux, sobriété & YAGNI.
+  - `02-frontend-conventions.md` : conventions Vue 3, SFC, Composition API & DaisyUI.
+  - `03-local-first-and-dexie.md` : intégrité IndexedDB, microtask boundary & UUIDv7.
+  - `04-sync-engine-and-outbox.md` : Transactional Outbox, idempotence & tombstones.
+  - `05-supabase-rls-and-schema.md` : sécurité Row Level Security, indexation B-Tree & pull incrémental.
 - `.agents/skills/` : Protocoles procéduraux déclenchés sur demande ou selon le besoin technique. Le périmètre des compétences actives et inactives est consigné dans [`.agents/skills-scope.md`](.agents/skills-scope.md).
   - Déclencheur hygiène (`code-hygiene`) : invoquer lors des revues de code, des nettoyages post-implémentation ou avant validation d'un composant/module.
 - `.agents/plugins/presence-stack/` : Équipe de sous-agents spécialisée pour la stack technique (Lucas, Nora, Marc, Chloé, Victor). Consulter le `README.md` du plugin.
