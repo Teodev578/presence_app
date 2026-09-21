@@ -25,9 +25,20 @@ Projet web monopage réactif avec persistance locale et synchronisation distante
 Le répertoire `.agents/` héberge les directives et compétences modulaires pour éviter la surcharge cognitive du contexte :
 
 - `.agents/rules/` : Règles permanentes de qualité logicielle, de style de code et de rigueur d'ingénierie. Consulter systématiquement `01-engineering-standards.md`.
-- `.agents/skills/` : Protocoles procéduraux déclenchés sur demande ou selon le besoin technique.
+- `.agents/skills/` : Protocoles procéduraux déclenchés sur demande ou selon le besoin technique. Le périmètre des compétences actives et inactives est consigné dans [`.agents/skills-scope.md`](.agents/skills-scope.md).
   - Déclencheur hygiène (`code-hygiene`) : invoquer lors des revues de code, des nettoyages post-implémentation ou avant validation d'un composant/module.
 - `.agents/plugins/presence-stack/` : Équipe de sous-agents spécialisée pour la stack technique (Lucas, Nora, Marc, Chloé, Victor). Consulter le `README.md` du plugin.
+
+## Stratégie de délégation agentique
+
+Deux ensembles d'agents cohabitent sur le dépôt avec une répartition stricte des responsabilités selon la phase du cycle de vie :
+
+| Phase | Équipe responsable | Agents / Rôles actifs | Livrables attendus |
+|---|---|---|---|
+| **Cadrage, Idéation & PRD** | **BMAD** | Mary (Analyste), John (PM), Sally (UX), Winston (Architecte) | Product Brief, PRD, Epics & Stories, Spécifications UX |
+| **Implémentation & Refactoring** | **presence-stack** | Lucas (Vue/Vite), Nora (Dexie/Local), Marc (Supabase/Sync), Chloé (DaisyUI/Tailwind) | Composants Vue 3, schémas Dexie, composables, règles RLS, intégration CSS |
+| **Sprint Planning & Suivi** | **BMAD** | Équipe BMAD au complet | `sprint-status.yaml`, backlog d'itération |
+| **Audit, Chaos Testing & Hygiène** | **presence-stack** | Victor (Chaos & Resilience Auditor) | Rapports d'audit, simulation de panne réseau, contrôle YAGNI, validation de build |
 
 ## Garde-fous inviolables
 

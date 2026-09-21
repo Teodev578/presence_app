@@ -48,8 +48,9 @@ Chaque agent applique les principes d'ingénierie senior et les standards défin
 ---
 
 ## 📋 Directives Générales de Collaboration
-
-- **Local comme Source Unique de Vérité** : Aucune vue ne doit court-circuiter Dexie pour requêter directement le réseau lors des opérations d'écriture.
-- **Principe YAGNI Inviolable** : Tout ajout technique doit répondre à un besoin immédiat et démontré.
-- **Intégrité des Versions** : Aucune modification de dépendance dans `package.json` n'est effectuée sans accord explicite préalable de l'utilisateur.
-- **Validation Finale Obligatoire** : Toute tâche s'achève par une compilation réussie via `npm run build`.
+ 
+ - **Frontière d'Intervention et Arbitrage** : L'équipe `presence-stack` intervient exclusivement lors des phases de conception technique fine, d'implémentation de code, de refactoring et d'audit de résilience. Les phases d'idéation, de cadrage des besoins métier et de rédaction des spécifications fonctionnelles (PRD) relèvent de la responsabilité de l'équipe BMAD (Mary, John, Sally, Winston), conformément à la stratégie définie dans [`AGENTS.md`](../../../AGENTS.md).
+ - **Local comme Source Unique de Vérité** : Aucune vue ne doit court-circuiter Dexie pour requêter directement le réseau lors des opérations d'écriture.
+ - **Principe YAGNI Inviolable** : Tout ajout technique doit répondre à un besoin immédiat et démontré.
+ - **Intégrité des Versions** : Aucune modification de dépendance dans `package.json` n'est effectuée sans accord explicite préalable de l'utilisateur.
+ - **Validation Finale Obligatoire** : Toute tâche s'achève par une compilation réussie via `npm run build`.
