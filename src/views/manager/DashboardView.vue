@@ -2,10 +2,12 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from '../../router'
 import { supabase } from '../../lib/supabase'
+import { useLocations } from '../../composables/useLocations'
 import StatCard from '../../components/manager/StatCard.vue'
 import StatusBadge from '../../components/shared/StatusBadge.vue'
 
 const { navigate } = useRouter()
+const { locations, ensureLoaded: loadLocations } = useLocations()
 
 const todayStr = new Date().toISOString().slice(0, 10)
 const loading = ref(true)
@@ -32,11 +34,16 @@ onMounted(async () => {
       .order('check_in_time', { ascending: false })
 
     presencesToday.value = presences || []
+    await loadLocations()
   } catch (err) {
     console.error('Erreur chargement dashboard manager :', err)
   } finally {
     loading.value = false
   }
+})
+
+const activeLocationsCount = computed(() => {
+  return (locations.value || []).filter((l) => l.is_active).length
 })
 
 const onTimeCount = computed(() => {
@@ -68,7 +75,15 @@ const formatTime = (iso) => {
         <p class="text-xs text-base-content/60 mt-0.5">Statut des effectifs pour la journée du {{ todayStr }}</p>
       </div>
 
-      <div>
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          class="btn btn-outline btn-sm rounded-xl font-bold gap-1.5"
+          @click="navigate('/manager/locations')"
+        >
+          <span>📍</span>
+          <span>Sites autorisés ({{ activeLocationsCount }})</span>
+        </button>
         <button
           type="button"
           class="btn btn-primary btn-sm rounded-xl font-bold shadow-xs"

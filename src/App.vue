@@ -17,6 +17,7 @@ import CheckOutView from './views/employee/CheckOutView.vue'
 import EmployeeAvailabilitiesView from './views/employee/AvailabilitiesView.vue'
 
 import DashboardView from './views/manager/DashboardView.vue'
+import LocationsView from './views/manager/LocationsView.vue'
 import PresencesView from './views/manager/PresencesView.vue'
 import ManagerAvailabilitiesView from './views/manager/AvailabilitiesView.vue'
 import EmployeesView from './views/manager/EmployeesView.vue'
@@ -84,6 +85,7 @@ watch([() => route.value.path, isManager, () => profile.value, profileLoading], 
   <ManagerLayout v-else-if="isManagerRoute">
     <Transition name="fade-slide" mode="out-in">
       <DashboardView v-if="route.path === '/manager'" />
+      <LocationsView v-else-if="route.path === '/manager/locations'" />
       <PresencesView v-else-if="route.path === '/manager/presences'" />
       <ManagerAvailabilitiesView v-else-if="route.path === '/manager/availabilities'" />
       <EmployeesView v-else-if="route.path === '/manager/employees'" />

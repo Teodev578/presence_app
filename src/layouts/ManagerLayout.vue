@@ -10,6 +10,7 @@ const { profile } = useProfile()
 
 const navItems = [
   { path: '/manager', label: 'Tableau de bord', icon: '📊' },
+  { path: '/manager/locations', label: 'Lieux & Sites', icon: '📍' },
   { path: '/manager/presences', label: 'Présences', icon: '⏱️' },
   { path: '/manager/availabilities', label: 'Disponibilités équipe', icon: '📅' },
   { path: '/manager/employees', label: 'Employés', icon: '👥' },
