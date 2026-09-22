@@ -34,14 +34,14 @@ const handleLogout = async () => {
     <input id="employee-drawer" type="checkbox" class="drawer-toggle" v-model="drawerOpen" />
 
     <!-- Conteneur principal de l'application -->
-    <div class="drawer-content flex flex-col min-h-screen pb-[calc(4.5rem+var(--safe-bottom,0px))] md:pb-8">
+    <div class="drawer-content flex flex-col min-h-screen pb-[calc(1.5rem+var(--safe-bottom,0px))] md:pb-8">
       <!-- Barre de navigation supérieure épurée -->
       <header class="navbar bg-base-100/90 backdrop-blur-md sticky top-0 z-30 border-b border-base-300 px-4 sm:px-6 min-h-14">
-        <!-- Bouton hamburger (tablette et desktop) + Marque & Logo -->
+        <!-- Bouton hamburger (mobile, tablette et desktop) + Marque & Logo -->
         <div class="flex items-center gap-2 sm:gap-3">
           <label
             for="employee-drawer"
-            class="btn btn-ghost btn-circle btn-sm min-h-10 min-w-10 text-base-content hidden md:inline-flex cursor-pointer"
+            class="btn btn-ghost btn-circle btn-sm min-h-12 min-w-12 sm:min-h-10 sm:min-w-10 text-base-content inline-flex cursor-pointer"
             aria-label="Ouvrir le menu de navigation"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -60,30 +60,15 @@ const handleLogout = async () => {
 
         <div class="flex-1"></div>
 
-        <!-- Actions de droite : Synchronisation + Déconnexion rapide -->
-        <div class="flex items-center gap-2">
+        <!-- Actions de droite : Raccourci gestionnaire si applicable -->
+        <div v-if="profile?.role === 'admin' || profile?.role === 'manager'" class="flex items-center gap-2">
           <button
-            v-if="profile?.role === 'admin' || profile?.role === 'manager'"
             type="button"
             class="btn btn-ghost btn-xs font-semibold text-primary hover:bg-primary/10 rounded-m3-sm hidden sm:inline-flex min-h-8"
             title="Accéder au tableau de bord gestionnaire"
             @click="navigate('/manager')"
           >
             Tableau de bord
-          </button>
-          <SyncIndicator />
-          <button
-            type="button"
-            class="btn btn-ghost btn-circle btn-sm text-base-content/70 hover:text-base-content min-w-9 min-h-9"
-            title="Se déconnecter"
-            aria-label="Se déconnecter"
-            @click="handleLogout"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-              <polyline points="16 17 21 12 16 7"></polyline>
-              <line x1="21" y1="12" x2="9" y2="12"></line>
-            </svg>
           </button>
         </div>
       </header>
@@ -92,90 +77,6 @@ const handleLogout = async () => {
       <main class="flex-1 p-4 sm:p-6 w-full max-w-xl md:max-w-3xl mx-auto">
         <slot />
       </main>
-
-      <!-- Barre de navigation inférieure Mobile uniquement (< 768px) -->
-      <nav
-        class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-base-100/95 backdrop-blur-md border-t border-base-300/70 flex flex-row items-center justify-around w-full h-[calc(4rem+var(--safe-bottom,0px))] pb-[var(--safe-bottom,0px)] px-3 shadow-lg"
-        role="tablist"
-        aria-label="Navigation principale mobile"
-      >
-        <button
-          type="button"
-          role="tab"
-          :aria-selected="currentPath === '/employee'"
-          aria-label="Espace de pointage"
-          class="flex-1 flex flex-col items-center justify-center h-full py-1 text-center transition-colors cursor-pointer select-none"
-          @click="navigate('/employee')"
-        >
-          <div
-            class="flex items-center justify-center px-5 py-1 rounded-full transition-all"
-            :class="currentPath === '/employee' ? 'bg-primary/15 text-primary' : 'bg-transparent text-base-content/70 hover:text-base-content'"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <polyline points="12 6 12 12 16 14" />
-            </svg>
-          </div>
-          <span
-            class="text-[11px] mt-0.5 tracking-tight transition-colors"
-            :class="currentPath === '/employee' ? 'font-bold text-primary' : 'font-medium text-base-content/70'"
-          >
-            Pointage
-          </span>
-        </button>
-
-        <button
-          type="button"
-          role="tab"
-          :aria-selected="currentPath.includes('/employee/check')"
-          aria-label="Pointer présence"
-          class="flex-1 flex flex-col items-center justify-center h-full py-1 text-center transition-colors cursor-pointer select-none"
-          @click="navigate('/employee/check-in')"
-        >
-          <div
-            class="flex items-center justify-center px-5 py-1 rounded-full transition-all"
-            :class="currentPath.includes('/employee/check') ? 'bg-primary/15 text-primary' : 'bg-transparent text-base-content/70 hover:text-base-content'"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-              <circle cx="12" cy="10" r="3"></circle>
-            </svg>
-          </div>
-          <span
-            class="text-[11px] mt-0.5 tracking-tight transition-colors"
-            :class="currentPath.includes('/employee/check') ? 'font-bold text-primary' : 'font-medium text-base-content/70'"
-          >
-            Pointer
-          </span>
-        </button>
-
-        <button
-          type="button"
-          role="tab"
-          :aria-selected="currentPath === '/employee/availabilities'"
-          aria-label="Gérer les disponibilités"
-          class="flex-1 flex flex-col items-center justify-center h-full py-1 text-center transition-colors cursor-pointer select-none"
-          @click="navigate('/employee/availabilities')"
-        >
-          <div
-            class="flex items-center justify-center px-5 py-1 rounded-full transition-all"
-            :class="currentPath === '/employee/availabilities' ? 'bg-primary/15 text-primary' : 'bg-transparent text-base-content/70 hover:text-base-content'"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-              <line x1="16" y1="2" x2="16" y2="6"></line>
-              <line x1="8" y1="2" x2="8" y2="6"></line>
-              <line x1="3" y1="10" x2="21" y2="10"></line>
-            </svg>
-          </div>
-          <span
-            class="text-[11px] mt-0.5 tracking-tight transition-colors"
-            :class="currentPath === '/employee/availabilities' ? 'font-bold text-primary' : 'font-medium text-base-content/70'"
-          >
-            Disponibilités
-          </span>
-        </button>
-      </nav>
     </div>
 
     <!-- Volet latéral Navigation Drawer (drawer-side) -->
@@ -265,8 +166,13 @@ const handleLogout = async () => {
           </nav>
         </div>
 
-        <!-- Pied de volet : Déconnexion -->
+        <!-- Pied de volet : Connectivité & Déconnexion -->
         <div class="pt-4 border-t border-base-300/60 flex flex-col gap-3">
+          <div class="flex items-center justify-between px-1">
+            <span class="text-xs text-base-content/60 font-medium">Statut réseau</span>
+            <SyncIndicator />
+          </div>
+
           <button
             type="button"
             class="btn btn-outline btn-error btn-sm w-full gap-2 rounded-m3-sm min-h-10"
