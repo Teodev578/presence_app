@@ -274,6 +274,13 @@ html, body {
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 30%, transparent);
 }
 
+/* Neutralisation stricte de l'outline et du halo DaisyUI sur les cartes cochées */
+.card[aria-checked],
+.card[role="checkbox"] {
+  outline: none !important;
+  outline-offset: 0 !important;
+}
+
 /* Accessibilité : désactivation des animations si demandée par l'OS */
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after {

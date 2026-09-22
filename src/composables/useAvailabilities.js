@@ -60,6 +60,20 @@ export function useAvailabilities() {
   }, [])
 
   /**
+   * Indique si l'utilisateur a déjà effectué un enregistrement pour la semaine sélectionnée.
+   */
+  const hasConfiguredWeek = useLiveQuery(async () => {
+    if (!user.value?.id) return false
+    const week = currentWeekStart.value
+    const count = await db.availabilities
+      .where('user_id')
+      .equals(user.value.id)
+      .filter((a) => a.week_start === week)
+      .count()
+    return count > 0
+  }, false)
+
+  /**
    * Enregistre l'ensemble des jours cochés (1 à 5) et la note pour la semaine sélectionnée.
    * Transaction Dexie atomique pure avec gestion des ajouts et des tombstones.
    *
@@ -184,6 +198,7 @@ export function useAvailabilities() {
   return {
     currentWeekStart,
     weekAvailabilities,
+    hasConfiguredWeek,
     nextWeek,
     prevWeek,
     saveWeekAvailabilities,

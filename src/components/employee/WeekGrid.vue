@@ -5,12 +5,14 @@ import { useAvailabilities, formatWeekLabel } from '../../composables/useAvailab
 const {
   currentWeekStart,
   weekAvailabilities,
+  hasConfiguredWeek,
   nextWeek,
   prevWeek,
   saveWeekAvailabilities,
 } = useAvailabilities()
 
-const selectedDays = ref([])
+// Par défaut : l'ensemble des 5 jours ouvrés (Lundi à Vendredi) est coché
+const selectedDays = ref([1, 2, 3, 4, 5])
 const note = ref('')
 const isSaving = ref(false)
 const saveSuccess = ref(false)
@@ -41,14 +43,17 @@ const daysWithDates = computed(() => {
   })
 })
 
-// Synchronise l'état local du formulaire lorsque les données Dexie changent
+// Synchronise l'état local du formulaire : si la semaine a été personnalisée, charge ses données ; sinon, coche tous les jours
 watch(
-  weekAvailabilities,
-  (items) => {
-    if (items) {
-      selectedDays.value = items.map((a) => a.day_of_week)
-      const existingNote = items.find((a) => a.note)?.note || ''
+  [weekAvailabilities, hasConfiguredWeek],
+  ([items, isConfigured]) => {
+    if (isConfigured) {
+      selectedDays.value = items ? items.map((a) => a.day_of_week) : []
+      const existingNote = items?.find((a) => a.note)?.note || ''
       note.value = existingNote
+    } else {
+      selectedDays.value = [1, 2, 3, 4, 5]
+      note.value = ''
     }
   },
   { immediate: true }
@@ -128,12 +133,11 @@ const handleSave = async () => {
         :aria-checked="selectedDays.includes(d.id)"
         :aria-label="`${d.label} ${d.dateFormatted}, ${selectedDays.includes(d.id) ? 'Disponible' : 'Non disponible'}`"
         tabindex="0"
-        class="card bg-base-200 border p-4 rounded-m3-md flex flex-row md:flex-col items-center md:items-start justify-between gap-3 transition-all select-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+        class="card bg-base-200 border p-4 rounded-m3-md flex flex-row md:flex-col items-center md:items-start justify-between gap-3 transition-all select-none cursor-pointer !outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         :class="[
           selectedDays.includes(d.id)
-            ? 'border-primary bg-primary/10 shadow-xs'
-            : 'border-base-300/70 hover:border-base-content/30',
-          d.isToday ? 'ring-2 ring-primary/40' : ''
+            ? 'border-primary bg-primary/10'
+            : 'border-base-300/70 hover:border-base-content/30'
         ]"
         @click="toggleDay(d.id)"
         @keydown.space.prevent="toggleDay(d.id)"
@@ -189,3 +193,12 @@ const handleSave = async () => {
     </button>
   </div>
 </template>
+
+<style scoped>
+/* Supprime l'outline automatique externe appliqué par DaisyUI v5 sur les cartes ayant aria-checked */
+.card[role="checkbox"],
+.card[aria-checked] {
+  outline: none !important;
+  outline-offset: 0 !important;
+}
+</style>
