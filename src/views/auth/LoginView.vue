@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter } from '../../router'
 import { useAuth } from '../../composables/useAuth'
 import { useProfile } from '../../composables/useProfile'
@@ -18,6 +18,21 @@ const message = ref('')
 const isOnline = ref(typeof navigator !== 'undefined' ? navigator.onLine : true)
 const isDev = import.meta.env.DEV
 
+let messageTimer = null
+
+// Disparition automatique des messages de notification après 4,5 secondes
+watch(message, (newVal) => {
+  if (messageTimer) {
+    clearTimeout(messageTimer)
+    messageTimer = null
+  }
+  if (newVal) {
+    messageTimer = setTimeout(() => {
+      message.value = ''
+    }, 4500)
+  }
+})
+
 const updateOnlineStatus = () => {
   isOnline.value = navigator.onLine
 }
@@ -28,6 +43,10 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  if (messageTimer) {
+    clearTimeout(messageTimer)
+    messageTimer = null
+  }
   window.removeEventListener('online', updateOnlineStatus)
   window.removeEventListener('offline', updateOnlineStatus)
 })
@@ -190,14 +209,40 @@ const handleForgotPassword = async () => {
             </fieldset>
 
             <!-- Erreur d'authentification / envoi -->
-            <div v-if="authError" class="alert alert-error text-xs py-2.5 rounded-xl">
-              <span>{{ authError }}</span>
-            </div>
+            <Transition name="alert-fade">
+              <div v-if="authError" class="alert alert-error text-xs py-2.5 rounded-xl flex items-center justify-between gap-2" role="alert">
+                <span>{{ authError }}</span>
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-xs btn-circle shrink-0 hover:bg-black/10 text-error-content"
+                  aria-label="Fermer le message d'erreur"
+                  @click="authError = null"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+            </Transition>
 
             <!-- Message d'information / confirmation -->
-            <div v-if="message" class="alert alert-info text-xs py-2.5 rounded-xl">
-              <span>{{ message }}</span>
-            </div>
+            <Transition name="alert-fade">
+              <div v-if="message" class="alert alert-info text-xs py-2.5 rounded-xl flex items-center justify-between gap-2" role="status">
+                <span>{{ message }}</span>
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-xs btn-circle shrink-0 hover:bg-black/10 text-info-content"
+                  aria-label="Fermer la notification"
+                  @click="message = ''"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+            </Transition>
 
             <!-- Bouton d'action réinitialisation -->
             <button
@@ -372,14 +417,40 @@ const handleForgotPassword = async () => {
             </fieldset>
 
             <!-- Erreur d'authentification -->
-            <div v-if="authError" class="alert alert-error text-xs py-2.5 rounded-xl">
-              <span>{{ authError }}</span>
-            </div>
+            <Transition name="alert-fade">
+              <div v-if="authError" class="alert alert-error text-xs py-2.5 rounded-xl flex items-center justify-between gap-2" role="alert">
+                <span>{{ authError }}</span>
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-xs btn-circle shrink-0 hover:bg-black/10 text-error-content"
+                  aria-label="Fermer le message d'erreur"
+                  @click="authError = null"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+            </Transition>
 
             <!-- Message d'information -->
-            <div v-if="message" class="alert alert-info text-xs py-2.5 rounded-xl">
-              <span>{{ message }}</span>
-            </div>
+            <Transition name="alert-fade">
+              <div v-if="message" class="alert alert-info text-xs py-2.5 rounded-xl flex items-center justify-between gap-2" role="status">
+                <span>{{ message }}</span>
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-xs btn-circle shrink-0 hover:bg-black/10 text-info-content"
+                  aria-label="Fermer la notification"
+                  @click="message = ''"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+            </Transition>
 
             <!-- Bouton de soumission principal -->
             <button
@@ -441,5 +512,17 @@ const handleForgotPassword = async () => {
 .auth-slide-leave-to {
   opacity: 0;
   transform: translateY(-6px);
+}
+
+/* Transition douce d'apparition et disparition des alertes (GPU-composited) */
+.alert-fade-enter-active,
+.alert-fade-leave-active {
+  transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.alert-fade-enter-from,
+.alert-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 </style>
