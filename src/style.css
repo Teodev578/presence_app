@@ -1,5 +1,253 @@
+/* Import typographie Google Fonts Inter — doit précéder toute autre règle */
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+
 @import "tailwindcss";
 @plugin "daisyui";
+
+/* ==========================================================================
+   Tailwind CSS v4 — Theme & Extensions
+   ========================================================================== */
+@theme {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  /* Échelle de formes Material 3 (Shape scale) */
+  --radius-m3-xs: 4px;
+  --radius-m3-sm: 8px;
+  --radius-m3-md: 12px;
+  --radius-m3-lg: 16px;
+  --radius-m3-xl: 28px;
+  --radius-m3-full: 9999px;
+}
+
+/* ==========================================================================
+   Material 3 / DaisyUI v5 — Thème Clair (Light)
+   ========================================================================== */
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+
+  /* Material 3 Palette — Rôles Sémantiques */
+  --md-sys-color-primary: #005ac1;
+  --md-sys-color-on-primary: #ffffff;
+  --md-sys-color-primary-container: #d8e2ff;
+  --md-sys-color-on-primary-container: #001a41;
+
+  --md-sys-color-secondary: #575e71;
+  --md-sys-color-on-secondary: #ffffff;
+  --md-sys-color-secondary-container: #dbe2f9;
+  --md-sys-color-on-secondary-container: #141b2c;
+
+  --md-sys-color-tertiary: #715573;
+  --md-sys-color-on-tertiary: #ffffff;
+  --md-sys-color-tertiary-container: #fbd7fc;
+  --md-sys-color-on-tertiary-container: #29132d;
+
+  --md-sys-color-error: #ba1a1a;
+  --md-sys-color-on-error: #ffffff;
+  --md-sys-color-error-container: #ffdad6;
+  --md-sys-color-on-error-container: #410002;
+
+  --md-sys-color-background: #fdfcff;
+  --md-sys-color-on-background: #1a1c1e;
+
+  --md-sys-color-surface: #fdfcff;
+  --md-sys-color-on-surface: #1a1c1e;
+  --md-sys-color-surface-variant: #e1e2ec;
+  --md-sys-color-on-surface-variant: #44474f;
+
+  --md-sys-color-outline: #74777f;
+  --md-sys-color-outline-variant: #c4c6d0;
+
+  /* Hiérarchie de Surfaces M3 (Tonal elevation, sans box-shadow) */
+  --md-sys-color-surface-container-lowest: #ffffff;
+  --md-sys-color-surface-container-low: #f7f7fa;
+  --md-sys-color-surface-container: #f1f0f4;
+  --md-sys-color-surface-container-high: #ebeae9;
+  --md-sys-color-surface-container-highest: #e5e4e8;
+
+  /* Mapping DaisyUI v5 */
+  --color-primary: var(--md-sys-color-primary);
+  --color-primary-content: var(--md-sys-color-on-primary);
+  --color-secondary: var(--md-sys-color-secondary);
+  --color-secondary-content: var(--md-sys-color-on-secondary);
+  --color-accent: var(--md-sys-color-tertiary);
+  --color-accent-content: var(--md-sys-color-on-tertiary);
+  --color-neutral: #2e3036;
+  --color-neutral-content: #fdfcff;
+
+  --color-base-100: var(--md-sys-color-surface);
+  --color-base-200: var(--md-sys-color-surface-container);
+  --color-base-300: var(--md-sys-color-surface-container-high);
+  --color-base-content: var(--md-sys-color-on-surface);
+
+  --color-error: var(--md-sys-color-error);
+  --color-error-content: var(--md-sys-color-on-error);
+  --color-success: #198754;
+  --color-success-content: #ffffff;
+  --color-warning: #b26a00;
+  --color-warning-content: #ffffff;
+  --color-info: #0288d1;
+  --color-info-content: #ffffff;
+
+  /* Rayons DaisyUI calqués sur Material 3 */
+  --radius-selector: 8px;
+  --radius-field: 12px;
+  --radius-box: 16px;
+}
+
+/* ==========================================================================
+   Material 3 / DaisyUI v5 — Thème Sombre Automatique & Forcé
+   ========================================================================== */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    /* Material 3 Palette Sombre */
+    --md-sys-color-primary: #adc6ff;
+    --md-sys-color-on-primary: #002e69;
+    --md-sys-color-primary-container: #004494;
+    --md-sys-color-on-primary-container: #d8e2ff;
+
+    --md-sys-color-secondary: #bfc6dc;
+    --md-sys-color-on-secondary: #293041;
+    --md-sys-color-secondary-container: #3f4759;
+    --md-sys-color-on-secondary-container: #dbe2f9;
+
+    --md-sys-color-tertiary: #debcdf;
+    --md-sys-color-on-tertiary: #402843;
+    --md-sys-color-tertiary-container: #583e5b;
+    --md-sys-color-on-tertiary-container: #fbd7fc;
+
+    --md-sys-color-error: #ffb4ab;
+    --md-sys-color-on-error: #690005;
+    --md-sys-color-error-container: #93000a;
+    --md-sys-color-on-error-container: #ffdad6;
+
+    --md-sys-color-background: #111318;
+    --md-sys-color-on-background: #e2e2e9;
+
+    --md-sys-color-surface: #111318;
+    --md-sys-color-on-surface: #e2e2e9;
+    --md-sys-color-surface-variant: #44474f;
+    --md-sys-color-on-surface-variant: #c4c6d0;
+
+    --md-sys-color-outline: #8e9099;
+    --md-sys-color-outline-variant: #44474f;
+
+    /* Hiérarchie de Surfaces M3 Sombre */
+    --md-sys-color-surface-container-lowest: #0c0e13;
+    --md-sys-color-surface-container-low: #191c20;
+    --md-sys-color-surface-container: #1d2024;
+    --md-sys-color-surface-container-high: #282a2f;
+    --md-sys-color-surface-container-highest: #33353a;
+
+    /* Mapping DaisyUI v5 Sombre */
+    --color-primary: var(--md-sys-color-primary);
+    --color-primary-content: var(--md-sys-color-on-primary);
+    --color-secondary: var(--md-sys-color-secondary);
+    --color-secondary-content: var(--md-sys-color-on-secondary);
+    --color-accent: var(--md-sys-color-tertiary);
+    --color-accent-content: var(--md-sys-color-on-tertiary);
+    --color-neutral: #1f2127;
+    --color-neutral-content: #e2e2e9;
+
+    --color-base-100: var(--md-sys-color-surface);
+    --color-base-200: var(--md-sys-color-surface-container);
+    --color-base-300: var(--md-sys-color-surface-container-high);
+    --color-base-content: var(--md-sys-color-on-surface);
+
+    --color-error: var(--md-sys-color-error);
+    --color-error-content: var(--md-sys-color-on-error);
+    --color-success: #75d49b;
+    --color-success-content: #00391c;
+    --color-warning: #ffb870;
+    --color-warning-content: #4a2800;
+    --color-info: #7fcfff;
+    --color-info-content: #003554;
+
+    /* Rayons DaisyUI calqués sur Material 3 */
+    --radius-selector: 8px;
+    --radius-field: 12px;
+    --radius-box: 16px;
+  }
+}
+
+/* Forçage explicite via data-theme="dark" */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Material 3 Palette Sombre */
+  --md-sys-color-primary: #adc6ff;
+  --md-sys-color-on-primary: #002e69;
+  --md-sys-color-primary-container: #004494;
+  --md-sys-color-on-primary-container: #d8e2ff;
+
+  --md-sys-color-secondary: #bfc6dc;
+  --md-sys-color-on-secondary: #293041;
+  --md-sys-color-secondary-container: #3f4759;
+  --md-sys-color-on-secondary-container: #dbe2f9;
+
+  --md-sys-color-tertiary: #debcdf;
+  --md-sys-color-on-tertiary: #402843;
+  --md-sys-color-tertiary-container: #583e5b;
+  --md-sys-color-on-tertiary-container: #fbd7fc;
+
+  --md-sys-color-error: #ffb4ab;
+  --md-sys-color-on-error: #690005;
+  --md-sys-color-error-container: #93000a;
+  --md-sys-color-on-error-container: #ffdad6;
+
+  --md-sys-color-background: #111318;
+  --md-sys-color-on-background: #e2e2e9;
+
+  --md-sys-color-surface: #111318;
+  --md-sys-color-on-surface: #e2e2e9;
+  --md-sys-color-surface-variant: #44474f;
+  --md-sys-color-on-surface-variant: #c4c6d0;
+
+  --md-sys-color-outline: #8e9099;
+  --md-sys-color-outline-variant: #44474f;
+
+  /* Hiérarchie de Surfaces M3 Sombre */
+  --md-sys-color-surface-container-lowest: #0c0e13;
+  --md-sys-color-surface-container-low: #191c20;
+  --md-sys-color-surface-container: #1d2024;
+  --md-sys-color-surface-container-high: #282a2f;
+  --md-sys-color-surface-container-highest: #33353a;
+
+  /* Mapping DaisyUI v5 Sombre */
+  --color-primary: var(--md-sys-color-primary);
+  --color-primary-content: var(--md-sys-color-on-primary);
+  --color-secondary: var(--md-sys-color-secondary);
+  --color-secondary-content: var(--md-sys-color-on-secondary);
+  --color-accent: var(--md-sys-color-tertiary);
+  --color-accent-content: var(--md-sys-color-on-tertiary);
+  --color-neutral: #1f2127;
+  --color-neutral-content: #e2e2e9;
+
+  --color-base-100: var(--md-sys-color-surface);
+  --color-base-200: var(--md-sys-color-surface-container);
+  --color-base-300: var(--md-sys-color-surface-container-high);
+  --color-base-content: var(--md-sys-color-on-surface);
+
+  --color-error: var(--md-sys-color-error);
+  --color-error-content: var(--md-sys-color-on-error);
+  --color-success: #75d49b;
+  --color-success-content: #00391c;
+  --color-warning: #ffb870;
+  --color-warning-content: #4a2800;
+  --color-info: #7fcfff;
+  --color-info-content: #003554;
+
+  /* Rayons DaisyUI calqués sur Material 3 */
+  --radius-selector: 8px;
+  --radius-field: 12px;
+  --radius-box: 16px;
+}
+
+/* ==========================================================================
+   Invariants Système & Accessibilité Mobile
+   ========================================================================== */
 
 /* Marges sécurisées PWA (iOS / encoches) */
 :root {
@@ -9,17 +257,21 @@
 
 html, body {
   min-height: 100%;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-sans);
+  background-color: var(--color-base-100);
+  color: var(--color-base-content);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Neutralisation de la double outline DaisyUI v5 au focus */
+/* Neutralisation du double outline DaisyUI au focus avec anneau M3 */
 .input:focus,
-.input:focus-within {
+.input:focus-within,
+.select:focus,
+.textarea:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 1px var(--color-primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 30%, transparent);
 }
 
 /* Accessibilité : désactivation des animations si demandée par l'OS */

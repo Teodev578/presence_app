@@ -30,7 +30,11 @@ Le répertoire `.agents/` héberge les directives et compétences modulaires pou
   - `03-local-first-and-dexie.md` : intégrité IndexedDB, microtask boundary & UUIDv7.
   - `04-sync-engine-and-outbox.md` : Transactional Outbox, idempotence & tombstones.
   - `05-supabase-rls-and-schema.md` : sécurité Row Level Security, indexation B-Tree & pull incrémental.
+  - `06-animation-standards.md` : fluidité GPU, anti-jank et prefers-reduced-motion.
+  - `07-design-system.md` : synergie Material 3 & DaisyUI v5, tokens et hiérarchie de formes.
 - `.agents/skills/` : Protocoles procéduraux déclenchés sur demande ou selon le besoin technique. Le périmètre des compétences actives et inactives est consigné dans [`.agents/skills-scope.md`](.agents/skills-scope.md).
+  - Déclencheur UI/UX & Design System (`ui-ux-pro-max`) : invoquer pour tout nouveau composant graphique, refonte d'écran ou définition de tokens/layouts.
+  - Déclencheur animations fluides (`vue-animation`) : invoquer lors de l'implémentation de transitions de routes, volets ou feedbacks tactiles.
   - Déclencheur hygiène (`code-hygiene`) : invoquer lors des revues de code, des nettoyages post-implémentation ou avant validation d'un composant/module.
 - `.agents/plugins/presence-stack/` : Équipe de sous-agents spécialisée pour la stack technique (Lucas, Nora, Marc, Chloé, Victor). Consulter le `README.md` du plugin.
 
@@ -41,9 +45,16 @@ Deux ensembles d'agents cohabitent sur le dépôt avec une répartition stricte 
 | Phase | Équipe responsable | Agents / Rôles actifs | Livrables attendus |
 |---|---|---|---|
 | **Cadrage, Idéation & PRD** | **BMAD** | Mary (Analyste), John (PM), Sally (UX), Winston (Architecte) | Product Brief, PRD, Epics & Stories, Spécifications UX |
+| **Design Visuel & Ergonomie** | **presence-stack & UI** | Chloé (DaisyUI/Tailwind/M3) + skill `ui-ux-pro-max` | Spécifications d'interface, tokens M3, conformité WCAG |
 | **Implémentation & Refactoring** | **presence-stack** | Lucas (Vue/Vite), Nora (Dexie/Local), Marc (Supabase/Sync), Chloé (DaisyUI/Tailwind) | Composants Vue 3, schémas Dexie, composables, règles RLS, intégration CSS |
 | **Sprint Planning & Suivi** | **BMAD** | Équipe BMAD au complet | `sprint-status.yaml`, backlog d'itération |
 | **Audit, Chaos Testing & Hygiène** | **presence-stack** | Victor (Chaos & Resilience Auditor) | Rapports d'audit, simulation de panne réseau, contrôle YAGNI, validation de build |
+
+## Mémoire d'apprentissage & Knowledge Items (KI)
+
+Pour éviter la perte de contexte entre sessions de travail :
+- À l'issue de toute tâche ayant permis de stabiliser un pattern réutilisable (ex : conventions DaisyUI/M3, gestion de conflit offline, indexation Dexie), l'agent documente ou met à jour le Knowledge Item (KI) correspondant sous `<appDataDir>/knowledge/`.
+- Chaque agent débutant une tâche complexe doit d'abord vérifier les résumés de KI injectés dans son contexte avant de concevoir de nouvelles abstractions.
 
 ## Garde-fous inviolables
 

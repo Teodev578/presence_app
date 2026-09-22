@@ -13,25 +13,31 @@ Ce document cartographie les compétences agentiques (skills) autorisées et mob
 - `prototype` : maquettage rapide pour valider une intuition d'interface ou de flux de données.
 - `tdd` : méthodologie d'implémentation guidée par les tests (red-green-refactor).
 
-### 2. Revue, Qualité & Résilience
+### 2. Design Visuel, UI & Animation
+- `ui-ux-pro-max` : conception visuelle, tokens de design, layouts réactifs, conformité Material 3 / DaisyUI et audit d'accessibilité WCAG.
+- `vue-animation` : orchestration de transitions légères Vue 3 (`<Transition>`) accélérées par GPU (transform/opacity) sans jank.
+
+### 3. Revue, Qualité & Résilience
 - `code-hygiene` : audit de propreté, détection de code mort et vérification des imports.
 - `code-review` : double revue standards / spécification post-implémentation.
 - `bmad-code-review` : revue contradictoire multicouche avant fusion ou finalisation.
+- `bmad-review` : inspection multicouche approfondie (critique adversariale, cas limites, trous de vérification).
 - `diagnosing-bugs` : protocole d'investigation méthodique pour anomalies de synchronisation ou de persistance.
 - `bmad-walkthrough` : explication pédagogique des modifications apportées lors d'un jalon.
 
-### 3. Cadrage Produit & Spécifications (Équipe BMAD)
+### 4. Cadrage Produit, Challenge & Spécifications (Équipe BMAD)
 - `bmad-prd` : structuration des exigences produit et définition des cas d'usage.
 - `bmad-architecture` : cadrage des invariants architecturaux haut niveau.
 - `bmad-create-epics-and-stories` : découpage fonctionnel en unités de livraison incrémentales.
 - `bmad-sprint-planning` : ordonnancement et statut du sprint.
 - `bmad-ux` : spécifications de parcours et ergonomie d'usage.
+- `grilling` : mise à l'épreuve contradictoire des plans, arbitrages et hypothèses architecturales.
 
-### 4. Modélisation du Domaine & Architecture
+### 5. Modélisation du Domaine & Architecture
 - `domain-modeling` : maintien du glossaire `CONTEXT.md` et alignement sémantique du code.
 - `codebase-design` : structuration modulaire des composables et des couches de données.
 
-### 5. Git & Cycle de Vie
+### 6. Git & Cycle de Vie
 - `pr` : formalisation des descriptions de pull request.
 - `resolving-merge-conflicts` : résolution méthodique des conflits git.
 - `bmad-retrospective` : bilan contradictoire d'itération.
