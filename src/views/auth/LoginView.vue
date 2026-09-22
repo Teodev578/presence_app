@@ -54,14 +54,14 @@ onUnmounted(() => {
 const fillAdminCredentials = () => {
   email.value = 'ultimateadmin@email.com'
   password.value = 'AdminPresence2026!'
-  message.value = 'Identifiants Administrateur appliqués.'
+  message.value = 'Identifiants administrateur remplis.'
 }
 
 const handleSubmit = async () => {
   message.value = ''
 
   if (!navigator.onLine) {
-    message.value = 'Connexion impossible : vous êtes actuellement hors-ligne. Une connexion Internet est requise pour vous authentifier.'
+    message.value = 'Vous êtes hors ligne. Connexion Internet requise pour vous identifier.'
     return
   }
 
@@ -70,7 +70,7 @@ const handleSubmit = async () => {
 
   if (isRegister.value) {
     if (!fullName.value.trim()) {
-      message.value = 'Veuillez saisir votre nom complet.'
+      message.value = 'Indiquez votre nom et prénom.'
       return
     }
     const { error } = await signUp(
@@ -81,7 +81,7 @@ const handleSubmit = async () => {
     )
     if (error) return
 
-    message.value = 'Compte créé avec succès. Vous pouvez maintenant vous connecter.'
+    message.value = 'Compte créé. Vous pouvez vous connecter.'
     isRegister.value = false
   } else {
     const { data, error } = await signIn(cleanEmail, cleanPassword)
@@ -90,7 +90,7 @@ const handleSubmit = async () => {
     const userProfile = await fetchProfile()
     const role = userProfile?.role || profile.value?.role || data?.user?.user_metadata?.role
 
-    // Routage strict et automatique fondé sur le rôle résolu
+    // Routage direct selon le rôle
     if (role === 'admin' || role === 'manager') {
       navigate('/manager')
     } else {
@@ -104,19 +104,19 @@ const handleForgotPassword = async () => {
   authError.value = null
 
   if (!navigator.onLine) {
-    message.value = 'Opération impossible : vous êtes actuellement hors-ligne.'
+    message.value = 'Connexion Internet requise pour cette action.'
     return
   }
 
   const cleanEmail = email.value.trim().toLowerCase()
   if (!cleanEmail) {
-    message.value = 'Veuillez renseigner votre adresse email professionnelle.'
+    message.value = 'Entrez votre adresse email.'
     return
   }
 
   const { error } = await resetPassword(cleanEmail)
   if (!error) {
-    message.value = 'Si cette adresse correspond à un compte actif, un lien de réinitialisation vous a été transmis.'
+    message.value = "Si un compte existe pour cet email, le lien vient d'être envoyé."
   }
 }
 </script>
@@ -146,7 +146,7 @@ const handleForgotPassword = async () => {
           </div>
           <h1 class="text-2xl font-black tracking-tight text-base-content">PresenceApp</h1>
           <p class="text-xs text-base-content/60 mt-1 max-w-xs">
-            Pointage géolocalisé, résilience hors-ligne et gestion des disponibilités
+            Pointage des présences et suivi des plannings
           </p>
         </div>
 
@@ -175,7 +175,7 @@ const handleForgotPassword = async () => {
             <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
             <line x1="12" y1="20" x2="12.01" y2="20" />
           </svg>
-          <span>Vous êtes hors-ligne. Une connexion Internet est requise pour vous authentifier la première fois.</span>
+          <span>Vous êtes hors ligne. Connectez-vous à Internet pour vous identifier.</span>
         </div>
 
         <!-- Mode Réinitialisation de mot de passe oublié -->
@@ -183,7 +183,7 @@ const handleForgotPassword = async () => {
           <div class="text-center">
             <h2 class="text-base font-bold text-base-content">Mot de passe oublié</h2>
             <p class="text-xs text-base-content/60 mt-1">
-              Indiquez votre adresse email professionnelle pour recevoir un lien de réinitialisation sécurisé.
+              Entrez votre email pour recevoir le lien de réinitialisation.
             </p>
           </div>
 
@@ -191,7 +191,7 @@ const handleForgotPassword = async () => {
             <!-- Email professionnel pour réinitialisation -->
             <fieldset class="fieldset">
               <legend class="fieldset-legend text-xs font-semibold text-base-content/70">
-                Email professionnel :
+                Adresse email
               </legend>
               <input
                 id="reset-email"
@@ -203,7 +203,7 @@ const handleForgotPassword = async () => {
                 spellcheck="false"
                 inputmode="email"
                 required
-                placeholder="jean.dupont@entreprise.fr"
+                placeholder="jean.dupont@exemple.com"
                 class="input input-bordered w-full rounded-xl text-sm focus:outline-none focus:border-primary"
               />
             </fieldset>
@@ -251,8 +251,8 @@ const handleForgotPassword = async () => {
               :disabled="authLoading"
             >
               <span v-if="authLoading" class="loading loading-spinner loading-sm"></span>
-              <span v-if="authLoading">Envoi du lien...</span>
-              <span v-else>Envoyer le lien de réinitialisation</span>
+              <span v-if="authLoading">Envoi en cours...</span>
+              <span v-else>Envoyer le lien</span>
             </button>
 
             <!-- Bouton de retour -->
@@ -261,7 +261,7 @@ const handleForgotPassword = async () => {
               class="btn btn-ghost btn-sm w-full text-xs text-base-content/70 hover:text-base-content rounded-lg"
               @click="isForgotPassword = false; message = ''; authError = null"
             >
-              ← Retour à la connexion
+              ← Retour
             </button>
           </form>
         </div>
@@ -310,7 +310,7 @@ const handleForgotPassword = async () => {
             <!-- Nom complet uniquement lors de la création de compte -->
             <fieldset v-if="isRegister" class="fieldset">
               <legend class="fieldset-legend text-xs font-semibold text-base-content/70">
-                Nom complet :
+                Nom et prénom
               </legend>
               <input
                 id="reg-name"
@@ -320,7 +320,7 @@ const handleForgotPassword = async () => {
                 autocomplete="name"
                 autocapitalize="words"
                 spellcheck="false"
-                placeholder="Ex : Jean Dupont"
+                placeholder="Jean Dupont"
                 class="input input-bordered w-full rounded-xl text-sm focus:outline-none focus:border-primary"
               />
             </fieldset>
@@ -328,7 +328,7 @@ const handleForgotPassword = async () => {
             <!-- Email professionnel -->
             <fieldset class="fieldset">
               <legend class="fieldset-legend text-xs font-semibold text-base-content/70">
-                Email professionnel :
+                Adresse email
               </legend>
               <input
                 id="auth-email"
@@ -340,7 +340,7 @@ const handleForgotPassword = async () => {
                 spellcheck="false"
                 inputmode="email"
                 required
-                placeholder="jean.dupont@entreprise.fr"
+                placeholder="jean.dupont@exemple.com"
                 class="input input-bordered w-full rounded-xl text-sm focus:outline-none focus:border-primary"
               />
             </fieldset>
@@ -349,7 +349,7 @@ const handleForgotPassword = async () => {
             <fieldset class="fieldset">
               <div class="flex items-center justify-between mb-1">
                 <legend class="fieldset-legend text-xs font-semibold text-base-content/70 m-0 p-0">
-                  Mot de passe :
+                  Mot de passe
                 </legend>
                 <button
                   v-if="!isRegister"
@@ -409,7 +409,7 @@ const handleForgotPassword = async () => {
                     class="w-4 h-4"
                     aria-hidden="true"
                   >
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z" />
                     <circle cx="12" cy="12" r="3" />
                   </svg>
                 </button>
@@ -459,8 +459,8 @@ const handleForgotPassword = async () => {
               :disabled="authLoading"
             >
               <span v-if="authLoading" class="loading loading-spinner loading-sm"></span>
-              <span v-if="authLoading">Authentification...</span>
-              <span v-else-if="isRegister">Créer mon compte employé</span>
+              <span v-if="authLoading">Connexion en cours...</span>
+              <span v-else-if="isRegister">Créer le compte</span>
               <span v-else>Se connecter</span>
             </button>
 
@@ -486,7 +486,7 @@ const handleForgotPassword = async () => {
                   <path d="m21 2-9.6 9.6" />
                   <path d="m15.5 7.5 3 3L22 7l-3-3" />
                 </svg>
-                <span>Pré-remplir avec le compte Administrateur (Dev)</span>
+                <span>Remplir avec le compte admin (test)</span>
               </button>
             </div>
           </form>

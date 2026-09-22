@@ -38,21 +38,21 @@ export function useAuth() {
     if (!err) return null
     const msg = err.message || ''
     if (msg.includes('Invalid login credentials')) {
-      return 'Email ou mot de passe incorrect. Vérifiez vos identifiants.'
+      return 'Email ou mot de passe incorrect.'
     }
     if (msg.includes('Email not confirmed')) {
-      return "Cette adresse email n'a pas encore été confirmée."
+      return 'Adresse email non confirmée.'
     }
     if (msg.includes('User already registered')) {
-      return 'Un compte existe déjà avec cette adresse email.'
+      return 'Un compte utilise déjà cette adresse email.'
     }
     if (msg.includes('Password should be at least')) {
-      return 'Le mot de passe doit comporter au moins 6 caractères.'
+      return 'Le mot de passe doit faire au moins 6 caractères.'
     }
     if (msg.includes('Failed to fetch') || !navigator.onLine) {
-      return 'Connexion impossible : vous êtes hors-ligne ou le serveur est inaccessible. Une connexion Internet est requise pour vous authentifier.'
+      return 'Impossible de joindre le serveur. Vérifiez votre accès Internet.'
     }
-    return msg || 'Une erreur est survenue lors de la connexion.'
+    return msg || 'Erreur de connexion.'
   }
 
   const signIn = async (email, password) => {
