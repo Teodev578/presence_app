@@ -222,28 +222,46 @@ const handleForgotPassword = async () => {
         </div>
 
         <!-- Mode standard : Onglets Connexion / Inscription -->
+        <!-- Mode standard : Onglets Connexion / Inscription (Segmented Button M3) -->
         <template v-else>
-          <div class="tabs tabs-box grid grid-cols-2 p-1 bg-base-200 rounded-xl">
+          <div
+            role="tablist"
+            aria-label="Mode d'authentification"
+            class="grid grid-cols-2 p-1 bg-base-200 border border-base-300 rounded-xl gap-1.5"
+          >
             <button
               type="button"
-              class="tab text-xs font-bold rounded-lg transition-all"
-              :class="{ 'tab-active bg-base-100 shadow-xs text-primary': !isRegister }"
+              role="tab"
+              :aria-selected="!isRegister"
+              class="py-2.5 px-3 text-xs font-bold rounded-lg flex items-center justify-center cursor-pointer border border-transparent outline-none focus:outline-hidden focus-visible:ring-1 focus-visible:ring-primary/40 select-none transition-colors duration-150"
+              :class="!isRegister
+                ? 'bg-base-300 text-primary border-base-content/10 shadow-xs'
+                : 'text-base-content/75 hover:text-base-content hover:bg-base-300/40 font-medium'"
               @click="isRegister = false; message = ''; authError = null"
             >
               Connexion
             </button>
             <button
               type="button"
-              class="tab text-xs font-bold rounded-lg transition-all"
-              :class="{ 'tab-active bg-base-100 shadow-xs text-primary': isRegister }"
+              role="tab"
+              :aria-selected="isRegister"
+              class="py-2.5 px-3 text-xs font-bold rounded-lg flex items-center justify-center cursor-pointer border border-transparent outline-none focus:outline-hidden focus-visible:ring-1 focus-visible:ring-primary/40 select-none transition-colors duration-150"
+              :class="isRegister
+                ? 'bg-base-300 text-primary border-base-content/10 shadow-xs'
+                : 'text-base-content/75 hover:text-base-content hover:bg-base-300/40 font-medium'"
               @click="isRegister = true; message = ''; authError = null"
             >
               Créer un compte
             </button>
           </div>
 
-          <!-- Formulaire principal -->
-          <form class="flex flex-col gap-4" @submit.prevent="handleSubmit">
+          <!-- Formulaire principal avec transition fluide -->
+          <Transition name="auth-slide" mode="out-in">
+            <form
+              :key="isRegister ? 'register' : 'login'"
+              class="flex flex-col gap-4"
+              @submit.prevent="handleSubmit"
+            >
             <!-- Nom complet uniquement lors de la création de compte -->
             <fieldset v-if="isRegister" class="fieldset">
               <legend class="fieldset-legend text-xs font-semibold text-base-content/70">
@@ -401,8 +419,27 @@ const handleForgotPassword = async () => {
               </button>
             </div>
           </form>
-        </template>
-      </div>
+        </Transition>
+      </template>
     </div>
   </div>
+</div>
 </template>
+
+<style scoped>
+/* Transition douce GPU-composited entre Connexion et Inscription */
+.auth-slide-enter-active,
+.auth-slide-leave-active {
+  transition: opacity 0.18s cubic-bezier(0.4, 0, 0.2, 1), transform 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.auth-slide-enter-from {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+.auth-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+</style>
