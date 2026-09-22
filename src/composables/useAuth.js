@@ -49,6 +49,9 @@ export function useAuth() {
     if (msg.includes('Password should be at least')) {
       return 'Le mot de passe doit comporter au moins 6 caractères.'
     }
+    if (msg.includes('Failed to fetch') || !navigator.onLine) {
+      return 'Connexion impossible : vous êtes hors-ligne ou le serveur est inaccessible. Une connexion Internet est requise pour vous authentifier.'
+    }
     return msg || 'Une erreur est survenue lors de la connexion.'
   }
 
