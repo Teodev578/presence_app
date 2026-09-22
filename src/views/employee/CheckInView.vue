@@ -102,14 +102,14 @@ const handleConfirmCheckIn = async () => {
       <button type="button" class="btn btn-ghost btn-sm text-xs font-semibold gap-1" @click="navigate('/employee')">
         ← Annuler
       </button>
-      <h2 class="text-base font-bold text-base-content">Pointer mon arrivée</h2>
+      <h1 class="text-base font-bold text-base-content">Pointer l'arrivée</h1>
       <span class="w-16"></span>
     </div>
 
     <!-- Sélecteur de site si multiple -->
     <div v-if="locations.length > 1" class="fieldset">
       <label for="loc-select" class="fieldset-legend text-xs font-semibold text-base-content/70">
-        Site de pointage :
+        Site de pointage
       </label>
       <select id="loc-select" v-model="selectedLocation" class="select select-bordered w-full rounded-xl text-sm">
         <option v-for="loc in locations" :key="loc.id" :value="loc">
@@ -118,7 +118,7 @@ const handleConfirmCheckIn = async () => {
       </select>
     </div>
     <div v-else-if="selectedLocation" class="card bg-base-100 border border-base-300 p-3 rounded-xl text-center text-xs text-base-content/70">
-      📍 Site ciblé : <strong class="text-base-content">{{ selectedLocation.name }}</strong>
+      Site : <strong class="text-base-content">{{ selectedLocation.name }}</strong>
     </div>
 
     <!-- Radar GPS -->
@@ -144,17 +144,17 @@ const handleConfirmCheckIn = async () => {
     <div class="flex flex-col gap-2.5 mt-2">
       <button
         type="button"
-        class="btn btn-success text-white w-full text-base font-bold min-h-12 shadow-lg rounded-xl active:scale-98 transition-transform"
+        class="btn btn-primary w-full text-base font-bold min-h-12 shadow-sm rounded-xl active:scale-98 transition-transform"
         :disabled="!perimeterResult.inPerimeter || isSubmitting"
         @click="handleConfirmCheckIn"
       >
         <span v-if="isSubmitting" class="loading loading-spinner loading-sm"></span>
         <span v-if="isSubmitting">Enregistrement...</span>
-        <span v-else-if="perimeterResult.inPerimeter">✓ Confirmer ma présence</span>
-        <span v-else>⚠️ Rapprochez-vous du site</span>
+        <span v-else-if="perimeterResult.inPerimeter">Valider l'arrivée</span>
+        <span v-else>Périmètre non atteint</span>
       </button>
-      <p class="text-[11px] text-base-content/60 text-center">
-        Fonctionne hors-ligne : votre présence sera mémorisée localement et transmise dès le retour du réseau.
+      <p class="text-[11px] text-base-content/50 text-center">
+        Disponible hors ligne. Enregistrement local automatique.
       </p>
     </div>
   </div>

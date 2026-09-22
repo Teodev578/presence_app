@@ -50,7 +50,7 @@ const formatTime = (isoStr) => {
           <span class="text-2xl font-bold text-base-content tracking-tight my-0.5">
             {{ presence?.check_in_time ? formatTime(presence.check_in_time) : '--:--' }}
           </span>
-          <span class="text-[11px] text-base-content/50">Attendu : {{ expectedArrivalTime.slice(0, 5) }}</span>
+          <span class="text-[11px] text-base-content/50">Prévu à {{ expectedArrivalTime.slice(0, 5) }}</span>
         </div>
 
         <div class="flex flex-col items-center border-l border-base-300">
@@ -68,36 +68,48 @@ const formatTime = (isoStr) => {
         <button
           v-if="!presence"
           type="button"
-          class="btn btn-success text-white w-full shadow-md text-base font-bold min-h-12 active:scale-98 transition-transform"
+          class="btn btn-primary w-full shadow-sm text-base font-bold min-h-12 active:scale-98 transition-transform gap-2"
           @click="emit('checkIn')"
         >
-          <span>📍</span>
-          Pointer mon arrivée
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+            <circle cx="12" cy="10" r="3"></circle>
+          </svg>
+          <span>Pointer l'arrivée</span>
         </button>
 
         <!-- Cas 2 : Arrivée validée mais pas de départ -->
         <button
           v-else-if="!presence.check_out_time"
           type="button"
-          class="btn btn-warning text-white w-full shadow-md text-base font-bold min-h-12 active:scale-98 transition-transform"
+          class="btn btn-warning text-warning-content w-full shadow-sm text-base font-bold min-h-12 active:scale-98 transition-transform gap-2"
           @click="emit('checkOut')"
         >
-          <span>🏁</span>
-          Pointer mon départ
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+          <span>Pointer le départ</span>
         </button>
 
         <!-- Cas 3 : Journée achevée -->
-        <div v-else class="alert alert-success py-3 text-sm font-semibold justify-center">
-          ✓ Journée entièrement enregistrée.
+        <div v-else class="alert alert-success/15 border border-success/30 text-success text-xs font-semibold py-2.5 justify-center rounded-xl">
+          Journée enregistrée
         </div>
 
         <button
           type="button"
-          class="btn btn-outline btn-primary w-full text-sm font-semibold min-h-10 mt-1"
+          class="btn btn-ghost border border-base-300 w-full text-xs font-semibold min-h-10 mt-1 gap-2 text-base-content/80 hover:text-base-content hover:bg-base-200"
           @click="emit('openAvailabilities')"
         >
-          <span>📅</span>
-          Mes disponibilités de la semaine
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+          <span>Gérer mes disponibilités</span>
         </button>
       </div>
     </div>

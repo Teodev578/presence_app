@@ -163,19 +163,19 @@ const handleSave = async () => {
     </div>
 
     <!-- Message de confirmation -->
-    <div v-if="saveSuccess" class="alert alert-success text-sm py-3 justify-center">
-      ✓ Disponibilités enregistrées avec succès en local.
+    <div v-if="saveSuccess" class="alert alert-success text-xs py-2.5 justify-center rounded-xl">
+      Disponibilités enregistrées
     </div>
 
     <!-- Bouton d'enregistrement principal -->
     <button
       type="button"
-      class="btn btn-primary w-full text-base font-bold min-h-12 shadow-md rounded-xl active:scale-98 transition-transform"
+      class="btn btn-primary w-full text-base font-bold min-h-12 shadow-sm rounded-xl active:scale-98 transition-transform"
       :disabled="isSaving"
       @click="handleSave"
     >
       <span v-if="isSaving">Enregistrement en cours...</span>
-      <span v-else>Enregistrer mes disponibilités</span>
+      <span v-else>Enregistrer</span>
     </button>
   </div>
 </template>

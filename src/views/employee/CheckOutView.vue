@@ -94,12 +94,12 @@ const handleConfirmCheckOut = async () => {
       <button type="button" class="btn btn-ghost btn-sm text-xs font-semibold gap-1" @click="navigate('/employee')">
         ← Annuler
       </button>
-      <h2 class="text-base font-bold text-base-content">Pointer mon départ</h2>
+      <h1 class="text-base font-bold text-base-content">Pointer le départ</h1>
       <span class="w-16"></span>
     </div>
 
     <div v-if="location" class="card bg-base-100 border border-base-300 p-3 rounded-xl text-center text-xs text-base-content/70">
-      🏁 Site de départ : <strong class="text-base-content">{{ location.name }}</strong>
+      Site : <strong class="text-base-content">{{ location.name }}</strong>
     </div>
 
     <!-- Radar GPS -->
@@ -125,17 +125,17 @@ const handleConfirmCheckOut = async () => {
     <div class="flex flex-col gap-2.5 mt-2">
       <button
         type="button"
-        class="btn btn-warning text-white w-full text-base font-bold min-h-12 shadow-lg rounded-xl active:scale-98 transition-transform"
+        class="btn btn-warning text-warning-content w-full text-base font-bold min-h-12 shadow-sm rounded-xl active:scale-98 transition-transform"
         :disabled="!perimeterResult.inPerimeter || isSubmitting"
         @click="handleConfirmCheckOut"
       >
         <span v-if="isSubmitting" class="loading loading-spinner loading-sm"></span>
         <span v-if="isSubmitting">Validation...</span>
-        <span v-else-if="perimeterResult.inPerimeter">✓ Terminer ma journée</span>
-        <span v-else>⚠️ Retournez sur le site</span>
+        <span v-else-if="perimeterResult.inPerimeter">Valider le départ</span>
+        <span v-else>Périmètre non atteint</span>
       </button>
-      <p class="text-[11px] text-base-content/60 text-center">
-        Enregistrement immédiat dans votre base locale avec transmission garantie.
+      <p class="text-[11px] text-base-content/50 text-center">
+        Disponible hors ligne. Enregistrement local automatique.
       </p>
     </div>
   </div>

@@ -125,8 +125,8 @@ const handleForgotPassword = async () => {
   <div class="min-h-screen flex items-center justify-center p-4 bg-base-200">
     <div class="card bg-base-100 shadow-xl border border-base-300 w-full max-w-md">
       <div class="card-body p-6 sm:p-8 gap-5">
-        <!-- Logo vectoriel et En-tête de marque -->
-        <div class="text-center flex flex-col items-center">
+        <!-- Logo vectoriel et En-tête de marque (uniquement sur la connexion / inscription) -->
+        <div v-if="!isForgotPassword" class="text-center flex flex-col items-center">
           <div class="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-xs mb-3">
             <!-- Horloge / Pointage SVG moderne -->
             <svg
@@ -179,9 +179,24 @@ const handleForgotPassword = async () => {
         </div>
 
         <!-- Mode Réinitialisation de mot de passe oublié -->
-        <div v-if="isForgotPassword" class="flex flex-col gap-4">
-          <div class="text-center">
-            <h2 class="text-base font-bold text-base-content">Mot de passe oublié</h2>
+        <div v-if="isForgotPassword" class="flex flex-col gap-5">
+          <div class="flex items-center justify-between">
+            <button
+              type="button"
+              class="btn btn-ghost btn-xs gap-1.5 text-base-content/70 hover:text-base-content -ml-2 rounded-lg cursor-pointer"
+              @click="isForgotPassword = false; message = ''; authError = null"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+              </svg>
+              <span>Retour</span>
+            </button>
+            <span class="text-xs font-semibold text-base-content/40 tracking-wider">PresenceApp</span>
+          </div>
+
+          <div>
+            <h1 class="text-xl font-bold tracking-tight text-base-content">Mot de passe oublié</h1>
             <p class="text-xs text-base-content/60 mt-1">
               Entrez votre email pour recevoir le lien de réinitialisation.
             </p>
@@ -253,15 +268,6 @@ const handleForgotPassword = async () => {
               <span v-if="authLoading" class="loading loading-spinner loading-sm"></span>
               <span v-if="authLoading">Envoi en cours...</span>
               <span v-else>Envoyer le lien</span>
-            </button>
-
-            <!-- Bouton de retour -->
-            <button
-              type="button"
-              class="btn btn-ghost btn-sm w-full text-xs text-base-content/70 hover:text-base-content rounded-lg"
-              @click="isForgotPassword = false; message = ''; authError = null"
-            >
-              ← Retour
             </button>
           </form>
         </div>

@@ -1,4 +1,5 @@
 <script setup>
+import { computed } from 'vue'
 import { useRouter } from '../../router'
 import { useProfile } from '../../composables/useProfile'
 import { usePresences } from '../../composables/usePresences'
@@ -7,18 +8,23 @@ import DayCard from '../../components/employee/DayCard.vue'
 const { navigate } = useRouter()
 const { profile } = useProfile()
 const { todayPresence } = usePresences()
+
+const displayName = computed(() => {
+  if (!profile.value?.full_name) return ''
+  const parts = profile.value.full_name.trim().split(' ')
+  return parts[0]
+})
 </script>
 
 <template>
-  <div class="flex flex-col gap-5 max-w-lg mx-auto">
-    <div class="flex items-center justify-between">
+  <div class="flex flex-col gap-6">
+    <div class="flex items-baseline justify-between">
       <div>
-        <h1 class="text-xl font-black text-base-content tracking-tight">
-          Bonjour, {{ profile?.full_name || 'Collaborateur' }} 👋
+        <h1 class="text-2xl font-bold text-base-content tracking-tight">
+          Bonjour{{ displayName ? ` ${displayName}` : '' }}
         </h1>
-        <p class="text-xs text-base-content/60 mt-0.5 flex items-center gap-1.5">
-          <span>Rôle :</span>
-          <span class="badge badge-sm badge-outline capitalize font-semibold">{{ profile?.role || 'Employé' }}</span>
+        <p class="text-xs text-base-content/60 mt-0.5">
+          Espace de pointage personnel
         </p>
       </div>
     </div>
@@ -31,13 +37,5 @@ const { todayPresence } = usePresences()
       @check-out="navigate('/employee/check-out')"
       @open-availabilities="navigate('/employee/availabilities')"
     />
-
-    <!-- Conseils rapides -->
-    <div class="alert alert-info bg-info/10 border-info/20 text-info text-xs py-3 rounded-2xl flex items-start gap-2.5">
-      <span class="text-base select-none">💡</span>
-      <div class="text-xs leading-relaxed text-base-content/80">
-        <strong class="text-base-content font-bold">Pensez à déclarer vos disponibilités</strong> pour la semaine prochaine afin de faciliter l'organisation des plannings.
-      </div>
-    </div>
   </div>
 </template>
