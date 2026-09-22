@@ -88,9 +88,9 @@ const handleLogout = async () => {
       <slot />
     </main>
 
-    <!-- Barre de navigation inférieure Mobile uniquement (M3 Pill + DaisyUI btm-nav) -->
+    <!-- Barre de navigation inférieure Mobile uniquement (M3 Navigation Bar responsive) -->
     <nav
-      class="md:hidden btm-nav bg-base-100/95 backdrop-blur-md border-t border-base-300/70 z-40 fixed bottom-0 left-0 right-0 h-[calc(3.75rem+var(--safe-bottom,0px))] pb-[var(--safe-bottom,0px)]"
+      class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-base-100/95 backdrop-blur-md border-t border-base-300/70 flex flex-row items-center justify-around w-full h-[calc(4rem+var(--safe-bottom,0px))] pb-[var(--safe-bottom,0px)] px-3 shadow-lg"
       role="tablist"
       aria-label="Navigation principale mobile"
     >
@@ -99,20 +99,24 @@ const handleLogout = async () => {
         role="tab"
         :aria-selected="currentPath === '/employee'"
         aria-label="Espace de pointage"
-        class="flex flex-col items-center justify-center gap-1 transition-colors min-h-12"
-        :class="currentPath === '/employee' ? 'text-primary font-bold' : 'text-base-content/70 hover:text-base-content'"
+        class="flex-1 flex flex-col items-center justify-center h-full py-1 text-center transition-colors cursor-pointer select-none"
         @click="navigate('/employee')"
       >
         <div
-          class="flex items-center justify-center px-4 py-1 rounded-full transition-all"
-          :class="currentPath === '/employee' ? 'bg-primary/15' : 'bg-transparent'"
+          class="flex items-center justify-center px-5 py-1 rounded-full transition-all"
+          :class="currentPath === '/employee' ? 'bg-primary/15 text-primary' : 'bg-transparent text-base-content/70 hover:text-base-content'"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="10" />
             <polyline points="12 6 12 12 16 14" />
           </svg>
         </div>
-        <span class="btm-nav-label text-[11px]">Pointage</span>
+        <span
+          class="text-[11px] mt-0.5 tracking-tight transition-colors"
+          :class="currentPath === '/employee' ? 'font-bold text-primary' : 'font-medium text-base-content/70'"
+        >
+          Pointage
+        </span>
       </button>
 
       <button
@@ -120,20 +124,24 @@ const handleLogout = async () => {
         role="tab"
         :aria-selected="currentPath.includes('/employee/check')"
         aria-label="Pointer présence"
-        class="flex flex-col items-center justify-center gap-1 transition-colors min-h-12"
-        :class="currentPath.includes('/employee/check') ? 'text-primary font-bold' : 'text-base-content/70 hover:text-base-content'"
+        class="flex-1 flex flex-col items-center justify-center h-full py-1 text-center transition-colors cursor-pointer select-none"
         @click="navigate('/employee/check-in')"
       >
         <div
-          class="flex items-center justify-center px-4 py-1 rounded-full transition-all"
-          :class="currentPath.includes('/employee/check') ? 'bg-primary/15' : 'bg-transparent'"
+          class="flex items-center justify-center px-5 py-1 rounded-full transition-all"
+          :class="currentPath.includes('/employee/check') ? 'bg-primary/15 text-primary' : 'bg-transparent text-base-content/70 hover:text-base-content'"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
             <circle cx="12" cy="10" r="3"></circle>
           </svg>
         </div>
-        <span class="btm-nav-label text-[11px]">Pointer</span>
+        <span
+          class="text-[11px] mt-0.5 tracking-tight transition-colors"
+          :class="currentPath.includes('/employee/check') ? 'font-bold text-primary' : 'font-medium text-base-content/70'"
+        >
+          Pointer
+        </span>
       </button>
 
       <button
@@ -141,13 +149,12 @@ const handleLogout = async () => {
         role="tab"
         :aria-selected="currentPath === '/employee/availabilities'"
         aria-label="Gérer les disponibilités"
-        class="flex flex-col items-center justify-center gap-1 transition-colors min-h-12"
-        :class="currentPath === '/employee/availabilities' ? 'text-primary font-bold' : 'text-base-content/70 hover:text-base-content'"
+        class="flex-1 flex flex-col items-center justify-center h-full py-1 text-center transition-colors cursor-pointer select-none"
         @click="navigate('/employee/availabilities')"
       >
         <div
-          class="flex items-center justify-center px-4 py-1 rounded-full transition-all"
-          :class="currentPath === '/employee/availabilities' ? 'bg-primary/15' : 'bg-transparent'"
+          class="flex items-center justify-center px-5 py-1 rounded-full transition-all"
+          :class="currentPath === '/employee/availabilities' ? 'bg-primary/15 text-primary' : 'bg-transparent text-base-content/70 hover:text-base-content'"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
@@ -156,7 +163,12 @@ const handleLogout = async () => {
             <line x1="3" y1="10" x2="21" y2="10"></line>
           </svg>
         </div>
-        <span class="btm-nav-label text-[11px]">Disponibilités</span>
+        <span
+          class="text-[11px] mt-0.5 tracking-tight transition-colors"
+          :class="currentPath === '/employee/availabilities' ? 'font-bold text-primary' : 'font-medium text-base-content/70'"
+        >
+          Disponibilités
+        </span>
       </button>
     </nav>
   </div>
