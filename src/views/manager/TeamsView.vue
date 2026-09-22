@@ -62,224 +62,82 @@ const archiveTeam = async (team) => {
 </script>
 
 <template>
-  <div class="teams-view">
-    <div class="view-header">
-      <div>
-        <h2 class="section-title">Gestion des Équipes</h2>
-        <p class="section-desc">Structurez vos pôles et regroupez vos collaborateurs</p>
-      </div>
+  <div class="flex flex-col gap-6">
+    <div>
+      <h2 class="text-2xl font-black tracking-tight text-base-content">Gestion des Équipes</h2>
+      <p class="text-xs text-base-content/60 mt-0.5">Structurez vos pôles et regroupez vos collaborateurs</p>
     </div>
 
-    <!-- Formulaire d'ajout rapide -->
-    <div class="create-bar">
+    <!-- Formulaire d'ajout rapide DaisyUI -->
+    <div class="card bg-base-100 border border-base-300 shadow-xs p-4 rounded-2xl flex flex-row items-center gap-3">
       <input
         v-model="newTeamName"
         type="text"
         placeholder="Nom de la nouvelle équipe (ex: Chantier Nord, Pôle Technique)..."
-        class="input-team"
+        class="input input-bordered input-sm rounded-lg flex-1 text-sm"
         @keyup.enter="handleCreateTeam"
       />
       <button
         type="button"
-        class="btn-create"
+        class="btn btn-primary btn-sm rounded-lg font-bold gap-1"
         :disabled="!newTeamName.trim() || isCreating"
         @click="handleCreateTeam"
       >
-        <span v-if="isCreating">Création...</span>
+        <span v-if="isCreating" class="loading loading-spinner loading-xs"></span>
         <span v-else>+ Créer l'équipe</span>
       </button>
     </div>
 
-    <!-- Liste des équipes en cartes -->
-    <div class="teams-grid">
-      <div v-if="loading" class="state-msg">
+    <!-- Grille des équipes en cartes DaisyUI -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div v-if="loading" class="col-span-full p-8 text-center text-sm text-base-content/60 flex items-center justify-center gap-2">
+        <span class="loading loading-spinner loading-sm text-primary"></span>
         Chargement des équipes...
       </div>
-      <div v-else-if="!teams.length" class="state-msg">
+      <div v-else-if="!teams.length" class="col-span-full p-8 text-center text-sm text-base-content/60">
         Aucune équipe créée pour l'instant.
       </div>
+
       <div
         v-for="team in teams"
         :key="team.id"
-        class="team-card"
+        class="card bg-base-100 border border-base-300 shadow-xs rounded-2xl p-5 flex flex-col gap-3"
       >
-        <div class="team-header">
-          <div class="team-title-box">
-            <span class="team-icon">🏢</span>
-            <h3 class="team-name">{{ team.name }}</h3>
+        <div class="flex items-center justify-between border-b border-base-200 pb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">🏢</span>
+            <h3 class="font-bold text-base text-base-content">{{ team.name }}</h3>
           </div>
           <button
             type="button"
-            class="btn-del"
+            class="btn btn-ghost btn-circle btn-xs text-error"
             title="Archiver l'équipe"
+            aria-label="Archiver l'équipe"
             @click="archiveTeam(team)"
           >
             🗑️
           </button>
         </div>
 
-        <div class="team-members">
-          <span class="members-caption">
+        <div>
+          <span class="text-[11px] font-bold uppercase tracking-wider text-base-content/60">
             Membres ({{ team.profiles?.length || 0 }}) :
           </span>
 
-          <div v-if="team.profiles?.length" class="members-pills">
+          <div v-if="team.profiles?.length" class="flex flex-wrap gap-1.5 mt-2">
             <span
               v-for="m in team.profiles"
               :key="m.id"
-              class="member-pill"
+              class="badge badge-ghost badge-sm text-xs"
             >
               👤 {{ m.full_name }}
             </span>
           </div>
-          <div v-else class="no-members">
-            Aucun membre assigné. Rendez-vous dans la section "Employés" pour en affecter.
+          <div v-else class="text-xs text-base-content/50 italic mt-2">
+            Aucun membre assigné. Rendez-vous dans "Employés" pour en affecter.
           </div>
         </div>
       </div>
     </div>
   </div>
 </template>
-
-<style scoped>
-.teams-view {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.section-title {
-  font-size: 1.4rem;
-  font-weight: 700;
-  margin: 0;
-  color: #0f172a;
-}
-
-.section-desc {
-  font-size: 0.85rem;
-  color: #64748b;
-  margin: 0.2rem 0 0;
-}
-
-.create-bar {
-  display: flex;
-  gap: 0.75rem;
-  background: #ffffff;
-  padding: 1rem 1.25rem;
-  border-radius: 0.85rem;
-  border: 1px solid var(--border-color, #e2e8f0);
-}
-
-.input-team {
-  flex: 1;
-  padding: 0.65rem 0.85rem;
-  border-radius: 0.5rem;
-  border: 1px solid #cbd5e1;
-  font-size: 0.9rem;
-}
-
-.btn-create {
-  background: #2563eb;
-  color: white;
-  border: none;
-  padding: 0.65rem 1.25rem;
-  border-radius: 0.5rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.btn-create:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.teams-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.25rem;
-}
-
-.team-card {
-  background: #ffffff;
-  border: 1px solid var(--border-color, #e2e8f0);
-  border-radius: 1rem;
-  padding: 1.25rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.team-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid #f1f5f9;
-  padding-bottom: 0.75rem;
-}
-
-.team-title-box {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.team-icon {
-  font-size: 1.3rem;
-}
-
-.team-name {
-  margin: 0;
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: #1e293b;
-}
-
-.btn-del {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0.2rem;
-  border-radius: 4px;
-}
-
-.btn-del:hover {
-  background: #fee2e2;
-}
-
-.members-caption {
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  color: #64748b;
-}
-
-.members-pills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  margin-top: 0.5rem;
-}
-
-.member-pill {
-  font-size: 0.78rem;
-  background: #f1f5f9;
-  color: #334155;
-  padding: 0.25rem 0.6rem;
-  border-radius: 9999px;
-}
-
-.no-members {
-  font-size: 0.8rem;
-  color: #94a3b8;
-  margin-top: 0.4rem;
-  font-style: italic;
-}
-
-.state-msg {
-  padding: 3rem;
-  text-align: center;
-  color: #64748b;
-  grid-column: 1 / -1;
-}
-</style>

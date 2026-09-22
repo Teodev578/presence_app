@@ -95,24 +95,22 @@ const formatTime = (iso) => {
 </script>
 
 <template>
-  <div class="presences-view">
-    <div class="page-title-row">
-      <div>
-        <h2 class="section-title">Journal des Présences</h2>
-        <p class="section-desc">Consultez, filtrez et auditez les relevés de pointage</p>
-      </div>
+  <div class="flex flex-col gap-6">
+    <div>
+      <h2 class="text-2xl font-black tracking-tight text-base-content">Journal des Présences</h2>
+      <p class="text-xs text-base-content/60 mt-0.5">Consultez, filtrez et auditez les relevés de pointage</p>
     </div>
 
-    <!-- Barre de filtrage -->
-    <div class="filter-bar">
-      <div class="filter-item">
-        <label for="f-date" class="filter-label">Date :</label>
-        <input id="f-date" v-model="filterDate" type="date" class="input-filter" />
+    <!-- Barre de filtrage DaisyUI -->
+    <div class="card bg-base-100 border border-base-300 shadow-xs p-4 rounded-2xl flex flex-wrap gap-4 items-end">
+      <div class="fieldset">
+        <label for="f-date" class="fieldset-legend text-xs font-semibold text-base-content/70">Date :</label>
+        <input id="f-date" v-model="filterDate" type="date" class="input input-bordered input-sm rounded-lg" />
       </div>
 
-      <div class="filter-item">
-        <label for="f-status" class="filter-label">Statut :</label>
-        <select id="f-status" v-model="filterStatus" class="input-filter">
+      <div class="fieldset">
+        <label for="f-status" class="fieldset-legend text-xs font-semibold text-base-content/70">Statut :</label>
+        <select id="f-status" v-model="filterStatus" class="select select-bordered select-sm rounded-lg">
           <option value="">Tous les statuts</option>
           <option value="present">Présent</option>
           <option value="late">En retard</option>
@@ -120,34 +118,35 @@ const formatTime = (iso) => {
         </select>
       </div>
 
-      <div class="filter-item flex-1">
-        <label for="f-search" class="filter-label">Recherche employé :</label>
+      <div class="fieldset flex-1 min-w-[200px]">
+        <label for="f-search" class="fieldset-legend text-xs font-semibold text-base-content/70">Recherche collaborateur :</label>
         <input
           id="f-search"
           v-model="filterSearch"
           type="text"
           placeholder="Nom, prénom ou email..."
-          class="input-filter"
+          class="input input-bordered input-sm rounded-lg w-full"
         />
       </div>
 
-      <button type="button" class="btn-refresh" @click="loadPresences">
+      <button type="button" class="btn btn-outline btn-sm rounded-lg gap-1.5" @click="loadPresences">
         🔄 Actualiser
       </button>
     </div>
 
-    <!-- Tableau des données -->
-    <div class="table-card">
-      <div v-if="loading" class="state-msg">
+    <!-- Tableau des données DaisyUI -->
+    <div class="card bg-base-100 border border-base-300 shadow-xs rounded-2xl overflow-hidden">
+      <div v-if="loading" class="p-8 text-center text-sm text-base-content/60 flex items-center justify-center gap-2">
+        <span class="loading loading-spinner loading-sm text-primary"></span>
         Chargement des pointages...
       </div>
-      <div v-else-if="!filteredPresences().length" class="state-msg">
+      <div v-else-if="!filteredPresences().length" class="p-8 text-center text-sm text-base-content/60">
         Aucun résultat pour cette sélection.
       </div>
-      <div v-else class="table-responsive">
-        <table class="data-table">
+      <div v-else class="overflow-x-auto">
+        <table class="table table-zebra table-sm w-full">
           <thead>
-            <tr>
+            <tr class="text-xs uppercase text-base-content/60">
               <th>Date</th>
               <th>Collaborateur</th>
               <th>Site</th>
@@ -159,26 +158,30 @@ const formatTime = (iso) => {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="p in filteredPresences()" :key="p.id">
-              <td>{{ p.work_date }}</td>
-              <td class="col-user">
-                <strong>{{ p.profiles?.full_name || 'Utilisateur inconnu' }}</strong>
-                <span class="sub-email">{{ p.profiles?.email }}</span>
+            <tr v-for="p in filteredPresences()" :key="p.id" class="hover">
+              <td class="font-mono text-xs">{{ p.work_date }}</td>
+              <td>
+                <div class="flex flex-col">
+                  <strong class="text-sm font-bold text-base-content">{{ p.profiles?.full_name || 'Utilisateur inconnu' }}</strong>
+                  <span class="text-xs text-base-content/60">{{ p.profiles?.email }}</span>
+                </div>
               </td>
-              <td>{{ p.locations?.name || 'Site' }}</td>
-              <td class="col-mono">{{ formatTime(p.check_in_time) }}</td>
-              <td class="col-mono">{{ formatTime(p.check_out_time) }}</td>
+              <td class="text-xs text-base-content/80">{{ p.locations?.name || 'Site' }}</td>
+              <td class="font-mono text-xs font-semibold">{{ formatTime(p.check_in_time) }}</td>
+              <td class="font-mono text-xs font-semibold">{{ formatTime(p.check_out_time) }}</td>
               <td>
                 <StatusBadge :status="p.status" />
               </td>
-              <td class="col-gps">
-                <span>Lat: {{ p.check_in_lat?.toFixed(4) }}, Lng: {{ p.check_in_lng?.toFixed(4) }}</span>
-                <span class="acc-text">Précision: ±{{ Math.round(p.check_in_accuracy) }}m</span>
+              <td>
+                <div class="flex flex-col text-xs text-base-content/70">
+                  <span>Lat: {{ p.check_in_lat?.toFixed(4) }}, Lng: {{ p.check_in_lng?.toFixed(4) }}</span>
+                  <span class="text-[11px] text-base-content/50">±{{ Math.round(p.check_in_accuracy) }}m</span>
+                </div>
               </td>
               <td v-if="profile?.role === 'admin'">
                 <button
                   type="button"
-                  class="btn-edit"
+                  class="btn btn-ghost btn-xs text-primary font-semibold"
                   title="Modifier le statut"
                   @click="openEditModal(p)"
                 >
@@ -191,261 +194,45 @@ const formatTime = (iso) => {
       </div>
     </div>
 
-    <!-- Modal de correction manuelle admin -->
-    <div v-if="editingPresence" class="modal-backdrop">
-      <div class="modal-card">
-        <h3 class="modal-title">Correction manuelle du pointage</h3>
-        <p class="modal-sub">
-          Collaborateur : <strong>{{ editingPresence.profiles?.full_name }}</strong> ({{ editingPresence.work_date }})
+    <!-- Modal de correction manuelle admin (DaisyUI Modal) -->
+    <dialog :class="['modal', { 'modal-open': !!editingPresence }]">
+      <div class="modal-box rounded-2xl max-w-sm sm:max-w-md p-6 gap-4 flex flex-col">
+        <h3 class="text-base font-bold text-base-content">Correction manuelle du pointage</h3>
+        <p class="text-xs text-base-content/60">
+          Collaborateur : <strong class="text-base-content">{{ editingPresence?.profiles?.full_name }}</strong> ({{ editingPresence?.work_date }})
         </p>
 
-        <div class="modal-field">
-          <label for="edit-st" class="field-label">Nouveau statut :</label>
-          <select id="edit-st" v-model="editStatus" class="input-filter">
+        <div class="fieldset">
+          <label for="edit-st" class="fieldset-legend text-xs font-semibold text-base-content/70">Nouveau statut :</label>
+          <select id="edit-st" v-model="editStatus" class="select select-bordered select-sm w-full rounded-xl">
             <option value="present">Présent</option>
             <option value="late">En retard</option>
             <option value="completed">Terminé</option>
           </select>
         </div>
 
-        <div class="modal-actions">
+        <div class="modal-action mt-2">
           <button
             type="button"
-            class="btn-cancel"
+            class="btn btn-ghost btn-sm rounded-lg"
             @click="editingPresence = null"
           >
             Annuler
           </button>
           <button
             type="button"
-            class="btn-save"
+            class="btn btn-primary btn-sm rounded-lg"
             :disabled="isSavingEdit"
             @click="saveEdit"
           >
-            <span v-if="isSavingEdit">Enregistrement...</span>
+            <span v-if="isSavingEdit" class="loading loading-spinner loading-xs"></span>
             <span v-else>Valider la correction</span>
           </button>
         </div>
       </div>
-    </div>
+      <form method="dialog" class="modal-backdrop bg-black/40 backdrop-blur-xs" @click="editingPresence = null">
+        <button>close</button>
+      </form>
+    </dialog>
   </div>
 </template>
-
-<style scoped>
-.presences-view {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.section-title {
-  font-size: 1.4rem;
-  font-weight: 700;
-  margin: 0;
-  color: #0f172a;
-}
-
-.section-desc {
-  font-size: 0.85rem;
-  color: #64748b;
-  margin: 0.2rem 0 0;
-}
-
-.filter-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  align-items: flex-end;
-  background: #ffffff;
-  padding: 1.25rem;
-  border-radius: 0.85rem;
-  border: 1px solid var(--border-color, #e2e8f0);
-}
-
-.filter-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.flex-1 {
-  flex: 1;
-  min-width: 200px;
-}
-
-.filter-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #64748b;
-}
-
-.input-filter {
-  padding: 0.55rem 0.75rem;
-  border-radius: 0.5rem;
-  border: 1px solid #cbd5e1;
-  font-size: 0.85rem;
-  background: #ffffff;
-  color: #1e293b;
-}
-
-.btn-refresh {
-  padding: 0.55rem 0.95rem;
-  background: #f1f5f9;
-  border: 1px solid #cbd5e1;
-  border-radius: 0.5rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.table-card {
-  background: #ffffff;
-  border: 1px solid var(--border-color, #e2e8f0);
-  border-radius: 1rem;
-  overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
-}
-
-.table-responsive {
-  overflow-x: auto;
-}
-
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-  text-align: left;
-  font-size: 0.88rem;
-}
-
-.data-table th {
-  background: #f8fafc;
-  color: #64748b;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  padding: 0.85rem 1.25rem;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.data-table td {
-  padding: 0.9rem 1.25rem;
-  border-bottom: 1px solid #f1f5f9;
-  color: #1e293b;
-}
-
-.col-user {
-  display: flex;
-  flex-direction: column;
-}
-
-.sub-email {
-  font-size: 0.75rem;
-  color: #64748b;
-}
-
-.col-mono {
-  font-family: ui-monospace, monospace;
-  font-weight: 600;
-}
-
-.col-gps {
-  display: flex;
-  flex-direction: column;
-  font-size: 0.75rem;
-  color: #475569;
-}
-
-.acc-text {
-  font-size: 0.7rem;
-  color: #94a3b8;
-}
-
-.btn-edit {
-  background: #eff6ff;
-  color: #2563eb;
-  border: 1px solid #bfdbfe;
-  padding: 0.35rem 0.65rem;
-  border-radius: 0.4rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.state-msg {
-  padding: 3rem;
-  text-align: center;
-  color: #64748b;
-}
-
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-}
-
-.modal-card {
-  background: white;
-  border-radius: 1rem;
-  padding: 1.75rem;
-  width: 90%;
-  max-width: 440px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.modal-title {
-  margin: 0;
-  font-size: 1.15rem;
-  font-weight: 700;
-}
-
-.modal-sub {
-  margin: 0;
-  font-size: 0.85rem;
-  color: #64748b;
-}
-
-.modal-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.field-label {
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  margin-top: 0.5rem;
-}
-
-.btn-cancel {
-  background: #f1f5f9;
-  border: 1px solid #cbd5e1;
-  padding: 0.6rem 1rem;
-  border-radius: 0.5rem;
-  font-size: 0.85rem;
-  cursor: pointer;
-}
-
-.btn-save {
-  background: #2563eb;
-  color: white;
-  border: none;
-  padding: 0.6rem 1.25rem;
-  border-radius: 0.5rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-</style>

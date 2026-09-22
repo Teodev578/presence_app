@@ -86,166 +86,53 @@ const generateCSV = async () => {
 </script>
 
 <template>
-  <div class="export-view">
-    <div class="view-header">
-      <div>
-        <h2 class="section-title">Export des Données de Présence</h2>
-        <p class="section-desc">Générez un fichier tabulaire CSV prêt pour le traitement RH ou comptable</p>
-      </div>
+  <div class="flex flex-col gap-6 max-w-xl">
+    <div>
+      <h2 class="text-2xl font-black tracking-tight text-base-content">Export des Données de Présence</h2>
+      <p class="text-xs text-base-content/60 mt-0.5">Générez un fichier tabulaire CSV prêt pour le traitement RH ou comptable</p>
     </div>
 
-    <div class="export-card">
-      <h3 class="card-subtitle">Paramètres de la période</h3>
+    <!-- Carte de configuration de l'export DaisyUI -->
+    <div class="card bg-base-100 border border-base-300 shadow-xs rounded-2xl p-6 flex flex-col gap-5">
+      <h3 class="text-base font-bold text-base-content">Paramètres de la période</h3>
 
-      <div class="dates-row">
-        <div class="date-field">
-          <label for="exp-start" class="field-label">Date de début :</label>
-          <input id="exp-start" v-model="startDate" type="date" class="input-date" />
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="fieldset">
+          <label for="exp-start" class="fieldset-legend text-xs font-semibold text-base-content/70">Date de début :</label>
+          <input id="exp-start" v-model="startDate" type="date" class="input input-bordered input-sm rounded-lg w-full" />
         </div>
 
-        <div class="date-field">
-          <label for="exp-end" class="field-label">Date de fin :</label>
-          <input id="exp-end" v-model="endDate" type="date" class="input-date" />
-        </div>
-      </div>
-
-      <div class="csv-details">
-        <div class="detail-item">
-          <span>Format de fichier :</span>
-          <strong>CSV (encodage UTF-8, séparateur point-virgule)</strong>
-        </div>
-        <div class="detail-item">
-          <span>Compatibilité :</span>
-          <strong>Microsoft Excel, Google Sheets, LibreOffice Calc</strong>
+        <div class="fieldset">
+          <label for="exp-end" class="fieldset-legend text-xs font-semibold text-base-content/70">Date de fin :</label>
+          <input id="exp-end" v-model="endDate" type="date" class="input input-bordered input-sm rounded-lg w-full" />
         </div>
       </div>
 
-      <div v-if="exportCount !== null" class="success-alert">
+      <div class="bg-base-200/60 border border-base-200 rounded-xl p-4 flex flex-col gap-2 text-xs text-base-content/80">
+        <div class="flex justify-between items-center">
+          <span class="text-base-content/60">Format de fichier :</span>
+          <strong class="text-base-content">CSV (UTF-8 avec BOM, séparateur ;)</strong>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-base-content/60">Compatibilité :</span>
+          <strong class="text-base-content">Excel, Google Sheets, Calc</strong>
+        </div>
+      </div>
+
+      <div v-if="exportCount !== null" class="alert alert-success text-xs py-2.5 rounded-xl">
         ✓ Export réussi : <strong>{{ exportCount }}</strong> ligne(s) exportée(s).
       </div>
 
       <button
         type="button"
-        class="btn-export"
+        class="btn btn-primary w-full text-base font-bold min-h-12 shadow-md rounded-xl mt-1 active:scale-98 transition-transform"
         :disabled="isExporting"
         @click="generateCSV"
       >
+        <span v-if="isExporting" class="loading loading-spinner loading-sm"></span>
         <span v-if="isExporting">Génération en cours...</span>
         <span v-else>📥 Télécharger l'export CSV</span>
       </button>
     </div>
   </div>
 </template>
-
-<style scoped>
-.export-view {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  max-width: 650px;
-}
-
-.section-title {
-  font-size: 1.4rem;
-  font-weight: 700;
-  margin: 0;
-  color: #0f172a;
-}
-
-.section-desc {
-  font-size: 0.85rem;
-  color: #64748b;
-  margin: 0.2rem 0 0;
-}
-
-.export-card {
-  background: #ffffff;
-  border: 1px solid var(--border-color, #e2e8f0);
-  border-radius: 1rem;
-  padding: 1.75rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-.card-subtitle {
-  margin: 0;
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #1e293b;
-}
-
-.dates-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-}
-
-.date-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.field-label {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #64748b;
-}
-
-.input-date {
-  padding: 0.65rem 0.85rem;
-  border-radius: 0.5rem;
-  border: 1px solid #cbd5e1;
-  font-size: 0.9rem;
-}
-
-.csv-details {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.65rem;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  font-size: 0.82rem;
-  color: #475569;
-}
-
-.detail-item {
-  display: flex;
-  justify-content: space-between;
-}
-
-.btn-export {
-  background-color: #2563eb;
-  color: white;
-  border: none;
-  padding: 0.95rem;
-  border-radius: 0.65rem;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 0 2px 5px rgba(37, 99, 235, 0.2);
-  transition: all 0.2s;
-}
-
-.btn-export:hover:not(:disabled) {
-  background-color: #1d4ed8;
-}
-
-.btn-export:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.success-alert {
-  background: #ecfdf5;
-  border: 1px solid #a7f3d0;
-  color: #065f46;
-  padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
-  font-size: 0.85rem;
-}
-</style>

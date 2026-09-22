@@ -50,9 +50,9 @@ const isAuthenticated = computed(() => !!session.value)
 </script>
 
 <template>
-  <div v-if="authLoading" class="global-loader">
-    <div class="spinner"></div>
-    <p>Chargement de PresenceApp...</p>
+  <div v-if="authLoading" class="min-h-screen flex flex-col items-center justify-center gap-3 bg-base-200 text-base-content/70 font-medium">
+    <span class="loading loading-spinner loading-lg text-primary"></span>
+    <p class="text-sm">Chargement de PresenceApp...</p>
   </div>
 
   <!-- Cas 1 : Non authentifié ou page de login explicite -->
@@ -60,73 +60,43 @@ const isAuthenticated = computed(() => !!session.value)
 
   <!-- Cas 2 : Espace Manager / Admin -->
   <ManagerLayout v-else-if="isManagerRoute">
-    <DashboardView v-if="route.path === '/manager'" />
-    <PresencesView v-else-if="route.path === '/manager/presences'" />
-    <ManagerAvailabilitiesView v-else-if="route.path === '/manager/availabilities'" />
-    <EmployeesView v-else-if="route.path === '/manager/employees'" />
-    <TeamsView v-else-if="route.path === '/manager/teams'" />
-    <ExportView v-else-if="route.path === '/manager/export'" />
-    <DashboardView v-else />
+    <Transition name="fade-slide" mode="out-in">
+      <DashboardView v-if="route.path === '/manager'" />
+      <PresencesView v-else-if="route.path === '/manager/presences'" />
+      <ManagerAvailabilitiesView v-else-if="route.path === '/manager/availabilities'" />
+      <EmployeesView v-else-if="route.path === '/manager/employees'" />
+      <TeamsView v-else-if="route.path === '/manager/teams'" />
+      <ExportView v-else-if="route.path === '/manager/export'" />
+      <DashboardView v-else />
+    </Transition>
   </ManagerLayout>
 
   <!-- Cas 3 : Espace Employé Mobile PWA -->
   <EmployeeLayout v-else>
-    <HomeView v-if="route.path === '/employee' || route.path === '/'" />
-    <CheckInView v-else-if="route.path === '/employee/check-in'" />
-    <CheckOutView v-else-if="route.path === '/employee/check-out'" />
-    <EmployeeAvailabilitiesView v-else-if="route.path === '/employee/availabilities'" />
-    <HomeView v-else />
+    <Transition name="fade-slide" mode="out-in">
+      <HomeView v-if="route.path === '/employee' || route.path === '/'" />
+      <CheckInView v-else-if="route.path === '/employee/check-in'" />
+      <CheckOutView v-else-if="route.path === '/employee/check-out'" />
+      <EmployeeAvailabilitiesView v-else-if="route.path === '/employee/availabilities'" />
+      <HomeView v-else />
+    </Transition>
   </EmployeeLayout>
 </template>
 
 <style>
-/* Reset global et tokens visuels */
-:root {
-  --bg-app: #f8fafc;
-  --bg-card: #ffffff;
-  --bg-subtle: #f1f5f9;
-  --text-main: #0f172a;
-  --text-muted: #64748b;
-  --border-color: #e2e8f0;
-  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+/* Transition fluide entre les routes (GPU accelerated: opacity + transform) */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-body {
-  margin: 0;
-  font-family: var(--font-sans);
-  background-color: var(--bg-app);
-  color: var(--text-main);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateY(4px);
 }
 
-button, input, select, textarea {
-  font-family: inherit;
-}
-
-.global-loader {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-  gap: 1rem;
-  color: #64748b;
-  font-weight: 500;
-}
-
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid #e2e8f0;
-  border-top-color: #2563eb;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 </style>

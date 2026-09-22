@@ -32,7 +32,6 @@ const prevWeek = () => {
 const loadData = async () => {
   loading.value = true
   try {
-    // 1. Liste des profils employés
     const { data: profs } = await supabase
       .from('profiles')
       .select('*, teams(name)')
@@ -42,7 +41,6 @@ const loadData = async () => {
 
     employees.value = profs || []
 
-    // 2. Disponibilités pour cette semaine
     const { data: avails } = await supabase
       .from('availabilities')
       .select('*')
@@ -51,7 +49,6 @@ const loadData = async () => {
 
     availabilities.value = avails || []
 
-    // 3. Présences réelles pour les jours de cette semaine
     const baseDate = new Date(selectedWeekStart.value)
     const endDate = new Date(baseDate)
     endDate.setDate(baseDate.getDate() + 5)
@@ -79,21 +76,18 @@ onMounted(() => {
   loadData()
 })
 
-// Calcule la date ISO pour un jour donné de la semaine
 const getDateForDay = (dayNumber) => {
   const d = new Date(selectedWeekStart.value)
   d.setDate(d.getDate() + (dayNumber - 1))
   return d.toISOString().slice(0, 10)
 }
 
-// Vérifie si un employé a déclaré sa disponibilité pour un jour
 const getAvailability = (userId, dayNumber) => {
   return availabilities.value.find(
     (a) => a.user_id === userId && a.day_of_week === dayNumber
   )
 }
 
-// Vérifie si un employé a effectivement pointé pour un jour
 const getActualPresence = (userId, dayNumber) => {
   const dateStr = getDateForDay(dayNumber)
   return presences.value.find((p) => p.user_id === userId && p.work_date === dateStr)
@@ -101,83 +95,84 @@ const getActualPresence = (userId, dayNumber) => {
 </script>
 
 <template>
-  <div class="manager-availabilities-view">
-    <div class="view-header">
+  <div class="flex flex-col gap-6">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
-        <h2 class="section-title">Disponibilités de l'Équipe</h2>
-        <p class="section-desc">
+        <h2 class="text-2xl font-black tracking-tight text-base-content">Disponibilités de l'Équipe</h2>
+        <p class="text-xs text-base-content/60 mt-0.5">
           Vue croisée : déclarations des collaborateurs et conformité des présences (Prévu vs Réel)
         </p>
       </div>
 
-      <!-- Navigation temporelle -->
-      <div class="week-picker">
-        <button type="button" class="btn-nav" @click="prevWeek">←</button>
-        <span class="week-text">{{ formatWeekLabel(selectedWeekStart) }}</span>
-        <button type="button" class="btn-nav" @click="nextWeek">→</button>
+      <!-- Navigation temporelle DaisyUI -->
+      <div class="card bg-base-100 border border-base-300 shadow-xs flex-row items-center gap-3 p-2 rounded-2xl">
+        <button type="button" class="btn btn-circle btn-ghost btn-sm text-base" aria-label="Semaine précédente" @click="prevWeek">
+          ←
+        </button>
+        <span class="text-xs font-bold text-base-content px-2">{{ formatWeekLabel(selectedWeekStart) }}</span>
+        <button type="button" class="btn btn-circle btn-ghost btn-sm text-base" aria-label="Semaine suivante" @click="nextWeek">
+          →
+        </button>
       </div>
     </div>
 
-    <!-- Tableau croisé matriciel -->
-    <div class="matrix-card">
-      <div v-if="loading" class="state-msg">
+    <!-- Tableau croisé matriciel DaisyUI -->
+    <div class="card bg-base-100 border border-base-300 shadow-xs rounded-2xl overflow-hidden">
+      <div v-if="loading" class="p-8 text-center text-sm text-base-content/60 flex items-center justify-center gap-2">
+        <span class="loading loading-spinner loading-sm text-primary"></span>
         Chargement de la grille d'équipe...
       </div>
-      <div v-else-if="!employees.length" class="state-msg">
+      <div v-else-if="!employees.length" class="p-8 text-center text-sm text-base-content/60">
         Aucun collaborateur actif répertorié.
       </div>
-      <div v-else class="table-responsive">
-        <table class="matrix-table">
+      <div v-else class="overflow-x-auto">
+        <table class="table table-zebra table-sm w-full">
           <thead>
-            <tr>
-              <th class="col-fixed">Collaborateur</th>
-              <th v-for="d in daysHeader" :key="d.id" class="col-day">
-                <div class="day-th-title">{{ d.label }}</div>
-                <div class="day-th-sub">{{ getDateForDay(d.id).slice(5) }}</div>
+            <tr class="text-xs uppercase text-base-content/60">
+              <th class="w-48">Collaborateur</th>
+              <th v-for="d in daysHeader" :key="d.id" class="text-center">
+                <div class="font-bold">{{ d.label }}</div>
+                <div class="text-[11px] text-base-content/50 font-normal">{{ getDateForDay(d.id).slice(5) }}</div>
               </th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="emp in employees" :key="emp.id">
-              <td class="col-fixed user-cell">
-                <div class="name-box">
-                  <strong>{{ emp.full_name }}</strong>
-                  <span class="team-tag">{{ emp.teams?.name || 'Sans équipe' }}</span>
+            <tr v-for="emp in employees" :key="emp.id" class="hover">
+              <td>
+                <div class="flex flex-col">
+                  <strong class="text-sm font-bold text-base-content">{{ emp.full_name }}</strong>
+                  <span class="badge badge-ghost badge-xs w-fit mt-0.5">{{ emp.teams?.name || 'Sans équipe' }}</span>
                 </div>
               </td>
 
-              <td
-                v-for="d in daysHeader"
-                :key="d.id"
-                class="cell-status"
-              >
-                <!-- Disponibilité déclarée -->
-                <div
-                  v-if="getAvailability(emp.id, d.id)"
-                  class="pill-avail"
-                  :class="{
-                    'pill-matched': getActualPresence(emp.id, d.id),
-                    'pill-unmatched': !getActualPresence(emp.id, d.id) && getDateForDay(d.id) <= new Date().toISOString().slice(0, 10)
-                  }"
-                  :title="getAvailability(emp.id, d.id)?.note || 'Disponible'"
-                >
-                  <span class="avail-icon">✓ Dispo</span>
+              <td v-for="d in daysHeader" :key="d.id" class="text-center">
+                <div v-if="getAvailability(emp.id, d.id)" class="inline-flex flex-col items-center gap-1">
+                  <span
+                    class="badge badge-sm font-semibold"
+                    :class="[
+                      getActualPresence(emp.id, d.id)
+                        ? 'badge-success text-success-content'
+                        : getDateForDay(d.id) <= new Date().toISOString().slice(0, 10)
+                          ? 'badge-warning text-warning-content'
+                          : 'badge-info badge-outline'
+                    ]"
+                  >
+                    ✓ Dispo
+                  </span>
                   <span
                     v-if="getActualPresence(emp.id, d.id)"
-                    class="pointage-tag"
+                    class="text-[10px] font-bold text-success"
                   >
                     Pointé ({{ getActualPresence(emp.id, d.id)?.status }})
                   </span>
                   <span
                     v-else-if="getDateForDay(d.id) <= new Date().toISOString().slice(0, 10)"
-                    class="gap-tag"
+                    class="text-[10px] font-medium text-warning"
                   >
                     Non pointé
                   </span>
                 </div>
-                <div v-else class="pill-none">
-                  -
-                </div>
+                <span v-else class="text-base-content/30 text-xs">-</span>
               </td>
             </tr>
           </tbody>
@@ -186,173 +181,3 @@ const getActualPresence = (userId, dayNumber) => {
     </div>
   </div>
 </template>
-
-<style scoped>
-.manager-availabilities-view {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.view-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.section-title {
-  font-size: 1.4rem;
-  font-weight: 700;
-  margin: 0;
-  color: #0f172a;
-}
-
-.section-desc {
-  font-size: 0.85rem;
-  color: #64748b;
-  margin: 0.2rem 0 0;
-}
-
-.week-picker {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  background: #ffffff;
-  padding: 0.5rem 0.85rem;
-  border-radius: 0.65rem;
-  border: 1px solid var(--border-color, #e2e8f0);
-}
-
-.btn-nav {
-  background: #f1f5f9;
-  border: 1px solid #cbd5e1;
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-.week-text {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #1e293b;
-}
-
-.matrix-card {
-  background: #ffffff;
-  border: 1px solid var(--border-color, #e2e8f0);
-  border-radius: 1rem;
-  overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
-}
-
-.table-responsive {
-  overflow-x: auto;
-}
-
-.matrix-table {
-  width: 100%;
-  border-collapse: collapse;
-  text-align: left;
-}
-
-.matrix-table th {
-  background: #f8fafc;
-  padding: 0.85rem 1rem;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.col-fixed {
-  min-width: 200px;
-}
-
-.col-day {
-  text-align: center;
-  min-width: 130px;
-}
-
-.day-th-title {
-  font-weight: 700;
-  font-size: 0.85rem;
-  color: #1e293b;
-}
-
-.day-th-sub {
-  font-size: 0.75rem;
-  color: #64748b;
-}
-
-.matrix-table td {
-  padding: 0.85rem 1rem;
-  border-bottom: 1px solid #f1f5f9;
-  vertical-align: middle;
-}
-
-.user-cell .name-box {
-  display: flex;
-  flex-direction: column;
-}
-
-.team-tag {
-  font-size: 0.72rem;
-  color: #64748b;
-}
-
-.cell-status {
-  text-align: center;
-}
-
-.pill-avail {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.2rem;
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  color: #1d4ed8;
-  padding: 0.35rem 0.65rem;
-  border-radius: 0.5rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.pill-matched {
-  background: #ecfdf5;
-  border-color: #a7f3d0;
-  color: #047857;
-}
-
-.pill-unmatched {
-  background: #fffbeb;
-  border-color: #fde68a;
-  color: #b45309;
-}
-
-.pointage-tag {
-  font-size: 0.68rem;
-  font-weight: 500;
-}
-
-.gap-tag {
-  font-size: 0.68rem;
-  color: #dc2626;
-  font-weight: 700;
-}
-
-.pill-none {
-  color: #cbd5e1;
-  font-size: 1.1rem;
-}
-
-.state-msg {
-  padding: 3rem;
-  text-align: center;
-  color: #64748b;
-}
-</style>

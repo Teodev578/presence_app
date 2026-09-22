@@ -10,12 +10,15 @@ const { todayPresence } = usePresences()
 </script>
 
 <template>
-  <div class="home-view">
-    <div class="user-greeting">
+  <div class="flex flex-col gap-5 max-w-lg mx-auto">
+    <div class="flex items-center justify-between">
       <div>
-        <h1 class="welcome-text">Bonjour, {{ profile?.full_name || 'Collaborateur' }} 👋</h1>
-        <p class="role-caption">
-          Rôle : <span class="capitalize">{{ profile?.role || 'Employé' }}</span>
+        <h1 class="text-xl font-black text-base-content tracking-tight">
+          Bonjour, {{ profile?.full_name || 'Collaborateur' }} 👋
+        </h1>
+        <p class="text-xs text-base-content/60 mt-0.5 flex items-center gap-1.5">
+          <span>Rôle :</span>
+          <span class="badge badge-sm badge-outline capitalize font-semibold">{{ profile?.role || 'Employé' }}</span>
         </p>
       </div>
     </div>
@@ -30,65 +33,11 @@ const { todayPresence } = usePresences()
     />
 
     <!-- Conseils rapides -->
-    <div class="info-card">
-      <div class="info-icon">💡</div>
-      <div class="info-text">
-        <strong>Pensez à déclarer vos disponibilités</strong> pour la semaine prochaine afin de faciliter l'organisation des équipes.
+    <div class="alert alert-info bg-info/10 border-info/20 text-info text-xs py-3 rounded-2xl flex items-start gap-2.5">
+      <span class="text-base select-none">💡</span>
+      <div class="text-xs leading-relaxed text-base-content/80">
+        <strong class="text-base-content font-bold">Pensez à déclarer vos disponibilités</strong> pour la semaine prochaine afin de faciliter l'organisation des plannings.
       </div>
     </div>
   </div>
 </template>
-
-<style scoped>
-.home-view {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  max-width: 520px;
-  margin: 0 auto;
-}
-
-.user-greeting {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.welcome-text {
-  font-size: 1.35rem;
-  font-weight: 700;
-  color: var(--text-main, #1e293b);
-  margin: 0;
-}
-
-.role-caption {
-  font-size: 0.8rem;
-  color: var(--text-muted, #64748b);
-  margin: 0.2rem 0 0;
-}
-
-.capitalize {
-  text-transform: capitalize;
-  font-weight: 600;
-}
-
-.info-card {
-  display: flex;
-  align-items: center;
-  gap: 0.85rem;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 1rem;
-  padding: 1rem 1.15rem;
-}
-
-.info-icon {
-  font-size: 1.5rem;
-}
-
-.info-text {
-  font-size: 0.85rem;
-  color: var(--text-muted, #475569);
-  line-height: 1.4;
-}
-</style>

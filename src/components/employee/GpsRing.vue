@@ -24,37 +24,38 @@ defineProps({
 </script>
 
 <template>
-  <div class="radar-box">
+  <div class="flex flex-col items-center gap-4 py-6 px-4">
     <!-- Anneau radar animé -->
     <div
-      class="radar-ring"
+      class="relative w-28 h-28 rounded-full flex items-center justify-center transition-all duration-300"
       :class="{
-        'radar-in': inPerimeter,
-        'radar-out': !inPerimeter && !isLocating,
-        'radar-loading': isLocating
+        'border-2 border-success bg-success/10 text-success': inPerimeter,
+        'border-2 border-error bg-error/10 text-error': !inPerimeter && !isLocating,
+        'border-2 border-dashed border-info bg-info/10 text-info': isLocating
       }"
     >
       <div class="radar-pulse"></div>
-      <div class="radar-center-icon">
-        <span v-if="isLocating">📡</span>
+      <div class="text-3xl z-10 select-none">
+        <span v-if="isLocating" class="loading loading-ring loading-lg text-info"></span>
         <span v-else-if="inPerimeter">📍</span>
         <span v-else>⚠️</span>
       </div>
     </div>
 
     <!-- Informations de distance et tolérance -->
-    <div class="radar-details">
-      <div v-if="isLocating" class="status-msg text-loading">
+    <div class="text-center flex flex-col items-center gap-1.5 max-w-xs">
+      <div v-if="isLocating" class="text-sm font-semibold text-info flex items-center gap-1.5">
+        <span class="loading loading-spinner loading-xs"></span>
         Acquisition du signal GPS en cours...
       </div>
-      <div v-else-if="inPerimeter" class="status-msg text-success">
+      <div v-else-if="inPerimeter" class="badge badge-success text-success-content font-bold py-3 px-4 text-xs gap-1.5">
         ✓ Position validée (vous êtes sur site)
       </div>
-      <div v-else class="status-msg text-warning">
+      <div v-else class="text-sm font-medium text-error">
         Distance au site : <strong>{{ distance }} m</strong> (limite : {{ allowedRadius }} m)
       </div>
 
-      <div v-if="accuracy" class="accuracy-tag">
+      <div v-if="accuracy" class="badge badge-ghost badge-sm text-[11px] text-base-content/60 mt-1">
         Précision satellite : ±{{ accuracy }} m
       </div>
     </div>
@@ -62,45 +63,6 @@ defineProps({
 </template>
 
 <style scoped>
-.radar-box {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1.25rem;
-  padding: 1.5rem 1rem;
-}
-
-.radar-ring {
-  position: relative;
-  width: 110px;
-  height: 110px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-}
-
-.radar-in {
-  background: rgba(16, 185, 129, 0.12);
-  border: 2px solid #10b981;
-}
-
-.radar-out {
-  background: rgba(239, 68, 68, 0.1);
-  border: 2px solid #ef4444;
-}
-
-.radar-loading {
-  background: rgba(59, 130, 246, 0.1);
-  border: 2px dashed #3b82f6;
-}
-
-.radar-center-icon {
-  font-size: 2.2rem;
-  z-index: 2;
-}
-
 .radar-pulse {
   position: absolute;
   inset: -12px;
@@ -108,18 +70,6 @@ defineProps({
   border: 2px solid currentColor;
   opacity: 0;
   animation: ripple 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
-}
-
-.radar-in .radar-pulse {
-  color: #10b981;
-}
-
-.radar-out .radar-pulse {
-  color: #ef4444;
-}
-
-.radar-loading .radar-pulse {
-  color: #3b82f6;
 }
 
 @keyframes ripple {
@@ -131,34 +81,5 @@ defineProps({
     transform: scale(1.4);
     opacity: 0;
   }
-}
-
-.radar-details {
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.status-msg {
-  font-size: 0.95rem;
-  font-weight: 600;
-}
-
-.text-success {
-  color: #059669;
-}
-
-.text-warning {
-  color: #dc2626;
-}
-
-.text-loading {
-  color: #2563eb;
-}
-
-.accuracy-tag {
-  font-size: 0.75rem;
-  color: var(--text-muted, #64748b);
 }
 </style>

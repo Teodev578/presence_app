@@ -96,25 +96,25 @@ const archiveEmployee = async (emp) => {
 </script>
 
 <template>
-  <div class="employees-view">
-    <div class="view-header">
-      <div>
-        <h2 class="section-title">Gestion des Collaborateurs</h2>
-        <p class="section-desc">Affectation d'équipes, horaires attendus et rôles d'accès</p>
-      </div>
+  <div class="flex flex-col gap-6">
+    <div>
+      <h2 class="text-2xl font-black tracking-tight text-base-content">Gestion des Collaborateurs</h2>
+      <p class="text-xs text-base-content/60 mt-0.5">Affectation d'équipes, horaires attendus et rôles d'accès</p>
     </div>
 
-    <div class="card-table">
-      <div v-if="loading" class="state-msg">
+    <!-- Tableau DaisyUI -->
+    <div class="card bg-base-100 border border-base-300 shadow-xs rounded-2xl overflow-hidden">
+      <div v-if="loading" class="p-8 text-center text-sm text-base-content/60 flex items-center justify-center gap-2">
+        <span class="loading loading-spinner loading-sm text-primary"></span>
         Chargement des profils...
       </div>
-      <div v-else-if="!employees.length" class="state-msg">
+      <div v-else-if="!employees.length" class="p-8 text-center text-sm text-base-content/60">
         Aucun collaborateur actif.
       </div>
-      <div v-else class="table-responsive">
-        <table class="data-table">
+      <div v-else class="overflow-x-auto">
+        <table class="table table-zebra table-sm w-full">
           <thead>
-            <tr>
+            <tr class="text-xs uppercase text-base-content/60">
               <th>Nom complet</th>
               <th>Email</th>
               <th>Équipe</th>
@@ -124,31 +124,42 @@ const archiveEmployee = async (emp) => {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="emp in employees" :key="emp.id">
-              <td><strong>{{ emp.full_name }}</strong></td>
-              <td class="col-sub">{{ emp.email }}</td>
-              <td>{{ emp.teams?.name || 'Non assigné' }}</td>
+            <tr v-for="emp in employees" :key="emp.id" class="hover">
+              <td class="font-bold text-sm text-base-content">{{ emp.full_name }}</td>
+              <td class="text-xs text-base-content/60">{{ emp.email }}</td>
               <td>
-                <span class="role-pill" :class="`role-${emp.role}`">
+                <span class="badge badge-ghost badge-sm">{{ emp.teams?.name || 'Non assigné' }}</span>
+              </td>
+              <td>
+                <span
+                  class="badge badge-sm font-semibold capitalize"
+                  :class="{
+                    'badge-error text-error-content': emp.role === 'admin',
+                    'badge-primary text-primary-content': emp.role === 'manager',
+                    'badge-ghost': emp.role === 'employee'
+                  }"
+                >
                   {{ emp.role }}
                 </span>
               </td>
-              <td class="col-mono">{{ emp.expected_arrival_time?.slice(0, 5) }}</td>
-              <td class="col-actions">
-                <button
-                  type="button"
-                  class="btn-action btn-edit"
-                  @click="openEditModal(emp)"
-                >
-                  ✏️ Modifier
-                </button>
-                <button
-                  type="button"
-                  class="btn-action btn-del"
-                  @click="archiveEmployee(emp)"
-                >
-                  📦 Archiver
-                </button>
+              <td class="font-mono text-xs font-semibold">{{ emp.expected_arrival_time?.slice(0, 5) }}</td>
+              <td>
+                <div class="flex items-center gap-1">
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-xs text-primary font-semibold"
+                    @click="openEditModal(emp)"
+                  >
+                    ✏️ Modifier
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-xs text-error font-semibold"
+                    @click="archiveEmployee(emp)"
+                  >
+                    📦 Archiver
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -156,29 +167,29 @@ const archiveEmployee = async (emp) => {
       </div>
     </div>
 
-    <!-- Modal d'édition employé -->
-    <div v-if="editingEmployee" class="modal-backdrop">
-      <div class="modal-card">
-        <h3 class="modal-title">Modifier le collaborateur</h3>
-        <p class="modal-sub">{{ editingEmployee.email }}</p>
+    <!-- Modal d'édition employé DaisyUI -->
+    <dialog :class="['modal', { 'modal-open': !!editingEmployee }]">
+      <div class="modal-box rounded-2xl max-w-sm sm:max-w-md p-6 gap-4 flex flex-col">
+        <h3 class="text-base font-bold text-base-content">Modifier le collaborateur</h3>
+        <p class="text-xs text-base-content/60">{{ editingEmployee?.email }}</p>
 
-        <div class="modal-field">
-          <label for="f-name" class="field-label">Nom complet :</label>
-          <input id="f-name" v-model="editForm.full_name" type="text" class="input-text" />
+        <div class="fieldset">
+          <label for="f-name" class="fieldset-legend text-xs font-semibold text-base-content/70">Nom complet :</label>
+          <input id="f-name" v-model="editForm.full_name" type="text" class="input input-bordered input-sm rounded-lg w-full" />
         </div>
 
-        <div class="modal-field">
-          <label for="f-role" class="field-label">Rôle d'accès :</label>
-          <select id="f-role" v-model="editForm.role" class="input-text">
+        <div class="fieldset">
+          <label for="f-role" class="fieldset-legend text-xs font-semibold text-base-content/70">Rôle d'accès :</label>
+          <select id="f-role" v-model="editForm.role" class="select select-bordered select-sm rounded-lg w-full">
             <option value="employee">Employé</option>
             <option value="manager">Manager</option>
             <option value="admin">Administrateur</option>
           </select>
         </div>
 
-        <div class="modal-field">
-          <label for="f-team" class="field-label">Équipe de rattachement :</label>
-          <select id="f-team" v-model="editForm.team_id" class="input-text">
+        <div class="fieldset">
+          <label for="f-team" class="fieldset-legend text-xs font-semibold text-base-content/70">Équipe de rattachement :</label>
+          <select id="f-team" v-model="editForm.team_id" class="select select-bordered select-sm rounded-lg w-full">
             <option value="">Aucune équipe</option>
             <option v-for="t in teams" :key="t.id" :value="t.id">
               {{ t.name }}
@@ -186,222 +197,24 @@ const archiveEmployee = async (emp) => {
           </select>
         </div>
 
-        <div class="modal-field">
-          <label for="f-time" class="field-label">Heure d'arrivée attendue :</label>
-          <input id="f-time" v-model="editForm.expected_arrival_time" type="time" class="input-text" />
+        <div class="fieldset">
+          <label for="f-time" class="fieldset-legend text-xs font-semibold text-base-content/70">Heure d'arrivée attendue :</label>
+          <input id="f-time" v-model="editForm.expected_arrival_time" type="time" class="input input-bordered input-sm rounded-lg w-full" />
         </div>
 
-        <div class="modal-actions">
-          <button type="button" class="btn-cancel" @click="editingEmployee = null">
+        <div class="modal-action mt-2">
+          <button type="button" class="btn btn-ghost btn-sm rounded-lg" @click="editingEmployee = null">
             Annuler
           </button>
-          <button type="button" class="btn-save" :disabled="isSaving" @click="saveEmployee">
-            <span v-if="isSaving">Mise à jour...</span>
+          <button type="button" class="btn btn-primary btn-sm rounded-lg" :disabled="isSaving" @click="saveEmployee">
+            <span v-if="isSaving" class="loading loading-spinner loading-xs"></span>
             <span v-else>Enregistrer</span>
           </button>
         </div>
       </div>
-    </div>
+      <form method="dialog" class="modal-backdrop bg-black/40 backdrop-blur-xs" @click="editingEmployee = null">
+        <button>close</button>
+      </form>
+    </dialog>
   </div>
 </template>
-
-<style scoped>
-.employees-view {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.section-title {
-  font-size: 1.4rem;
-  font-weight: 700;
-  margin: 0;
-  color: #0f172a;
-}
-
-.section-desc {
-  font-size: 0.85rem;
-  color: #64748b;
-  margin: 0.2rem 0 0;
-}
-
-.card-table {
-  background: #ffffff;
-  border: 1px solid var(--border-color, #e2e8f0);
-  border-radius: 1rem;
-  overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
-}
-
-.table-responsive {
-  overflow-x: auto;
-}
-
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-  text-align: left;
-  font-size: 0.88rem;
-}
-
-.data-table th {
-  background: #f8fafc;
-  color: #64748b;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  padding: 0.85rem 1.25rem;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.data-table td {
-  padding: 0.9rem 1.25rem;
-  border-bottom: 1px solid #f1f5f9;
-  color: #1e293b;
-}
-
-.col-sub {
-  color: #64748b;
-  font-size: 0.82rem;
-}
-
-.col-mono {
-  font-family: ui-monospace, monospace;
-}
-
-.role-pill {
-  display: inline-block;
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  padding: 0.2rem 0.5rem;
-  border-radius: 9999px;
-}
-
-.role-employee {
-  background: #f1f5f9;
-  color: #475569;
-}
-
-.role-manager {
-  background: #eff6ff;
-  color: #2563eb;
-}
-
-.role-admin {
-  background: #faf5ff;
-  color: #7c3aed;
-}
-
-.col-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.btn-action {
-  border: 1px solid #cbd5e1;
-  background: white;
-  padding: 0.35rem 0.65rem;
-  border-radius: 0.4rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.btn-edit:hover {
-  background: #eff6ff;
-  color: #2563eb;
-  border-color: #bfdbfe;
-}
-
-.btn-del:hover {
-  background: #fef2f2;
-  color: #dc2626;
-  border-color: #fecaca;
-}
-
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-}
-
-.modal-card {
-  background: white;
-  border-radius: 1rem;
-  padding: 1.75rem;
-  width: 90%;
-  max-width: 440px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.modal-title {
-  margin: 0;
-  font-size: 1.15rem;
-  font-weight: 700;
-}
-
-.modal-sub {
-  margin: 0;
-  font-size: 0.85rem;
-  color: #64748b;
-}
-
-.modal-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.field-label {
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
-.input-text {
-  padding: 0.55rem 0.75rem;
-  border-radius: 0.5rem;
-  border: 1px solid #cbd5e1;
-  font-size: 0.85rem;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  margin-top: 0.5rem;
-}
-
-.btn-cancel {
-  background: #f1f5f9;
-  border: 1px solid #cbd5e1;
-  padding: 0.6rem 1rem;
-  border-radius: 0.5rem;
-  font-size: 0.85rem;
-  cursor: pointer;
-}
-
-.btn-save {
-  background: #2563eb;
-  color: white;
-  border: none;
-  padding: 0.6rem 1.25rem;
-  border-radius: 0.5rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.state-msg {
-  padding: 3rem;
-  text-align: center;
-  color: #64748b;
-}
-</style>

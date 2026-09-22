@@ -1,4 +1,5 @@
 <script setup>
+import { computed } from 'vue'
 import { useSyncEngine } from '../../composables/useSyncEngine'
 import { useAuth } from '../../composables/useAuth'
 
@@ -10,95 +11,47 @@ const triggerSync = () => {
     syncNow(user.value.id)
   }
 }
+
+const statusText = computed(() => {
+  if (isSyncing.value) return 'Synchronisation...'
+  if (pendingCount.value > 0) return `${pendingCount.value} en attente`
+  return 'À jour'
+})
 </script>
 
 <template>
   <button
     type="button"
-    class="sync-pill"
+    class="badge badge-sm py-2.5 px-3 gap-1.5 font-medium cursor-pointer transition-all duration-200 select-none hover:opacity-85 active:scale-95"
     :class="{
-      'sync-pending': pendingCount > 0,
-      'sync-online': pendingCount === 0 && !isSyncing,
-      'sync-active': isSyncing
+      'badge-warning border-warning/40 bg-warning/10 text-warning-content': pendingCount > 0 && !isSyncing,
+      'badge-success border-success/40 bg-success/10 text-success': pendingCount === 0 && !isSyncing,
+      'badge-info border-info/40 bg-info/10 text-info': isSyncing
     }"
-    :title="pendingCount > 0 ? `${pendingCount} mutation(s) en attente de synchronisation` : 'Données synchronisées'"
+    :title="pendingCount > 0 ? `${pendingCount} mutation(s) en attente` : 'Données synchronisées (cliquer pour forcer)'"
+    aria-label="État de synchronisation"
     @click="triggerSync"
   >
-    <!-- Icône / indicateur animé -->
-    <span v-if="isSyncing" class="sync-dot dot-spinning"></span>
-    <span v-else-if="pendingCount > 0" class="sync-dot dot-pending"></span>
-    <span v-else class="sync-dot dot-synced"></span>
+    <span v-if="isSyncing" class="loading loading-spinner loading-xs text-info"></span>
+    <span
+      v-else
+      class="inline-block w-1.5 h-1.5 rounded-full"
+      :class="pendingCount > 0 ? 'bg-warning animate-pulse' : 'bg-success'"
+    ></span>
 
-    <span class="sync-label">
-      <template v-if="isSyncing">Synchronisation...</template>
-      <template v-else-if="pendingCount > 0">{{ pendingCount }} en attente</template>
-      <template v-else>À jour</template>
-    </span>
+    <Transition name="fade-fast" mode="out-in">
+      <span :key="statusText" class="text-xs">{{ statusText }}</span>
+    </Transition>
   </button>
 </template>
 
 <style scoped>
-.sync-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.25rem 0.65rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  border: 1px solid var(--border-color, #e2e8f0);
-  background: var(--bg-surface, #ffffff);
-  color: var(--text-muted, #64748b);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  user-select: none;
+.fade-fast-enter-active,
+.fade-fast-leave-active {
+  transition: opacity 0.15s ease;
 }
-
-.sync-pill:hover {
-  background: var(--bg-surface-hover, #f8fafc);
-}
-
-.sync-pending {
-  border-color: #f59e0b;
-  color: #b45309;
-  background: #fffbeb;
-}
-
-.sync-online {
-  border-color: #10b981;
-  color: #047857;
-  background: #ecfdf5;
-}
-
-.sync-active {
-  border-color: #3b82f6;
-  color: #1d4ed8;
-  background: #eff6ff;
-}
-
-.sync-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  display: inline-block;
-}
-
-.dot-synced {
-  background-color: #10b981;
-}
-
-.dot-pending {
-  background-color: #f59e0b;
-}
-
-.dot-spinning {
-  background-color: #3b82f6;
-  animation: pulse 1s infinite;
-}
-
-@keyframes pulse {
-  0% { transform: scale(0.9); opacity: 0.6; }
-  50% { transform: scale(1.2); opacity: 1; }
-  100% { transform: scale(0.9); opacity: 0.6; }
+.fade-fast-enter-from,
+.fade-fast-leave-to {
+  opacity: 0;
 }
 </style>

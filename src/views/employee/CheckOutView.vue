@@ -37,7 +37,6 @@ onMounted(async () => {
     }
   }
 
-  // Fallback si non trouvé
   if (!location.value) {
     location.value = {
       name: 'Site de pointage',
@@ -89,17 +88,18 @@ const handleConfirmCheckOut = async () => {
 </script>
 
 <template>
-  <div class="check-out-view">
-    <div class="header-nav">
-      <button type="button" class="back-link" @click="navigate('/employee')">
+  <div class="flex flex-col gap-4 max-w-lg mx-auto">
+    <!-- En-tête navigation -->
+    <div class="flex items-center justify-between">
+      <button type="button" class="btn btn-ghost btn-sm text-xs font-semibold gap-1" @click="navigate('/employee')">
         ← Annuler
       </button>
-      <h2 class="view-title">Pointer mon départ</h2>
-      <span style="width: 40px"></span>
+      <h2 class="text-base font-bold text-base-content">Pointer mon départ</h2>
+      <span class="w-16"></span>
     </div>
 
-    <div v-if="location" class="single-loc-badge">
-      🏁 Site de départ : <strong>{{ location.name }}</strong>
+    <div v-if="location" class="card bg-base-100 border border-base-300 p-3 rounded-xl text-center text-xs text-base-content/70">
+      🏁 Site de départ : <strong class="text-base-content">{{ location.name }}</strong>
     </div>
 
     <!-- Radar GPS -->
@@ -112,119 +112,31 @@ const handleConfirmCheckOut = async () => {
     />
 
     <!-- Erreur GPS éventuelle -->
-    <div v-if="gpsError" class="alert-error">
-      {{ gpsError }}
+    <div v-if="gpsError" class="alert alert-error text-xs py-2.5 rounded-xl">
+      <span>{{ gpsError }}</span>
     </div>
 
     <!-- Message d'erreur de soumission -->
-    <div v-if="errorMessage" class="alert-error">
-      {{ errorMessage }}
+    <div v-if="errorMessage" class="alert alert-error text-xs py-2.5 rounded-xl">
+      <span>{{ errorMessage }}</span>
     </div>
 
     <!-- Bouton de confirmation départ -->
-    <div class="action-footer">
+    <div class="flex flex-col gap-2.5 mt-2">
       <button
         type="button"
-        class="confirm-btn"
+        class="btn btn-warning text-white w-full text-base font-bold min-h-12 shadow-lg rounded-xl active:scale-98 transition-transform"
         :disabled="!perimeterResult.inPerimeter || isSubmitting"
         @click="handleConfirmCheckOut"
       >
+        <span v-if="isSubmitting" class="loading loading-spinner loading-sm"></span>
         <span v-if="isSubmitting">Validation...</span>
         <span v-else-if="perimeterResult.inPerimeter">✓ Terminer ma journée</span>
         <span v-else>⚠️ Retournez sur le site</span>
       </button>
-      <p class="offline-hint">
+      <p class="text-[11px] text-base-content/60 text-center">
         Enregistrement immédiat dans votre base locale avec transmission garantie.
       </p>
     </div>
   </div>
 </template>
-
-<style scoped>
-.check-out-view {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  max-width: 520px;
-  margin: 0 auto;
-}
-
-.header-nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.back-link {
-  background: none;
-  border: none;
-  color: var(--text-muted, #64748b);
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 0.4rem;
-}
-
-.view-title {
-  font-size: 1.15rem;
-  font-weight: 700;
-  margin: 0;
-  color: var(--text-main, #1e293b);
-}
-
-.single-loc-badge {
-  text-align: center;
-  font-size: 0.85rem;
-  color: var(--text-muted, #475569);
-  background: #f1f5f9;
-  padding: 0.6rem;
-  border-radius: 0.75rem;
-}
-
-.alert-error {
-  background: #fef2f2;
-  border: 1px solid #f87171;
-  color: #991b1b;
-  font-size: 0.85rem;
-  padding: 0.75rem;
-  border-radius: 0.75rem;
-  text-align: center;
-}
-
-.action-footer {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-top: 1rem;
-}
-
-.confirm-btn {
-  background-color: #f59e0b;
-  color: white;
-  border: none;
-  padding: 1.1rem;
-  border-radius: 0.85rem;
-  font-size: 1.05rem;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
-  transition: all 0.2s ease;
-}
-
-.confirm-btn:hover:not(:disabled) {
-  background-color: #d97706;
-}
-
-.confirm-btn:disabled {
-  background-color: #94a3b8;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-.offline-hint {
-  text-align: center;
-  font-size: 0.75rem;
-  color: var(--text-muted, #64748b);
-  margin: 0;
-}
-</style>
