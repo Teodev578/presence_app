@@ -5,10 +5,11 @@ import { useAuth } from '../../composables/useAuth'
 import { useProfile } from '../../composables/useProfile'
 
 const { navigate } = useRouter()
-const { signIn, signUp, authLoading, authError } = useAuth()
+const { signIn, signUp, resetPassword, authLoading, authError } = useAuth()
 const { profile, fetchProfile } = useProfile()
 
 const isRegister = ref(false)
+const isForgotPassword = ref(false)
 const email = ref('')
 const password = ref('')
 const fullName = ref('')
@@ -78,6 +79,27 @@ const handleSubmit = async () => {
     }
   }
 }
+
+const handleForgotPassword = async () => {
+  message.value = ''
+  authError.value = null
+
+  if (!navigator.onLine) {
+    message.value = 'Opération impossible : vous êtes actuellement hors-ligne.'
+    return
+  }
+
+  const cleanEmail = email.value.trim().toLowerCase()
+  if (!cleanEmail) {
+    message.value = 'Veuillez renseigner votre adresse email professionnelle.'
+    return
+  }
+
+  const { error } = await resetPassword(cleanEmail)
+  if (!error) {
+    message.value = 'Si cette adresse correspond à un compte actif, un lien de réinitialisation vous a été transmis.'
+  }
+}
 </script>
 
 <template>
@@ -137,175 +159,249 @@ const handleSubmit = async () => {
           <span>Vous êtes hors-ligne. Une connexion Internet est requise pour vous authentifier la première fois.</span>
         </div>
 
-        <!-- Onglets Connexion / Inscription -->
-        <div class="tabs tabs-box grid grid-cols-2 p-1 bg-base-200 rounded-xl">
-          <button
-            type="button"
-            class="tab text-xs font-bold rounded-lg transition-all"
-            :class="{ 'tab-active bg-base-100 shadow-xs text-primary': !isRegister }"
-            @click="isRegister = false; message = ''; authError = null"
-          >
-            Connexion
-          </button>
-          <button
-            type="button"
-            class="tab text-xs font-bold rounded-lg transition-all"
-            :class="{ 'tab-active bg-base-100 shadow-xs text-primary': isRegister }"
-            @click="isRegister = true; message = ''; authError = null"
-          >
-            Créer un compte
-          </button>
-        </div>
+        <!-- Mode Réinitialisation de mot de passe oublié -->
+        <div v-if="isForgotPassword" class="flex flex-col gap-4">
+          <div class="text-center">
+            <h2 class="text-base font-bold text-base-content">Mot de passe oublié</h2>
+            <p class="text-xs text-base-content/60 mt-1">
+              Indiquez votre adresse email professionnelle pour recevoir un lien de réinitialisation sécurisé.
+            </p>
+          </div>
 
-        <!-- Formulaire principal -->
-        <form class="flex flex-col gap-4" @submit.prevent="handleSubmit">
-          <!-- Nom complet uniquement lors de la création de compte -->
-          <fieldset v-if="isRegister" class="fieldset">
-            <legend class="fieldset-legend text-xs font-semibold text-base-content/70">
-              Nom complet :
-            </legend>
-            <input
-              id="reg-name"
-              v-model="fullName"
-              type="text"
-              required
-              autocomplete="name"
-              autocapitalize="words"
-              spellcheck="false"
-              placeholder="Ex : Jean Dupont"
-              class="input input-bordered w-full rounded-xl text-sm"
-            />
-          </fieldset>
-
-          <!-- Email professionnel -->
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend text-xs font-semibold text-base-content/70">
-              Email professionnel :
-            </legend>
-            <input
-              id="auth-email"
-              v-model="email"
-              type="email"
-              autocomplete="email"
-              autocapitalize="none"
-              autocorrect="off"
-              spellcheck="false"
-              inputmode="email"
-              required
-              placeholder="jean.dupont@entreprise.fr"
-              class="input input-bordered w-full rounded-xl text-sm"
-            />
-          </fieldset>
-
-          <!-- Mot de passe avec bascule de visibilité -->
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend text-xs font-semibold text-base-content/70">
-              Mot de passe :
-            </legend>
-            <div class="relative flex items-center">
+          <form class="flex flex-col gap-4" @submit.prevent="handleForgotPassword">
+            <!-- Email professionnel pour réinitialisation -->
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend text-xs font-semibold text-base-content/70">
+                Email professionnel :
+              </legend>
               <input
-                id="auth-pwd"
-                v-model="password"
-                :type="showPassword ? 'text' : 'password'"
-                :autocomplete="isRegister ? 'new-password' : 'current-password'"
+                id="reset-email"
+                v-model="email"
+                type="email"
+                autocomplete="email"
                 autocapitalize="none"
                 autocorrect="off"
                 spellcheck="false"
+                inputmode="email"
                 required
-                placeholder="••••••••"
-                class="input input-bordered w-full rounded-xl text-sm pr-11"
+                placeholder="jean.dupont@entreprise.fr"
+                class="input input-bordered w-full rounded-xl text-sm focus:outline-none focus:border-primary"
               />
-              <button
-                type="button"
-                class="absolute right-3 p-1.5 text-base-content/50 hover:text-base-content transition-colors rounded-lg focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40"
-                :aria-label="showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'"
-                tabindex="-1"
-                @click="showPassword = !showPassword"
-              >
-                <!-- Icône œil masqué -->
-                <svg
-                  v-if="showPassword"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  class="w-4 h-4"
-                  aria-hidden="true"
-                >
-                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-                  <line x1="1" y1="1" x2="23" y2="23" />
-                </svg>
-                <!-- Icône œil visible -->
-                <svg
-                  v-else
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  class="w-4 h-4"
-                  aria-hidden="true"
-                >
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
-              </button>
+            </fieldset>
+
+            <!-- Erreur d'authentification / envoi -->
+            <div v-if="authError" class="alert alert-error text-xs py-2.5 rounded-xl">
+              <span>{{ authError }}</span>
             </div>
-          </fieldset>
 
-          <!-- Erreur d'authentification -->
-          <div v-if="authError" class="alert alert-error text-xs py-2.5 rounded-xl">
-            <span>{{ authError }}</span>
-          </div>
+            <!-- Message d'information / confirmation -->
+            <div v-if="message" class="alert alert-info text-xs py-2.5 rounded-xl">
+              <span>{{ message }}</span>
+            </div>
 
-          <!-- Message d'information -->
-          <div v-if="message" class="alert alert-info text-xs py-2.5 rounded-xl">
-            <span>{{ message }}</span>
-          </div>
+            <!-- Bouton d'action réinitialisation -->
+            <button
+              type="submit"
+              class="btn btn-primary w-full text-base font-bold min-h-12 shadow-md rounded-xl mt-1 active:scale-98 transition-transform"
+              :disabled="authLoading"
+            >
+              <span v-if="authLoading" class="loading loading-spinner loading-sm"></span>
+              <span v-if="authLoading">Envoi du lien...</span>
+              <span v-else>Envoyer le lien de réinitialisation</span>
+            </button>
 
-          <!-- Bouton de soumission principal -->
-          <button
-            type="submit"
-            class="btn btn-primary w-full text-base font-bold min-h-12 shadow-md rounded-xl mt-2 active:scale-98 transition-transform"
-            :disabled="authLoading"
-          >
-            <span v-if="authLoading" class="loading loading-spinner loading-sm"></span>
-            <span v-if="authLoading">Authentification...</span>
-            <span v-else-if="isRegister">Créer mon compte employé</span>
-            <span v-else>Se connecter</span>
-          </button>
-
-          <!-- Raccourci environnement de développement / démonstration -->
-          <div v-if="isDev && !isRegister" class="text-center pt-2 border-t border-base-200 mt-1">
+            <!-- Bouton de retour -->
             <button
               type="button"
-              class="text-xs text-primary hover:underline font-medium inline-flex items-center gap-1.5 py-1 px-2.5 rounded-lg hover:bg-primary/5 transition-colors"
-              @click="fillAdminCredentials"
+              class="btn btn-ghost btn-sm w-full text-xs text-base-content/70 hover:text-base-content rounded-lg"
+              @click="isForgotPassword = false; message = ''; authError = null"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                class="w-3.5 h-3.5"
-                aria-hidden="true"
-              >
-                <circle cx="7.5" cy="15.5" r="5.5" />
-                <path d="m21 2-9.6 9.6" />
-                <path d="m15.5 7.5 3 3L22 7l-3-3" />
-              </svg>
-              <span>Pré-remplir avec le compte Administrateur (Dev)</span>
+              ← Retour à la connexion
+            </button>
+          </form>
+        </div>
+
+        <!-- Mode standard : Onglets Connexion / Inscription -->
+        <template v-else>
+          <div class="tabs tabs-box grid grid-cols-2 p-1 bg-base-200 rounded-xl">
+            <button
+              type="button"
+              class="tab text-xs font-bold rounded-lg transition-all"
+              :class="{ 'tab-active bg-base-100 shadow-xs text-primary': !isRegister }"
+              @click="isRegister = false; message = ''; authError = null"
+            >
+              Connexion
+            </button>
+            <button
+              type="button"
+              class="tab text-xs font-bold rounded-lg transition-all"
+              :class="{ 'tab-active bg-base-100 shadow-xs text-primary': isRegister }"
+              @click="isRegister = true; message = ''; authError = null"
+            >
+              Créer un compte
             </button>
           </div>
-        </form>
+
+          <!-- Formulaire principal -->
+          <form class="flex flex-col gap-4" @submit.prevent="handleSubmit">
+            <!-- Nom complet uniquement lors de la création de compte -->
+            <fieldset v-if="isRegister" class="fieldset">
+              <legend class="fieldset-legend text-xs font-semibold text-base-content/70">
+                Nom complet :
+              </legend>
+              <input
+                id="reg-name"
+                v-model="fullName"
+                type="text"
+                required
+                autocomplete="name"
+                autocapitalize="words"
+                spellcheck="false"
+                placeholder="Ex : Jean Dupont"
+                class="input input-bordered w-full rounded-xl text-sm focus:outline-none focus:border-primary"
+              />
+            </fieldset>
+
+            <!-- Email professionnel -->
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend text-xs font-semibold text-base-content/70">
+                Email professionnel :
+              </legend>
+              <input
+                id="auth-email"
+                v-model="email"
+                type="email"
+                autocomplete="email"
+                autocapitalize="none"
+                autocorrect="off"
+                spellcheck="false"
+                inputmode="email"
+                required
+                placeholder="jean.dupont@entreprise.fr"
+                class="input input-bordered w-full rounded-xl text-sm focus:outline-none focus:border-primary"
+              />
+            </fieldset>
+
+            <!-- Mot de passe avec bascule de visibilité -->
+            <fieldset class="fieldset">
+              <div class="flex items-center justify-between mb-1">
+                <legend class="fieldset-legend text-xs font-semibold text-base-content/70 m-0 p-0">
+                  Mot de passe :
+                </legend>
+                <button
+                  v-if="!isRegister"
+                  type="button"
+                  class="text-xs text-primary hover:underline font-medium transition-colors"
+                  @click="isForgotPassword = true; message = ''; authError = null"
+                >
+                  Mot de passe oublié ?
+                </button>
+              </div>
+              <div class="relative flex items-center">
+                <input
+                  id="auth-pwd"
+                  v-model="password"
+                  :type="showPassword ? 'text' : 'password'"
+                  :autocomplete="isRegister ? 'new-password' : 'current-password'"
+                  autocapitalize="none"
+                  autocorrect="off"
+                  spellcheck="false"
+                  required
+                  placeholder="••••••••"
+                  class="input input-bordered w-full rounded-xl text-sm pr-11 focus:outline-none focus:border-primary"
+                />
+                <button
+                  type="button"
+                  class="absolute right-3 p-1.5 text-base-content/50 hover:text-base-content transition-colors rounded-lg focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40"
+                  :aria-label="showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'"
+                  tabindex="-1"
+                  @click="showPassword = !showPassword"
+                >
+                  <!-- Icône œil masqué -->
+                  <svg
+                    v-if="showPassword"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="w-4 h-4"
+                    aria-hidden="true"
+                  >
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                    <line x1="1" y1="1" x2="23" y2="23" />
+                  </svg>
+                  <!-- Icône œil visible -->
+                  <svg
+                    v-else
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="w-4 h-4"
+                    aria-hidden="true"
+                  >
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                </button>
+              </div>
+            </fieldset>
+
+            <!-- Erreur d'authentification -->
+            <div v-if="authError" class="alert alert-error text-xs py-2.5 rounded-xl">
+              <span>{{ authError }}</span>
+            </div>
+
+            <!-- Message d'information -->
+            <div v-if="message" class="alert alert-info text-xs py-2.5 rounded-xl">
+              <span>{{ message }}</span>
+            </div>
+
+            <!-- Bouton de soumission principal -->
+            <button
+              type="submit"
+              class="btn btn-primary w-full text-base font-bold min-h-12 shadow-md rounded-xl mt-2 active:scale-98 transition-transform"
+              :disabled="authLoading"
+            >
+              <span v-if="authLoading" class="loading loading-spinner loading-sm"></span>
+              <span v-if="authLoading">Authentification...</span>
+              <span v-else-if="isRegister">Créer mon compte employé</span>
+              <span v-else>Se connecter</span>
+            </button>
+
+            <!-- Raccourci environnement de développement / démonstration -->
+            <div v-if="isDev && !isRegister" class="text-center pt-2 border-t border-base-200 mt-1">
+              <button
+                type="button"
+                class="text-xs text-primary hover:underline font-medium inline-flex items-center gap-1.5 py-1 px-2.5 rounded-lg hover:bg-primary/5 transition-colors"
+                @click="fillAdminCredentials"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="w-3.5 h-3.5"
+                  aria-hidden="true"
+                >
+                  <circle cx="7.5" cy="15.5" r="5.5" />
+                  <path d="m21 2-9.6 9.6" />
+                  <path d="m15.5 7.5 3 3L22 7l-3-3" />
+                </svg>
+                <span>Pré-remplir avec le compte Administrateur (Dev)</span>
+              </button>
+            </div>
+          </form>
+        </template>
       </div>
     </div>
   </div>

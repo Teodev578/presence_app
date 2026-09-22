@@ -106,6 +106,25 @@ export function useAuth() {
     }
   }
 
+  const resetPassword = async (email) => {
+    authLoading.value = true
+    authError.value = null
+    const cleanEmail = (email || '').trim().toLowerCase()
+
+    try {
+      const { data, error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
+        redirectTo: `${window.location.origin}/`,
+      })
+      if (error) throw error
+      return { data, error: null }
+    } catch (err) {
+      authError.value = formatAuthError(err)
+      return { data: null, error: err }
+    } finally {
+      authLoading.value = false
+    }
+  }
+
   const signOut = async () => {
     authLoading.value = true
     try {
@@ -129,5 +148,6 @@ export function useAuth() {
     signIn,
     signUp,
     signOut,
+    resetPassword,
   }
 }
