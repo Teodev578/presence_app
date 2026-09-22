@@ -34,20 +34,41 @@ export function useAuth() {
     })
   }
 
+  const formatAuthError = (err) => {
+    if (!err) return null
+    const msg = err.message || ''
+    if (msg.includes('Invalid login credentials')) {
+      return 'Email ou mot de passe incorrect. Vérifiez vos identifiants.'
+    }
+    if (msg.includes('Email not confirmed')) {
+      return "Cette adresse email n'a pas encore été confirmée."
+    }
+    if (msg.includes('User already registered')) {
+      return 'Un compte existe déjà avec cette adresse email.'
+    }
+    if (msg.includes('Password should be at least')) {
+      return 'Le mot de passe doit comporter au moins 6 caractères.'
+    }
+    return msg || 'Une erreur est survenue lors de la connexion.'
+  }
+
   const signIn = async (email, password) => {
     authLoading.value = true
     authError.value = null
+    const cleanEmail = (email || '').trim().toLowerCase()
+    const cleanPassword = (password || '').trim()
+
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+        email: cleanEmail,
+        password: cleanPassword,
       })
       if (error) throw error
       session.value = data.session
       user.value = data.user
       return { data, error: null }
     } catch (err) {
-      authError.value = err.message
+      authError.value = formatAuthError(err)
       return { data: null, error: err }
     } finally {
       authLoading.value = false
@@ -57,13 +78,17 @@ export function useAuth() {
   const signUp = async (email, password, fullName, role = 'employee') => {
     authLoading.value = true
     authError.value = null
+    const cleanEmail = (email || '').trim().toLowerCase()
+    const cleanPassword = (password || '').trim()
+    const cleanName = (fullName || '').trim()
+
     try {
       const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
+        email: cleanEmail,
+        password: cleanPassword,
         options: {
           data: {
-            full_name: fullName,
+            full_name: cleanName,
             role,
           },
         },
@@ -71,7 +96,7 @@ export function useAuth() {
       if (error) throw error
       return { data, error: null }
     } catch (err) {
-      authError.value = err.message
+      authError.value = formatAuthError(err)
       return { data: null, error: err }
     } finally {
       authLoading.value = false

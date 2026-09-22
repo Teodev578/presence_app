@@ -1,10 +1,12 @@
 <script setup>
 import { useRouter } from '../router'
 import { useAuth } from '../composables/useAuth'
+import { useProfile } from '../composables/useProfile'
 import SyncIndicator from '../components/shared/SyncIndicator.vue'
 
 const { currentPath, navigate } = useRouter()
 const { signOut } = useAuth()
+const { profile } = useProfile()
 
 const handleLogout = async () => {
   await signOut()
@@ -22,6 +24,15 @@ const handleLogout = async () => {
       </div>
 
       <div class="flex-none flex items-center gap-2">
+        <button
+          v-if="profile?.role === 'admin' || profile?.role === 'manager'"
+          type="button"
+          class="btn btn-primary btn-xs font-bold gap-1 rounded-lg"
+          title="Accéder au Tableau de bord"
+          @click="navigate('/manager')"
+        >
+          📊 Dashboard
+        </button>
         <SyncIndicator />
         <button
           type="button"
@@ -34,6 +45,21 @@ const handleLogout = async () => {
         </button>
       </div>
     </header>
+
+    <!-- Bannière contextuelle pour les comptes avec privilèges de gestion -->
+    <div
+      v-if="profile?.role === 'admin' || profile?.role === 'manager'"
+      class="bg-primary/10 border-b border-primary/20 px-4 py-2 flex items-center justify-between text-xs text-primary font-medium"
+    >
+      <span>Session : {{ profile?.role === 'admin' ? 'Super Administrateur' : 'Manager' }}</span>
+      <button
+        type="button"
+        class="btn btn-primary btn-xs font-bold shadow-xs"
+        @click="navigate('/manager')"
+      >
+        Accéder au Dashboard →
+      </button>
+    </div>
 
     <!-- Conteneur principal de la vue active -->
     <main class="flex-1 p-4 w-full max-w-md mx-auto">

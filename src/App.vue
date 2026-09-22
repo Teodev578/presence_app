@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, computed } from 'vue'
+import { onMounted, computed, watch } from 'vue'
 import { useRouter } from './router'
 import { useAuth } from './composables/useAuth'
 import { useProfile } from './composables/useProfile'
@@ -25,17 +25,20 @@ import ExportView from './views/manager/ExportView.vue'
 
 const { route, navigate } = useRouter()
 const { session, user, authLoading, initAuth } = useAuth()
-const { profile } = useProfile()
+const { profile, profileLoading, fetchProfile } = useProfile()
 const { startSyncWatcher } = useSyncEngine()
 
 onMounted(async () => {
   await initAuth()
   startSyncWatcher(() => user.value?.id)
 
-  // Redirection initiale intelligente
+  // Redirection initiale intelligente une fois la session et le profil résolus
   if (session.value) {
+    const resolvedProfile = await fetchProfile()
+    const role = resolvedProfile?.role || user.value?.user_metadata?.role
+
     if (route.value.path === '/' || route.value.path === '/login') {
-      if (profile.value?.role === 'manager' || profile.value?.role === 'admin') {
+      if (role === 'manager' || role === 'admin') {
         navigate('/manager')
       } else {
         navigate('/employee')
@@ -44,13 +47,32 @@ onMounted(async () => {
   }
 })
 
-// Détermination de la vue active
-const isManagerRoute = computed(() => route.value.path.startsWith('/manager'))
+const isManager = computed(() => {
+  const role = profile.value?.role || user.value?.user_metadata?.role
+  return role === 'manager' || role === 'admin'
+})
+const isManagerRoute = computed(() => route.value.path.startsWith('/manager') && isManager.value)
 const isAuthenticated = computed(() => !!session.value)
+
+// Garde de navigation : interdit l'accès manager/dashboard aux employés seulement après confirmation du profil
+watch([() => route.value.path, isManager, () => profile.value, profileLoading], () => {
+  if (
+    route.value.path.startsWith('/manager') &&
+    !profileLoading.value &&
+    profile.value &&
+    !isManager.value
+  ) {
+    navigate('/employee')
+  }
+})
 </script>
 
 <template>
-  <div v-if="authLoading" class="min-h-screen flex flex-col items-center justify-center gap-3 bg-base-200 text-base-content/70 font-medium">
+  <!-- Écran de chargement pendant l'authentification initiale et la résolution du profil -->
+  <div
+    v-if="authLoading || (isAuthenticated && !profile && profileLoading)"
+    class="min-h-screen flex flex-col items-center justify-center gap-3 bg-base-200 text-base-content/70 font-medium"
+  >
     <span class="loading loading-spinner loading-lg text-primary"></span>
     <p class="text-sm">Chargement de PresenceApp...</p>
   </div>

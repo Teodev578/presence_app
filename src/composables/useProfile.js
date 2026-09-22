@@ -12,10 +12,21 @@ export function useProfile() {
   const fetchProfile = async () => {
     if (!user.value) {
       currentProfile.value = null
-      return
+      return null
     }
 
     const userId = user.value.id
+
+    // Fallback immédiat et synchrone depuis les métadonnées utilisateur pour éviter toute condition de course
+    if (!currentProfile.value) {
+      currentProfile.value = {
+        id: userId,
+        email: user.value.email || '',
+        role: user.value.user_metadata?.role || 'employee',
+        full_name: user.value.user_metadata?.full_name || '',
+      }
+    }
+
     profileLoading.value = true
 
     // 1. Lecture locale immédiate dans Dexie (Local-First)
@@ -35,7 +46,7 @@ export function useProfile() {
           .from('profiles')
           .select('*')
           .eq('id', userId)
-          .single()
+          .maybeSingle()
 
         if (!error && data) {
           currentProfile.value = data
@@ -47,6 +58,7 @@ export function useProfile() {
     }
 
     profileLoading.value = false
+    return currentProfile.value
   }
 
   // Surveille les changements de session utilisateur
