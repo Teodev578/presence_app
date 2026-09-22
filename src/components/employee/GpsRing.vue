@@ -35,10 +35,39 @@ defineProps({
       }"
     >
       <div class="radar-pulse"></div>
-      <div class="text-3xl z-10 select-none">
+      <div class="z-10 select-none flex items-center justify-center">
         <span v-if="isLocating" class="loading loading-ring loading-lg text-info"></span>
-        <span v-else-if="inPerimeter">📍</span>
-        <span v-else>⚠️</span>
+        <svg
+          v-else-if="inPerimeter"
+          xmlns="http://www.w3.org/2000/svg"
+          class="w-8 h-8 text-success"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+          <circle cx="12" cy="10" r="3"></circle>
+        </svg>
+        <svg
+          v-else
+          xmlns="http://www.w3.org/2000/svg"
+          class="w-8 h-8 text-error"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
       </div>
     </div>
 
@@ -48,14 +77,14 @@ defineProps({
         <span class="loading loading-spinner loading-xs"></span>
         Acquisition du signal GPS en cours...
       </div>
-      <div v-else-if="inPerimeter" class="badge badge-success text-success-content font-bold py-3 px-4 text-xs gap-1.5">
+      <div v-else-if="inPerimeter" class="badge badge-success text-success-content font-bold py-3 px-4 text-xs gap-1.5 rounded-m3-xs">
         ✓ Position validée (vous êtes sur site)
       </div>
       <div v-else class="text-sm font-medium text-error">
         Distance au site : <strong>{{ distance }} m</strong> (limite : {{ allowedRadius }} m)
       </div>
 
-      <div v-if="accuracy" class="badge badge-ghost badge-sm text-[11px] text-base-content/60 mt-1">
+      <div v-if="accuracy" class="badge badge-ghost badge-sm text-[11px] text-base-content/60 mt-1 rounded-m3-xs">
         Précision satellite : ±{{ accuracy }} m
       </div>
     </div>
@@ -80,6 +109,14 @@ defineProps({
   100% {
     transform: scale(1.4);
     opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .radar-pulse {
+    animation: none;
+    opacity: 0.2;
+    transform: scale(1);
   }
 }
 </style>

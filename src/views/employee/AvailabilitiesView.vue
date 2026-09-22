@@ -6,9 +6,13 @@ const { navigate } = useRouter()
 </script>
 
 <template>
-  <div class="flex flex-col gap-4 max-w-lg mx-auto">
+  <div class="flex flex-col gap-4 max-w-lg md:max-w-4xl mx-auto">
     <div class="flex items-center justify-between">
-      <button type="button" class="btn btn-ghost btn-sm text-xs font-semibold gap-1" @click="navigate('/employee')">
+      <button
+        type="button"
+        class="btn btn-ghost min-h-12 px-3 text-xs font-semibold gap-1 rounded-m3-sm"
+        @click="navigate('/employee')"
+      >
         ← Retour
       </button>
       <h2 class="text-base font-bold text-base-content">Mes disponibilités</h2>

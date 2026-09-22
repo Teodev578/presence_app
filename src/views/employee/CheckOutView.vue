@@ -78,6 +78,9 @@ const handleConfirmCheckOut = async () => {
       coords: currentCoords.value,
       accuracy: gpsAccuracy.value,
     })
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate(40)
+    }
     navigate('/employee')
   } catch (err) {
     errorMessage.value = `Erreur : ${err.message}`
@@ -89,16 +92,20 @@ const handleConfirmCheckOut = async () => {
 
 <template>
   <div class="flex flex-col gap-4 max-w-lg mx-auto">
-    <!-- En-tête navigation -->
+    <!-- En-tête navigation avec touch target 48dp -->
     <div class="flex items-center justify-between">
-      <button type="button" class="btn btn-ghost btn-sm text-xs font-semibold gap-1" @click="navigate('/employee')">
+      <button
+        type="button"
+        class="btn btn-ghost min-h-12 px-3 text-xs font-semibold gap-1 rounded-m3-sm"
+        @click="navigate('/employee')"
+      >
         ← Annuler
       </button>
       <h1 class="text-base font-bold text-base-content">Pointer le départ</h1>
       <span class="w-16"></span>
     </div>
 
-    <div v-if="location" class="card bg-base-100 border border-base-300 p-3 rounded-xl text-center text-xs text-base-content/70">
+    <div v-if="location" class="card bg-base-200 border border-base-300/60 p-3 rounded-m3-md text-center text-xs text-base-content/70">
       Site : <strong class="text-base-content">{{ location.name }}</strong>
     </div>
 
@@ -112,12 +119,12 @@ const handleConfirmCheckOut = async () => {
     />
 
     <!-- Erreur GPS éventuelle -->
-    <div v-if="gpsError" class="alert alert-error text-xs py-2.5 rounded-xl">
+    <div v-if="gpsError" class="alert alert-error text-xs py-2.5 rounded-m3-md">
       <span>{{ gpsError }}</span>
     </div>
 
     <!-- Message d'erreur de soumission -->
-    <div v-if="errorMessage" class="alert alert-error text-xs py-2.5 rounded-xl">
+    <div v-if="errorMessage" class="alert alert-error text-xs py-2.5 rounded-m3-md">
       <span>{{ errorMessage }}</span>
     </div>
 
@@ -125,7 +132,7 @@ const handleConfirmCheckOut = async () => {
     <div class="flex flex-col gap-2.5 mt-2">
       <button
         type="button"
-        class="btn btn-warning text-warning-content w-full text-base font-bold min-h-12 shadow-sm rounded-xl active:scale-98 transition-transform"
+        class="btn btn-warning text-warning-content w-full text-base font-bold min-h-14 shadow-xs rounded-m3-md active:scale-95 transition-transform focus-visible:ring-2 focus-visible:ring-warning focus-visible:ring-offset-2"
         :disabled="!perimeterResult.inPerimeter || isSubmitting"
         @click="handleConfirmCheckOut"
       >

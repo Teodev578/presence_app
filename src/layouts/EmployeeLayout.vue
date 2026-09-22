@@ -15,12 +15,12 @@ const handleLogout = async () => {
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col bg-base-200 text-base-content pb-20 md:pb-8">
+  <div class="min-h-screen flex flex-col bg-base-100 text-base-content pb-[calc(4.5rem+var(--safe-bottom,0px))] md:pb-8">
     <!-- Barre de navigation supérieure responsive -->
     <header class="navbar bg-base-100/90 backdrop-blur-md sticky top-0 z-30 border-b border-base-300 px-4 sm:px-6 min-h-14">
       <!-- Marque & Logo -->
       <div class="flex items-center gap-3">
-        <div class="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+        <div class="w-8 h-8 rounded-m3-sm bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
             <circle cx="12" cy="12" r="10" />
             <polyline points="12 6 12 12 16 14" />
@@ -30,10 +30,10 @@ const handleLogout = async () => {
       </div>
 
       <!-- Navigation Desktop (visible dès l'écran moyen) -->
-      <nav class="hidden md:flex items-center gap-1 ml-8">
+      <nav class="hidden md:flex items-center gap-1 ml-8" aria-label="Navigation principale desktop">
         <button
           type="button"
-          class="btn btn-sm text-xs font-semibold rounded-lg transition-colors"
+          class="btn btn-sm text-xs font-semibold rounded-m3-sm transition-colors"
           :class="currentPath === '/employee' || currentPath.includes('/employee/check')
             ? 'btn-primary'
             : 'btn-ghost text-base-content/70 hover:text-base-content'"
@@ -43,7 +43,7 @@ const handleLogout = async () => {
         </button>
         <button
           type="button"
-          class="btn btn-sm text-xs font-semibold rounded-lg transition-colors"
+          class="btn btn-sm text-xs font-semibold rounded-m3-sm transition-colors"
           :class="currentPath === '/employee/availabilities'
             ? 'btn-primary'
             : 'btn-ghost text-base-content/70 hover:text-base-content'"
@@ -60,7 +60,7 @@ const handleLogout = async () => {
         <button
           v-if="profile?.role === 'admin' || profile?.role === 'manager'"
           type="button"
-          class="btn btn-ghost btn-xs font-semibold text-primary hover:bg-primary/10 rounded-lg hidden sm:inline-flex"
+          class="btn btn-ghost btn-xs font-semibold text-primary hover:bg-primary/10 rounded-m3-sm hidden sm:inline-flex min-h-8"
           title="Accéder au tableau de bord gestionnaire"
           @click="navigate('/manager')"
         >
@@ -69,7 +69,7 @@ const handleLogout = async () => {
         <SyncIndicator />
         <button
           type="button"
-          class="btn btn-ghost btn-circle btn-sm text-base-content/70 hover:text-base-content"
+          class="btn btn-ghost btn-circle btn-sm text-base-content/70 hover:text-base-content min-w-9 min-h-9"
           title="Se déconnecter"
           aria-label="Se déconnecter"
           @click="handleLogout"
@@ -84,47 +84,78 @@ const handleLogout = async () => {
     </header>
 
     <!-- Conteneur principal de la vue active (largeur adaptative) -->
-    <main class="flex-1 p-4 sm:p-6 w-full max-w-xl md:max-w-2xl mx-auto">
+    <main class="flex-1 p-4 sm:p-6 w-full max-w-xl md:max-w-3xl mx-auto">
       <slot />
     </main>
 
-    <!-- Barre de navigation inférieure Mobile uniquement (DaisyUI btm-nav) -->
-    <nav class="md:hidden btm-nav btm-nav-md bg-base-100/95 backdrop-blur-md border-t border-base-300 z-40 fixed bottom-0 left-0 right-0">
+    <!-- Barre de navigation inférieure Mobile uniquement (M3 Pill + DaisyUI btm-nav) -->
+    <nav
+      class="md:hidden btm-nav bg-base-100/95 backdrop-blur-md border-t border-base-300/70 z-40 fixed bottom-0 left-0 right-0 h-[calc(3.75rem+var(--safe-bottom,0px))] pb-[var(--safe-bottom,0px)]"
+      role="tablist"
+      aria-label="Navigation principale mobile"
+    >
       <button
         type="button"
-        :class="{ 'active text-primary font-bold': currentPath === '/employee' }"
+        role="tab"
+        :aria-selected="currentPath === '/employee'"
+        aria-label="Espace de pointage"
+        class="flex flex-col items-center justify-center gap-1 transition-colors min-h-12"
+        :class="currentPath === '/employee' ? 'text-primary font-bold' : 'text-base-content/70 hover:text-base-content'"
         @click="navigate('/employee')"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10" />
-          <polyline points="12 6 12 12 16 14" />
-        </svg>
+        <div
+          class="flex items-center justify-center px-4 py-1 rounded-full transition-all"
+          :class="currentPath === '/employee' ? 'bg-primary/15' : 'bg-transparent'"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+          </svg>
+        </div>
         <span class="btm-nav-label text-[11px]">Pointage</span>
       </button>
 
       <button
         type="button"
-        :class="{ 'active text-primary font-bold': currentPath.includes('/employee/check') }"
+        role="tab"
+        :aria-selected="currentPath.includes('/employee/check')"
+        aria-label="Pointer présence"
+        class="flex flex-col items-center justify-center gap-1 transition-colors min-h-12"
+        :class="currentPath.includes('/employee/check') ? 'text-primary font-bold' : 'text-base-content/70 hover:text-base-content'"
         @click="navigate('/employee/check-in')"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-          <circle cx="12" cy="10" r="3"></circle>
-        </svg>
+        <div
+          class="flex items-center justify-center px-4 py-1 rounded-full transition-all"
+          :class="currentPath.includes('/employee/check') ? 'bg-primary/15' : 'bg-transparent'"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+            <circle cx="12" cy="10" r="3"></circle>
+          </svg>
+        </div>
         <span class="btm-nav-label text-[11px]">Pointer</span>
       </button>
 
       <button
         type="button"
-        :class="{ 'active text-primary font-bold': currentPath === '/employee/availabilities' }"
+        role="tab"
+        :aria-selected="currentPath === '/employee/availabilities'"
+        aria-label="Gérer les disponibilités"
+        class="flex flex-col items-center justify-center gap-1 transition-colors min-h-12"
+        :class="currentPath === '/employee/availabilities' ? 'text-primary font-bold' : 'text-base-content/70 hover:text-base-content'"
         @click="navigate('/employee/availabilities')"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-          <line x1="16" y1="2" x2="16" y2="6"></line>
-          <line x1="8" y1="2" x2="8" y2="6"></line>
-          <line x1="3" y1="10" x2="21" y2="10"></line>
-        </svg>
+        <div
+          class="flex items-center justify-center px-4 py-1 rounded-full transition-all"
+          :class="currentPath === '/employee/availabilities' ? 'bg-primary/15' : 'bg-transparent'"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+        </div>
         <span class="btm-nav-label text-[11px]">Disponibilités</span>
       </button>
     </nav>

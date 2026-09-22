@@ -20,10 +20,10 @@ const displayName = computed(() => {
   <div class="flex flex-col gap-6">
     <div class="flex items-baseline justify-between">
       <div>
-        <h1 class="text-2xl font-bold text-base-content tracking-tight">
+        <h1 class="text-2xl md:text-3xl font-bold text-base-content tracking-tight">
           Bonjour{{ displayName ? ` ${displayName}` : '' }}
         </h1>
-        <p class="text-xs text-base-content/60 mt-0.5">
+        <p class="text-xs md:text-sm text-base-content/60 mt-0.5">
           Espace de pointage personnel
         </p>
       </div>

@@ -86,61 +86,71 @@ const handleSave = async () => {
 </script>
 
 <template>
-  <div class="flex flex-col gap-4 max-w-lg mx-auto">
-    <!-- Barre de navigation semaine -->
-    <div class="card bg-base-100 border border-base-300 shadow-xs flex flex-row items-center justify-between p-3 rounded-2xl">
+  <div class="flex flex-col gap-4 w-full">
+    <!-- Barre de navigation semaine avec cibles tactiles 48dp -->
+    <div class="card bg-base-200 border border-base-300/60 shadow-xs flex flex-row items-center justify-between p-2.5 sm:p-3 rounded-m3-lg">
       <button
         type="button"
-        class="btn btn-circle btn-ghost btn-sm text-base"
+        class="btn btn-circle btn-ghost min-w-12 min-h-12 w-12 h-12 rounded-full focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         title="Semaine précédente"
         aria-label="Semaine précédente"
         @click="prevWeek"
       >
-        ←
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
       </button>
 
       <div class="text-center flex flex-col items-center">
-        <span class="badge badge-primary badge-xs font-bold uppercase tracking-wider mb-1">Planning</span>
-        <h3 class="font-bold text-sm text-base-content">{{ formatWeekLabel(currentWeekStart) }}</h3>
+        <span class="badge badge-primary badge-xs font-bold uppercase tracking-wider mb-1 rounded-m3-xs">Planning</span>
+        <h3 class="font-bold text-sm md:text-base text-base-content">{{ formatWeekLabel(currentWeekStart) }}</h3>
       </div>
 
       <button
         type="button"
-        class="btn btn-circle btn-ghost btn-sm text-base"
+        class="btn btn-circle btn-ghost min-w-12 min-h-12 w-12 h-12 rounded-full focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         title="Semaine suivante"
         aria-label="Semaine suivante"
         @click="nextWeek"
       >
-        →
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
       </button>
     </div>
 
-    <!-- Grille des 5 jours (Lundi à Vendredi) -->
-    <div class="flex flex-col gap-2.5">
+    <!-- Grille adaptative des 5 jours (colonne mobile, 5 colonnes dès md: 600px) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3" role="group" aria-label="Jours de la semaine">
       <div
         v-for="d in daysWithDates"
         :key="d.id"
-        class="card bg-base-100 border p-4 rounded-xl flex flex-row items-center justify-between transition-all select-none cursor-pointer"
+        role="checkbox"
+        :aria-checked="selectedDays.includes(d.id)"
+        :aria-label="`${d.label} ${d.dateFormatted}, ${selectedDays.includes(d.id) ? 'Disponible' : 'Non disponible'}`"
+        tabindex="0"
+        class="card bg-base-200 border p-4 rounded-m3-md flex flex-row md:flex-col items-center md:items-start justify-between gap-3 transition-all select-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         :class="[
           selectedDays.includes(d.id)
-            ? 'border-primary bg-primary/5 shadow-xs'
-            : 'border-base-300 hover:border-base-content/20',
+            ? 'border-primary bg-primary/10 shadow-xs'
+            : 'border-base-300/70 hover:border-base-content/30',
           d.isToday ? 'ring-2 ring-primary/40' : ''
         ]"
         @click="toggleDay(d.id)"
+        @keydown.space.prevent="toggleDay(d.id)"
+        @keydown.enter.prevent="toggleDay(d.id)"
       >
-        <div>
-          <div class="font-bold text-sm text-base-content flex items-center gap-2">
-            {{ d.label }}
-            <span v-if="d.isToday" class="badge badge-primary badge-xs font-semibold">Aujourd'hui</span>
+        <div class="flex flex-col">
+          <div class="font-bold text-sm text-base-content flex items-center gap-1.5">
+            <span>{{ d.label }}</span>
+            <span v-if="d.isToday" class="badge badge-primary badge-xs font-semibold rounded-m3-xs">Auj.</span>
           </div>
           <div class="text-xs text-base-content/60 mt-0.5">{{ d.dateFormatted }}</div>
         </div>
 
-        <!-- Toggle DaisyUI -->
+        <!-- Toggle DaisyUI synchronisé -->
         <input
           type="checkbox"
-          class="toggle toggle-primary pointer-events-none"
+          class="toggle toggle-primary pointer-events-none md:mt-2"
           :checked="selectedDays.includes(d.id)"
           tabindex="-1"
           aria-hidden="true"
@@ -157,20 +167,20 @@ const handleSave = async () => {
         id="week-note"
         v-model="note"
         rows="2"
-        class="textarea textarea-bordered w-full rounded-xl text-sm"
+        class="textarea textarea-bordered w-full rounded-m3-md text-sm"
         placeholder="Ex: Télétravail mercredi, déplacement externe vendredi..."
       ></textarea>
     </div>
 
     <!-- Message de confirmation -->
-    <div v-if="saveSuccess" class="alert alert-success text-xs py-2.5 justify-center rounded-xl">
+    <div v-if="saveSuccess" class="alert alert-success text-xs py-2.5 justify-center rounded-m3-md">
       Disponibilités enregistrées
     </div>
 
     <!-- Bouton d'enregistrement principal -->
     <button
       type="button"
-      class="btn btn-primary w-full text-base font-bold min-h-12 shadow-sm rounded-xl active:scale-98 transition-transform"
+      class="btn btn-primary w-full text-base font-bold min-h-14 shadow-xs rounded-m3-md active:scale-95 transition-transform focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
       :disabled="isSaving"
       @click="handleSave"
     >

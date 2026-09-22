@@ -86,6 +86,9 @@ const handleConfirmCheckIn = async () => {
       accuracy: gpsAccuracy.value,
       expectedArrivalTime: profile.value?.expected_arrival_time || '09:00:00',
     })
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate(40)
+    }
     navigate('/employee')
   } catch (err) {
     errorMessage.value = `Erreur : ${err.message}`
@@ -97,9 +100,13 @@ const handleConfirmCheckIn = async () => {
 
 <template>
   <div class="flex flex-col gap-4 max-w-lg mx-auto">
-    <!-- En-tête navigation -->
+    <!-- En-tête navigation avec touch target 48dp -->
     <div class="flex items-center justify-between">
-      <button type="button" class="btn btn-ghost btn-sm text-xs font-semibold gap-1" @click="navigate('/employee')">
+      <button
+        type="button"
+        class="btn btn-ghost min-h-12 px-3 text-xs font-semibold gap-1 rounded-m3-sm"
+        @click="navigate('/employee')"
+      >
         ← Annuler
       </button>
       <h1 class="text-base font-bold text-base-content">Pointer l'arrivée</h1>
@@ -111,13 +118,13 @@ const handleConfirmCheckIn = async () => {
       <label for="loc-select" class="fieldset-legend text-xs font-semibold text-base-content/70">
         Site de pointage
       </label>
-      <select id="loc-select" v-model="selectedLocation" class="select select-bordered w-full rounded-xl text-sm">
+      <select id="loc-select" v-model="selectedLocation" class="select select-bordered w-full rounded-m3-md text-sm">
         <option v-for="loc in locations" :key="loc.id" :value="loc">
           {{ loc.name }} (rayon {{ loc.radius_meters }}m)
         </option>
       </select>
     </div>
-    <div v-else-if="selectedLocation" class="card bg-base-100 border border-base-300 p-3 rounded-xl text-center text-xs text-base-content/70">
+    <div v-else-if="selectedLocation" class="card bg-base-200 border border-base-300/60 p-3 rounded-m3-md text-center text-xs text-base-content/70">
       Site : <strong class="text-base-content">{{ selectedLocation.name }}</strong>
     </div>
 
@@ -131,12 +138,12 @@ const handleConfirmCheckIn = async () => {
     />
 
     <!-- Erreur GPS éventuelle -->
-    <div v-if="gpsError" class="alert alert-error text-xs py-2.5 rounded-xl">
+    <div v-if="gpsError" class="alert alert-error text-xs py-2.5 rounded-m3-md">
       <span>{{ gpsError }}</span>
     </div>
 
     <!-- Message d'erreur de soumission -->
-    <div v-if="errorMessage" class="alert alert-error text-xs py-2.5 rounded-xl">
+    <div v-if="errorMessage" class="alert alert-error text-xs py-2.5 rounded-m3-md">
       <span>{{ errorMessage }}</span>
     </div>
 
@@ -144,7 +151,7 @@ const handleConfirmCheckIn = async () => {
     <div class="flex flex-col gap-2.5 mt-2">
       <button
         type="button"
-        class="btn btn-primary w-full text-base font-bold min-h-12 shadow-sm rounded-xl active:scale-98 transition-transform"
+        class="btn btn-primary w-full text-base font-bold min-h-14 shadow-xs rounded-m3-md active:scale-95 transition-transform focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         :disabled="!perimeterResult.inPerimeter || isSubmitting"
         @click="handleConfirmCheckIn"
       >

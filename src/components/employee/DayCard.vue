@@ -31,7 +31,7 @@ const formatTime = (isoStr) => {
 </script>
 
 <template>
-  <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl">
+  <div class="card bg-base-200 border border-base-300/60 shadow-xs rounded-m3-lg">
     <div class="card-body p-5 sm:p-6 gap-4">
       <!-- En-tête de la carte -->
       <div class="flex items-start justify-between">
@@ -40,11 +40,11 @@ const formatTime = (isoStr) => {
           <h2 class="text-xl font-bold text-base-content capitalize mt-0.5">{{ todayFormatted }}</h2>
         </div>
         <StatusBadge v-if="presence" :status="presence.status" />
-        <span v-else class="badge badge-ghost badge-sm py-2 px-2.5">Non pointé</span>
+        <span v-else class="badge badge-ghost badge-sm py-2 px-2.5 rounded-m3-xs">Non pointé</span>
       </div>
 
       <!-- Détails des horaires -->
-      <div class="grid grid-cols-2 gap-3 bg-base-200/60 p-4 rounded-xl border border-base-200">
+      <div class="grid grid-cols-2 gap-3 bg-base-100/80 p-4 rounded-m3-md border border-base-300/40">
         <div class="flex flex-col items-center">
           <span class="text-xs font-semibold text-base-content/60">Arrivée</span>
           <span class="text-2xl font-bold text-base-content tracking-tight my-0.5">
@@ -68,7 +68,7 @@ const formatTime = (isoStr) => {
         <button
           v-if="!presence"
           type="button"
-          class="btn btn-primary w-full shadow-sm text-base font-bold min-h-12 active:scale-98 transition-transform gap-2"
+          class="btn btn-primary w-full shadow-xs text-base font-bold min-h-14 rounded-m3-md active:scale-95 transition-transform gap-2 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           @click="emit('checkIn')"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -82,7 +82,7 @@ const formatTime = (isoStr) => {
         <button
           v-else-if="!presence.check_out_time"
           type="button"
-          class="btn btn-warning text-warning-content w-full shadow-sm text-base font-bold min-h-12 active:scale-98 transition-transform gap-2"
+          class="btn btn-warning text-warning-content w-full shadow-xs text-base font-bold min-h-14 rounded-m3-md active:scale-95 transition-transform gap-2 focus-visible:ring-2 focus-visible:ring-warning focus-visible:ring-offset-2"
           @click="emit('checkOut')"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -94,13 +94,13 @@ const formatTime = (isoStr) => {
         </button>
 
         <!-- Cas 3 : Journée achevée -->
-        <div v-else class="alert alert-success/15 border border-success/30 text-success text-xs font-semibold py-2.5 justify-center rounded-xl">
+        <div v-else class="alert alert-success/15 border border-success/30 text-success text-xs font-semibold py-2.5 justify-center rounded-m3-md">
           Journée enregistrée
         </div>
 
         <button
           type="button"
-          class="btn btn-ghost border border-base-300 w-full text-xs font-semibold min-h-10 mt-1 gap-2 text-base-content/80 hover:text-base-content hover:bg-base-200"
+          class="btn btn-ghost border border-base-300/80 w-full text-xs font-semibold min-h-12 rounded-m3-md mt-1 gap-2 text-base-content/80 hover:text-base-content hover:bg-base-100 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           @click="emit('openAvailabilities')"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
