@@ -1,5 +1,5 @@
 interface:
-  display_name: "Grill Me"
-  short_description: "Sharpen a plan through interview"
+  display_name: "Pocock Grill"
+  short_description: "Sharpen a plan through Matt Pocock's interview protocol"
 policy:
   allow_implicit_invocation: false

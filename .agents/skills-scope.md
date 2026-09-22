@@ -47,4 +47,4 @@ Ces compétences, issues de configurations globales ou d'autres contextes techni
 - **Exercices et Pédagogie** : `scaffold-exercises`, `teach`.
 - **Rédaction littéraire / Contenu** : `writing-beats`, `writing-fragments`, `writing-shape`.
 - **Outils spécifiques TypeScript étranger** : `migrate-to-shoehorn`, `setup-ts-deep-modules`.
-- **Skills d'assistance tiers non pertinents** : `ask-matt`, `claude-handoff`, `handoff`, `loop-me`, `to-questionnaire`, `to-spec`, `to-tickets`, `wait-what`, `grill-me`, `grill-with-docs`.
+- **Skills d'assistance tiers non pertinents** : `ask-matt`, `claude-handoff`, `handoff`, `loop-me`, `to-questionnaire`, `to-spec`, `to-tickets`, `wait-what`, `pocock-grill`, `grill-with-docs`.
