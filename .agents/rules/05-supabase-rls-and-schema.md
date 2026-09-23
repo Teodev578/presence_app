@@ -61,3 +61,16 @@ Chaque table métier persistée sur Supabase doit comporter les colonnes d'audit
   ```sql
   CREATE INDEX idx_<nom_de_table>_sync ON public.<nom_de_table> (user_id, updated_at);
   ```
+
+---
+
+## 5. Garde-fous MCP Supabase (Sécurité Infrastructure)
+
+Lors de l'utilisation de l'outillage Model Context Protocol (serveur `supabase`), les règles suivantes s'appliquent strictement :
+- **Outils d'administration destructifs prohibés sans accord préalable** :
+  L'agent a l'interdiction d'invoquer les commandes `delete_branch`, `reset_branch`, `pause_project` ou `create_project`. Toute action de cette nature exige une demande explicite à l'utilisateur avec justification détaillée.
+- **Principe de moindre privilège** :
+  Privilégier la lecture de schémas (`list_tables`, `list_migrations`), l'inspection des logs (`query_logs`) et l'audit de performance (`get_advisors`).
+- **Application prudente des migrations** :
+  Les migrations DDL distantes via `apply_migration` ou `execute_sql` doivent être préalablement formulées sous forme de script réversible et validées par l'utilisateur.
+

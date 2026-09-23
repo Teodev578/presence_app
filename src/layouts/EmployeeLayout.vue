@@ -64,7 +64,7 @@ const handleLogout = async () => {
         <div v-if="profile?.role === 'admin' || profile?.role === 'manager'" class="flex items-center gap-2">
           <button
             type="button"
-            class="btn btn-ghost btn-xs font-semibold text-primary hover:bg-primary/10 rounded-m3-sm hidden sm:inline-flex min-h-8"
+            class="btn btn-ghost btn-sm font-semibold text-primary hover:bg-primary/10 rounded-m3-sm hidden sm:inline-flex min-h-11 px-3"
             title="Accéder au tableau de bord gestionnaire"
             @click="navigate('/manager')"
           >

@@ -183,7 +183,7 @@ const handleForgotPassword = async () => {
           <div class="flex items-center justify-between">
             <button
               type="button"
-              class="btn btn-ghost btn-xs gap-1.5 text-base-content/70 hover:text-base-content -ml-2 rounded-m3-xs cursor-pointer"
+              class="btn btn-ghost btn-sm gap-1.5 text-base-content/70 hover:text-base-content -ml-2 rounded-m3-sm min-h-11 px-3 cursor-pointer"
               @click="isForgotPassword = false; message = ''; authError = null"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -229,11 +229,11 @@ const handleForgotPassword = async () => {
                 <span>{{ authError }}</span>
                 <button
                   type="button"
-                  class="btn btn-ghost btn-xs btn-circle shrink-0 hover:bg-black/10 text-error-content"
+                  class="btn btn-ghost btn-sm btn-circle shrink-0 hover:bg-black/10 text-error-content min-w-11 min-h-11"
                   aria-label="Fermer le message d'erreur"
                   @click="authError = null"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
                     <line x1="6" y1="6" x2="18" y2="18"></line>
                   </svg>
@@ -247,11 +247,11 @@ const handleForgotPassword = async () => {
                 <span>{{ message }}</span>
                 <button
                   type="button"
-                  class="btn btn-ghost btn-xs btn-circle shrink-0 hover:bg-black/10 text-info-content"
+                  class="btn btn-ghost btn-sm btn-circle shrink-0 hover:bg-black/10 text-info-content min-w-11 min-h-11"
                   aria-label="Fermer la notification"
                   @click="message = ''"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
                     <line x1="6" y1="6" x2="18" y2="18"></line>
                   </svg>
@@ -428,11 +428,11 @@ const handleForgotPassword = async () => {
                 <span>{{ authError }}</span>
                 <button
                   type="button"
-                  class="btn btn-ghost btn-xs btn-circle shrink-0 hover:bg-black/10 text-error-content"
+                  class="btn btn-ghost btn-sm btn-circle shrink-0 hover:bg-black/10 text-error-content min-w-11 min-h-11"
                   aria-label="Fermer le message d'erreur"
                   @click="authError = null"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
                     <line x1="6" y1="6" x2="18" y2="18"></line>
                   </svg>
@@ -446,11 +446,11 @@ const handleForgotPassword = async () => {
                 <span>{{ message }}</span>
                 <button
                   type="button"
-                  class="btn btn-ghost btn-xs btn-circle shrink-0 hover:bg-black/10 text-info-content"
+                  class="btn btn-ghost btn-sm btn-circle shrink-0 hover:bg-black/10 text-info-content min-w-11 min-h-11"
                   aria-label="Fermer la notification"
                   @click="message = ''"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
                     <line x1="6" y1="6" x2="18" y2="18"></line>
                   </svg>

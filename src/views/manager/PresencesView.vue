@@ -184,11 +184,11 @@ const formatTime = (iso) => {
               <td v-if="profile?.role === 'admin'">
                 <button
                   type="button"
-                  class="btn btn-ghost btn-xs text-primary font-semibold gap-1 rounded-m3-sm"
+                  class="btn btn-ghost btn-sm text-primary font-semibold gap-1.5 rounded-m3-sm min-h-11 px-3"
                   title="Modifier le statut"
                   @click="openEditModal(p)"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                   </svg>

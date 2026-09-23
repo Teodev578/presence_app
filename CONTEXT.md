@@ -1,4 +1,4 @@
-# Glossaire & Modèle de Domaine — PresenceApp
+# Glossaire & Modèle de Domaine : PresenceApp
 
 Ce document constitue la source unique de vérité terminologique et conceptuelle pour le projet PresenceApp. Tout agent doit utiliser les termes définis ci-dessous sans recourir à des synonymes arbitraires.
 
@@ -9,10 +9,10 @@ Ce document constitue la source unique de vérité terminologique et conceptuell
 - **Collaborateur (`employee`)** : Utilisateur final de l'application qui déclare ses disponibilités et enregistre ses prises et fins de poste.
 - **Responsable (`manager`)** : Utilisateur superviseur disposant des droits d'administration, de consultation des feuilles de présence et de validation des pointages.
 - **Pointage / Présence (`presence`)** : Événement horodaté traçant une prise de poste (`check_in`) ou une fin de poste (`check_out`). Chaque enregistrement comporte un identifiant universel (`id`), un horodatage (`timestamp`), des coordonnées GPS (`latitude`, `longitude`), un statut de validation et un indicateur de synchronisation.
-- **Session (`session`)** : Créneau horaire d'activité planifié ou spontané rattaché à un collaborateur et à un site d'affectation.
 - **Disponibilité (`availability`)** : Période temporelle déclarée par un collaborateur indiquant sa capacité à travailler (`available`, `unavailable`, `preferred`).
 - **Site / Établissement (`location`)** : Emplacement géographique physique caractérisé par son libellé, ses coordonnées GPS de référence (`latitude`, `longitude`) et son rayon de tolérance.
 - **Cercle Géographique (`gps_ring`)** : Zone circulaire définie autour d'un site par son rayon en mètres. Le pointage est qualifié de « conforme » si la géolocalisation du collaborateur s'inscrit à l'intérieur de ce rayon lors de la validation.
+- **Équipe (`team`)** : Groupe organisationnel de collaborateurs rattachés à un ou plusieurs gestionnaires.
 
 ---
 

@@ -1,4 +1,4 @@
-# Directives & Standards de Design System — Material 3 & DaisyUI v5
+# Directives & Standards de Design System : Material 3 & DaisyUI v5
 
 Ce document définit les conventions esthétiques, la hiérarchie visuelle et les règles d'implémentation de l'interface graphique pour l'ensemble du projet PresenceApp. Tout agent générant ou refactorisant du code d'interface (`.vue`, `.css`) doit s'y conformer impérativement.
 
@@ -42,9 +42,9 @@ Toute couleur de surface ou de conteneur M3 s'accompagne obligatoirement de son 
 
 Material 3 remplace l'élévation par ombre (`box-shadow`) par une élévation par **teinte de surface** :
 
-- **Élévation 0 (Plate)** : `bg-base-100` — Arrière-plan de la vue.
-- **Élévation 1 (Posée)** : `bg-base-200` — Cartes standards, listes d'éléments, tableaux.
-- **Élévation 2 (Surélevée)** : `bg-base-300` — Menus déroulants, barres de navigation flottantes.
+- **Élévation 0 (Plate)** : `bg-base-100` (Arrière-plan de la vue).
+- **Élévation 1 (Posée)** : `bg-base-200` (Cartes standards, listes d'éléments, tableaux).
+- **Élévation 2 (Surélevée)** : `bg-base-300` (Menus déroulants, barres de navigation flottantes).
 - **Élévation 3 (Modale)** : `bg-base-100` avec anneau de bordure subtil `border border-base-300/40` ou `outline-variant`.
 
 > **Interdiction formelle** : Les ombres portées agressives (`shadow-lg`, `shadow-2xl`, ombres noires floues) sont prohibées. Utiliser au maximum `shadow-xs` ou `shadow-sm` combiné à une variation de couleur de surface pour marquer le relief.
@@ -100,12 +100,6 @@ Ce volet applique les spécifications du skill `responsive-adaptive-ui`, inspir�
 - **Surface tactile minimale** : 44×44 pixels obligatoires pour tout élément interactif. Sur mobile tactile, les boutons d'action clés (pointage, validation) occupent une hauteur minimale de 56dp. Sur desktop (souris/pointeur), la hauteur minimale est de 48dp.
 - **Affordance tactile** : Tout bouton ou carte interactive intègre un feedback au toucher (`active:scale-95 transition-transform duration-150`).
 - **Marges matérielles (Safe Areas)** : Tout conteneur d'en-tête ou de pied de page applique les variables d'encoche matérielles (`env(safe-area-inset-top)`, `env(safe-area-inset-bottom)`).
-
-### Composant Player Bar persistant
-Le Player Bar (barre de statut audio/pointage) adopte trois morphologies distinctes :
-1. **Mini Pill (Mobile)** : Pastille flottante compacte ancrée au-dessus de la Bottom Navigation, accessible au pouce.
-2. **Desktop Bar (Grand écran)** : Barre horizontale ancrée en bas de page couvrant toute la largeur avec commandes déployées.
-3. **Full View (Plein écran)** : Feuille modale immersive déroulée par glissement vertical.
 
 ---
 

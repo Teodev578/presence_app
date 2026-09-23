@@ -15,7 +15,7 @@ Ce document cartographie les compétences agentiques (skills) autorisées et mob
 - `tdd` : méthodologie d'implémentation guidée par les tests (red-green-refactor).
 
 ### 2. Design Visuel, UI, Ergonomie & Animation
-- `responsive-adaptive-ui` : design system adaptatif inspiré d'Encore pour grilles, navigation adaptative, Player Bar sous 3 formes, seuils de bascule (600px, 840px, 1200px) et cibles tactiles 44px (56dp mobile).
+- `responsive-adaptive-ui` : design system adaptatif inspiré d'Encore pour grilles, navigation adaptative, seuils de bascule (600px, 840px, 1200px) et cibles tactiles 44px (56dp mobile).
 - `ui-ux-pro-max` : conception visuelle, tokens de surface Material 3, composants DaisyUI v5 et conformité WCAG AA.
 - `vue-animation` : orchestration de transitions légères Vue 3 (`<Transition>`) accélérées par GPU (`transform`/`opacity`) sans saccade.
 

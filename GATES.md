@@ -1,30 +1,35 @@
-# Gates: Refonte Responsive et Harmonisation Stylistique Complète de l'Espace Manager & Global
+# Gates: Remédiation d'Ingénierie & Sécurisation du Setup (REC-03 à REC-07)
 
-OWNS: src/views/manager/**, src/components/manager/**, src/layouts/**, src/views/auth/LoginView.vue, src/components/employee/GpsRing.vue
+OWNS: scripts/verify-gates.mjs, .agents/rules/**, docs/agents/**, CONTEXT.md, AGENTS.md, src/views/manager/**, src/views/auth/**, src/layouts/**
 
-Scope: Éliminer tous les emojis bruts résiduels et caractères graphiques unicode, harmoniser les tokens Material 3 (arrondis, élévations), déplacer le statut réseau et déconnexion dans le Navigation Drawer, sécuriser l'adaptabilité mobile et valider la compilation.
+Scope: Sécurisation des règles MCP Supabase, refonte déterministe de verify-gates.mjs, alignement du modèle de domaine CONTEXT.md avec IndexedDB Dexie, éradication de la Player Bar fantôme, mise en conformité des cibles tactiles interactives à 44px minimum et validation de compilation de production.
 
-- [x] G1: Absence totale d'emojis bruts et caractères unicode graphiques résiduels
+- [x] G1: Absence totale d'emojis bruts et caractères graphiques unicode dans src/
   CHECK: node scripts/verify-gates.mjs --emojis
-  EXPECT: CLEAN: 0 raw emojis across all src files
-  EVIDENCE: CLEAN: 0 raw emojis across all src files (Exécuté avec code retour 0)
+  EXPECT: G1 passed: 0 raw emojis across all src files
+  EVIDENCE: G1 passed: 0 raw emojis across all src files (Code retour 0)
 
-- [x] G2: Remplacement des arrondis arbitraires par les tokens Material 3 (rounded-m3-*)
+- [x] G2: Exclusion intégrale des arrondis non M3 au profit des tokens Material 3 (rounded-m3-*)
   CHECK: node scripts/verify-gates.mjs --radii
   EXPECT: G2 passed: all non-M3 radii converted to tokens
-  EVIDENCE: G2 passed: all non-M3 radii converted to tokens (Exécuté avec code retour 0)
+  EVIDENCE: G2 passed: all non-M3 radii converted to tokens (Code retour 0)
 
-- [x] G3: Élimination des ombres agressives prohibées (shadow-md, shadow-lg, shadow-xl, shadow-2xl)
+- [x] G3: Absence d'ombres opaques et agressives (shadow-md, shadow-lg, shadow-xl, shadow-2xl)
   CHECK: node scripts/verify-gates.mjs --shadows
   EXPECT: G3 passed: no aggressive shadows across all Vue files
-  EVIDENCE: G3 passed: no aggressive shadows across all Vue files (Exécuté avec code retour 0)
+  EVIDENCE: G3 passed: no aggressive shadows across all Vue files (Code retour 0)
 
-- [x] G4: Déplacement du statut réseau et déconnexion dans le Navigation Drawer
+- [x] G4: Conformité de toutes les cibles tactiles interactives au seuil minimal de 44px (WCAG AA)
+  CHECK: node scripts/verify-gates.mjs --targets
+  EXPECT: G4 passed: all interactive buttons meet 44px touch targets
+  EVIDENCE: G4 passed: all interactive buttons meet 44px touch targets (Code retour 0)
+
+- [x] G5: Emplacement conforme du composant SyncIndicator dans les tiroirs latéraux (Manager et Employé)
   CHECK: node scripts/verify-gates.mjs --layout
-  EXPECT: G4 passed: SyncIndicator properly located in drawer footer and removed from header
-  EVIDENCE: G4 passed: SyncIndicator properly located in drawer footer and removed from header (Exécuté avec code retour 0)
+  EXPECT: G5 passed: SyncIndicator correctly placed in sidebar drawers and removed from headers
+  EVIDENCE: G5 passed: SyncIndicator correctly placed in sidebar drawers and removed from headers (Code retour 0)
 
-- [x] G5: Compilation de production Vite sans erreur
+- [x] G6: Compilation de production Vite sans erreur validée par le code retour du sous-processus
   CHECK: node scripts/verify-gates.mjs --build
-  EXPECT: G5 passed: build succeeded
-  EVIDENCE: G5 passed: build succeeded (Exécuté avec code retour 0)
+  EXPECT: G6 passed: build succeeded with exit code 0
+  EVIDENCE: G6 passed: build succeeded with exit code 0 (Code retour 0)

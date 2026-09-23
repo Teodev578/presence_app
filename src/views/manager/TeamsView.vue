@@ -121,7 +121,7 @@ const archiveTeam = async (team) => {
           </div>
           <button
             type="button"
-            class="btn btn-ghost btn-circle btn-xs text-error min-w-8 min-h-8"
+            class="btn btn-ghost btn-circle btn-sm text-error min-w-11 min-h-11"
             title="Archiver l'équipe"
             aria-label="Archiver l'équipe"
             @click="archiveTeam(team)"

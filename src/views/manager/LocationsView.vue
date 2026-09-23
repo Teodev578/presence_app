@@ -273,7 +273,7 @@ const handleDelete = async (loc) => {
           <div class="join">
             <button
               type="button"
-              class="btn btn-xs join-item rounded-l-m3-sm"
+              class="btn btn-sm join-item min-h-11 px-3 rounded-l-m3-sm"
               :class="{ 'btn-primary': filterStatus === 'all' }"
               @click="filterStatus = 'all'"
             >
@@ -281,7 +281,7 @@ const handleDelete = async (loc) => {
             </button>
             <button
               type="button"
-              class="btn btn-xs join-item"
+              class="btn btn-sm join-item min-h-11 px-3"
               :class="{ 'btn-primary': filterStatus === 'active' }"
               @click="filterStatus = 'active'"
             >
@@ -289,7 +289,7 @@ const handleDelete = async (loc) => {
             </button>
             <button
               type="button"
-              class="btn btn-xs join-item rounded-r-m3-sm"
+              class="btn btn-sm join-item min-h-11 px-3 rounded-r-m3-sm"
               :class="{ 'btn-primary': filterStatus === 'inactive' }"
               @click="filterStatus = 'inactive'"
             >
@@ -373,7 +373,7 @@ const handleDelete = async (loc) => {
         <div class="flex items-center justify-end gap-2 mt-4 pt-3 border-t border-base-200">
           <button
             type="button"
-            class="btn btn-ghost btn-xs text-error font-medium rounded-m3-sm"
+            class="btn btn-ghost btn-sm text-error font-medium rounded-m3-sm min-h-11 px-3"
             @click="handleDelete(loc)"
             title="Supprimer ce site"
           >
@@ -381,10 +381,10 @@ const handleDelete = async (loc) => {
           </button>
           <button
             type="button"
-            class="btn btn-secondary btn-outline btn-xs font-semibold rounded-m3-sm gap-1"
+            class="btn btn-secondary btn-outline btn-sm font-semibold rounded-m3-sm gap-1.5 min-h-11 px-3"
             @click="openEditModal(loc)"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
             </svg>

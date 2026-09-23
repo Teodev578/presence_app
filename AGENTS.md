@@ -1,4 +1,4 @@
-# Directives Agentiques — PresenceApp
+# Directives Agentiques : PresenceApp
 
 Ce fichier définit les invariants opérationnels et le cadre d'exécution pour tout agent intervenant sur ce dépôt.
 
@@ -36,7 +36,7 @@ Le répertoire `.agents/` héberge les directives et compétences modulaires pou
 - `.agents/skills/` : Protocoles procéduraux déclenchés sur demande ou selon le besoin technique. Le périmètre des compétences actives et inactives est consigné dans [`.agents/skills-scope.md`](.agents/skills-scope.md).
   - Déclencheur discipline & grand livre (`unlazy`) : invoquer obligatoirement avant toute intervention substantielle, refactoring transverse ou correctif multi-fichiers pour établir et prouver les gates d'acceptation dans `GATES.md`.
   - Déclencheur communication & prose (`stop-slop`) : invoquer pour tout texte rédigé, commentaire de code, documentation ou réponse utilisateur afin de bannir le jargon artificiel, les adverbes superflus et les tirets cadratins.
-  - Déclencheur responsive & adaptatif (`responsive-adaptive-ui`) : invoquer pour tout composant Card/List Item/Grid, toute navigation (Bottom Nav, Sidebar), le Player Bar sous ses 3 formes, les règles de breakpoints (600px, 840px, 1200px), de zones tactiles (44x44px min / 56dp mobile) et de typographie fluide.
+  - Déclencheur responsive & adaptatif (`responsive-adaptive-ui`) : invoquer pour tout composant Card/List Item/Grid, toute navigation (Bottom Nav, Sidebar), les règles de breakpoints (600px, 840px, 1200px), de zones tactiles (44x44px min / 56dp mobile) et de typographie fluide.
   - Déclencheur UI/UX & Design System (`ui-ux-pro-max`) : invoquer pour tout nouveau composant graphique, refonte d'écran ou définition de tokens/layouts M3.
   - Déclencheur animations fluides (`vue-animation`) : invoquer lors de l'implémentation de transitions de routes, volets ou feedbacks tactiles accélérés GPU.
   - Déclencheur hygiène (`code-hygiene`) : invoquer lors des revues de code, des nettoyages post-implémentation ou avant validation d'un composant/module.
