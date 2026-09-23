@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, h } from 'vue'
 import { useRouter } from '../../router'
 import { supabase } from '../../lib/supabase'
 import { useLocations } from '../../composables/useLocations'
@@ -8,6 +8,45 @@ import StatusBadge from '../../components/shared/StatusBadge.vue'
 
 const { navigate } = useRouter()
 const { locations, ensureLoaded: loadLocations } = useLocations()
+
+const createIcon = (paths) => () =>
+  h(
+    'svg',
+    {
+      xmlns: 'http://www.w3.org/2000/svg',
+      viewBox: '0 0 24 24',
+      fill: 'none',
+      stroke: 'currentColor',
+      strokeWidth: '2',
+      strokeLinecap: 'round',
+      strokeLinejoin: 'round',
+      class: 'w-5 h-5 shrink-0',
+    },
+    paths.map(([tag, attrs]) => h(tag, attrs))
+  )
+
+const iconUsers = createIcon([
+  ['path', { d: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2' }],
+  ['circle', { cx: '9', cy: '7', r: '4' }],
+  ['path', { d: 'M23 21v-2a4 4 0 0 0-3-3.87' }],
+  ['path', { d: 'M16 3.13a4 4 0 0 1 0 7.75' }],
+])
+
+const iconCheck = createIcon([
+  ['path', { d: 'M22 11.08V12a10 10 0 1 1-5.93-9.14' }],
+  ['polyline', { points: '22 4 12 14.01 9 11.01' }],
+])
+
+const iconClockAlert = createIcon([
+  ['circle', { cx: '12', cy: '12', r: '10' }],
+  ['polyline', { points: '12 6 12 12 16 14' }],
+])
+
+const iconAlertTriangle = createIcon([
+  ['path', { d: 'M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z' }],
+  ['line', { x1: '12', y1: '9', x2: '12', y2: '13' }],
+  ['line', { x1: '12', y1: '17', x2: '12.01', y2: '17' }],
+])
 
 const todayStr = new Date().toISOString().slice(0, 10)
 const loading = ref(true)
@@ -78,15 +117,18 @@ const formatTime = (iso) => {
       <div class="flex items-center gap-2">
         <button
           type="button"
-          class="btn btn-outline btn-sm rounded-xl font-bold gap-1.5"
+          class="btn btn-outline btn-sm rounded-m3-sm font-bold gap-1.5"
           @click="navigate('/manager/locations')"
         >
-          <span>📍</span>
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+            <circle cx="12" cy="10" r="3"></circle>
+          </svg>
           <span>Sites autorisés ({{ activeLocationsCount }})</span>
         </button>
         <button
           type="button"
-          class="btn btn-primary btn-sm rounded-xl font-bold shadow-xs"
+          class="btn btn-primary btn-sm rounded-m3-sm font-bold shadow-xs"
           @click="navigate('/manager/presences')"
         >
           Voir tous les pointages →
@@ -99,35 +141,35 @@ const formatTime = (iso) => {
       <StatCard
         title="Effectif Actif"
         :value="totalEmployees"
-        icon="👥"
+        :icon="iconUsers"
         subtitle="Employés enregistrés"
         color="blue"
       />
       <StatCard
         title="Présents à l'heure"
         :value="onTimeCount"
-        icon="✅"
+        :icon="iconCheck"
         subtitle="Pointages conformes"
         color="green"
       />
       <StatCard
         title="Retards signalés"
         :value="lateCount"
-        icon="⏰"
+        :icon="iconClockAlert"
         subtitle="Arrivée après horaire"
         color="amber"
       />
       <StatCard
         title="Non pointés / Absents"
         :value="absentCount"
-        icon="⚠️"
+        :icon="iconAlertTriangle"
         subtitle="En attente de pointage"
         color="red"
       />
     </div>
 
     <!-- Derniers pointages récents (DaisyUI Card & Table) -->
-    <div class="card bg-base-100 border border-base-300 shadow-xs rounded-2xl overflow-hidden">
+    <div class="card bg-base-100 border border-base-300 shadow-xs rounded-m3-lg overflow-hidden">
       <div class="p-4 sm:p-5 border-b border-base-200 flex items-center justify-between">
         <h3 class="text-sm font-bold text-base-content">Derniers pointages enregistrés aujourd'hui</h3>
         <span class="badge badge-primary badge-sm font-semibold">{{ presencesToday.length }} pointage(s)</span>

@@ -78,7 +78,10 @@ defineProps({
         Acquisition du signal GPS en cours...
       </div>
       <div v-else-if="inPerimeter" class="badge badge-success text-success-content font-bold py-3 px-4 text-xs gap-1.5 rounded-m3-xs">
-        ✓ Position validée (vous êtes sur site)
+        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+        </svg>
+        <span>Position validée (vous êtes sur site)</span>
       </div>
       <div v-else class="text-sm font-medium text-error">
         Distance au site : <strong>{{ distance }} m</strong> (limite : {{ allowedRadius }} m)

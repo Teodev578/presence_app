@@ -93,22 +93,22 @@ const generateCSV = async () => {
     </div>
 
     <!-- Carte de configuration de l'export DaisyUI -->
-    <div class="card bg-base-100 border border-base-300 shadow-xs rounded-2xl p-6 flex flex-col gap-5">
+    <div class="card bg-base-100 border border-base-300 shadow-xs rounded-m3-lg p-5 sm:p-6 flex flex-col gap-5">
       <h3 class="text-base font-bold text-base-content">Paramètres de la période</h3>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div class="fieldset">
           <label for="exp-start" class="fieldset-legend text-xs font-semibold text-base-content/70">Date de début :</label>
-          <input id="exp-start" v-model="startDate" type="date" class="input input-bordered input-sm rounded-lg w-full" />
+          <input id="exp-start" v-model="startDate" type="date" class="input input-bordered input-sm rounded-m3-sm w-full" />
         </div>
 
         <div class="fieldset">
           <label for="exp-end" class="fieldset-legend text-xs font-semibold text-base-content/70">Date de fin :</label>
-          <input id="exp-end" v-model="endDate" type="date" class="input input-bordered input-sm rounded-lg w-full" />
+          <input id="exp-end" v-model="endDate" type="date" class="input input-bordered input-sm rounded-m3-sm w-full" />
         </div>
       </div>
 
-      <div class="bg-base-200/60 border border-base-200 rounded-xl p-4 flex flex-col gap-2 text-xs text-base-content/80">
+      <div class="bg-base-200/60 border border-base-200 rounded-m3-md p-4 flex flex-col gap-2 text-xs text-base-content/80">
         <div class="flex justify-between items-center">
           <span class="text-base-content/60">Format de fichier :</span>
           <strong class="text-base-content">CSV (UTF-8 avec BOM, séparateur ;)</strong>
@@ -119,19 +119,29 @@ const generateCSV = async () => {
         </div>
       </div>
 
-      <div v-if="exportCount !== null" class="alert alert-success text-xs py-2.5 rounded-xl">
-        ✓ Export réussi : <strong>{{ exportCount }}</strong> ligne(s) exportée(s).
+      <div v-if="exportCount !== null" class="alert alert-success text-xs py-2.5 rounded-m3-md flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        <span>Export réussi : <strong>{{ exportCount }}</strong> ligne(s) exportée(s).</span>
       </div>
 
       <button
         type="button"
-        class="btn btn-primary w-full text-base font-bold min-h-12 shadow-md rounded-xl mt-1 active:scale-98 transition-transform"
+        class="btn btn-primary w-full text-base font-bold min-h-12 shadow-xs rounded-m3-md mt-1 active:scale-98 transition-transform gap-2"
         :disabled="isExporting"
         @click="generateCSV"
       >
         <span v-if="isExporting" class="loading loading-spinner loading-sm"></span>
         <span v-if="isExporting">Génération en cours...</span>
-        <span v-else>📥 Télécharger l'export CSV</span>
+        <template v-else>
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span>Télécharger l'export CSV</span>
+        </template>
       </button>
     </div>
   </div>

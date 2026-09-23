@@ -69,22 +69,28 @@ const archiveTeam = async (team) => {
     </div>
 
     <!-- Formulaire d'ajout rapide DaisyUI -->
-    <div class="card bg-base-100 border border-base-300 shadow-xs p-4 rounded-2xl flex flex-row items-center gap-3">
+    <div class="card bg-base-100 border border-base-300 shadow-xs p-4 rounded-m3-lg flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
       <input
         v-model="newTeamName"
         type="text"
         placeholder="Nom de la nouvelle équipe (ex: Chantier Nord, Pôle Technique)..."
-        class="input input-bordered input-sm rounded-lg flex-1 text-sm"
+        class="input input-bordered input-sm rounded-m3-sm flex-1 text-sm"
         @keyup.enter="handleCreateTeam"
       />
       <button
         type="button"
-        class="btn btn-primary btn-sm rounded-lg font-bold gap-1"
+        class="btn btn-primary btn-sm rounded-m3-sm font-bold gap-1.5 shadow-xs"
         :disabled="!newTeamName.trim() || isCreating"
         @click="handleCreateTeam"
       >
         <span v-if="isCreating" class="loading loading-spinner loading-xs"></span>
-        <span v-else>+ Créer l'équipe</span>
+        <template v-else>
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          <span>Créer l'équipe</span>
+        </template>
       </button>
     </div>
 
@@ -101,21 +107,29 @@ const archiveTeam = async (team) => {
       <div
         v-for="team in teams"
         :key="team.id"
-        class="card bg-base-100 border border-base-300 shadow-xs rounded-2xl p-5 flex flex-col gap-3"
+        class="card bg-base-100 border border-base-300 shadow-xs rounded-m3-lg p-5 flex flex-col gap-3"
       >
         <div class="flex items-center justify-between border-b border-base-200 pb-3">
           <div class="flex items-center gap-2">
-            <span class="text-xl">🏢</span>
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
+              <line x1="9" y1="22" x2="9" y2="2"></line>
+              <line x1="15" y1="22" x2="15" y2="2"></line>
+              <line x1="4" y1="12" x2="20" y2="12"></line>
+            </svg>
             <h3 class="font-bold text-base text-base-content">{{ team.name }}</h3>
           </div>
           <button
             type="button"
-            class="btn btn-ghost btn-circle btn-xs text-error"
+            class="btn btn-ghost btn-circle btn-xs text-error min-w-8 min-h-8"
             title="Archiver l'équipe"
             aria-label="Archiver l'équipe"
             @click="archiveTeam(team)"
           >
-            🗑️
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
           </button>
         </div>
 
@@ -128,9 +142,13 @@ const archiveTeam = async (team) => {
             <span
               v-for="m in team.profiles"
               :key="m.id"
-              class="badge badge-ghost badge-sm text-xs"
+              class="badge badge-ghost badge-sm text-xs rounded-m3-xs gap-1"
             >
-              👤 {{ m.full_name }}
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 text-base-content/60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+              <span>{{ m.full_name }}</span>
             </span>
           </div>
           <div v-else class="text-xs text-base-content/50 italic mt-2">

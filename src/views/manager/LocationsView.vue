@@ -219,8 +219,13 @@ const handleDelete = async (loc) => {
     <!-- En-tête -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
-        <h1 class="text-2xl font-black tracking-tight text-base-content flex items-center gap-2">
-          <span>📍</span>
+        <h1 class="text-2xl font-black tracking-tight text-base-content flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-m3-sm bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+              <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+          </div>
           <span>Gestion des Sites & Lieux</span>
         </h1>
         <p class="text-xs text-base-content/60 mt-0.5">
@@ -231,22 +236,28 @@ const handleDelete = async (loc) => {
       <div>
         <button
           type="button"
-          class="btn btn-primary rounded-xl font-bold shadow-xs flex items-center gap-2"
+          class="btn btn-primary rounded-m3-sm font-bold shadow-xs flex items-center gap-2"
           @click="openCreateModal"
         >
-          <span>➕</span>
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
           <span>Nouveau Site</span>
         </button>
       </div>
     </div>
 
     <!-- Filtres et recherche -->
-    <div class="card bg-base-100 border border-base-300 shadow-xs rounded-2xl p-4">
+    <div class="card bg-base-100 border border-base-300 shadow-xs rounded-m3-lg p-4">
       <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
         <!-- Recherche -->
         <div class="w-full sm:w-80">
-          <label class="input input-bordered input-sm flex items-center gap-2 rounded-xl bg-base-200/50">
-            <span class="text-base-content/50">🔍</span>
+          <label class="input input-bordered input-sm flex items-center gap-2 rounded-m3-md bg-base-200/50">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-base-content/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
             <input
               v-model="searchQuery"
               type="text"
@@ -262,7 +273,7 @@ const handleDelete = async (loc) => {
           <div class="join">
             <button
               type="button"
-              class="btn btn-xs join-item rounded-l-xl"
+              class="btn btn-xs join-item rounded-l-m3-sm"
               :class="{ 'btn-primary': filterStatus === 'all' }"
               @click="filterStatus = 'all'"
             >
@@ -278,7 +289,7 @@ const handleDelete = async (loc) => {
             </button>
             <button
               type="button"
-              class="btn btn-xs join-item rounded-r-xl"
+              class="btn btn-xs join-item rounded-r-m3-sm"
               :class="{ 'btn-primary': filterStatus === 'inactive' }"
               @click="filterStatus = 'inactive'"
             >
@@ -290,8 +301,13 @@ const handleDelete = async (loc) => {
     </div>
 
     <!-- Liste des sites -->
-    <div v-if="filteredLocations.length === 0" class="card bg-base-100 border border-base-300 rounded-2xl p-8 text-center">
-      <span class="text-4xl select-none mb-2">📍</span>
+    <div v-if="filteredLocations.length === 0" class="card bg-base-100 border border-base-300 rounded-m3-lg p-8 text-center items-center">
+      <div class="w-12 h-12 rounded-full bg-base-200 flex items-center justify-center text-base-content/40 mb-3">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+          <circle cx="12" cy="10" r="3"></circle>
+        </svg>
+      </div>
       <h3 class="font-bold text-base text-base-content">Aucun site trouvé</h3>
       <p class="text-xs text-base-content/60 mt-1 max-w-sm mx-auto">
         {{ searchQuery ? 'Aucun résultat ne correspond à votre recherche.' : 'Créez votre premier site pour autoriser le pointage géolocalisé.' }}
@@ -300,7 +316,7 @@ const handleDelete = async (loc) => {
         <button
           v-if="!searchQuery"
           type="button"
-          class="btn btn-primary btn-sm rounded-xl"
+          class="btn btn-primary btn-sm rounded-m3-sm"
           @click="openCreateModal"
         >
           Créer un site
@@ -312,17 +328,22 @@ const handleDelete = async (loc) => {
       <div
         v-for="loc in filteredLocations"
         :key="loc.id"
-        class="card bg-base-100 border border-base-300 shadow-xs hover:border-primary/40 transition-all rounded-2xl p-5 flex flex-col justify-between"
+        class="card bg-base-100 border border-base-300 shadow-xs hover:border-primary/40 transition-all rounded-m3-lg p-5 flex flex-col justify-between"
       >
         <div class="flex flex-col gap-3">
           <!-- Titre & Statut -->
           <div class="flex items-start justify-between gap-2">
             <div class="flex items-center gap-2 min-w-0">
-              <span class="text-xl shrink-0">🏢</span>
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
+                <line x1="9" y1="22" x2="9" y2="2"></line>
+                <line x1="15" y1="22" x2="15" y2="2"></line>
+                <line x1="4" y1="12" x2="20" y2="12"></line>
+              </svg>
               <h3 class="font-bold text-sm text-base-content truncate">{{ loc.name }}</h3>
             </div>
             <span
-              class="badge badge-sm shrink-0 font-semibold cursor-pointer"
+              class="badge badge-sm shrink-0 font-semibold cursor-pointer rounded-m3-xs"
               :class="loc.is_active ? 'badge-success text-success-content' : 'badge-ghost text-base-content/50'"
               @click="toggleStatus(loc)"
               title="Cliquer pour changer le statut"
@@ -332,7 +353,7 @@ const handleDelete = async (loc) => {
           </div>
 
           <!-- Détails Coordonnées & Rayon -->
-          <div class="bg-base-200/60 rounded-xl p-3 flex flex-col gap-1.5 text-xs text-base-content/80 font-mono">
+          <div class="bg-base-200/60 rounded-m3-md p-3 flex flex-col gap-1.5 text-xs text-base-content/80 font-mono">
             <div class="flex items-center justify-between">
               <span class="text-base-content/50">Latitude :</span>
               <span class="font-semibold">{{ Number(loc.latitude).toFixed(5) }}°</span>
@@ -352,7 +373,7 @@ const handleDelete = async (loc) => {
         <div class="flex items-center justify-end gap-2 mt-4 pt-3 border-t border-base-200">
           <button
             type="button"
-            class="btn btn-ghost btn-xs text-error font-medium rounded-lg"
+            class="btn btn-ghost btn-xs text-error font-medium rounded-m3-sm"
             @click="handleDelete(loc)"
             title="Supprimer ce site"
           >
@@ -360,10 +381,14 @@ const handleDelete = async (loc) => {
           </button>
           <button
             type="button"
-            class="btn btn-secondary btn-outline btn-xs font-semibold rounded-lg"
+            class="btn btn-secondary btn-outline btn-xs font-semibold rounded-m3-sm gap-1"
             @click="openEditModal(loc)"
           >
-            Modifier ✏️
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            <span>Modifier</span>
           </button>
         </div>
       </div>
@@ -371,24 +396,40 @@ const handleDelete = async (loc) => {
 
     <!-- Modal d'Ajout / Édition -->
     <dialog class="modal" :class="{ 'modal-open': isModalOpen }">
-      <div class="modal-box rounded-3xl max-w-md p-6 bg-base-100 border border-base-300 shadow-2xl">
+      <div class="modal-box rounded-m3-xl max-w-md p-5 sm:p-6 bg-base-100 border border-base-300 shadow-sm">
         <div class="flex items-center justify-between mb-4 pb-2 border-b border-base-200">
           <h3 class="font-black text-lg text-base-content flex items-center gap-2">
-            <span>{{ isEditing ? '✏️' : '📍' }}</span>
+            <svg v-if="isEditing" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+              <circle cx="12" cy="10" r="3"></circle>
+            </svg>
             <span>{{ isEditing ? 'Modifier le site' : 'Ajouter un nouveau site' }}</span>
           </h3>
           <button
             type="button"
             class="btn btn-sm btn-circle btn-ghost"
+            aria-label="Fermer la modale"
             @click="closeModal"
           >
-            ✕
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
           </button>
         </div>
 
         <!-- Message d'erreur -->
-        <div v-if="formError" class="alert alert-error text-xs py-2.5 rounded-xl mb-4 text-error-content">
-          <span>⚠️ {{ formError }}</span>
+        <div v-if="formError" class="alert alert-error text-xs py-2.5 rounded-m3-md mb-4 text-error-content flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <span>{{ formError }}</span>
         </div>
 
         <form class="flex flex-col gap-4" @submit.prevent="handleSubmit">
@@ -400,25 +441,27 @@ const handleDelete = async (loc) => {
             <input
               v-model="form.name"
               type="text"
-              class="input input-bordered rounded-xl text-sm"
+              class="input input-bordered rounded-m3-md text-sm"
               placeholder="ex: Siège social, Chantier Alpha, Dépôt..."
               required
             />
           </div>
 
           <!-- Assistant de localisation rapide -->
-          <div class="bg-base-200/60 p-3 rounded-2xl flex flex-col gap-2.5">
+          <div class="bg-base-200/60 p-3 rounded-m3-lg flex flex-col gap-2.5">
             <span class="text-xs font-bold text-base-content/70">Assistant de localisation</span>
 
             <!-- Bouton GPS actuel -->
             <button
               type="button"
-              class="btn btn-sm btn-outline btn-primary rounded-xl font-bold flex items-center justify-center gap-2"
+              class="btn btn-sm btn-outline btn-primary rounded-m3-sm font-bold flex items-center justify-center gap-2"
               :disabled="isLocating"
               @click="useCurrentLocation"
             >
               <span v-if="isLocating" class="loading loading-spinner loading-xs"></span>
-              <span v-else>📡</span>
+              <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
+              </svg>
               <span>Détecter ma position actuelle</span>
             </button>
 
@@ -428,7 +471,7 @@ const handleDelete = async (loc) => {
                 <input
                   v-model="addressQuery"
                   type="text"
-                  class="input input-bordered input-sm rounded-xl text-xs"
+                  class="input input-bordered input-sm rounded-m3-md text-xs"
                   placeholder="Rechercher une adresse (France)..."
                   @input="onAddressInput"
                 />
@@ -437,7 +480,7 @@ const handleDelete = async (loc) => {
               <!-- Liste déroulante des suggestions -->
               <ul
                 v-if="addressSuggestions.length > 0"
-                class="menu absolute z-50 bg-base-100 border border-base-300 rounded-xl shadow-lg w-full mt-1 p-1 text-xs"
+                class="menu absolute z-50 bg-base-100 border border-base-300 rounded-m3-md shadow-xs w-full mt-1 p-1 text-xs"
               >
                 <li v-for="(sug, idx) in addressSuggestions" :key="idx">
                   <button
@@ -463,7 +506,7 @@ const handleDelete = async (loc) => {
                 v-model.number="form.latitude"
                 type="number"
                 step="0.000001"
-                class="input input-bordered rounded-xl text-xs font-mono"
+                class="input input-bordered rounded-m3-md text-xs font-mono"
                 placeholder="48.8566"
                 required
               />
@@ -476,7 +519,7 @@ const handleDelete = async (loc) => {
                 v-model.number="form.longitude"
                 type="number"
                 step="0.000001"
-                class="input input-bordered rounded-xl text-xs font-mono"
+                class="input input-bordered rounded-m3-md text-xs font-mono"
                 placeholder="2.3522"
                 required
               />
@@ -511,7 +554,7 @@ const handleDelete = async (loc) => {
               <input
                 v-model="form.is_active"
                 type="checkbox"
-                class="checkbox checkbox-primary checkbox-sm rounded-lg"
+                class="checkbox checkbox-primary checkbox-sm rounded-m3-xs"
               />
               <span class="label-text font-semibold text-xs text-base-content">
                 Site actif pour le pointage
@@ -523,7 +566,7 @@ const handleDelete = async (loc) => {
           <div class="modal-action mt-4 pt-3 border-t border-base-200">
             <button
               type="button"
-              class="btn btn-ghost btn-sm rounded-xl font-medium"
+              class="btn btn-ghost btn-sm rounded-m3-sm font-medium"
               :disabled="isSubmitting"
               @click="closeModal"
             >
@@ -531,7 +574,7 @@ const handleDelete = async (loc) => {
             </button>
             <button
               type="submit"
-              class="btn btn-primary btn-sm rounded-xl font-bold shadow-xs"
+              class="btn btn-primary btn-sm rounded-m3-sm font-bold shadow-xs"
               :disabled="isSubmitting"
             >
               <span v-if="isSubmitting" class="loading loading-spinner loading-xs"></span>

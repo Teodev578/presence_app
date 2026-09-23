@@ -101,10 +101,12 @@ const handleLogout = async () => {
             <!-- Bouton de fermeture -->
             <label
               for="employee-drawer"
-              class="btn btn-ghost btn-circle btn-xs text-base-content/60 hover:text-base-content cursor-pointer shrink-0"
+              class="btn btn-ghost btn-circle btn-sm text-base-content/60 hover:text-base-content cursor-pointer shrink-0"
               aria-label="Fermer le menu"
             >
-              ✕
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </label>
           </div>
 

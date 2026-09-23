@@ -105,19 +105,23 @@ const getActualPresence = (userId, dayNumber) => {
       </div>
 
       <!-- Navigation temporelle DaisyUI -->
-      <div class="card bg-base-100 border border-base-300 shadow-xs flex-row items-center gap-3 p-2 rounded-2xl">
-        <button type="button" class="btn btn-circle btn-ghost btn-sm text-base" aria-label="Semaine précédente" @click="prevWeek">
-          ←
+      <div class="card bg-base-100 border border-base-300 shadow-xs flex-row items-center gap-2 p-1.5 rounded-m3-md">
+        <button type="button" class="btn btn-circle btn-ghost btn-sm" aria-label="Semaine précédente" @click="prevWeek">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
         </button>
         <span class="text-xs font-bold text-base-content px-2">{{ formatWeekLabel(selectedWeekStart) }}</span>
-        <button type="button" class="btn btn-circle btn-ghost btn-sm text-base" aria-label="Semaine suivante" @click="nextWeek">
-          →
+        <button type="button" class="btn btn-circle btn-ghost btn-sm" aria-label="Semaine suivante" @click="nextWeek">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
         </button>
       </div>
     </div>
 
     <!-- Tableau croisé matriciel DaisyUI -->
-    <div class="card bg-base-100 border border-base-300 shadow-xs rounded-2xl overflow-hidden">
+    <div class="card bg-base-100 border border-base-300 shadow-xs rounded-m3-lg overflow-hidden">
       <div v-if="loading" class="p-8 text-center text-sm text-base-content/60 flex items-center justify-center gap-2">
         <span class="loading loading-spinner loading-sm text-primary"></span>
         Chargement de la grille d'équipe...
@@ -141,14 +145,14 @@ const getActualPresence = (userId, dayNumber) => {
               <td>
                 <div class="flex flex-col">
                   <strong class="text-sm font-bold text-base-content">{{ emp.full_name }}</strong>
-                  <span class="badge badge-ghost badge-xs w-fit mt-0.5">{{ emp.teams?.name || 'Sans équipe' }}</span>
+                  <span class="badge badge-ghost badge-xs w-fit mt-0.5 rounded-m3-xs">{{ emp.teams?.name || 'Sans équipe' }}</span>
                 </div>
               </td>
 
               <td v-for="d in daysHeader" :key="d.id" class="text-center">
                 <div v-if="getAvailability(emp.id, d.id)" class="inline-flex flex-col items-center gap-1">
                   <span
-                    class="badge badge-sm font-semibold"
+                    class="badge badge-sm font-semibold rounded-m3-xs gap-1"
                     :class="[
                       getActualPresence(emp.id, d.id)
                         ? 'badge-success text-success-content'
@@ -157,7 +161,10 @@ const getActualPresence = (userId, dayNumber) => {
                           : 'badge-info badge-outline'
                     ]"
                   >
-                    ✓ Dispo
+                    <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>Dispo</span>
                   </span>
                   <span
                     v-if="getActualPresence(emp.id, d.id)"

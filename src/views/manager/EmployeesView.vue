@@ -103,7 +103,7 @@ const archiveEmployee = async (emp) => {
     </div>
 
     <!-- Tableau DaisyUI -->
-    <div class="card bg-base-100 border border-base-300 shadow-xs rounded-2xl overflow-hidden">
+    <div class="card bg-base-100 border border-base-300 shadow-xs rounded-m3-lg overflow-hidden">
       <div v-if="loading" class="p-8 text-center text-sm text-base-content/60 flex items-center justify-center gap-2">
         <span class="loading loading-spinner loading-sm text-primary"></span>
         Chargement des profils...
@@ -128,11 +128,11 @@ const archiveEmployee = async (emp) => {
               <td class="font-bold text-sm text-base-content">{{ emp.full_name }}</td>
               <td class="text-xs text-base-content/60">{{ emp.email }}</td>
               <td>
-                <span class="badge badge-ghost badge-sm">{{ emp.teams?.name || 'Non assigné' }}</span>
+                <span class="badge badge-ghost badge-sm rounded-m3-xs">{{ emp.teams?.name || 'Non assigné' }}</span>
               </td>
               <td>
                 <span
-                  class="badge badge-sm font-semibold capitalize"
+                  class="badge badge-sm font-semibold capitalize rounded-m3-xs"
                   :class="{
                     'badge-error text-error-content': emp.role === 'admin',
                     'badge-primary text-primary-content': emp.role === 'manager',
@@ -147,17 +147,26 @@ const archiveEmployee = async (emp) => {
                 <div class="flex items-center gap-1">
                   <button
                     type="button"
-                    class="btn btn-ghost btn-xs text-primary font-semibold"
+                    class="btn btn-ghost btn-xs text-primary font-semibold gap-1 rounded-m3-sm"
                     @click="openEditModal(emp)"
                   >
-                    ✏️ Modifier
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                    <span>Modifier</span>
                   </button>
                   <button
                     type="button"
-                    class="btn btn-ghost btn-xs text-error font-semibold"
+                    class="btn btn-ghost btn-xs text-error font-semibold gap-1 rounded-m3-sm"
                     @click="archiveEmployee(emp)"
                   >
-                    📦 Archiver
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="21 8 21 21 3 21 3 8"></polyline>
+                      <rect x="1" y="3" width="22" height="5"></rect>
+                      <line x1="10" y1="12" x2="14" y2="12"></line>
+                    </svg>
+                    <span>Archiver</span>
                   </button>
                 </div>
               </td>
@@ -169,18 +178,18 @@ const archiveEmployee = async (emp) => {
 
     <!-- Modal d'édition employé DaisyUI -->
     <dialog :class="['modal', { 'modal-open': !!editingEmployee }]">
-      <div class="modal-box rounded-2xl max-w-sm sm:max-w-md p-6 gap-4 flex flex-col">
+      <div class="modal-box rounded-m3-xl max-w-sm sm:max-w-md p-6 gap-4 flex flex-col bg-base-100 border border-base-300 shadow-sm">
         <h3 class="text-base font-bold text-base-content">Modifier le collaborateur</h3>
         <p class="text-xs text-base-content/60">{{ editingEmployee?.email }}</p>
 
         <div class="fieldset">
           <label for="f-name" class="fieldset-legend text-xs font-semibold text-base-content/70">Nom complet :</label>
-          <input id="f-name" v-model="editForm.full_name" type="text" class="input input-bordered input-sm rounded-lg w-full" />
+          <input id="f-name" v-model="editForm.full_name" type="text" class="input input-bordered input-sm rounded-m3-sm w-full" />
         </div>
 
         <div class="fieldset">
           <label for="f-role" class="fieldset-legend text-xs font-semibold text-base-content/70">Rôle d'accès :</label>
-          <select id="f-role" v-model="editForm.role" class="select select-bordered select-sm rounded-lg w-full">
+          <select id="f-role" v-model="editForm.role" class="select select-bordered select-sm rounded-m3-sm w-full">
             <option value="employee">Employé</option>
             <option value="manager">Manager</option>
             <option value="admin">Administrateur</option>
@@ -189,7 +198,7 @@ const archiveEmployee = async (emp) => {
 
         <div class="fieldset">
           <label for="f-team" class="fieldset-legend text-xs font-semibold text-base-content/70">Équipe de rattachement :</label>
-          <select id="f-team" v-model="editForm.team_id" class="select select-bordered select-sm rounded-lg w-full">
+          <select id="f-team" v-model="editForm.team_id" class="select select-bordered select-sm rounded-m3-sm w-full">
             <option value="">Aucune équipe</option>
             <option v-for="t in teams" :key="t.id" :value="t.id">
               {{ t.name }}
@@ -199,14 +208,14 @@ const archiveEmployee = async (emp) => {
 
         <div class="fieldset">
           <label for="f-time" class="fieldset-legend text-xs font-semibold text-base-content/70">Heure d'arrivée attendue :</label>
-          <input id="f-time" v-model="editForm.expected_arrival_time" type="time" class="input input-bordered input-sm rounded-lg w-full" />
+          <input id="f-time" v-model="editForm.expected_arrival_time" type="time" class="input input-bordered input-sm rounded-m3-sm w-full" />
         </div>
 
         <div class="modal-action mt-2">
-          <button type="button" class="btn btn-ghost btn-sm rounded-lg" @click="editingEmployee = null">
+          <button type="button" class="btn btn-ghost btn-sm rounded-m3-sm" @click="editingEmployee = null">
             Annuler
           </button>
-          <button type="button" class="btn btn-primary btn-sm rounded-lg" :disabled="isSaving" @click="saveEmployee">
+          <button type="button" class="btn btn-primary btn-sm rounded-m3-sm font-bold shadow-xs" :disabled="isSaving" @click="saveEmployee">
             <span v-if="isSaving" class="loading loading-spinner loading-xs"></span>
             <span v-else>Enregistrer</span>
           </button>

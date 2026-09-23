@@ -123,11 +123,11 @@ const handleForgotPassword = async () => {
 
 <template>
   <div class="min-h-screen flex items-center justify-center p-4 bg-base-200">
-    <div class="card bg-base-100 shadow-xl border border-base-300 w-full max-w-md">
+    <div class="card bg-base-100 shadow-sm border border-base-300 w-full max-w-md rounded-m3-xl">
       <div class="card-body p-6 sm:p-8 gap-5">
         <!-- Logo vectoriel et En-tête de marque (uniquement sur la connexion / inscription) -->
         <div v-if="!isForgotPassword" class="text-center flex flex-col items-center">
-          <div class="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-xs mb-3">
+          <div class="w-14 h-14 rounded-m3-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-xs mb-3">
             <!-- Horloge / Pointage SVG moderne -->
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -153,7 +153,7 @@ const handleForgotPassword = async () => {
         <!-- Avertissement si le terminal est hors-ligne -->
         <div
           v-if="!isOnline"
-          class="alert alert-warning text-xs py-2.5 px-3 rounded-xl flex items-start gap-2"
+          class="alert alert-warning text-xs py-2.5 px-3 rounded-m3-md flex items-start gap-2"
           role="status"
         >
           <svg
@@ -183,7 +183,7 @@ const handleForgotPassword = async () => {
           <div class="flex items-center justify-between">
             <button
               type="button"
-              class="btn btn-ghost btn-xs gap-1.5 text-base-content/70 hover:text-base-content -ml-2 rounded-lg cursor-pointer"
+              class="btn btn-ghost btn-xs gap-1.5 text-base-content/70 hover:text-base-content -ml-2 rounded-m3-xs cursor-pointer"
               @click="isForgotPassword = false; message = ''; authError = null"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -219,13 +219,13 @@ const handleForgotPassword = async () => {
                 inputmode="email"
                 required
                 placeholder="jean.dupont@exemple.com"
-                class="input input-bordered w-full rounded-xl text-sm focus:outline-none focus:border-primary"
+                class="input input-bordered w-full rounded-m3-sm text-sm focus:outline-none focus:border-primary"
               />
             </fieldset>
 
             <!-- Erreur d'authentification / envoi -->
             <Transition name="alert-fade">
-              <div v-if="authError" class="alert alert-error text-xs py-2.5 rounded-xl flex items-center justify-between gap-2" role="alert">
+              <div v-if="authError" class="alert alert-error text-xs py-2.5 rounded-m3-md flex items-center justify-between gap-2" role="alert">
                 <span>{{ authError }}</span>
                 <button
                   type="button"
@@ -243,7 +243,7 @@ const handleForgotPassword = async () => {
 
             <!-- Message d'information / confirmation -->
             <Transition name="alert-fade">
-              <div v-if="message" class="alert alert-info text-xs py-2.5 rounded-xl flex items-center justify-between gap-2" role="status">
+              <div v-if="message" class="alert alert-info text-xs py-2.5 rounded-m3-md flex items-center justify-between gap-2" role="status">
                 <span>{{ message }}</span>
                 <button
                   type="button"
@@ -262,7 +262,7 @@ const handleForgotPassword = async () => {
             <!-- Bouton d'action réinitialisation -->
             <button
               type="submit"
-              class="btn btn-primary w-full text-base font-bold min-h-12 shadow-md rounded-xl mt-1 active:scale-98 transition-transform"
+              class="btn btn-primary w-full text-base font-bold min-h-12 shadow-xs rounded-m3-md mt-1 active:scale-98 transition-transform"
               :disabled="authLoading"
             >
               <span v-if="authLoading" class="loading loading-spinner loading-sm"></span>
@@ -278,13 +278,13 @@ const handleForgotPassword = async () => {
           <div
             role="tablist"
             aria-label="Mode d'authentification"
-            class="grid grid-cols-2 p-1 bg-base-200 border border-base-300 rounded-xl gap-1.5"
+            class="grid grid-cols-2 p-1 bg-base-200 border border-base-300 rounded-m3-md gap-1.5"
           >
             <button
               type="button"
               role="tab"
               :aria-selected="!isRegister"
-              class="py-2.5 px-3 text-xs font-bold rounded-lg flex items-center justify-center cursor-pointer border border-transparent outline-none focus:outline-hidden focus-visible:ring-1 focus-visible:ring-primary/40 select-none transition-colors duration-150"
+              class="py-2.5 px-3 text-xs font-bold rounded-m3-sm flex items-center justify-center cursor-pointer border border-transparent outline-none focus:outline-hidden focus-visible:ring-1 focus-visible:ring-primary/40 select-none transition-colors duration-150"
               :class="!isRegister
                 ? 'bg-base-300 text-primary border-base-content/10 shadow-xs'
                 : 'text-base-content/75 hover:text-base-content hover:bg-base-300/40 font-medium'"
@@ -296,7 +296,7 @@ const handleForgotPassword = async () => {
               type="button"
               role="tab"
               :aria-selected="isRegister"
-              class="py-2.5 px-3 text-xs font-bold rounded-lg flex items-center justify-center cursor-pointer border border-transparent outline-none focus:outline-hidden focus-visible:ring-1 focus-visible:ring-primary/40 select-none transition-colors duration-150"
+              class="py-2.5 px-3 text-xs font-bold rounded-m3-sm flex items-center justify-center cursor-pointer border border-transparent outline-none focus:outline-hidden focus-visible:ring-1 focus-visible:ring-primary/40 select-none transition-colors duration-150"
               :class="isRegister
                 ? 'bg-base-300 text-primary border-base-content/10 shadow-xs'
                 : 'text-base-content/75 hover:text-base-content hover:bg-base-300/40 font-medium'"
@@ -327,7 +327,7 @@ const handleForgotPassword = async () => {
                 autocapitalize="words"
                 spellcheck="false"
                 placeholder="Jean Dupont"
-                class="input input-bordered w-full rounded-xl text-sm focus:outline-none focus:border-primary"
+                class="input input-bordered w-full rounded-m3-sm text-sm focus:outline-none focus:border-primary"
               />
             </fieldset>
 
@@ -347,7 +347,7 @@ const handleForgotPassword = async () => {
                 inputmode="email"
                 required
                 placeholder="jean.dupont@exemple.com"
-                class="input input-bordered w-full rounded-xl text-sm focus:outline-none focus:border-primary"
+                class="input input-bordered w-full rounded-m3-sm text-sm focus:outline-none focus:border-primary"
               />
             </fieldset>
 
@@ -377,11 +377,11 @@ const handleForgotPassword = async () => {
                   spellcheck="false"
                   required
                   placeholder="••••••••"
-                  class="input input-bordered w-full rounded-xl text-sm pr-11 focus:outline-none focus:border-primary"
+                  class="input input-bordered w-full rounded-m3-sm text-sm pr-11 focus:outline-none focus:border-primary"
                 />
                 <button
                   type="button"
-                  class="absolute right-3 p-1.5 text-base-content/50 hover:text-base-content transition-colors rounded-lg focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40"
+                  class="absolute right-3 p-1.5 text-base-content/50 hover:text-base-content transition-colors rounded-m3-xs focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40"
                   :aria-label="showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'"
                   tabindex="-1"
                   @click="showPassword = !showPassword"
@@ -424,7 +424,7 @@ const handleForgotPassword = async () => {
 
             <!-- Erreur d'authentification -->
             <Transition name="alert-fade">
-              <div v-if="authError" class="alert alert-error text-xs py-2.5 rounded-xl flex items-center justify-between gap-2" role="alert">
+              <div v-if="authError" class="alert alert-error text-xs py-2.5 rounded-m3-md flex items-center justify-between gap-2" role="alert">
                 <span>{{ authError }}</span>
                 <button
                   type="button"
@@ -442,7 +442,7 @@ const handleForgotPassword = async () => {
 
             <!-- Message d'information -->
             <Transition name="alert-fade">
-              <div v-if="message" class="alert alert-info text-xs py-2.5 rounded-xl flex items-center justify-between gap-2" role="status">
+              <div v-if="message" class="alert alert-info text-xs py-2.5 rounded-m3-md flex items-center justify-between gap-2" role="status">
                 <span>{{ message }}</span>
                 <button
                   type="button"
@@ -461,7 +461,7 @@ const handleForgotPassword = async () => {
             <!-- Bouton de soumission principal -->
             <button
               type="submit"
-              class="btn btn-primary w-full text-base font-bold min-h-12 shadow-md rounded-xl mt-2 active:scale-98 transition-transform"
+              class="btn btn-primary w-full text-base font-bold min-h-12 shadow-xs rounded-m3-md mt-2 active:scale-98 transition-transform"
               :disabled="authLoading"
             >
               <span v-if="authLoading" class="loading loading-spinner loading-sm"></span>
@@ -474,7 +474,7 @@ const handleForgotPassword = async () => {
             <div v-if="isDev && !isRegister" class="text-center pt-2 border-t border-base-200 mt-1">
               <button
                 type="button"
-                class="text-xs text-primary hover:underline font-medium inline-flex items-center gap-1.5 py-1 px-2.5 rounded-lg hover:bg-primary/5 transition-colors"
+                class="text-xs text-primary hover:underline font-medium inline-flex items-center gap-1.5 py-1 px-2.5 rounded-m3-xs hover:bg-primary/5 transition-colors"
                 @click="fillAdminCredentials"
               >
                 <svg
