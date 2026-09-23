@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 
 // Calcul de la distance géodésique (formule de Haversine) en mètres
 export function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
@@ -14,6 +14,91 @@ export function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
   return R * c
+}
+
+/**
+ * Formate lisiblement une distance en mètres ou kilomètres.
+ * @param {number} meters
+ * @returns {string}
+ */
+export function formatDistance(meters) {
+  if (meters === null || meters === undefined || isNaN(meters)) return '--'
+  const absM = Math.abs(meters)
+  if (absM >= 1000) {
+    const km = absM / 1000
+    return km >= 10 ? `${Math.round(km)} km` : `${km.toFixed(1)} km`
+  }
+  return `${Math.round(absM)} m`
+}
+
+/**
+ * Identifie si des coordonnées GPS correspondent à un site autorisé (in-perimeter)
+ * ou détermine le site le plus proche.
+ *
+ * @param {{ latitude: number, longitude: number } | null} coords
+ * @param {Array<{ id: string, name: string, latitude: number, longitude: number, radius_meters?: number }>} locationsList
+ * @returns {{
+ *   matchedLocation: object | null,
+ *   closestLocation: object | null,
+ *   closestDistance: number,
+ *   matchedDistance: number | null,
+ *   inPerimeter: boolean
+ * }}
+ */
+export function findMatchingLocation(coords, locationsList) {
+  if (!coords || !locationsList || !locationsList.length) {
+    return {
+      matchedLocation: null,
+      closestLocation: null,
+      closestDistance: Infinity,
+      matchedDistance: null,
+      inPerimeter: false,
+    }
+  }
+
+  let matchedLocation = null
+  let closestLocation = null
+  let closestDistance = Infinity
+  let matchedDistance = Infinity
+
+  for (const loc of locationsList) {
+    if (
+      loc.latitude === null ||
+      loc.latitude === undefined ||
+      loc.longitude === null ||
+      loc.longitude === undefined
+    ) {
+      continue
+    }
+
+    const dist = calculateHaversineDistance(
+      coords.latitude,
+      coords.longitude,
+      loc.latitude,
+      loc.longitude
+    )
+    const allowedRadius = loc.radius_meters || 50
+
+    if (dist < closestDistance) {
+      closestDistance = dist
+      closestLocation = loc
+    }
+
+    if (dist <= allowedRadius) {
+      if (!matchedLocation || dist < matchedDistance) {
+        matchedLocation = loc
+        matchedDistance = dist
+      }
+    }
+  }
+
+  return {
+    matchedLocation,
+    closestLocation,
+    closestDistance: Math.round(closestDistance),
+    matchedDistance: matchedLocation ? Math.round(matchedDistance) : null,
+    inPerimeter: Boolean(matchedLocation),
+  }
 }
 
 const currentCoords = ref(null)
@@ -80,11 +165,11 @@ export function useGeolocation() {
   /**
    * Vérifie si les coordonnées actuelles se situent à l'intérieur du périmètre d'un site.
    * @param {Object} location - { latitude, longitude, radius_meters }
-   * @returns {{ inPerimeter: boolean, distance: number }}
+   * @returns {{ inPerimeter: boolean, distance: number, allowedRadius: number }}
    */
   const checkPerimeter = (location) => {
     if (!currentCoords.value || !location) {
-      return { inPerimeter: false, distance: Infinity }
+      return { inPerimeter: false, distance: Infinity, allowedRadius: location?.radius_meters || 50 }
     }
 
     const dist = calculateHaversineDistance(
@@ -110,5 +195,7 @@ export function useGeolocation() {
     startWatching,
     stopWatching,
     checkPerimeter,
+    findMatchingLocation,
+    formatDistance,
   }
 }

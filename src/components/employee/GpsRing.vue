@@ -1,5 +1,8 @@
 <script setup>
-defineProps({
+import { computed } from 'vue'
+import { formatDistance } from '../../composables/useGeolocation'
+
+const props = defineProps({
   inPerimeter: {
     type: Boolean,
     default: false,
@@ -20,7 +23,22 @@ defineProps({
     type: Boolean,
     default: false,
   },
+  siteName: {
+    type: String,
+    default: '',
+  },
+  closestSiteName: {
+    type: String,
+    default: '',
+  },
+  hasSitesConfigured: {
+    type: Boolean,
+    default: true,
+  },
 })
+
+const formattedDistance = computed(() => formatDistance(props.distance))
+const formattedAllowedRadius = computed(() => formatDistance(props.allowedRadius))
 </script>
 
 <template>
@@ -72,19 +90,33 @@ defineProps({
     </div>
 
     <!-- Informations de distance et tolérance -->
-    <div class="text-center flex flex-col items-center gap-1.5 max-w-xs">
+    <div class="text-center flex flex-col items-center gap-1.5 max-w-sm">
       <div v-if="isLocating" class="text-sm font-semibold text-info flex items-center gap-1.5">
         <span class="loading loading-spinner loading-xs"></span>
         Acquisition du signal GPS en cours...
       </div>
-      <div v-else-if="inPerimeter" class="badge badge-success text-success-content font-bold py-3 px-4 text-xs gap-1.5 rounded-m3-xs">
-        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
-        </svg>
-        <span>Position validée (vous êtes sur site)</span>
+      <div v-else-if="!hasSitesConfigured" class="text-xs font-medium text-warning">
+        Aucun site de pointage actif configuré.
       </div>
-      <div v-else class="text-sm font-medium text-error">
-        Distance au site : <strong>{{ distance }} m</strong> (limite : {{ allowedRadius }} m)
+      <div v-else-if="inPerimeter" class="flex flex-col items-center gap-1">
+        <div class="badge badge-success text-success-content font-bold py-3 px-4 text-xs gap-1.5 rounded-m3-xs">
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+          </svg>
+          <span>Position validée</span>
+        </div>
+        <p v-if="siteName" class="text-xs text-base-content/80 mt-0.5">
+          Vous êtes sur le site <strong class="text-base-content font-bold">{{ siteName }}</strong> (à {{ formattedDistance }})
+        </p>
+      </div>
+      <div v-else class="flex flex-col items-center gap-0.5 text-xs text-error font-medium">
+        <div class="font-bold text-sm">Hors périmètre de pointage</div>
+        <p v-if="closestSiteName" class="text-base-content/70 text-[11px] mt-0.5">
+          Site le plus proche : <strong class="text-base-content">{{ closestSiteName }}</strong> (à {{ formattedDistance }}, rayon : {{ formattedAllowedRadius }})
+        </p>
+        <p v-else class="text-base-content/60 text-[11px] mt-0.5">
+          Distance : {{ formattedDistance }} (rayon requis : {{ formattedAllowedRadius }})
+        </p>
       </div>
 
       <div v-if="accuracy" class="badge badge-ghost badge-sm text-[11px] text-base-content/60 mt-1 rounded-m3-xs">
@@ -98,28 +130,24 @@ defineProps({
 .radar-pulse {
   position: absolute;
   inset: -12px;
-  border-radius: 50%;
-  border: 2px solid currentColor;
-  opacity: 0;
-  animation: ripple 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+  border-radius: 9999px;
+  border: 1px solid currentColor;
+  opacity: 0.15;
+  animation: pulse-ring 2.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
 }
 
-@keyframes ripple {
+@keyframes pulse-ring {
   0% {
-    transform: scale(0.85);
-    opacity: 0.8;
+    transform: scale(0.9);
+    opacity: 0.4;
   }
-  100% {
-    transform: scale(1.4);
+  70% {
+    transform: scale(1.3);
     opacity: 0;
   }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .radar-pulse {
-    animation: none;
-    opacity: 0.2;
-    transform: scale(1);
+  100% {
+    transform: scale(1.3);
+    opacity: 0;
   }
 }
 </style>

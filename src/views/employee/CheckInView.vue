@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from '../../router'
-import { useGeolocation } from '../../composables/useGeolocation'
+import { useGeolocation, formatDistance } from '../../composables/useGeolocation'
 import { usePresences } from '../../composables/usePresences'
 import { useProfile } from '../../composables/useProfile'
 import { db } from '../../lib/db'
@@ -17,45 +17,50 @@ const {
   startWatching,
   stopWatching,
   checkPerimeter,
+  findMatchingLocation,
 } = useGeolocation()
 
 const { checkIn } = usePresences()
 const { profile } = useProfile()
 
 const locations = ref([])
-const selectedLocation = ref(null)
+const manualSelectedLocation = ref(null)
 const isSubmitting = ref(false)
 const errorMessage = ref('')
+const isLoadingLocations = ref(true)
 
 onMounted(async () => {
   startWatching()
 
   try {
-    let list = await db.locations.where('is_active').equals(1).toArray()
-    if (!list.length) {
-      const { data } = await supabase.from('locations').select('*').eq('is_active', true)
-      if (data && data.length) {
+    isLoadingLocations.value = true
+    // Récupération stricte des sites actifs réels sans filtres de type IndexedDB restrictifs
+    let list = await db.locations
+      .filter(
+        (loc) =>
+          !loc.deleted_at &&
+          (loc.is_active === true || loc.is_active === 1 || loc.is_active === 'true')
+      )
+      .toArray()
+
+    // Si le cache local est vide, synchronisation initiale depuis Supabase
+    if (!list.length && navigator.onLine) {
+      const { data, error } = await supabase
+        .from('locations')
+        .select('*')
+        .eq('is_active', true)
+        .is('deleted_at', null)
+      if (!error && data && data.length) {
         list = data
         await db.locations.bulkPut(data)
       }
     }
 
-    if (!list.length) {
-      list = [
-        {
-          id: '00000000-0000-0000-0000-000000000001',
-          name: 'Siège Principal / Site Central',
-          latitude: 48.8566,
-          longitude: 2.3522,
-          radius_meters: 100000,
-        },
-      ]
-    }
-
     locations.value = list
-    selectedLocation.value = list[0]
   } catch (err) {
     console.error('Erreur chargement sites :', err)
+  } finally {
+    isLoadingLocations.value = false
   }
 })
 
@@ -63,6 +68,25 @@ onUnmounted(() => {
   stopWatching()
 })
 
+// Détection automatique en temps réel du site le plus proche ou correspondant
+const autoMatch = computed(() => {
+  return findMatchingLocation(currentCoords.value, locations.value)
+})
+
+// Site actif retenu : sélection manuelle prioritaire, sinon détection automatique
+const selectedLocation = computed({
+  get() {
+    if (manualSelectedLocation.value) {
+      return manualSelectedLocation.value
+    }
+    return autoMatch.value.matchedLocation || autoMatch.value.closestLocation || null
+  },
+  set(val) {
+    manualSelectedLocation.value = val
+  },
+})
+
+// Résultat du calcul de distance sur le site retenu
 const perimeterResult = computed(() => {
   if (!selectedLocation.value || !currentCoords.value) {
     return { inPerimeter: false, distance: 0, allowedRadius: 50 }
@@ -71,6 +95,11 @@ const perimeterResult = computed(() => {
 })
 
 const handleConfirmCheckIn = async () => {
+  if (!selectedLocation.value) {
+    errorMessage.value = 'Aucun site de pointage sélectionné.'
+    return
+  }
+
   if (!perimeterResult.value.inPerimeter) {
     errorMessage.value = 'Rapprochez-vous du site pour valider votre présence.'
     return
@@ -113,19 +142,60 @@ const handleConfirmCheckIn = async () => {
       <span class="w-16"></span>
     </div>
 
-    <!-- Sélecteur de site si multiple -->
-    <div v-if="locations.length > 1" class="fieldset">
-      <label for="loc-select" class="fieldset-legend text-xs font-semibold text-base-content/70">
-        Site de pointage
-      </label>
-      <select id="loc-select" v-model="selectedLocation" class="select select-bordered w-full rounded-m3-md text-sm">
-        <option v-for="loc in locations" :key="loc.id" :value="loc">
-          {{ loc.name }} (rayon {{ loc.radius_meters }}m)
-        </option>
-      </select>
+    <!-- Si aucun site n'est configuré en base -->
+    <div
+      v-if="!isLoadingLocations && locations.length === 0"
+      class="alert alert-warning text-xs py-3 rounded-m3-md flex items-center gap-2"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="8" x2="12" y2="12" />
+        <line x1="12" y1="16" x2="12.01" y2="16" />
+      </svg>
+      <span>Aucun site de pointage actif n'est configuré. Contactez votre manager.</span>
     </div>
-    <div v-else-if="selectedLocation" class="card bg-base-200 border border-base-300/60 p-3 rounded-m3-md text-center text-xs text-base-content/70">
-      Site : <strong class="text-base-content">{{ selectedLocation.name }}</strong>
+
+    <!-- Carte statut de localisation contextuelle -->
+    <div v-else-if="selectedLocation" class="card bg-base-200 border border-base-300/60 p-3.5 rounded-m3-md flex flex-col gap-2">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span
+            class="w-2.5 h-2.5 rounded-full shrink-0"
+            :class="perimeterResult.inPerimeter ? 'bg-success animate-pulse' : 'bg-base-content/30'"
+          ></span>
+          <span class="text-xs font-medium text-base-content/70">
+            {{ perimeterResult.inPerimeter ? 'Site détecté' : 'Site le plus proche' }}
+          </span>
+        </div>
+        <span v-if="perimeterResult.inPerimeter" class="badge badge-success text-[10px] font-bold rounded-m3-xs py-1 px-2">
+          Dans le périmètre
+        </span>
+        <span v-else class="badge badge-ghost text-[10px] text-base-content/60 rounded-m3-xs py-1 px-2">
+          Hors périmètre
+        </span>
+      </div>
+
+      <div class="text-sm font-bold text-base-content flex items-center gap-1.5">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+          <circle cx="12" cy="10" r="3" />
+        </svg>
+        <span>{{ selectedLocation.name }}</span>
+      </div>
+
+      <!-- Sélecteur manuel discret de dérogation si plusieurs sites configurés -->
+      <div v-if="locations.length > 1" class="pt-2 border-t border-base-300/40 flex items-center justify-between gap-2">
+        <label for="loc-select" class="text-[11px] text-base-content/60 font-medium">Changer de site :</label>
+        <select
+          id="loc-select"
+          v-model="selectedLocation"
+          class="select select-bordered select-xs rounded-m3-sm text-xs font-normal max-w-xs"
+        >
+          <option v-for="loc in locations" :key="loc.id" :value="loc">
+            {{ loc.name }} ({{ loc.radius_meters }}m)
+          </option>
+        </select>
+      </div>
     </div>
 
     <!-- Radar GPS -->
@@ -135,6 +205,9 @@ const handleConfirmCheckIn = async () => {
       :allowed-radius="perimeterResult.allowedRadius"
       :accuracy="gpsAccuracy"
       :is-locating="isLocating"
+      :site-name="selectedLocation?.name || ''"
+      :closest-site-name="selectedLocation?.name || ''"
+      :has-sites-configured="locations.length > 0"
     />
 
     <!-- Erreur GPS éventuelle -->
@@ -152,12 +225,14 @@ const handleConfirmCheckIn = async () => {
       <button
         type="button"
         class="btn btn-primary w-full text-base font-bold min-h-14 shadow-xs rounded-m3-md active:scale-95 transition-transform focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-        :disabled="!perimeterResult.inPerimeter || isSubmitting"
+        :disabled="!perimeterResult.inPerimeter || isSubmitting || locations.length === 0"
         @click="handleConfirmCheckIn"
       >
         <span v-if="isSubmitting" class="loading loading-spinner loading-sm"></span>
         <span v-if="isSubmitting">Enregistrement...</span>
-        <span v-else-if="perimeterResult.inPerimeter">Valider l'arrivée</span>
+        <span v-else-if="perimeterResult.inPerimeter">
+          Valider l'arrivée sur {{ selectedLocation?.name }}
+        </span>
         <span v-else>Périmètre non atteint</span>
       </button>
       <p class="text-[11px] text-base-content/50 text-center">
