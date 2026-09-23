@@ -87,7 +87,29 @@ L'application utilise exclusivement la police **Inter**, optimisée pour le rend
 
 ---
 
-## 7. Anti-Patterns & Pratiques Prohibées
+## 7. Architecture Responsive & Adaptative (Protocole Responsive-Adaptive-UI)
+
+Ce volet applique les spécifications du skill `responsive-adaptive-ui`, inspirées d'Encore et calibrées pour PresenceApp :
+
+### Seuils de bascule critiques (Breakpoints)
+- **Bascule Carrousel vers Grille (600px)** : Sous 600px, les collections denses s'affichent en carrousel horizontal à défilement tactile avec pagination discrète. À partir de 600px, elles adoptent une grille responsive à colonnes (`grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4`).
+- **Bascule Navigation Basse vers Rail (840px)** : Sous 840px, l'application utilise une Bottom Navigation fixe. À partir de 840px, la navigation bascule en Sidebar Rail latérale compacte (icônes seules).
+- **Bascule Rail vers Tiroir Déployé (1200px)** : À partir de 1200px, la barre latérale se déploie avec libellés complets et indicateurs d'état permanents.
+
+### Ergonomie tactile et cibles cliquables
+- **Surface tactile minimale** : 44×44 pixels obligatoires pour tout élément interactif. Sur mobile tactile, les boutons d'action clés (pointage, validation) occupent une hauteur minimale de 56dp. Sur desktop (souris/pointeur), la hauteur minimale est de 48dp.
+- **Affordance tactile** : Tout bouton ou carte interactive intègre un feedback au toucher (`active:scale-95 transition-transform duration-150`).
+- **Marges matérielles (Safe Areas)** : Tout conteneur d'en-tête ou de pied de page applique les variables d'encoche matérielles (`env(safe-area-inset-top)`, `env(safe-area-inset-bottom)`).
+
+### Composant Player Bar persistant
+Le Player Bar (barre de statut audio/pointage) adopte trois morphologies distinctes :
+1. **Mini Pill (Mobile)** : Pastille flottante compacte ancrée au-dessus de la Bottom Navigation, accessible au pouce.
+2. **Desktop Bar (Grand écran)** : Barre horizontale ancrée en bas de page couvrant toute la largeur avec commandes déployées.
+3. **Full View (Plein écran)** : Feuille modale immersive déroulée par glissement vertical.
+
+---
+
+## 8. Anti-Patterns & Pratiques Prohibées
 
 Tout agent doit refuser et corriger les pratiques suivantes lors de ses interventions :
 

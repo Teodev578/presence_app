@@ -7,22 +7,25 @@ Ce document cartographie les compétences agentiques (skills) autorisées et mob
 ## Skills Actifs par Domaine d'Intervention
 
 ### 1. Développement & Implémentation
+- `unlazy` : grand livre de vérification déterministe (`GATES.md`), décomposition méthodique et preuve de complétion avant toute livraison.
 - `bmad-build` : implémentation rigoureuse d'une tâche ou d'une story selon les conventions locales.
 - `bmad-build-auto` : exécution itérative automatisée de stories balisées.
 - `bmad-spec` : condensation d'exigences en spécifications opérationnelles.
 - `prototype` : maquettage rapide pour valider une intuition d'interface ou de flux de données.
 - `tdd` : méthodologie d'implémentation guidée par les tests (red-green-refactor).
 
-### 2. Design Visuel, UI & Animation
-- `ui-ux-pro-max` : conception visuelle, tokens de design, layouts réactifs, conformité Material 3 / DaisyUI et audit d'accessibilité WCAG.
-- `vue-animation` : orchestration de transitions légères Vue 3 (`<Transition>`) accélérées par GPU (transform/opacity) sans jank.
+### 2. Design Visuel, UI, Ergonomie & Animation
+- `responsive-adaptive-ui` : design system adaptatif inspiré d'Encore pour grilles, navigation adaptative, Player Bar sous 3 formes, seuils de bascule (600px, 840px, 1200px) et cibles tactiles 44px (56dp mobile).
+- `ui-ux-pro-max` : conception visuelle, tokens de surface Material 3, composants DaisyUI v5 et conformité WCAG AA.
+- `vue-animation` : orchestration de transitions légères Vue 3 (`<Transition>`) accélérées par GPU (`transform`/`opacity`) sans saccade.
 
-### 3. Revue, Qualité & Résilience
+### 3. Revue, Hygiène, Qualité & Résilience
+- `stop-slop` : élimination du jargon artificiel d'IA, suppression des adverbes, voix active, suppression des tirets cadratins et concision de prose.
 - `code-hygiene` : audit de propreté, détection de code mort et vérification des imports.
 - `code-review` : double revue standards / spécification post-implémentation.
 - `bmad-code-review` : revue contradictoire multicouche avant fusion ou finalisation.
 - `bmad-review` : inspection multicouche approfondie (critique adversariale, cas limites, trous de vérification).
-- `diagnosing-bugs` : protocole d'investigation méthodique pour anomalies de synchronisation ou de persistance.
+- `diagnosing-bugs` : protocole d'investigation méthodique pour anomalies de synchronisation Outbox ou de persistance Dexie.
 - `bmad-walkthrough` : explication pédagogique des modifications apportées lors d'un jalon.
 
 ### 4. Cadrage Produit, Challenge & Spécifications (Équipe BMAD)
