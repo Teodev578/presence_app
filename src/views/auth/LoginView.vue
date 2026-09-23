@@ -16,7 +16,6 @@ const fullName = ref('')
 const showPassword = ref(false)
 const message = ref('')
 const isOnline = ref(typeof navigator !== 'undefined' ? navigator.onLine : true)
-const isDev = import.meta.env.DEV
 
 let messageTimer = null
 
@@ -50,12 +49,6 @@ onUnmounted(() => {
   window.removeEventListener('online', updateOnlineStatus)
   window.removeEventListener('offline', updateOnlineStatus)
 })
-
-const fillAdminCredentials = () => {
-  email.value = 'ultimateadmin@email.com'
-  password.value = 'AdminPresence2026!'
-  message.value = 'Identifiants administrateur remplis.'
-}
 
 const handleSubmit = async () => {
   message.value = ''
@@ -470,31 +463,6 @@ const handleForgotPassword = async () => {
               <span v-else>Se connecter</span>
             </button>
 
-            <!-- Raccourci environnement de développement / démonstration -->
-            <div v-if="isDev && !isRegister" class="text-center pt-2 border-t border-base-200 mt-1">
-              <button
-                type="button"
-                class="text-xs text-primary hover:underline font-medium inline-flex items-center gap-1.5 py-1 px-2.5 rounded-m3-xs hover:bg-primary/5 transition-colors"
-                @click="fillAdminCredentials"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  class="w-3.5 h-3.5"
-                  aria-hidden="true"
-                >
-                  <circle cx="7.5" cy="15.5" r="5.5" />
-                  <path d="m21 2-9.6 9.6" />
-                  <path d="m15.5 7.5 3 3L22 7l-3-3" />
-                </svg>
-                <span>Remplir avec le compte admin (test)</span>
-              </button>
-            </div>
           </form>
         </Transition>
       </template>
