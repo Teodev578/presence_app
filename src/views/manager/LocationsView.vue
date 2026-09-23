@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useLocations } from '../../composables/useLocations'
 import { useGeolocation } from '../../composables/useGeolocation'
+import { parseGeoInput, parseAndResolveGeoInput } from '../../lib/geoParser'
 
 const { locations, ensureLoaded, createLocation, updateLocation, deleteLocation } = useLocations()
 const { currentCoords, isLocating, gpsError, startWatching, stopWatching } = useGeolocation()
@@ -29,6 +30,12 @@ const form = ref({
 const addressQuery = ref('')
 const addressSuggestions = ref([])
 const isSearchingAddress = ref(false)
+
+// Assistant lien cartographique (Google Maps, Apple Maps, Coordonnées)
+const mapUrlInput = ref('')
+const mapUrlFeedback = ref({ status: null, message: '' })
+const isResolvingMapUrl = ref(false)
+let mapInputTimeout = null
 
 // Initialisation
 onMounted(async () => {
@@ -59,6 +66,9 @@ const openCreateModal = () => {
   }
   addressQuery.value = ''
   addressSuggestions.value = []
+  mapUrlInput.value = ''
+  mapUrlFeedback.value = { status: null, message: '' }
+  isResolvingMapUrl.value = false
   formError.value = ''
   isModalOpen.value = true
 }
@@ -76,6 +86,9 @@ const openEditModal = (loc) => {
   }
   addressQuery.value = ''
   addressSuggestions.value = []
+  mapUrlInput.value = ''
+  mapUrlFeedback.value = { status: null, message: '' }
+  isResolvingMapUrl.value = false
   formError.value = ''
   isModalOpen.value = true
 }
@@ -147,6 +160,77 @@ const selectAddress = (sug) => {
   }
   addressQuery.value = sug.label
   addressSuggestions.value = []
+}
+
+// Traitement d'un lien Google Maps, Apple Maps ou coordonnées brutes
+const handleMapInput = () => {
+  mapUrlFeedback.value = { status: null, message: '' }
+  if (!mapUrlInput.value || !mapUrlInput.value.trim()) {
+    return
+  }
+
+  clearTimeout(mapInputTimeout)
+  const quick = parseGeoInput(mapUrlInput.value)
+  if (quick.success) {
+    form.value.latitude = quick.latitude
+    form.value.longitude = quick.longitude
+    if (quick.name && !form.value.name.trim()) {
+      form.value.name = quick.name
+    }
+    mapUrlFeedback.value = {
+      status: 'success',
+      message: `Position détectée (${quick.source}) : ${quick.latitude}, ${quick.longitude}`,
+    }
+    return
+  }
+
+  if (quick.isShortUrl) {
+    mapUrlFeedback.value = {
+      status: 'info',
+      message: 'Résolution du lien court en cours...',
+    }
+    isResolvingMapUrl.value = true
+  }
+
+  mapInputTimeout = setTimeout(async () => {
+    isResolvingMapUrl.value = true
+    try {
+      const result = await parseAndResolveGeoInput(mapUrlInput.value)
+      if (result.success) {
+        form.value.latitude = result.latitude
+        form.value.longitude = result.longitude
+        if (result.name && !form.value.name.trim()) {
+          form.value.name = result.name
+        }
+        mapUrlFeedback.value = {
+          status: 'success',
+          message: `Position détectée (${result.source}) : ${result.latitude}, ${result.longitude}`,
+        }
+      } else if (result.isShortUrl) {
+        mapUrlFeedback.value = {
+          status: 'warning',
+          message: result.error,
+        }
+      } else {
+        mapUrlFeedback.value = {
+          status: 'error',
+          message: result.error || 'Format non reconnu.',
+        }
+      }
+    } finally {
+      isResolvingMapUrl.value = false
+    }
+  }, quick.isShortUrl ? 50 : 250)
+}
+
+const handleMapPaste = (event) => {
+  const pastedText = event.clipboardData?.getData('text')
+  if (pastedText) {
+    setTimeout(() => {
+      mapUrlInput.value = pastedText.trim()
+      handleMapInput()
+    }, 0)
+  }
 }
 
 // Soumission du formulaire
@@ -464,6 +548,77 @@ const handleDelete = async (loc) => {
               </svg>
               <span>Détecter ma position actuelle</span>
             </button>
+
+            <!-- Saisie lien cartographique ou coordonnées -->
+            <div class="flex flex-col gap-1">
+              <div class="relative flex items-center">
+                <input
+                  v-model="mapUrlInput"
+                  type="text"
+                  class="input input-bordered input-sm rounded-m3-md text-xs w-full pl-8"
+                  placeholder="Coller un lien (Google Maps, Apple Maps) ou coordonnées..."
+                  @input="handleMapInput"
+                  @paste="handleMapPaste"
+                />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="w-3.5 h-3.5 absolute left-2.5 text-base-content/50 pointer-events-none"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                </svg>
+                <span
+                  v-if="isResolvingMapUrl"
+                  class="loading loading-spinner loading-xs absolute right-2.5 text-primary"
+                ></span>
+              </div>
+
+              <!-- Retours contextuels -->
+              <div
+                v-if="mapUrlFeedback.status === 'info'"
+                class="text-[11px] text-primary font-medium flex items-center gap-1.5 px-1 mt-0.5"
+              >
+                <span class="loading loading-spinner loading-xs text-primary"></span>
+                <span>{{ mapUrlFeedback.message }}</span>
+              </div>
+              <div
+                v-if="mapUrlFeedback.status === 'success'"
+                class="text-[11px] text-success font-medium flex items-center gap-1.5 px-1 mt-0.5"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                <span>{{ mapUrlFeedback.message }}</span>
+              </div>
+              <div
+                v-else-if="mapUrlFeedback.status === 'warning'"
+                class="text-[11px] text-warning font-medium flex items-start gap-1.5 px-1 mt-0.5"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+                <span>{{ mapUrlFeedback.message }}</span>
+              </div>
+              <div
+                v-else-if="mapUrlFeedback.status === 'error'"
+                class="text-[11px] text-error font-medium flex items-center gap-1.5 px-1 mt-0.5"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="15" y1="9" x2="9" y2="15" />
+                  <line x1="9" y1="9" x2="15" y2="15" />
+                </svg>
+                <span>{{ mapUrlFeedback.message }}</span>
+              </div>
+            </div>
 
             <!-- Recherche d'adresse postale -->
             <div class="relative">
