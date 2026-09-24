@@ -93,8 +93,8 @@ Ce volet applique les spécifications du skill `responsive-adaptive-ui`, inspir�
 
 ### Seuils de bascule critiques (Breakpoints)
 - **Bascule Carrousel vers Grille (600px)** : Sous 600px, les collections denses s'affichent en carrousel horizontal à défilement tactile avec pagination discrète. À partir de 600px, elles adoptent une grille responsive à colonnes (`grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4`).
-- **Bascule Navigation Basse vers Rail (840px)** : Sous 840px, l'application utilise une Bottom Navigation fixe. À partir de 840px, la navigation bascule en Sidebar Rail latérale compacte (icônes seules).
-- **Bascule Rail vers Tiroir Déployé (1200px)** : À partir de 1200px, la barre latérale se déploie avec libellés complets et indicateurs d'état permanents.
+- **Bascule Navigation Basse vers Rail (840px)** : Sous 840px, l'application utilise une Bottom Navigation fixe. À partir de 840px, la navigation bascule en Sidebar Rail latérale compacte (icônes seules). *(Exception absolue : cette règle ne concerne pas la partie employé. Dans l'espace employé, interdiction stricte de toucher ou d'introduire un « Navigation rail »).*
+- **Bascule Rail vers Tiroir Déployé (1200px)** : À partir de 1200px, la barre latérale se déploie avec libellés complets et indicateurs d'état permanents (espace gestionnaire uniquement).
 
 ### Ergonomie tactile et cibles cliquables
 - **Surface tactile minimale** : 44×44 pixels obligatoires pour tout élément interactif. Sur mobile tactile, les boutons d'action clés (pointage, validation) occupent une hauteur minimale de 56dp. Sur desktop (souris/pointeur), la hauteur minimale est de 48dp.
