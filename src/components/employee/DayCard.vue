@@ -39,7 +39,7 @@ const workDuration = computed(() => {
   <div class="card bg-base-200 border border-base-300/60 shadow-xs rounded-m3-lg h-full flex flex-col justify-between">
     <div class="card-body p-5 sm:p-6 gap-4 flex-1 flex flex-col justify-between">
       <!-- En-tête de la carte -->
-      <div class="flex items-start justify-between">
+      <div class="flex items-start justify-between shrink-0">
         <div>
           <span class="text-[11px] font-bold uppercase tracking-wider text-base-content/60">Aujourd'hui</span>
           <h2 class="text-xl font-bold text-base-content capitalize mt-0.5">{{ todayFormatted }}</h2>
@@ -48,66 +48,68 @@ const workDuration = computed(() => {
         <span v-else class="badge badge-ghost badge-sm py-2 px-2.5 rounded-m3-xs">Non pointé</span>
       </div>
 
-      <!-- Détails des horaires -->
-      <div class="grid grid-cols-2 gap-3 bg-base-100/80 p-4 rounded-m3-md border border-base-300/40">
-        <div class="flex flex-col items-center">
-          <span class="text-xs font-semibold text-base-content/60">Arrivée</span>
-          <span class="text-2xl font-bold text-base-content tracking-tight my-0.5">
-            {{ presence?.check_in_time ? formatTime(presence.check_in_time) : '--:--' }}
-          </span>
-          <span class="text-[11px] text-base-content/50">Prévu à {{ expectedArrivalTime.slice(0, 5) }}</span>
+      <!-- Corps central équilibré : Détails des horaires & temps de poste -->
+      <div class="flex-1 flex flex-col justify-center gap-3.5 my-auto py-2">
+        <div class="grid grid-cols-2 gap-3 bg-base-100/80 p-4 sm:p-5 rounded-m3-md border border-base-300/40">
+          <div class="flex flex-col items-center">
+            <span class="text-xs font-semibold text-base-content/60">Arrivée</span>
+            <span class="text-2xl sm:text-3xl font-bold text-base-content tracking-tight my-0.5">
+              {{ presence?.check_in_time ? formatTime(presence.check_in_time) : '--:--' }}
+            </span>
+            <span class="text-[11px] text-base-content/50">Prévu à {{ expectedArrivalTime.slice(0, 5) }}</span>
+          </div>
+
+          <div class="flex flex-col items-center border-l border-base-300">
+            <span class="text-xs font-semibold text-base-content/60">Départ</span>
+            <span class="text-2xl sm:text-3xl font-bold text-base-content tracking-tight my-0.5">
+              {{ presence?.check_out_time ? formatTime(presence.check_out_time) : '--:--' }}
+            </span>
+            <span class="text-[11px] text-base-content/50">{{ presence?.check_out_time ? 'Validé' : 'En attente' }}</span>
+          </div>
         </div>
 
-        <div class="flex flex-col items-center border-l border-base-300">
-          <span class="text-xs font-semibold text-base-content/60">Départ</span>
-          <span class="text-2xl font-bold text-base-content tracking-tight my-0.5">
-            {{ presence?.check_out_time ? formatTime(presence.check_out_time) : '--:--' }}
+        <!-- Durée de travail ou temps écoulé -->
+        <div
+          v-if="workDuration"
+          class="flex items-center justify-center gap-1.5 text-xs font-medium py-2 px-3 rounded-m3-xs bg-base-100/60 border border-base-300/40"
+        >
+          <svg
+            v-if="!presence.check_out_time"
+            xmlns="http://www.w3.org/2000/svg"
+            class="w-3.5 h-3.5 text-warning animate-pulse"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+          </svg>
+          <svg
+            v-else
+            xmlns="http://www.w3.org/2000/svg"
+            class="w-3.5 h-3.5 text-success"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+            <polyline points="22 4 12 14.01 9 11.01" />
+          </svg>
+          <span class="text-base-content/70">
+            {{ presence.check_out_time ? 'Durée travaillée :' : 'En poste depuis :' }}
           </span>
-          <span class="text-[11px] text-base-content/50">{{ presence?.check_out_time ? 'Validé' : 'En attente' }}</span>
+          <strong class="text-base-content font-bold">{{ workDuration }}</strong>
         </div>
       </div>
 
-      <!-- Durée de travail ou temps écoulé -->
-      <div
-        v-if="workDuration"
-        class="flex items-center justify-center gap-1.5 text-xs font-medium py-1.5 px-3 rounded-m3-xs bg-base-100/60 border border-base-300/40"
-      >
-        <svg
-          v-if="!presence.check_out_time"
-          xmlns="http://www.w3.org/2000/svg"
-          class="w-3.5 h-3.5 text-warning animate-pulse"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <circle cx="12" cy="12" r="10" />
-          <polyline points="12 6 12 12 16 14" />
-        </svg>
-        <svg
-          v-else
-          xmlns="http://www.w3.org/2000/svg"
-          class="w-3.5 h-3.5 text-success"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-          <polyline points="22 4 12 14.01 9 11.01" />
-        </svg>
-        <span class="text-base-content/70">
-          {{ presence.check_out_time ? 'Durée travaillée :' : 'En poste depuis :' }}
-        </span>
-        <strong class="text-base-content font-bold">{{ workDuration }}</strong>
-      </div>
-
-      <!-- Actions principales contextuelles -->
-      <div class="card-actions flex flex-col gap-2.5 mt-2">
+      <!-- Actions principales contextuelles ancrées en bas -->
+      <div class="card-actions flex flex-col gap-2.5 mt-auto shrink-0 pt-2">
         <!-- Cas 1 : Aucun pointage d'arrivée -->
         <button
           v-if="!presence"

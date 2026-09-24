@@ -228,6 +228,40 @@ export function checkEmployeeDesktop() {
   return true;
 }
 
+export function checkResponsiveCards() {
+  const homePath = path.join(SRC_DIR, 'views', 'employee', 'HomeView.vue');
+  const homeContent = fs.readFileSync(homePath, 'utf8');
+  if (!homeContent.includes('md:grid-cols-12')) {
+    console.error('FAILURE G8: HomeView.vue does not enable 2-column grid on tablet breakpoint (missing md:grid-cols-12)');
+    return false;
+  }
+  if (!homeContent.includes('flex-1')) {
+    console.error('FAILURE G8: HomeView.vue does not use flex-1 to fill vertical space');
+    return false;
+  }
+
+  const layoutPath = path.join(SRC_DIR, 'layouts', 'EmployeeLayout.vue');
+  const layoutContent = fs.readFileSync(layoutPath, 'utf8');
+  if (!layoutContent.includes('flex flex-col') || !layoutContent.includes('flex-1')) {
+    console.error('FAILURE G8: EmployeeLayout.vue main tag does not use flex-1 flex flex-col for full height expansion');
+    return false;
+  }
+  if (layoutContent.includes('navigation-rail') || layoutContent.includes('NavigationRail')) {
+    console.error('FAILURE G8: Sanctuarisation violée: navigation-rail trouvé dans EmployeeLayout.vue');
+    return false;
+  }
+
+  const weekPath = path.join(SRC_DIR, 'components', 'employee', 'WeekSummaryCard.vue');
+  const weekContent = fs.readFileSync(weekPath, 'utf8');
+  if (!weekContent.includes('flex-1 flex flex-col justify-between')) {
+    console.error('FAILURE G8: WeekSummaryCard.vue does not expand vertically with flex-1 flex flex-col justify-between');
+    return false;
+  }
+
+  console.log('G8 passed: cards responsiveness and vertical coverage validated without altering employee navigation');
+  return true;
+}
+
 export function checkBuild() {
   const result = spawnSync('npm', ['run', 'build'], { encoding: 'utf8', stdio: 'pipe' });
   if (result.status === 0) {
@@ -255,6 +289,8 @@ if (arg === '--emojis') {
   success = checkLayout();
 } else if (arg === '--employee-desktop') {
   success = checkEmployeeDesktop();
+} else if (arg === '--responsive') {
+  success = checkResponsiveCards();
 } else if (arg === '--build') {
   success = checkBuild();
 } else if (arg === '--all') {
@@ -264,12 +300,14 @@ if (arg === '--emojis') {
   const r4 = checkTouchTargets();
   const r5 = checkLayout();
   const r6 = checkEmployeeDesktop();
-  const r7 = checkBuild();
-  success = r1 && r2 && r3 && r4 && r5 && r6 && r7;
+  const r7 = checkResponsiveCards();
+  const r8 = checkBuild();
+  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8;
 } else {
-  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--build|--all]`);
+  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--build|--all]`);
   process.exit(1);
 }
 
 process.exit(success ? 0 : 1);
+
 

@@ -73,8 +73,8 @@ const handleLogout = async () => {
         </div>
       </header>
 
-      <!-- Conteneur principal de la vue active : élargi sur grand écran pour la composition bi-cartes -->
-      <main class="flex-1 p-4 sm:p-6 w-full max-w-xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto transition-all">
+      <!-- Conteneur principal de la vue active : fluide et élargi pour tablette/desktop avec étirement vertical complet -->
+      <main class="flex-1 flex flex-col w-full max-w-6xl xl:max-w-7xl mx-auto px-4 sm:px-6 md:px-8 xl:px-10 py-4 sm:py-6 transition-all min-h-0">
         <slot />
       </main>
     </div>

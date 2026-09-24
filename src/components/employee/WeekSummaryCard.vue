@@ -56,9 +56,9 @@ const getPresenceDuration = (presence) => {
 
 <template>
   <div class="card bg-base-200 border border-base-300/60 shadow-xs rounded-m3-lg h-full flex flex-col justify-between">
-    <div class="card-body p-5 sm:p-6 gap-4">
+    <div class="card-body p-5 sm:p-6 gap-4 flex-1 flex flex-col justify-between min-h-0">
       <!-- En-tête de la carte -->
-      <div class="flex items-start justify-between">
+      <div class="flex items-start justify-between shrink-0">
         <div>
           <span class="text-[11px] font-bold uppercase tracking-wider text-base-content/60">Cette semaine</span>
           <h2 class="text-xl font-bold text-base-content capitalize mt-0.5">Bilan & Activité</h2>
@@ -69,7 +69,7 @@ const getPresenceDuration = (presence) => {
       </div>
 
       <!-- Jauge de progression et métrique hebdomadaire -->
-      <div class="bg-base-100/80 p-4 rounded-m3-md border border-base-300/40 flex flex-col gap-2.5">
+      <div class="bg-base-100/80 p-4 rounded-m3-md border border-base-300/40 flex flex-col gap-2.5 shrink-0">
         <div class="flex items-baseline justify-between">
           <span class="text-xs font-semibold text-base-content/70">Cumul hebdomadaire validé</span>
           <span class="text-sm font-extrabold text-primary">{{ progressPercent }}%</span>
@@ -99,9 +99,9 @@ const getPresenceDuration = (presence) => {
         </div>
       </div>
 
-      <!-- Section Historique Récent -->
-      <div class="flex flex-col gap-2">
-        <div class="flex items-center justify-between">
+      <!-- Section Historique Récent extensible en hauteur -->
+      <div class="flex-1 flex flex-col min-h-0 gap-2 my-1">
+        <div class="flex items-center justify-between shrink-0">
           <span class="text-xs font-bold text-base-content/70 uppercase tracking-wider">
             Derniers pointages
           </span>
@@ -109,7 +109,7 @@ const getPresenceDuration = (presence) => {
         </div>
 
         <!-- Liste des pointages récents -->
-        <div v-if="recentPresences.length > 0" class="flex flex-col gap-1.5">
+        <div v-if="recentPresences.length > 0" class="flex-1 flex flex-col gap-1.5 overflow-y-auto min-h-0">
           <div
             v-for="item in recentPresences"
             :key="item.id"
@@ -134,23 +134,27 @@ const getPresenceDuration = (presence) => {
           </div>
         </div>
 
-        <!-- État vide si aucun historique encore présent -->
+        <!-- État vide centré et valorisé dans l'espace disponible -->
         <div
           v-else
-          class="p-4 rounded-m3-md bg-base-100/40 border border-base-300/30 text-center flex flex-col items-center gap-1.5"
+          class="flex-1 flex flex-col items-center justify-center p-6 rounded-m3-md bg-base-100/40 border border-base-300/30 text-center gap-2 min-h-[130px]"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-base-content/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-            <line x1="16" y1="2" x2="16" y2="6"></line>
-            <line x1="8" y1="2" x2="8" y2="6"></line>
-            <line x1="3" y1="10" x2="21" y2="10"></line>
-          </svg>
-          <span class="text-xs text-base-content/60 font-medium">Aucun pointage antérieur enregistré cette semaine.</span>
+          <div class="w-10 h-10 rounded-full bg-base-200 flex items-center justify-center text-base-content/40">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+          </div>
+          <span class="text-xs text-base-content/60 font-medium max-w-xs">
+            Aucun pointage antérieur enregistré cette semaine.
+          </span>
         </div>
       </div>
 
-      <!-- Action rapide vers les disponibilités -->
-      <div class="pt-2 mt-auto">
+      <!-- Action rapide vers les disponibilités ancrée en bas -->
+      <div class="pt-2 mt-auto shrink-0">
         <button
           type="button"
           class="btn btn-ghost border border-base-300/80 w-full text-xs font-semibold min-h-12 rounded-m3-md gap-2 text-base-content/80 hover:text-base-content hover:bg-base-100 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
