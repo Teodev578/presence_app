@@ -16,6 +16,9 @@ const fullName = ref('')
 const showPassword = ref(false)
 const message = ref('')
 const isOnline = ref(typeof navigator !== 'undefined' ? navigator.onLine : true)
+const isSuccess = ref(false)
+const successText = ref('')
+const isForgotSuccess = ref(false)
 
 let messageTimer = null
 
@@ -74,7 +77,10 @@ const handleSubmit = async () => {
     )
     if (error) return
 
-    message.value = 'Compte créé. Vous pouvez vous connecter.'
+    isSuccess.value = true
+    successText.value = 'Compte créé avec succès'
+    await new Promise((r) => setTimeout(r, 1100))
+    isSuccess.value = false
     isRegister.value = false
   } else {
     const { data, error } = await signIn(cleanEmail, cleanPassword)
@@ -82,6 +88,10 @@ const handleSubmit = async () => {
 
     const userProfile = await fetchProfile()
     const role = userProfile?.role || profile.value?.role || data?.user?.user_metadata?.role
+
+    isSuccess.value = true
+    successText.value = 'Connexion réussie'
+    await new Promise((r) => setTimeout(r, 700))
 
     // Routage direct selon le rôle
     if (role === 'admin' || role === 'manager') {
@@ -109,7 +119,10 @@ const handleForgotPassword = async () => {
 
   const { error } = await resetPassword(cleanEmail)
   if (!error) {
-    message.value = "Si un compte existe pour cet email, le lien vient d'être envoyé."
+    isForgotSuccess.value = true
+    setTimeout(() => {
+      isForgotSuccess.value = false
+    }, 4000)
   }
 }
 </script>
@@ -234,32 +247,25 @@ const handleForgotPassword = async () => {
               </div>
             </Transition>
 
-            <!-- Message d'information / confirmation -->
-            <Transition name="alert-fade">
-              <div v-if="message" class="alert alert-info text-xs py-2.5 rounded-m3-md flex items-center justify-between gap-2" role="status">
-                <span>{{ message }}</span>
-                <button
-                  type="button"
-                  class="btn btn-ghost btn-sm btn-circle shrink-0 hover:bg-black/10 text-info-content min-w-11 min-h-11"
-                  aria-label="Fermer la notification"
-                  @click="message = ''"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
-                </button>
-              </div>
-            </Transition>
-
-            <!-- Bouton d'action réinitialisation -->
+            <!-- Bouton d'action réinitialisation avec feedback intégré -->
             <button
               type="submit"
-              class="btn btn-primary w-full text-base font-bold min-h-12 shadow-xs rounded-m3-md mt-1 active:scale-98 transition-transform"
-              :disabled="authLoading"
+              class="btn w-full text-base font-bold min-h-12 shadow-xs rounded-m3-md mt-1 active:scale-98 transition-all gap-2"
+              :class="[
+                isForgotSuccess
+                  ? 'btn-success text-success-content focus-visible:ring-success'
+                  : 'btn-primary focus-visible:ring-primary'
+              ]"
+              :disabled="authLoading || isForgotSuccess"
             >
               <span v-if="authLoading" class="loading loading-spinner loading-sm"></span>
               <span v-if="authLoading">Envoi en cours...</span>
+              <template v-else-if="isForgotSuccess">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span>Lien envoyé par email</span>
+              </template>
               <span v-else>Envoyer le lien</span>
             </button>
           </form>
@@ -433,32 +439,27 @@ const handleForgotPassword = async () => {
               </div>
             </Transition>
 
-            <!-- Message d'information -->
-            <Transition name="alert-fade">
-              <div v-if="message" class="alert alert-info text-xs py-2.5 rounded-m3-md flex items-center justify-between gap-2" role="status">
-                <span>{{ message }}</span>
-                <button
-                  type="button"
-                  class="btn btn-ghost btn-sm btn-circle shrink-0 hover:bg-black/10 text-info-content min-w-11 min-h-11"
-                  aria-label="Fermer la notification"
-                  @click="message = ''"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
-                </button>
-              </div>
-            </Transition>
-
-            <!-- Bouton de soumission principal -->
+            <!-- Bouton de soumission principal avec feedback intégré -->
             <button
               type="submit"
-              class="btn btn-primary w-full text-base font-bold min-h-12 shadow-xs rounded-m3-md mt-2 active:scale-98 transition-transform"
-              :disabled="authLoading"
+              class="btn w-full text-base font-bold min-h-12 shadow-xs rounded-m3-md mt-2 active:scale-98 transition-all gap-2"
+              :class="[
+                isSuccess
+                  ? 'btn-success text-success-content focus-visible:ring-success'
+                  : 'btn-primary focus-visible:ring-primary'
+              ]"
+              :disabled="authLoading || isSuccess"
             >
               <span v-if="authLoading" class="loading loading-spinner loading-sm"></span>
-              <span v-if="authLoading">Connexion en cours...</span>
+              <span v-if="authLoading">
+                {{ isRegister ? 'Création en cours...' : 'Connexion en cours...' }}
+              </span>
+              <template v-else-if="isSuccess">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span>{{ successText }}</span>
+              </template>
               <span v-else-if="isRegister">Créer le compte</span>
               <span v-else>Se connecter</span>
             </button>
