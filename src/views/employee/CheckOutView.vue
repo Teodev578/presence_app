@@ -169,48 +169,78 @@ const handleConfirmCheckOut = async () => {
           />
         </div>
 
-        <!-- Colonne Droite (7/12) : Statut du site, alertes et bouton d'action -->
-        <div class="md:col-span-7 flex flex-col justify-between gap-3 sm:gap-4 h-full">
-          <!-- Carte statut du site -->
-          <div v-if="activeLocation" class="bg-base-100/90 border border-base-300/50 p-3 sm:p-4 rounded-m3-lg flex flex-col gap-2.5 shadow-xs">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <span
-                  class="w-2.5 h-2.5 rounded-full shrink-0"
-                  :class="perimeterResult.inPerimeter ? 'bg-success animate-pulse' : 'bg-base-content/30'"
-                ></span>
-                <span class="text-xs font-semibold text-base-content/75">
-                  {{ perimeterResult.inPerimeter ? 'Vous êtes au bon endroit' : 'Lieu de pointage' }}
+        <!-- Colonne Droite (7/12) : Statut du site, synthèse contextuelle et action de départ -->
+        <div class="md:col-span-7 bg-base-100/70 border border-base-300/40 rounded-m3-lg p-3.5 sm:p-5 lg:p-6 shadow-xs flex flex-col justify-between h-full gap-3 sm:gap-4">
+          <!-- Partie haute : Statut du site de pointage -->
+          <div class="flex flex-col gap-3">
+            <div v-if="activeLocation" class="bg-base-200/80 border border-base-300/60 p-3.5 sm:p-4 rounded-m3-md flex flex-col gap-2.5 shadow-xs">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span
+                    class="w-2.5 h-2.5 rounded-full shrink-0"
+                    :class="perimeterResult.inPerimeter ? 'bg-success animate-pulse' : 'bg-base-content/30'"
+                  ></span>
+                  <span class="text-xs font-semibold text-base-content/75">
+                    {{ perimeterResult.inPerimeter ? 'Vous êtes au bon endroit' : 'Lieu de pointage' }}
+                  </span>
+                </div>
+                <span v-if="perimeterResult.inPerimeter" class="badge badge-success text-[10px] font-bold rounded-m3-xs py-1 px-2.5">
+                  Sur place
+                </span>
+                <span v-else class="badge badge-ghost text-[10px] text-base-content/60 rounded-m3-xs py-1 px-2.5">
+                  À distance du site
                 </span>
               </div>
-              <span v-if="perimeterResult.inPerimeter" class="badge badge-success text-[10px] font-bold rounded-m3-xs py-1 px-2.5">
-                Sur place
-              </span>
-              <span v-else class="badge badge-ghost text-[10px] text-base-content/60 rounded-m3-xs py-1 px-2.5">
-                À distance du site
-              </span>
+
+              <div class="text-sm sm:text-lg font-bold text-base-content flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 sm:w-5 sm:h-5 text-warning shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                  <circle cx="12" cy="10" r="3" />
+                </svg>
+                <span>{{ activeLocation.name }}</span>
+              </div>
             </div>
 
-            <div class="text-sm sm:text-lg font-bold text-base-content flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 sm:w-5 sm:h-5 text-warning shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                <circle cx="12" cy="10" r="3" />
-              </svg>
-              <span>{{ activeLocation.name }}</span>
+            <!-- Fiche récapitulative contextuelle de départ -->
+            <div class="grid grid-cols-2 gap-2.5 sm:gap-3">
+              <div class="bg-base-200/50 border border-base-300/40 rounded-m3-md p-3 flex flex-col gap-1">
+                <span class="text-[11px] font-medium text-base-content/60 flex items-center gap-1.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-warning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                  </svg>
+                  Statut session
+                </span>
+                <span class="text-sm sm:text-base font-bold text-base-content">
+                  En cours de service
+                </span>
+              </div>
+
+              <div class="bg-base-200/50 border border-base-300/40 rounded-m3-md p-3 flex flex-col gap-1">
+                <span class="text-[11px] font-medium text-base-content/60 flex items-center gap-1.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-warning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z" />
+                    <path d="M12 6a6 6 0 1 0 6 6 6 6 0 0 0-6-6zm0 10a4 4 0 1 1 4-4 4 4 0 0 1-4 4z" />
+                  </svg>
+                  Signal GPS
+                </span>
+                <span class="text-sm sm:text-base font-bold text-base-content">
+                  {{ gpsAccuracy ? `±${Math.round(gpsAccuracy)} m` : 'Recherche...' }}
+                </span>
+              </div>
             </div>
           </div>
 
-          <!-- Alertes d'erreurs éventuelles -->
-          <div v-if="gpsError" class="alert alert-error text-xs py-2 sm:py-2.5 rounded-m3-md">
-            <span>{{ gpsError }}</span>
-          </div>
+          <!-- Partie basse : Alertes et action de confirmation départ -->
+          <div class="flex flex-col gap-2.5 mt-auto">
+            <div v-if="gpsError" class="alert alert-error text-xs py-2 sm:py-2.5 rounded-m3-md">
+              <span>{{ gpsError }}</span>
+            </div>
 
-          <div v-if="errorMessage" class="alert alert-error text-xs py-2 sm:py-2.5 rounded-m3-md">
-            <span>{{ errorMessage }}</span>
-          </div>
+            <div v-if="errorMessage" class="alert alert-error text-xs py-2 sm:py-2.5 rounded-m3-md">
+              <span>{{ errorMessage }}</span>
+            </div>
 
-          <!-- Zone d'action de confirmation départ -->
-          <div class="flex flex-col gap-2 pt-2.5 border-t border-base-300/40 mt-auto">
             <button
               type="button"
               class="btn btn-warning text-warning-content w-full text-sm sm:text-base font-bold min-h-12 sm:min-h-13 shadow-xs rounded-m3-md active:scale-95 transition-transform focus-visible:ring-2 focus-visible:ring-warning focus-visible:ring-offset-2"

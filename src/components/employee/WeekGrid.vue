@@ -91,9 +91,9 @@ const handleSave = async () => {
 </script>
 
 <template>
-  <div class="flex flex-col gap-3 sm:gap-3.5 w-full">
+  <div class="flex flex-col gap-3.5 sm:gap-4 w-full flex-1 justify-between">
     <!-- Barre de navigation semaine avec cibles tactiles conformes WCAG -->
-    <div class="bg-base-100/90 border border-base-300/50 shadow-xs flex flex-row items-center justify-between p-1.5 sm:p-2 rounded-m3-lg">
+    <div class="bg-base-100/80 border border-base-300/40 shadow-xs flex flex-row items-center justify-between p-2 sm:p-2.5 rounded-m3-lg">
       <button
         type="button"
         class="btn btn-circle btn-ghost min-w-11 min-h-11 w-11 h-11 rounded-full focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
@@ -125,7 +125,7 @@ const handleSave = async () => {
     </div>
 
     <!-- Grille adaptative des 5 jours (colonne mobile, 5 colonnes dès md: 600px) -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2 sm:gap-2.5" role="group" aria-label="Jours de la semaine">
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2.5 sm:gap-3" role="group" aria-label="Jours de la semaine">
       <div
         v-for="d in daysWithDates"
         :key="d.id"
@@ -133,7 +133,7 @@ const handleSave = async () => {
         :aria-checked="selectedDays.includes(d.id)"
         :aria-label="`${d.label} ${d.dateFormatted}, ${selectedDays.includes(d.id) ? 'Disponible' : 'Non disponible'}`"
         tabindex="0"
-        class="card border p-2.5 sm:p-3 md:p-3.5 rounded-m3-md flex flex-row md:flex-col items-center md:items-start justify-between gap-2.5 transition-all select-none cursor-pointer !outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 shadow-xs"
+        class="card border p-3.5 sm:p-4 rounded-m3-md flex flex-row md:flex-col items-center md:items-start justify-between min-h-[76px] md:min-h-[112px] gap-2.5 transition-all select-none cursor-pointer !outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 shadow-xs"
         :class="[
           selectedDays.includes(d.id)
             ? 'border-primary bg-primary/10'
@@ -154,7 +154,7 @@ const handleSave = async () => {
         <!-- Toggle DaisyUI synchronisé -->
         <input
           type="checkbox"
-          class="toggle toggle-primary pointer-events-none md:mt-2"
+          class="toggle toggle-primary pointer-events-none md:mt-auto"
           :checked="selectedDays.includes(d.id)"
           tabindex="-1"
           aria-hidden="true"
@@ -162,17 +162,21 @@ const handleSave = async () => {
       </div>
     </div>
 
-    <!-- Champ note optionnelle -->
-    <div class="fieldset">
-      <label for="week-note" class="fieldset-legend text-xs font-semibold text-base-content/70">
+    <!-- Champ note optionnelle dans un panneau surfacique propre -->
+    <div class="bg-base-100/70 border border-base-300/40 rounded-m3-lg p-3 sm:p-3.5 flex flex-col gap-1.5 shadow-xs">
+      <label for="week-note" class="text-xs font-semibold text-base-content/75 flex items-center gap-1.5">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+        </svg>
         Précision pour votre équipe (optionnel)
       </label>
       <textarea
         id="week-note"
         v-model="note"
         rows="2"
-        class="textarea textarea-bordered w-full rounded-m3-md text-xs sm:text-sm py-1.5 px-3 bg-base-100/90 border-base-300/60 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary"
-        placeholder="Ex : Télétravail mercredi, déplacement chez un client vendredi..."
+        class="textarea textarea-bordered w-full rounded-m3-sm text-xs sm:text-sm py-1.5 px-3 bg-base-200/60 border-base-300/50 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary"
+        placeholder="Ex : Télétravail mercredi, déplacement client vendredi..."
       ></textarea>
     </div>
 
@@ -185,10 +189,10 @@ const handleSave = async () => {
     </div>
 
     <!-- Bouton d'enregistrement principal -->
-    <div class="pt-1.5 border-t border-base-300/40">
+    <div class="pt-1.5 border-t border-base-300/40 mt-auto">
       <button
         type="button"
-        class="btn btn-primary w-full text-sm sm:text-base font-bold min-h-11 sm:min-h-12 shadow-xs rounded-m3-md active:scale-95 transition-transform focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+        class="btn btn-primary w-full text-sm sm:text-base font-bold min-h-12 sm:min-h-13 shadow-xs rounded-m3-md active:scale-95 transition-transform focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         :disabled="isSaving"
         @click="handleSave"
       >
