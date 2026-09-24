@@ -1,8 +1,8 @@
-# Gates: Remédiation d'Ingénierie & Sécurisation du Setup (REC-03 à REC-07)
+# Gates: Optimisation Desktop Espace Employé & Carte Compagnon (Option A)
 
-OWNS: scripts/verify-gates.mjs, .agents/rules/**, docs/agents/**, CONTEXT.md, AGENTS.md, src/views/manager/**, src/views/auth/**, src/layouts/**
+OWNS: scripts/verify-gates.mjs, src/components/employee/WeekSummaryCard.vue, src/views/employee/HomeView.vue, src/layouts/EmployeeLayout.vue, src/lib/dateUtils.js, src/composables/usePresences.js
 
-Scope: Sécurisation des règles MCP Supabase, refonte déterministe de verify-gates.mjs, alignement du modèle de domaine CONTEXT.md avec IndexedDB Dexie, éradication de la Player Bar fantôme, mise en conformité des cibles tactiles interactives à 44px minimum et validation de compilation de production.
+Scope: Intégration de la carte compagnon WeekSummaryCard.vue affichant le total des heures de la semaine et l'historique des 5 derniers jours, mise en place d'une grille réactive asymétrique (lg:grid-cols-12) dans HomeView.vue, élargissement du conteneur desktop dans EmployeeLayout.vue (lg:max-w-5xl xl:max-w-6xl) et sanctuarisation absolue de la navigation employé (aucun navigation rail).
 
 - [x] G1: Absence totale d'emojis bruts et caractères graphiques unicode dans src/
   CHECK: node scripts/verify-gates.mjs --emojis
@@ -29,7 +29,13 @@ Scope: Sécurisation des règles MCP Supabase, refonte déterministe de verify-g
   EXPECT: G5 passed: SyncIndicator correctly placed in sidebar drawers and removed from headers
   EVIDENCE: G5 passed: SyncIndicator correctly placed in sidebar drawers and removed from headers (Code retour 0)
 
-- [x] G6: Compilation de production Vite sans erreur validée par le code retour du sous-processus
+- [x] G7: Implémentation de WeekSummaryCard.vue, de la grille desktop lg:grid-cols-12 et sanctuarisation de la navigation employé
+  CHECK: node scripts/verify-gates.mjs --employee-desktop
+  EXPECT: G7 passed: WeekSummaryCard and desktop grid properly implemented with employee navigation sanctuarized
+  EVIDENCE: G7 passed: WeekSummaryCard and desktop grid properly implemented with employee navigation sanctuarized (Code retour 0)
+
+- [x] G8: Compilation de production Vite sans erreur validée par le code retour du sous-processus
   CHECK: node scripts/verify-gates.mjs --build
   EXPECT: G6 passed: build succeeded with exit code 0
   EVIDENCE: G6 passed: build succeeded with exit code 0 (Code retour 0)
+

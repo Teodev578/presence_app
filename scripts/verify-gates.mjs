@@ -198,6 +198,36 @@ export function checkLayout() {
   return false;
 }
 
+export function checkEmployeeDesktop() {
+  const compPath = path.join(SRC_DIR, 'components', 'employee', 'WeekSummaryCard.vue');
+  if (!fs.existsSync(compPath)) {
+    console.error('FAILURE G7: WeekSummaryCard.vue does not exist');
+    return false;
+  }
+  const homePath = path.join(SRC_DIR, 'views', 'employee', 'HomeView.vue');
+  const homeContent = fs.readFileSync(homePath, 'utf8');
+  if (!homeContent.includes('WeekSummaryCard')) {
+    console.error('FAILURE G7: HomeView.vue does not import or use WeekSummaryCard');
+    return false;
+  }
+  if (!homeContent.includes('lg:grid-cols-12')) {
+    console.error('FAILURE G7: HomeView.vue does not define an asymmetric desktop grid lg:grid-cols-12');
+    return false;
+  }
+  const layoutPath = path.join(SRC_DIR, 'layouts', 'EmployeeLayout.vue');
+  const layoutContent = fs.readFileSync(layoutPath, 'utf8');
+  if (layoutContent.includes('navigation-rail') || layoutContent.includes('NavigationRail')) {
+    console.error('FAILURE G7: Sanctuarisation violée: navigation-rail trouvé dans EmployeeLayout.vue');
+    return false;
+  }
+  if (!layoutContent.includes('max-w-5xl') && !layoutContent.includes('max-w-6xl')) {
+    console.error('FAILURE G7: EmployeeLayout.vue does not expand desktop container (missing max-w-5xl/6xl)');
+    return false;
+  }
+  console.log('G7 passed: WeekSummaryCard and desktop grid properly implemented with employee navigation sanctuarized');
+  return true;
+}
+
 export function checkBuild() {
   const result = spawnSync('npm', ['run', 'build'], { encoding: 'utf8', stdio: 'pipe' });
   if (result.status === 0) {
@@ -223,6 +253,8 @@ if (arg === '--emojis') {
   success = checkTouchTargets();
 } else if (arg === '--layout') {
   success = checkLayout();
+} else if (arg === '--employee-desktop') {
+  success = checkEmployeeDesktop();
 } else if (arg === '--build') {
   success = checkBuild();
 } else if (arg === '--all') {
@@ -231,11 +263,13 @@ if (arg === '--emojis') {
   const r3 = checkShadows();
   const r4 = checkTouchTargets();
   const r5 = checkLayout();
-  const r6 = checkBuild();
-  success = r1 && r2 && r3 && r4 && r5 && r6;
+  const r6 = checkEmployeeDesktop();
+  const r7 = checkBuild();
+  success = r1 && r2 && r3 && r4 && r5 && r6 && r7;
 } else {
-  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--build|--all]`);
+  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--build|--all]`);
   process.exit(1);
 }
 
 process.exit(success ? 0 : 1);
+

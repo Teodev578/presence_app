@@ -74,3 +74,51 @@ export function calculateElapsedTime(startTime, now = new Date()) {
   if (hours === 0) return `${minutes} min`
   return `${hours}h ${String(minutes).padStart(2, '0')}min`
 }
+
+/**
+ * Calcule la date du lundi correspondant à une date donnée sous forme 'YYYY-MM-DD'.
+ *
+ * @param {Date|string|number} [d=new Date()]
+ * @returns {string} ex: "2026-09-21"
+ */
+export function getMonday(d = new Date()) {
+  const date = d instanceof Date ? new Date(d) : new Date(d)
+  const day = date.getDay()
+  const diff = date.getDate() - day + (day === 0 ? -6 : 1) // ajustement si dimanche (0)
+  date.setDate(diff)
+  return getLocalDateString(date)
+}
+
+/**
+ * Formate un nombre total de minutes en chaîne 'Xh YYmin' ou '0h 00min'.
+ *
+ * @param {number} totalMinutes
+ * @returns {string}
+ */
+export function formatHoursMinutes(totalMinutes) {
+  if (!totalMinutes || isNaN(totalMinutes) || totalMinutes <= 0) return '0h 00min'
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = Math.floor(totalMinutes % 60)
+  return `${hours}h ${String(minutes).padStart(2, '0')}min`
+}
+
+/**
+ * Formate une date ISO ou string 'YYYY-MM-DD' en libellé court français (ex: "Lun. 21 sept.").
+ *
+ * @param {string|Date} dateVal
+ * @returns {string}
+ */
+export function formatWorkDate(dateVal) {
+  if (!dateVal) return ''
+  const d = typeof dateVal === 'string' && dateVal.length === 10
+    ? new Date(`${dateVal}T12:00:00`)
+    : new Date(dateVal)
+  if (isNaN(d.getTime())) return ''
+  const formatted = d.toLocaleDateString('fr-FR', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  })
+  return formatted.charAt(0).toUpperCase() + formatted.slice(1)
+}
+

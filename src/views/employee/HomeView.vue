@@ -4,10 +4,16 @@ import { useRouter } from '../../router'
 import { useProfile } from '../../composables/useProfile'
 import { usePresences } from '../../composables/usePresences'
 import DayCard from '../../components/employee/DayCard.vue'
+import WeekSummaryCard from '../../components/employee/WeekSummaryCard.vue'
 
 const { navigate } = useRouter()
 const { profile } = useProfile()
-const { todayPresence } = usePresences()
+const {
+  todayPresence,
+  recentPresences,
+  weekPresences,
+  weekTotalMinutes,
+} = usePresences()
 
 const displayName = computed(() => {
   if (!profile.value?.full_name) return ''
@@ -29,13 +35,28 @@ const displayName = computed(() => {
       </div>
     </div>
 
-    <!-- Carte statut du jour -->
-    <DayCard
-      :presence="todayPresence"
-      :expected-arrival-time="profile?.expected_arrival_time || '09:00:00'"
-      @check-in="navigate('/employee/check-in')"
-      @check-out="navigate('/employee/check-out')"
-      @open-availabilities="navigate('/employee/availabilities')"
-    />
+    <!-- Grille adaptative : mono-colonne sur mobile/tablette, 2 colonnes asymétriques dès grand écran (lg: 1024px) -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+      <!-- Colonne principale : Carte statut du jour (7/12) -->
+      <div class="lg:col-span-7">
+        <DayCard
+          :presence="todayPresence"
+          :expected-arrival-time="profile?.expected_arrival_time || '09:00:00'"
+          @check-in="navigate('/employee/check-in')"
+          @check-out="navigate('/employee/check-out')"
+          @open-availabilities="navigate('/employee/availabilities')"
+        />
+      </div>
+
+      <!-- Colonne compagnon : Synthèse hebdomadaire et activité récente (5/12) -->
+      <div class="lg:col-span-5">
+        <WeekSummaryCard
+          :recent-presences="recentPresences"
+          :week-presences="weekPresences"
+          :week-total-minutes="weekTotalMinutes"
+          @open-availabilities="navigate('/employee/availabilities')"
+        />
+      </div>
+    </div>
   </div>
 </template>

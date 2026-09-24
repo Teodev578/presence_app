@@ -36,8 +36,8 @@ const workDuration = computed(() => {
 </script>
 
 <template>
-  <div class="card bg-base-200 border border-base-300/60 shadow-xs rounded-m3-lg">
-    <div class="card-body p-5 sm:p-6 gap-4">
+  <div class="card bg-base-200 border border-base-300/60 shadow-xs rounded-m3-lg h-full flex flex-col justify-between">
+    <div class="card-body p-5 sm:p-6 gap-4 flex-1 flex flex-col justify-between">
       <!-- En-tête de la carte -->
       <div class="flex items-start justify-between">
         <div>

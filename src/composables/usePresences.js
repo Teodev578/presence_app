@@ -1,7 +1,7 @@
 import { computed } from 'vue'
 import { db, useLiveQuery } from '../lib/db'
 import { generateUUIDv7 } from '../lib/uuidv7'
-import { getLocalDateString } from '../lib/dateUtils'
+import { getLocalDateString, getMonday } from '../lib/dateUtils'
 import { useAuth } from './useAuth'
 import { useSyncEngine } from './useSyncEngine'
 
@@ -23,6 +23,58 @@ export function usePresences() {
       .toArray()
     return list[0] || null
   }, null)
+
+  /**
+   * Observe les 5 derniers pointages de l'utilisateur connecté via useLiveQuery Dexie.
+   */
+  const recentPresences = useLiveQuery(async () => {
+    if (!user.value?.id) return []
+    const list = await db.presences
+      .where('user_id')
+      .equals(user.value.id)
+      .filter((p) => !p.deleted_at)
+      .toArray()
+    list.sort((a, b) => (b.work_date || '').localeCompare(a.work_date || ''))
+    return list.slice(0, 5)
+  }, [])
+
+  /**
+   * Observe les pointages de la semaine courante (depuis le lundi).
+   */
+  const weekPresences = useLiveQuery(async () => {
+    if (!user.value?.id) return []
+    const mondayStr = getMonday()
+    const list = await db.presences
+      .where('user_id')
+      .equals(user.value.id)
+      .filter((p) => !p.deleted_at && p.work_date >= mondayStr)
+      .toArray()
+    return list
+  }, [])
+
+  /**
+   * Calcule le total cumulé des minutes travaillées cette semaine.
+   */
+  const weekTotalMinutes = computed(() => {
+    if (!weekPresences.value || !weekPresences.value.length) return 0
+    let total = 0
+    for (const p of weekPresences.value) {
+      if (p.check_in_time && p.check_out_time) {
+        const start = new Date(p.check_in_time).getTime()
+        const end = new Date(p.check_out_time).getTime()
+        if (!isNaN(start) && !isNaN(end) && end > start) {
+          total += Math.floor((end - start) / 60000)
+        }
+      } else if (p.check_in_time && !p.check_out_time) {
+        const start = new Date(p.check_in_time).getTime()
+        const now = Date.now()
+        if (!isNaN(start) && now > start) {
+          total += Math.floor((now - start) / 60000)
+        }
+      }
+    }
+    return total
+  })
 
   /**
    * Enregistre un pointage d'arrivée (Check-In).
@@ -151,6 +203,9 @@ export function usePresences() {
 
   return {
     todayPresence,
+    recentPresences,
+    weekPresences,
+    weekTotalMinutes,
     checkIn,
     checkOut,
   }
