@@ -33,10 +33,10 @@ const handleLogout = async () => {
     <!-- Contrôle réactif du tiroir latéral -->
     <input id="employee-drawer" type="checkbox" class="drawer-toggle" v-model="drawerOpen" />
 
-    <!-- Conteneur principal de l'application -->
-    <div class="drawer-content flex flex-col min-h-screen pb-[calc(1.5rem+var(--safe-bottom,0px))] md:pb-8">
+    <!-- Conteneur principal de l'application : onepage strict sans défilement sur tablette et desktop -->
+    <div class="drawer-content flex flex-col min-h-screen md:h-screen md:max-h-screen md:overflow-hidden pb-[calc(0.75rem+var(--safe-bottom,0px))] md:pb-2">
       <!-- Barre de navigation supérieure épurée -->
-      <header class="navbar bg-base-100/90 backdrop-blur-md sticky top-0 z-30 border-b border-base-300 px-4 sm:px-6 min-h-14">
+      <header class="navbar bg-base-100/90 backdrop-blur-md sticky top-0 z-30 border-b border-base-300 px-4 sm:px-6 min-h-14 shrink-0">
         <!-- Bouton hamburger (mobile, tablette et desktop) + Marque & Logo -->
         <div class="flex items-center gap-2 sm:gap-3">
           <label
@@ -73,8 +73,8 @@ const handleLogout = async () => {
         </div>
       </header>
 
-      <!-- Conteneur principal de la vue active : fluide, élargi jusqu'à 2xl avec étirement vertical complet -->
-      <main class="flex-1 flex flex-col w-full max-w-6xl xl:max-w-7xl 2xl:max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 xl:px-10 py-4 sm:py-6 md:py-8 transition-all min-h-0">
+      <!-- Conteneur principal de la vue active : fluide, optimisé onepage sans scrollbar -->
+      <main class="flex-1 flex flex-col w-full max-w-6xl xl:max-w-7xl 2xl:max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 xl:px-10 py-2 sm:py-2.5 md:py-3 transition-all min-h-0 overflow-visible md:overflow-hidden">
         <slot />
       </main>
     </div>

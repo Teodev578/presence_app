@@ -258,7 +258,12 @@ export function checkResponsiveCards() {
     return false;
   }
 
-  console.log('G8 passed: cards responsiveness and vertical coverage validated without altering employee navigation');
+  if (!homeContent.includes('order-2 md:order-1') || !homeContent.includes('order-1 md:order-2')) {
+    console.error('FAILURE G8: HomeView.vue does not invert cards on mobile format (missing order-2 md:order-1 or order-1 md:order-2)');
+    return false;
+  }
+
+  console.log('G8 passed: cards responsiveness, mobile order inversion, and vertical coverage validated');
   return true;
 }
 

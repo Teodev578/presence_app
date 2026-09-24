@@ -23,22 +23,22 @@ const displayName = computed(() => {
 </script>
 
 <template>
-  <div class="flex flex-col flex-1 min-h-0 gap-4 md:gap-6 lg:gap-7">
+  <div class="flex flex-col flex-1 min-h-0 gap-2 sm:gap-3 md:gap-3.5 h-full overflow-y-auto md:overflow-hidden pb-4 md:pb-0">
     <div class="flex items-baseline justify-between shrink-0">
       <div>
-        <h1 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-base-content tracking-tight">
+        <h1 class="text-xl sm:text-2xl lg:text-3xl font-extrabold text-base-content tracking-tight">
           Bonjour{{ displayName ? ` ${displayName}` : '' }}
         </h1>
-        <p class="text-xs sm:text-sm md:text-base text-base-content/60 mt-1">
+        <p class="text-xs sm:text-sm text-base-content/60 mt-0.5">
           Espace de pointage personnel
         </p>
       </div>
     </div>
 
-    <!-- Grille adaptative : mono-colonne sur mobile, 2 colonnes dès tablette (md: 768px) et grand écran (lg: 1024px) -->
-    <div class="grid grid-cols-1 md:grid-cols-12 lg:grid-cols-12 gap-5 md:gap-6 lg:gap-7 xl:gap-8 items-stretch flex-1 min-h-0">
-      <!-- Colonne principale : Carte statut du jour (6/12 tablette, 7/12 desktop) -->
-      <div class="md:col-span-6 lg:col-span-7 flex flex-col min-h-0">
+    <!-- Grille adaptative : mono-colonne sur mobile (ordre inversé), 2 colonnes dès tablette (md: 768px) et grand écran (lg: 1024px) -->
+    <div class="grid grid-cols-1 md:grid-cols-12 lg:grid-cols-12 gap-3.5 md:gap-4 lg:gap-5 xl:gap-6 items-stretch flex-1 min-h-0">
+      <!-- Carte statut du jour (en 2e position sur mobile, colonne gauche 6/12 tablette, 7/12 desktop) -->
+      <div class="order-2 md:order-1 md:col-span-6 lg:col-span-7 flex flex-col min-h-0">
         <DayCard
           :presence="todayPresence"
           :expected-arrival-time="profile?.expected_arrival_time || '09:00:00'"
@@ -48,8 +48,8 @@ const displayName = computed(() => {
         />
       </div>
 
-      <!-- Colonne compagnon : Synthèse hebdomadaire et activité récente (6/12 tablette, 5/12 desktop) -->
-      <div class="md:col-span-6 lg:col-span-5 flex flex-col min-h-0">
+      <!-- Carte synthèse hebdomadaire (en 1re position sur mobile, colonne droite 6/12 tablette, 5/12 desktop) -->
+      <div class="order-1 md:order-2 md:col-span-6 lg:col-span-5 flex flex-col min-h-0">
         <WeekSummaryCard
           :recent-presences="recentPresences"
           :week-presences="weekPresences"
