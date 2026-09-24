@@ -48,7 +48,7 @@ const workDuration = computed(() => {
         </div>
         <StatusBadge v-if="presence" :status="presence.status" class="shrink-0" />
         <span v-else class="badge badge-ghost text-xs font-semibold py-1.5 px-2.5 rounded-m3-sm shrink-0">
-          Non pointé
+          Pas encore pointé
         </span>
       </div>
 
@@ -145,7 +145,7 @@ const workDuration = computed(() => {
               <line x1="12" y1="8" x2="12" y2="12"></line>
               <line x1="12" y1="16" x2="12.01" y2="16"></line>
             </svg>
-            <span>Pointage géolocalisé attendu sur votre site de travail.</span>
+            <span>Nous vous attendons sur votre lieu de travail, merci !</span>
           </div>
         </div>
       </div>
@@ -205,7 +205,7 @@ const workDuration = computed(() => {
             <line x1="8" y1="2" x2="8" y2="6"></line>
             <line x1="3" y1="10" x2="21" y2="10"></line>
           </svg>
-          <span>Gérer mes disponibilités</span>
+          <span>Partager ma disponibilité cette semaine</span>
         </button>
       </div>
     </div>

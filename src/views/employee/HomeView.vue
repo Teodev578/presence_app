@@ -30,7 +30,7 @@ const displayName = computed(() => {
           Bonjour{{ displayName ? ` ${displayName}` : '' }}
         </h1>
         <p class="text-xs sm:text-sm text-base-content/60 mt-0.5">
-          Espace de pointage personnel
+          Prêt pour votre journée ?
         </p>
       </div>
     </div>
@@ -54,7 +54,6 @@ const displayName = computed(() => {
           :recent-presences="recentPresences"
           :week-presences="weekPresences"
           :week-total-minutes="weekTotalMinutes"
-          @open-availabilities="navigate('/employee/availabilities')"
         />
       </div>
     </div>
