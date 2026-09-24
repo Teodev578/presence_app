@@ -55,7 +55,7 @@ const getPresenceDuration = (presence) => {
 </script>
 <template>
   <div class="card bg-base-200 border border-base-300/60 shadow-xs rounded-m3-lg h-full flex flex-col justify-between overflow-hidden">
-    <div class="card-body p-4 sm:p-5 lg:p-5.5 gap-2.5 sm:gap-3 flex-1 flex flex-col justify-between min-h-0">
+    <div class="card-body p-3.5 sm:p-4.5 lg:p-5 gap-2.5 sm:gap-3 flex-1 flex flex-col justify-between min-h-0">
       <!-- En-tête de la carte avec typographie rehaussée -->
       <div class="flex items-start justify-between shrink-0 gap-2">
         <div>
