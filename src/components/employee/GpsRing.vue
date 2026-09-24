@@ -42,7 +42,7 @@ const formattedAllowedRadius = computed(() => formatDistance(props.allowedRadius
 </script>
 
 <template>
-  <div class="flex flex-col items-center gap-4 py-6 px-4">
+  <div class="flex flex-col items-center gap-2.5 sm:gap-4 py-3 sm:py-5 px-3 sm:px-4">
     <!-- Anneau radar animé -->
     <div
       class="relative w-28 h-28 rounded-full flex items-center justify-center transition-all duration-300"
@@ -103,14 +103,14 @@ const formattedAllowedRadius = computed(() => formatDistance(props.allowedRadius
           <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
           </svg>
-          <span>Vous êtes bien sur place !</span>
+          <span>Emplacement reconnu !</span>
         </div>
         <p v-if="siteName" class="text-xs text-base-content/80 mt-0.5">
-          Vous êtes sur le site <strong class="text-base-content font-bold">{{ siteName }}</strong> (à {{ formattedDistance }})
+          Bienvenue sur le site <strong class="text-base-content font-bold">{{ siteName }}</strong>
         </p>
       </div>
       <div v-else class="flex flex-col items-center gap-0.5 text-xs text-error font-medium">
-        <div class="font-bold text-sm">Encore un peu loin du site</div>
+        <div class="font-bold text-sm">Encore quelques mètres pour rejoindre le site</div>
         <p v-if="closestSiteName" class="text-base-content/70 text-[11px] mt-0.5">
           Lieu le plus proche : <strong class="text-base-content">{{ closestSiteName }}</strong> (à {{ formattedDistance }}, tolérance : {{ formattedAllowedRadius }})
         </p>
@@ -120,7 +120,7 @@ const formattedAllowedRadius = computed(() => formatDistance(props.allowedRadius
       </div>
 
       <div v-if="accuracy" class="badge badge-ghost badge-sm text-[11px] text-base-content/60 mt-1 rounded-m3-xs">
-        Précision GPS : ±{{ accuracy }} m
+        Précision de la position : ±{{ accuracy }} m
       </div>
     </div>
   </div>

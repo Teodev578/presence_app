@@ -96,12 +96,12 @@ const perimeterResult = computed(() => {
 
 const handleConfirmCheckIn = async () => {
   if (!selectedLocation.value) {
-    errorMessage.value = 'Aucun site de pointage sélectionné.'
+    errorMessage.value = 'Veuillez sélectionner un lieu de travail.'
     return
   }
 
   if (!perimeterResult.value.inPerimeter) {
-    errorMessage.value = 'Rapprochez-vous du site pour valider votre présence.'
+    errorMessage.value = 'Rapprochez-vous de votre lieu de travail pour pouvoir valider.'
     return
   }
 
@@ -129,9 +129,9 @@ const handleConfirmCheckIn = async () => {
 
 <template>
   <div class="flex-1 flex flex-col justify-center items-center py-1 sm:py-2 md:py-3 w-full h-full min-h-0 overflow-y-auto">
-    <div class="card bg-base-200 border border-base-300/60 shadow-xs rounded-m3-xl p-4 sm:p-6 lg:p-8 w-full max-w-md md:max-w-5xl lg:max-w-5xl xl:max-w-6xl flex flex-col gap-4 sm:gap-6 my-auto">
+    <div class="card bg-base-200 border border-base-300/60 shadow-xs rounded-m3-xl p-3.5 sm:p-5 lg:p-7 w-full max-w-md md:max-w-5xl lg:max-w-5xl xl:max-w-6xl flex flex-col gap-3 sm:gap-5 my-auto">
       <!-- En-tête navigation avec touch target 44px+ -->
-      <div class="flex items-center justify-between border-b border-base-300/40 pb-3 sm:pb-4">
+      <div class="flex items-center justify-between border-b border-base-300/40 pb-2.5 sm:pb-3.5">
         <button
           type="button"
           class="btn btn-ghost btn-sm min-h-11 px-3 text-xs font-semibold gap-1.5 rounded-m3-sm text-base-content/75 hover:text-base-content focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
@@ -143,8 +143,8 @@ const handleConfirmCheckIn = async () => {
           <span>Retour</span>
         </button>
         <div class="text-right">
-          <h1 class="text-base sm:text-xl font-extrabold text-base-content tracking-tight">Pointer l'arrivée</h1>
-          <p class="text-xs text-base-content/60">Vérification de votre présence</p>
+          <h1 class="text-base sm:text-xl font-extrabold text-base-content tracking-tight">Valider mon arrivée</h1>
+          <p class="text-xs text-base-content/60">Ravi de vous retrouver sur site</p>
         </div>
       </div>
 
@@ -162,9 +162,9 @@ const handleConfirmCheckIn = async () => {
       </div>
 
       <!-- Corps adaptatif : colonne unique sur mobile, 2 colonnes harmonieuses sur tablette/desktop -->
-      <div v-else class="grid grid-cols-1 md:grid-cols-12 gap-5 md:gap-7 items-stretch">
+      <div v-else class="grid grid-cols-1 md:grid-cols-12 gap-3.5 sm:gap-5 md:gap-7 items-stretch">
         <!-- Colonne Gauche (5/12) : Radar GPS contextuel -->
-        <div class="md:col-span-5 bg-base-100/70 border border-base-300/40 rounded-m3-lg p-4 sm:p-6 shadow-xs flex flex-col justify-center items-center">
+        <div class="md:col-span-5 bg-base-100/70 border border-base-300/40 rounded-m3-lg p-3 sm:p-5 shadow-xs flex flex-col justify-center items-center">
           <GpsRing
             :in-perimeter="perimeterResult.inPerimeter"
             :distance="perimeterResult.distance"
@@ -178,9 +178,9 @@ const handleConfirmCheckIn = async () => {
         </div>
 
         <!-- Colonne Droite (7/12) : Statut du site, alertes et bouton d'action -->
-        <div class="md:col-span-7 flex flex-col justify-between gap-4">
+        <div class="md:col-span-7 flex flex-col justify-between gap-3 sm:gap-4">
           <!-- Carte statut de localisation contextuelle -->
-          <div v-if="selectedLocation" class="bg-base-100/90 border border-base-300/50 p-4 sm:p-5 rounded-m3-lg flex flex-col gap-3 shadow-xs">
+          <div v-if="selectedLocation" class="bg-base-100/90 border border-base-300/50 p-3 sm:p-4 rounded-m3-lg flex flex-col gap-2.5 shadow-xs">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2">
                 <span
@@ -188,19 +188,19 @@ const handleConfirmCheckIn = async () => {
                   :class="perimeterResult.inPerimeter ? 'bg-success animate-pulse' : 'bg-base-content/30'"
                 ></span>
                 <span class="text-xs font-semibold text-base-content/75">
-                  {{ perimeterResult.inPerimeter ? 'Lieu de travail confirmé' : 'Lieu le plus proche' }}
+                  {{ perimeterResult.inPerimeter ? 'Vous êtes au bon endroit' : 'Lieu le plus proche' }}
                 </span>
               </div>
               <span v-if="perimeterResult.inPerimeter" class="badge badge-success text-[10px] font-bold rounded-m3-xs py-1 px-2.5">
-                Vous êtes sur place
+                Sur place
               </span>
               <span v-else class="badge badge-ghost text-[10px] text-base-content/60 rounded-m3-xs py-1 px-2.5">
                 À distance du site
               </span>
             </div>
 
-            <div class="text-base sm:text-lg font-bold text-base-content flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <div class="text-sm sm:text-lg font-bold text-base-content flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                 <circle cx="12" cy="10" r="3" />
               </svg>
@@ -208,8 +208,8 @@ const handleConfirmCheckIn = async () => {
             </div>
 
             <!-- Sélecteur manuel discret de dérogation si plusieurs sites configurés -->
-            <div v-if="locations.length > 1" class="pt-3 border-t border-base-300/40 flex items-center justify-between gap-3">
-              <label for="loc-select" class="text-xs text-base-content/60 font-medium">Changer de lieu :</label>
+            <div v-if="locations.length > 1" class="pt-2 sm:pt-3 border-t border-base-300/40 flex items-center justify-between gap-3">
+              <label for="loc-select" class="text-xs text-base-content/60 font-medium">Autre lieu de travail :</label>
               <select
                 id="loc-select"
                 v-model="selectedLocation"
@@ -223,16 +223,16 @@ const handleConfirmCheckIn = async () => {
           </div>
 
           <!-- Alertes d'erreurs éventuelles -->
-          <div v-if="gpsError" class="alert alert-error text-xs py-2.5 rounded-m3-md">
+          <div v-if="gpsError" class="alert alert-error text-xs py-2 sm:py-2.5 rounded-m3-md">
             <span>{{ gpsError }}</span>
           </div>
 
-          <div v-if="errorMessage" class="alert alert-error text-xs py-2.5 rounded-m3-md">
+          <div v-if="errorMessage" class="alert alert-error text-xs py-2 sm:py-2.5 rounded-m3-md">
             <span>{{ errorMessage }}</span>
           </div>
 
           <!-- Zone d'action de confirmation -->
-          <div class="flex flex-col gap-2.5 pt-3 border-t border-base-300/40 mt-auto">
+          <div class="flex flex-col gap-2 pt-2.5 border-t border-base-300/40 mt-auto">
             <button
               type="button"
               class="btn btn-primary w-full text-sm sm:text-base font-bold min-h-12 sm:min-h-13 shadow-xs rounded-m3-md active:scale-95 transition-transform focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
@@ -240,15 +240,12 @@ const handleConfirmCheckIn = async () => {
               @click="handleConfirmCheckIn"
             >
               <span v-if="isSubmitting" class="loading loading-spinner loading-sm"></span>
-              <span v-if="isSubmitting">Enregistrement de votre arrivée...</span>
+              <span v-if="isSubmitting">Validation de votre arrivée en cours...</span>
               <span v-else-if="perimeterResult.inPerimeter">
-                Confirmer mon arrivée sur {{ selectedLocation?.name }}
+                Confirmer mon arrivée
               </span>
-              <span v-else>En attente de votre arrivée sur site</span>
+              <span v-else>Rapprochez-vous pour valider</span>
             </button>
-            <p class="text-xs text-base-content/50 text-center">
-              Fonctionne même sans connexion. Synchronisation automatique.
-            </p>
           </div>
         </div>
       </div>

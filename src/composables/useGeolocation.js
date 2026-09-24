@@ -134,16 +134,19 @@ export function useGeolocation() {
         isLocating.value = false
         switch (err.code) {
           case err.PERMISSION_DENIED:
-            gpsError.value = 'Accès GPS refusé. Veuillez autoriser la localisation.'
+            gpsError.value = 'Accès à votre position refusé. Vous pouvez l’activer dans les paramètres de votre appareil.'
             break
           case err.POSITION_UNAVAILABLE:
-            gpsError.value = 'Signal GPS introuvable.'
+            gpsError.value = 'Position géographique momentanément indisponible. Vérifiez votre connexion GPS.'
             break
           case err.TIMEOUT:
-            gpsError.value = 'Délai d’attente du signal GPS dépassé.'
+            // Ne pas afficher d'erreur de timeout si des coordonnées valides sont déjà disponibles
+            if (!currentCoords.value) {
+              gpsError.value = 'La recherche de votre position prend un instant. Vérifiez que votre GPS est bien actif.'
+            }
             break
           default:
-            gpsError.value = 'Erreur de localisation inconnue.'
+            gpsError.value = 'Impossible de déterminer votre position géographique actuelle.'
         }
       },
       {
