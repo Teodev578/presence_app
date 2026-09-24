@@ -91,9 +91,9 @@ const handleSave = async () => {
 </script>
 
 <template>
-  <div class="flex flex-col gap-4 w-full">
+  <div class="flex flex-col gap-3 sm:gap-3.5 w-full">
     <!-- Barre de navigation semaine avec cibles tactiles conformes WCAG -->
-    <div class="bg-base-100/90 border border-base-300/50 shadow-xs flex flex-row items-center justify-between p-2 sm:p-2.5 rounded-m3-lg">
+    <div class="bg-base-100/90 border border-base-300/50 shadow-xs flex flex-row items-center justify-between p-1.5 sm:p-2 rounded-m3-lg">
       <button
         type="button"
         class="btn btn-circle btn-ghost min-w-11 min-h-11 w-11 h-11 rounded-full focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
@@ -108,7 +108,7 @@ const handleSave = async () => {
 
       <div class="text-center flex flex-col items-center">
         <span class="badge badge-primary badge-xs font-bold uppercase tracking-wider mb-0.5 rounded-m3-xs">Semaine</span>
-        <h2 class="font-bold text-sm md:text-base text-base-content">{{ formatWeekLabel(currentWeekStart) }}</h2>
+        <h2 class="font-bold text-xs sm:text-sm md:text-base text-base-content">{{ formatWeekLabel(currentWeekStart) }}</h2>
       </div>
 
       <button
@@ -125,7 +125,7 @@ const handleSave = async () => {
     </div>
 
     <!-- Grille adaptative des 5 jours (colonne mobile, 5 colonnes dès md: 600px) -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2.5 sm:gap-3" role="group" aria-label="Jours de la semaine">
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2 sm:gap-2.5" role="group" aria-label="Jours de la semaine">
       <div
         v-for="d in daysWithDates"
         :key="d.id"
@@ -133,7 +133,7 @@ const handleSave = async () => {
         :aria-checked="selectedDays.includes(d.id)"
         :aria-label="`${d.label} ${d.dateFormatted}, ${selectedDays.includes(d.id) ? 'Disponible' : 'Non disponible'}`"
         tabindex="0"
-        class="card border p-3.5 sm:p-4 rounded-m3-md flex flex-row md:flex-col items-center md:items-start justify-between gap-3 transition-all select-none cursor-pointer !outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 shadow-xs"
+        class="card border p-2.5 sm:p-3 md:p-3.5 rounded-m3-md flex flex-row md:flex-col items-center md:items-start justify-between gap-2.5 transition-all select-none cursor-pointer !outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 shadow-xs"
         :class="[
           selectedDays.includes(d.id)
             ? 'border-primary bg-primary/10'
@@ -144,11 +144,11 @@ const handleSave = async () => {
         @keydown.enter.prevent="toggleDay(d.id)"
       >
         <div class="flex flex-col">
-          <div class="font-bold text-sm text-base-content flex items-center gap-1.5">
+          <div class="font-bold text-xs sm:text-sm text-base-content flex items-center gap-1.5">
             <span>{{ d.label }}</span>
             <span v-if="d.isToday" class="badge badge-primary badge-xs font-bold rounded-m3-xs">Aujourd'hui</span>
           </div>
-          <div class="text-xs text-base-content/60 mt-0.5 capitalize">{{ d.dateFormatted }}</div>
+          <div class="text-[11px] sm:text-xs text-base-content/60 mt-0.5 capitalize">{{ d.dateFormatted }}</div>
         </div>
 
         <!-- Toggle DaisyUI synchronisé -->
@@ -171,13 +171,13 @@ const handleSave = async () => {
         id="week-note"
         v-model="note"
         rows="2"
-        class="textarea textarea-bordered w-full rounded-m3-md text-sm bg-base-100/90 border-base-300/60 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary"
+        class="textarea textarea-bordered w-full rounded-m3-md text-xs sm:text-sm py-1.5 px-3 bg-base-100/90 border-base-300/60 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary"
         placeholder="Ex : Télétravail mercredi, déplacement chez un client vendredi..."
       ></textarea>
     </div>
 
     <!-- Message de confirmation -->
-    <div v-if="saveSuccess" class="alert alert-success text-xs py-2.5 justify-center rounded-m3-md flex items-center gap-2">
+    <div v-if="saveSuccess" class="alert alert-success text-xs py-2 justify-center rounded-m3-md flex items-center gap-2">
       <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="20 6 9 17 4 12"></polyline>
       </svg>
@@ -185,10 +185,10 @@ const handleSave = async () => {
     </div>
 
     <!-- Bouton d'enregistrement principal -->
-    <div class="pt-1 border-t border-base-300/40">
+    <div class="pt-1.5 border-t border-base-300/40">
       <button
         type="button"
-        class="btn btn-primary w-full text-sm sm:text-base font-bold min-h-12 sm:min-h-13 shadow-xs rounded-m3-md active:scale-95 transition-transform focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+        class="btn btn-primary w-full text-sm sm:text-base font-bold min-h-11 sm:min-h-12 shadow-xs rounded-m3-md active:scale-95 transition-transform focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         :disabled="isSaving"
         @click="handleSave"
       >

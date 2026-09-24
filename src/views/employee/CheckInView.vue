@@ -128,10 +128,10 @@ const handleConfirmCheckIn = async () => {
 </script>
 
 <template>
-  <div class="flex-1 flex flex-col justify-center items-center py-2 sm:py-4 md:py-6 w-full h-full min-h-0 overflow-y-auto">
-    <div class="card bg-base-200 border border-base-300/60 shadow-xs rounded-m3-xl p-4 sm:p-6 lg:p-7 w-full max-w-md md:max-w-3xl lg:max-w-4xl flex flex-col gap-4 sm:gap-5 my-auto">
+  <div class="flex-1 flex flex-col justify-center items-center py-1 sm:py-2 md:py-3 w-full h-full min-h-0 overflow-y-auto">
+    <div class="card bg-base-200 border border-base-300/60 shadow-xs rounded-m3-xl p-4 sm:p-6 lg:p-8 w-full max-w-md md:max-w-5xl lg:max-w-5xl xl:max-w-6xl flex flex-col gap-4 sm:gap-6 my-auto">
       <!-- En-tête navigation avec touch target 44px+ -->
-      <div class="flex items-center justify-between border-b border-base-300/40 pb-3">
+      <div class="flex items-center justify-between border-b border-base-300/40 pb-3 sm:pb-4">
         <button
           type="button"
           class="btn btn-ghost btn-sm min-h-11 px-3 text-xs font-semibold gap-1.5 rounded-m3-sm text-base-content/75 hover:text-base-content focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
@@ -143,8 +143,8 @@ const handleConfirmCheckIn = async () => {
           <span>Retour</span>
         </button>
         <div class="text-right">
-          <h1 class="text-base sm:text-lg font-extrabold text-base-content tracking-tight">Pointer l'arrivée</h1>
-          <p class="text-[11px] text-base-content/60">Vérification de votre présence</p>
+          <h1 class="text-base sm:text-xl font-extrabold text-base-content tracking-tight">Pointer l'arrivée</h1>
+          <p class="text-xs text-base-content/60">Vérification de votre présence</p>
         </div>
       </div>
 
@@ -161,10 +161,10 @@ const handleConfirmCheckIn = async () => {
         <span>Aucun lieu de travail actif n'est configuré pour le moment. Contactez votre responsable.</span>
       </div>
 
-      <!-- Corps adaptatif : colonne unique sur mobile, 2 colonnes sur tablette/desktop -->
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 items-stretch">
-        <!-- Colonne Gauche : Radar GPS contextuel -->
-        <div class="bg-base-100/70 border border-base-300/40 rounded-m3-lg p-2 sm:p-4 shadow-xs flex flex-col justify-center items-center">
+      <!-- Corps adaptatif : colonne unique sur mobile, 2 colonnes harmonieuses sur tablette/desktop -->
+      <div v-else class="grid grid-cols-1 md:grid-cols-12 gap-5 md:gap-7 items-stretch">
+        <!-- Colonne Gauche (5/12) : Radar GPS contextuel -->
+        <div class="md:col-span-5 bg-base-100/70 border border-base-300/40 rounded-m3-lg p-4 sm:p-6 shadow-xs flex flex-col justify-center items-center">
           <GpsRing
             :in-perimeter="perimeterResult.inPerimeter"
             :distance="perimeterResult.distance"
@@ -177,10 +177,10 @@ const handleConfirmCheckIn = async () => {
           />
         </div>
 
-        <!-- Colonne Droite : Statut du site, alertes et bouton d'action -->
-        <div class="flex flex-col justify-between gap-3 sm:gap-4">
+        <!-- Colonne Droite (7/12) : Statut du site, alertes et bouton d'action -->
+        <div class="md:col-span-7 flex flex-col justify-between gap-4">
           <!-- Carte statut de localisation contextuelle -->
-          <div v-if="selectedLocation" class="bg-base-100/90 border border-base-300/50 p-3.5 sm:p-4 rounded-m3-lg flex flex-col gap-2.5 shadow-xs">
+          <div v-if="selectedLocation" class="bg-base-100/90 border border-base-300/50 p-4 sm:p-5 rounded-m3-lg flex flex-col gap-3 shadow-xs">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2">
                 <span
@@ -191,16 +191,16 @@ const handleConfirmCheckIn = async () => {
                   {{ perimeterResult.inPerimeter ? 'Lieu de travail confirmé' : 'Lieu le plus proche' }}
                 </span>
               </div>
-              <span v-if="perimeterResult.inPerimeter" class="badge badge-success text-[10px] font-bold rounded-m3-xs py-1 px-2">
+              <span v-if="perimeterResult.inPerimeter" class="badge badge-success text-[10px] font-bold rounded-m3-xs py-1 px-2.5">
                 Vous êtes sur place
               </span>
-              <span v-else class="badge badge-ghost text-[10px] text-base-content/60 rounded-m3-xs py-1 px-2">
+              <span v-else class="badge badge-ghost text-[10px] text-base-content/60 rounded-m3-xs py-1 px-2.5">
                 À distance du site
               </span>
             </div>
 
-            <div class="text-sm sm:text-base font-bold text-base-content flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <div class="text-base sm:text-lg font-bold text-base-content flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                 <circle cx="12" cy="10" r="3" />
               </svg>
@@ -208,8 +208,8 @@ const handleConfirmCheckIn = async () => {
             </div>
 
             <!-- Sélecteur manuel discret de dérogation si plusieurs sites configurés -->
-            <div v-if="locations.length > 1" class="pt-2 border-t border-base-300/40 flex items-center justify-between gap-2">
-              <label for="loc-select" class="text-[11px] text-base-content/60 font-medium">Changer de lieu :</label>
+            <div v-if="locations.length > 1" class="pt-3 border-t border-base-300/40 flex items-center justify-between gap-3">
+              <label for="loc-select" class="text-xs text-base-content/60 font-medium">Changer de lieu :</label>
               <select
                 id="loc-select"
                 v-model="selectedLocation"
@@ -232,7 +232,7 @@ const handleConfirmCheckIn = async () => {
           </div>
 
           <!-- Zone d'action de confirmation -->
-          <div class="flex flex-col gap-2 pt-2 border-t border-base-300/40 mt-auto">
+          <div class="flex flex-col gap-2.5 pt-3 border-t border-base-300/40 mt-auto">
             <button
               type="button"
               class="btn btn-primary w-full text-sm sm:text-base font-bold min-h-12 sm:min-h-13 shadow-xs rounded-m3-md active:scale-95 transition-transform focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
@@ -246,7 +246,7 @@ const handleConfirmCheckIn = async () => {
               </span>
               <span v-else>En attente de votre arrivée sur site</span>
             </button>
-            <p class="text-[11px] text-base-content/50 text-center">
+            <p class="text-xs text-base-content/50 text-center">
               Fonctionne même sans connexion. Synchronisation automatique.
             </p>
           </div>
