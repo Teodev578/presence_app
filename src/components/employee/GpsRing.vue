@@ -93,34 +93,34 @@ const formattedAllowedRadius = computed(() => formatDistance(props.allowedRadius
     <div class="text-center flex flex-col items-center gap-1.5 max-w-sm">
       <div v-if="isLocating" class="text-sm font-semibold text-info flex items-center gap-1.5">
         <span class="loading loading-spinner loading-xs"></span>
-        Acquisition du signal GPS en cours...
+        Recherche de votre position...
       </div>
       <div v-else-if="!hasSitesConfigured" class="text-xs font-medium text-warning">
-        Aucun site de pointage actif configuré.
+        Aucun lieu de travail configuré pour le moment.
       </div>
       <div v-else-if="inPerimeter" class="flex flex-col items-center gap-1">
         <div class="badge badge-success text-success-content font-bold py-3 px-4 text-xs gap-1.5 rounded-m3-xs">
           <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
           </svg>
-          <span>Position validée</span>
+          <span>Vous êtes bien sur place !</span>
         </div>
         <p v-if="siteName" class="text-xs text-base-content/80 mt-0.5">
           Vous êtes sur le site <strong class="text-base-content font-bold">{{ siteName }}</strong> (à {{ formattedDistance }})
         </p>
       </div>
       <div v-else class="flex flex-col items-center gap-0.5 text-xs text-error font-medium">
-        <div class="font-bold text-sm">Hors périmètre de pointage</div>
+        <div class="font-bold text-sm">Encore un peu loin du site</div>
         <p v-if="closestSiteName" class="text-base-content/70 text-[11px] mt-0.5">
-          Site le plus proche : <strong class="text-base-content">{{ closestSiteName }}</strong> (à {{ formattedDistance }}, rayon : {{ formattedAllowedRadius }})
+          Lieu le plus proche : <strong class="text-base-content">{{ closestSiteName }}</strong> (à {{ formattedDistance }}, tolérance : {{ formattedAllowedRadius }})
         </p>
         <p v-else class="text-base-content/60 text-[11px] mt-0.5">
-          Distance : {{ formattedDistance }} (rayon requis : {{ formattedAllowedRadius }})
+          Distance : {{ formattedDistance }} (tolérance : {{ formattedAllowedRadius }})
         </p>
       </div>
 
       <div v-if="accuracy" class="badge badge-ghost badge-sm text-[11px] text-base-content/60 mt-1 rounded-m3-xs">
-        Précision satellite : ±{{ accuracy }} m
+        Précision GPS : ±{{ accuracy }} m
       </div>
     </div>
   </div>

@@ -6,24 +6,32 @@ const { navigate } = useRouter()
 </script>
 
 <template>
-  <div class="flex flex-col gap-4 max-w-lg md:max-w-4xl mx-auto">
-    <div class="flex items-center justify-between">
-      <button
-        type="button"
-        class="btn btn-ghost min-h-12 px-3 text-xs font-semibold gap-1 rounded-m3-sm"
-        @click="navigate('/employee')"
-      >
-        ← Retour
-      </button>
-      <h2 class="text-base font-bold text-base-content">Mes disponibilités</h2>
-      <span class="w-16"></span>
+  <div class="flex-1 flex flex-col justify-center items-center py-2 sm:py-4 w-full h-full min-h-0 overflow-y-auto">
+    <div class="card bg-base-200 border border-base-300/60 shadow-xs rounded-m3-xl p-4 sm:p-6 lg:p-7 w-full max-w-2xl md:max-w-3xl flex flex-col gap-4 my-auto">
+      <!-- En-tête navigation avec touch target 44px+ -->
+      <div class="flex items-center justify-between border-b border-base-300/40 pb-3">
+        <button
+          type="button"
+          class="btn btn-ghost btn-sm min-h-11 px-3 text-xs font-semibold gap-1.5 rounded-m3-sm text-base-content/75 hover:text-base-content focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          @click="navigate('/employee')"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+          <span>Retour</span>
+        </button>
+        <div class="text-right">
+          <h1 class="text-base sm:text-lg font-extrabold text-base-content tracking-tight">Mes disponibilités</h1>
+          <p class="text-[11px] text-base-content/60">Organisation de votre semaine</p>
+        </div>
+      </div>
+
+      <p class="text-xs text-base-content/65 leading-relaxed">
+        Indiquez vos jours de présence prévus sur site pour faciliter la coordination avec votre équipe.
+      </p>
+
+      <!-- Grille de saisie hebdomadaire -->
+      <WeekGrid />
     </div>
-
-    <p class="text-xs text-base-content/60 text-center leading-relaxed">
-      Indiquez vos jours de présence prévus (Lundi au Vendredi) pour la semaine choisie.
-    </p>
-
-    <!-- Grille de saisie hebdomadaire -->
-    <WeekGrid />
   </div>
 </template>
