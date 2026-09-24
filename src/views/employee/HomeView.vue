@@ -23,20 +23,20 @@ const displayName = computed(() => {
 </script>
 
 <template>
-  <div class="flex flex-col flex-1 min-h-0 gap-4 md:gap-6">
+  <div class="flex flex-col flex-1 min-h-0 gap-4 md:gap-6 lg:gap-7">
     <div class="flex items-baseline justify-between shrink-0">
       <div>
-        <h1 class="text-2xl md:text-3xl font-bold text-base-content tracking-tight">
+        <h1 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-base-content tracking-tight">
           Bonjour{{ displayName ? ` ${displayName}` : '' }}
         </h1>
-        <p class="text-xs md:text-sm text-base-content/60 mt-0.5">
+        <p class="text-xs sm:text-sm md:text-base text-base-content/60 mt-1">
           Espace de pointage personnel
         </p>
       </div>
     </div>
 
     <!-- Grille adaptative : mono-colonne sur mobile, 2 colonnes dès tablette (md: 768px) et grand écran (lg: 1024px) -->
-    <div class="grid grid-cols-1 md:grid-cols-12 lg:grid-cols-12 gap-4 md:gap-6 items-stretch flex-1 min-h-0">
+    <div class="grid grid-cols-1 md:grid-cols-12 lg:grid-cols-12 gap-5 md:gap-6 lg:gap-7 xl:gap-8 items-stretch flex-1 min-h-0">
       <!-- Colonne principale : Carte statut du jour (6/12 tablette, 7/12 desktop) -->
       <div class="md:col-span-6 lg:col-span-7 flex flex-col min-h-0">
         <DayCard

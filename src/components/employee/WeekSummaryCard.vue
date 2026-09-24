@@ -56,27 +56,29 @@ const getPresenceDuration = (presence) => {
 
 <template>
   <div class="card bg-base-200 border border-base-300/60 shadow-xs rounded-m3-lg h-full flex flex-col justify-between">
-    <div class="card-body p-5 sm:p-6 gap-4 flex-1 flex flex-col justify-between min-h-0">
-      <!-- En-tête de la carte -->
-      <div class="flex items-start justify-between shrink-0">
+    <div class="card-body p-6 sm:p-7 lg:p-8 gap-5 flex-1 flex flex-col justify-between min-h-0">
+      <!-- En-tête de la carte avec typographie rehaussée -->
+      <div class="flex items-start justify-between shrink-0 gap-3">
         <div>
-          <span class="text-[11px] font-bold uppercase tracking-wider text-base-content/60">Cette semaine</span>
-          <h2 class="text-xl font-bold text-base-content capitalize mt-0.5">Bilan & Activité</h2>
+          <span class="text-xs sm:text-sm font-bold uppercase tracking-wider text-base-content/60">Cette semaine</span>
+          <h2 class="text-2xl sm:text-3xl xl:text-4xl font-extrabold text-base-content capitalize mt-1 tracking-tight leading-tight">
+            Bilan & Activité
+          </h2>
         </div>
-        <span class="badge badge-primary py-2 px-2.5 rounded-m3-xs font-bold text-xs">
+        <span class="badge badge-primary py-2.5 px-3.5 rounded-m3-sm font-black text-xs sm:text-sm shrink-0 shadow-xs">
           {{ weekHoursFormatted }} / {{ weeklyTargetHours }}h
         </span>
       </div>
 
-      <!-- Jauge de progression et métrique hebdomadaire -->
-      <div class="bg-base-100/80 p-4 rounded-m3-md border border-base-300/40 flex flex-col gap-2.5 shrink-0">
+      <!-- Jauge de progression et métriques enrichies -->
+      <div class="bg-base-100/90 p-5 sm:p-6 lg:p-7 rounded-m3-lg border border-base-300/50 flex flex-col gap-4 shadow-xs shrink-0">
         <div class="flex items-baseline justify-between">
-          <span class="text-xs font-semibold text-base-content/70">Cumul hebdomadaire validé</span>
-          <span class="text-sm font-extrabold text-primary">{{ progressPercent }}%</span>
+          <span class="text-xs sm:text-sm font-bold text-base-content/75 uppercase tracking-wider">Cumul hebdomadaire validé</span>
+          <span class="text-xl sm:text-2xl lg:text-3xl font-black text-primary font-mono">{{ progressPercent }}%</span>
         </div>
 
         <progress
-          class="progress progress-primary w-full h-2 rounded-full"
+          class="progress progress-primary w-full h-3 rounded-full bg-base-200"
           :value="progressPercent"
           max="100"
           :aria-valuenow="progressPercent"
@@ -85,89 +87,123 @@ const getPresenceDuration = (presence) => {
           :aria-label="`Progression hebdomadaire de ${progressPercent}%`"
         ></progress>
 
-        <div class="flex items-center justify-between text-[11px] text-base-content/60">
-          <span>Objectif contractuel : {{ weeklyTargetHours }}h00</span>
-          <span v-if="progressPercent >= 100" class="text-success font-semibold flex items-center gap-1">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-            Objectif atteint
-          </span>
-          <span v-else class="text-base-content/50">
-            Reste {{ formatHoursMinutes(Math.max(0, targetMinutes - weekTotalMinutes)) }}
-          </span>
+        <!-- Mini-tuiles statistiques métriques -->
+        <div class="grid grid-cols-2 gap-3 pt-1">
+          <div class="flex items-center gap-2.5 p-2.5 sm:p-3 rounded-m3-sm bg-base-200/60 border border-base-300/40">
+            <div class="w-8 h-8 rounded-full bg-base-300/80 text-base-content/70 flex items-center justify-center shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+            </div>
+            <div class="flex flex-col min-w-0">
+              <span class="text-[10px] sm:text-xs font-semibold text-base-content/50 uppercase tracking-wider">Objectif</span>
+              <span class="text-xs sm:text-sm font-bold text-base-content truncate">{{ weeklyTargetHours }}h00</span>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2.5 p-2.5 sm:p-3 rounded-m3-sm bg-base-200/60 border border-base-300/40">
+            <div
+              class="w-8 h-8 rounded-full shrink-0 flex items-center justify-center"
+              :class="progressPercent >= 100 ? 'bg-success/15 text-success' : 'bg-primary/10 text-primary'"
+            >
+              <svg v-if="progressPercent >= 100" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 14 14"></polyline>
+              </svg>
+            </div>
+            <div class="flex flex-col min-w-0">
+              <span class="text-[10px] sm:text-xs font-semibold text-base-content/50 uppercase tracking-wider">Reste</span>
+              <span
+                class="text-xs sm:text-sm font-bold truncate"
+                :class="progressPercent >= 100 ? 'text-success' : 'text-base-content'"
+              >
+                {{ progressPercent >= 100 ? 'Atteint' : formatHoursMinutes(Math.max(0, targetMinutes - weekTotalMinutes)) }}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
       <!-- Section Historique Récent extensible en hauteur -->
-      <div class="flex-1 flex flex-col min-h-0 gap-2 my-1">
+      <div class="flex-1 flex flex-col min-h-0 gap-3 my-1">
         <div class="flex items-center justify-between shrink-0">
-          <span class="text-xs font-bold text-base-content/70 uppercase tracking-wider">
+          <span class="text-xs sm:text-sm font-bold text-base-content/75 uppercase tracking-wider">
             Derniers pointages
           </span>
-          <span class="text-[11px] text-base-content/50 font-medium">5 récents</span>
+          <span class="badge badge-ghost text-[10px] sm:text-xs font-semibold py-1 px-2.5 rounded-m3-xs text-base-content/60">
+            {{ recentPresences.length }} / 5 récents
+          </span>
         </div>
 
         <!-- Liste des pointages récents -->
-        <div v-if="recentPresences.length > 0" class="flex-1 flex flex-col gap-1.5 overflow-y-auto min-h-0">
+        <div v-if="recentPresences.length > 0" class="flex-1 flex flex-col gap-2 overflow-y-auto min-h-0">
           <div
             v-for="item in recentPresences"
             :key="item.id"
-            class="flex items-center justify-between p-2.5 rounded-m3-sm bg-base-100/60 border border-base-300/30 text-xs transition-colors hover:bg-base-100"
+            class="flex items-center justify-between p-3 sm:p-3.5 rounded-m3-md bg-base-100/70 border border-base-300/40 text-xs sm:text-sm transition-colors hover:bg-base-100 shadow-xs"
           >
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2.5">
               <span
-                class="w-2 h-2 rounded-full shrink-0"
+                class="w-2.5 h-2.5 rounded-full shrink-0"
                 :class="item.check_out_time ? 'bg-success' : 'bg-warning animate-pulse'"
               ></span>
-              <span class="font-semibold text-base-content">{{ formatWorkDate(item.work_date) }}</span>
+              <span class="font-bold text-base-content">{{ formatWorkDate(item.work_date) }}</span>
             </div>
 
             <div class="flex items-center gap-3">
-              <span class="font-mono text-base-content/70 text-[11px]">
+              <span class="font-mono text-base-content/75 text-xs sm:text-sm">
                 {{ formatTime(item.check_in_time) }} → {{ item.check_out_time ? formatTime(item.check_out_time) : 'En cours' }}
               </span>
-              <span class="badge badge-ghost badge-sm font-semibold rounded-m3-xs py-1 px-2 text-[10px]">
+              <span class="badge badge-ghost font-bold rounded-m3-xs py-1 px-2 text-[11px] sm:text-xs">
                 {{ getPresenceDuration(item) }}
               </span>
             </div>
           </div>
         </div>
 
-        <!-- État vide centré et valorisé dans l'espace disponible -->
+        <!-- État vide chaleureux, valorisé et centré dans l'espace disponible -->
         <div
           v-else
-          class="flex-1 flex flex-col items-center justify-center p-6 rounded-m3-md bg-base-100/40 border border-base-300/30 text-center gap-2 min-h-[130px]"
+          class="flex-1 flex flex-col items-center justify-center p-6 sm:p-8 rounded-m3-lg bg-base-100/70 border border-base-300/40 text-center gap-3 min-h-[160px]"
         >
-          <div class="w-10 h-10 rounded-full bg-base-200 flex items-center justify-center text-base-content/40">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <div class="w-14 h-14 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
               <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
               <line x1="16" y1="2" x2="16" y2="6"></line>
               <line x1="8" y1="2" x2="8" y2="6"></line>
               <line x1="3" y1="10" x2="21" y2="10"></line>
             </svg>
           </div>
-          <span class="text-xs text-base-content/60 font-medium max-w-xs">
-            Aucun pointage antérieur enregistré cette semaine.
-          </span>
+          <div class="flex flex-col gap-1 max-w-sm">
+            <span class="text-sm sm:text-base font-bold text-base-content">
+              Aucun pointage antérieur cette semaine
+            </span>
+            <span class="text-xs sm:text-sm text-base-content/60 leading-relaxed">
+              Vos prises de poste et fins de service enregistrées s'afficheront automatiquement ici.
+            </span>
+          </div>
         </div>
       </div>
 
       <!-- Action rapide vers les disponibilités ancrée en bas -->
-      <div class="pt-2 mt-auto shrink-0">
+      <div class="pt-3 mt-auto shrink-0 border-t border-base-300/40">
         <button
           type="button"
-          class="btn btn-ghost border border-base-300/80 w-full text-xs font-semibold min-h-12 rounded-m3-md gap-2 text-base-content/80 hover:text-base-content hover:bg-base-100 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          class="btn btn-ghost border border-base-300/80 w-full text-xs sm:text-sm font-semibold min-h-12 sm:min-h-13 rounded-m3-md gap-2.5 text-base-content/85 hover:text-base-content hover:bg-base-100 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           @click="emit('openAvailabilities')"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
             <line x1="16" y1="2" x2="16" y2="6"></line>
             <line x1="8" y1="2" x2="8" y2="6"></line>
             <line x1="3" y1="10" x2="21" y2="10"></line>
           </svg>
           <span>Consulter le planning complet de la semaine</span>
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 ml-auto text-base-content/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-auto text-base-content/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="9 18 15 12 9 6"></polyline>
           </svg>
         </button>

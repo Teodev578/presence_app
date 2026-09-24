@@ -1,8 +1,8 @@
-# Gates: Optimisation Responsivité des Cards & Couverture Espace Tablette/Desktop
+# Gates: Raffinement Esthétique, Typographie & Responsivité Étendue des Cards
 
 OWNS: scripts/verify-gates.mjs, src/layouts/EmployeeLayout.vue, src/views/employee/HomeView.vue, src/components/employee/DayCard.vue, src/components/employee/WeekSummaryCard.vue
 
-Scope: Optimiser la responsivité des cartes de l'espace employé pour éliminer le padding latéral excessif en mode tablette et desktop, assurer une couverture verticale fluide et complète de l'espace écran et sanctuariser strictement la navigation employé.
+Scope: Améliorer l'esthétique individuelle et la responsivité des cartes de l'espace employé, rehausser la hiérarchie typographique et les échelles de texte, équilibrer la densité visuelle sur grand écran (2xl) et préserver la sanctuarisation de la navigation employé.
 
 - [x] G1: Absence totale d'emojis bruts et caractères graphiques unicode dans src/
   CHECK: node scripts/verify-gates.mjs --emojis
