@@ -77,6 +77,10 @@ const generateCSV = async () => {
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
+
+    setTimeout(() => {
+      exportCount.value = null
+    }, 4000)
   } catch (err) {
     alert(`Erreur lors de l'export CSV : ${err.message}`)
   } finally {
@@ -119,21 +123,25 @@ const generateCSV = async () => {
         </div>
       </div>
 
-      <div v-if="exportCount !== null" class="alert alert-success text-xs py-2.5 rounded-m3-md flex items-center gap-2">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="20 6 9 17 4 12"></polyline>
-        </svg>
-        <span>Export réussi : <strong>{{ exportCount }}</strong> ligne(s) exportée(s).</span>
-      </div>
-
       <button
         type="button"
-        class="btn btn-primary w-full text-base font-bold min-h-12 shadow-xs rounded-m3-md mt-1 active:scale-98 transition-transform gap-2"
+        class="btn w-full text-base font-bold min-h-12 shadow-xs rounded-m3-md mt-1 active:scale-98 transition-all gap-2"
+        :class="[
+          exportCount !== null
+            ? 'btn-success text-success-content'
+            : 'btn-primary'
+        ]"
         :disabled="isExporting"
         @click="generateCSV"
       >
         <span v-if="isExporting" class="loading loading-spinner loading-sm"></span>
         <span v-if="isExporting">Génération en cours...</span>
+        <template v-else-if="exportCount !== null">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          <span>Export réussi ({{ exportCount }} ligne{{ exportCount > 1 ? 's' : '' }})</span>
+        </template>
         <template v-else>
           <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>

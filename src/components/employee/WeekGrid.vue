@@ -210,24 +210,27 @@ const handleSave = async () => {
       ></textarea>
     </div>
 
-    <!-- Message de confirmation -->
-    <div v-if="saveSuccess" class="alert alert-success text-xs py-2 justify-center rounded-m3-md flex items-center gap-2">
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="20 6 9 17 4 12"></polyline>
-      </svg>
-      <span>Vos disponibilités ont bien été enregistrées.</span>
-    </div>
-
-    <!-- Bouton d'enregistrement principal -->
-    <div class="pt-1.5 border-t border-base-300/40 mt-auto">
+    <!-- Bouton d'enregistrement principal avec feedback de succès intégré (zéro décalage de mise en page) -->
+    <div class="pt-2 border-t border-base-300/40 mt-auto">
       <button
         type="button"
-        class="btn btn-primary w-full text-sm sm:text-base font-bold min-h-12 sm:min-h-13 shadow-xs rounded-m3-md active:scale-95 transition-transform focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+        class="btn w-full text-sm sm:text-base font-bold min-h-12 sm:min-h-13 shadow-xs rounded-m3-md active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-offset-2"
+        :class="[
+          saveSuccess
+            ? 'btn-success text-success-content focus-visible:ring-success'
+            : 'btn-primary focus-visible:ring-primary'
+        ]"
         :disabled="isSaving || isEntireWeekPast"
         @click="handleSave"
       >
         <span v-if="isSaving" class="loading loading-spinner loading-sm"></span>
         <span v-if="isSaving">Enregistrement en cours...</span>
+        <template v-else-if="saveSuccess">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          <span>Disponibilités enregistrées</span>
+        </template>
         <span v-else-if="isEntireWeekPast">Semaine passée (non modifiable)</span>
         <span v-else>Enregistrer mes disponibilités</span>
       </button>

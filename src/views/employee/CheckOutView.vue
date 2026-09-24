@@ -23,6 +23,7 @@ const { todayPresence, checkOut } = usePresences()
 const location = ref(null)
 const allLocations = ref([])
 const isSubmitting = ref(false)
+const isSuccess = ref(false)
 const errorMessage = ref('')
 const isLoading = ref(true)
 
@@ -110,6 +111,8 @@ const handleConfirmCheckOut = async () => {
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
       navigator.vibrate(40)
     }
+    isSuccess.value = true
+    await new Promise((r) => setTimeout(r, 700))
     navigate('/employee')
   } catch (err) {
     errorMessage.value = `Erreur : ${err.message}`
@@ -243,12 +246,23 @@ const handleConfirmCheckOut = async () => {
 
             <button
               type="button"
-              class="btn btn-warning text-warning-content w-full text-sm sm:text-base font-bold min-h-12 sm:min-h-13 shadow-xs rounded-m3-md active:scale-95 transition-transform focus-visible:ring-2 focus-visible:ring-warning focus-visible:ring-offset-2"
-              :disabled="!perimeterResult.inPerimeter || isSubmitting || !activeLocation"
+              class="btn w-full text-sm sm:text-base font-bold min-h-12 sm:min-h-13 shadow-xs rounded-m3-md active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-offset-2"
+              :class="[
+                isSuccess
+                  ? 'btn-success text-success-content focus-visible:ring-success'
+                  : 'btn-warning text-warning-content focus-visible:ring-warning'
+              ]"
+              :disabled="!perimeterResult.inPerimeter || isSubmitting || isSuccess || !activeLocation"
               @click="handleConfirmCheckOut"
             >
               <span v-if="isSubmitting" class="loading loading-spinner loading-sm"></span>
               <span v-if="isSubmitting">Validation de votre départ en cours...</span>
+              <template v-else-if="isSuccess">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span>Départ validé</span>
+              </template>
               <span v-else-if="perimeterResult.inPerimeter">
                 Confirmer mon départ
               </span>
