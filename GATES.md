@@ -44,3 +44,8 @@ Scope: Inverser l'ordre des cartes en format mobile (carte hebdomadaire en premi
   EXPECT: G6 passed: build succeeded with exit code 0
   EVIDENCE: G6 passed: build succeeded with exit code 0 (vérifié par node scripts/verify-gates.mjs --build)
 
+- [x] G9: Expansion desktop des cartes sans contraintes de largeur étroites (w-full fluide sans padding excessif)
+  CHECK: node scripts/verify-gates.mjs --card-desktop
+  EXPECT: G9 passed: all employee cards expand to full desktop container width
+  EVIDENCE: G9 passed: all employee cards expand to full desktop container width (vérifié par node scripts/verify-gates.mjs --card-desktop)
+

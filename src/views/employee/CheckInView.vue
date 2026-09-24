@@ -128,10 +128,10 @@ const handleConfirmCheckIn = async () => {
 </script>
 
 <template>
-  <div class="flex-1 flex flex-col justify-center items-center py-1 sm:py-2 md:py-3 w-full h-full min-h-0 overflow-y-auto">
-    <div class="card bg-base-200 border border-base-300/60 shadow-xs rounded-m3-xl p-3.5 sm:p-5 lg:p-7 w-full max-w-md md:max-w-5xl lg:max-w-5xl xl:max-w-6xl flex flex-col gap-3 sm:gap-5 my-auto">
+  <div class="flex-1 flex flex-col w-full h-full min-h-0 overflow-y-auto md:overflow-hidden py-1 md:py-1.5">
+    <div class="card bg-base-200 border border-base-300/60 shadow-xs rounded-m3-xl p-3.5 sm:p-5 lg:p-6 w-full flex-1 flex flex-col justify-between gap-3 sm:gap-4 md:gap-5">
       <!-- En-tête navigation avec touch target 44px+ -->
-      <div class="flex items-center justify-between border-b border-base-300/40 pb-2.5 sm:pb-3.5">
+      <div class="flex items-center justify-between border-b border-base-300/40 pb-2.5 sm:pb-3.5 shrink-0">
         <button
           type="button"
           class="btn btn-ghost btn-sm min-h-11 px-3 text-xs font-semibold gap-1.5 rounded-m3-sm text-base-content/75 hover:text-base-content focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
@@ -162,9 +162,9 @@ const handleConfirmCheckIn = async () => {
       </div>
 
       <!-- Corps adaptatif : colonne unique sur mobile, 2 colonnes harmonieuses sur tablette/desktop -->
-      <div v-else class="grid grid-cols-1 md:grid-cols-12 gap-3.5 sm:gap-5 md:gap-7 items-stretch">
+      <div v-else class="grid grid-cols-1 md:grid-cols-12 gap-3.5 sm:gap-5 md:gap-6 items-stretch flex-1 min-h-0">
         <!-- Colonne Gauche (5/12) : Radar GPS contextuel -->
-        <div class="md:col-span-5 bg-base-100/70 border border-base-300/40 rounded-m3-lg p-3 sm:p-5 shadow-xs flex flex-col justify-center items-center">
+        <div class="md:col-span-5 bg-base-100/70 border border-base-300/40 rounded-m3-lg p-3 sm:p-5 shadow-xs flex flex-col justify-center items-center h-full">
           <GpsRing
             :in-perimeter="perimeterResult.inPerimeter"
             :distance="perimeterResult.distance"
@@ -178,9 +178,9 @@ const handleConfirmCheckIn = async () => {
         </div>
 
         <!-- Colonne Droite (7/12) : Statut du site, alertes et bouton d'action -->
-        <div class="md:col-span-7 flex flex-col justify-between gap-3 sm:gap-4">
+        <div class="md:col-span-7 flex flex-col justify-between gap-3 sm:gap-4 h-full">
           <!-- Carte statut de localisation contextuelle -->
-          <div v-if="selectedLocation" class="bg-base-100/90 border border-base-300/50 p-3 sm:p-4 rounded-m3-lg flex flex-col gap-2.5 shadow-xs">
+          <div v-if="selectedLocation" class="bg-base-100/90 border border-base-300/50 p-3.5 sm:p-4 rounded-m3-lg flex flex-col gap-2.5 shadow-xs">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2">
                 <span

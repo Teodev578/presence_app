@@ -6,10 +6,10 @@ const { navigate } = useRouter()
 </script>
 
 <template>
-  <div class="flex-1 flex flex-col justify-center items-center py-1 sm:py-2 w-full h-full min-h-0 overflow-y-auto md:overflow-hidden">
-    <div class="card bg-base-200 border border-base-300/60 shadow-xs rounded-m3-xl p-4 sm:p-5 md:p-6 w-full max-w-md md:max-w-5xl lg:max-w-5xl xl:max-w-6xl flex flex-col gap-3 sm:gap-3.5 my-auto">
+  <div class="flex-1 flex flex-col w-full h-full min-h-0 overflow-y-auto md:overflow-hidden py-1 md:py-1.5">
+    <div class="card bg-base-200 border border-base-300/60 shadow-xs rounded-m3-xl p-3.5 sm:p-5 lg:p-6 w-full flex-1 flex flex-col justify-between gap-3 sm:gap-4">
       <!-- En-tête navigation avec touch target 44px+ -->
-      <div class="flex items-center justify-between border-b border-base-300/40 pb-2.5 sm:pb-3">
+      <div class="flex items-center justify-between border-b border-base-300/40 pb-2.5 sm:pb-3 shrink-0">
         <button
           type="button"
           class="btn btn-ghost btn-sm min-h-11 px-3 text-xs font-semibold gap-1.5 rounded-m3-sm text-base-content/75 hover:text-base-content focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
@@ -26,7 +26,7 @@ const { navigate } = useRouter()
         </div>
       </div>
 
-      <p class="text-xs sm:text-sm text-base-content/65 leading-relaxed">
+      <p class="text-xs sm:text-sm text-base-content/65 leading-relaxed shrink-0">
         Indiquez vos jours de présence prévus sur site pour faciliter la coordination avec votre équipe.
       </p>
 
@@ -35,3 +35,4 @@ const { navigate } = useRouter()
     </div>
   </div>
 </template>
+

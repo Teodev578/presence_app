@@ -267,6 +267,29 @@ export function checkResponsiveCards() {
   return true;
 }
 
+export function checkCardDesktop() {
+  const files = ['CheckInView.vue', 'CheckOutView.vue', 'AvailabilitiesView.vue'];
+  let allPassed = true;
+  for (const f of files) {
+    const filePath = path.join(SRC_DIR, 'views', 'employee', f);
+    if (!fs.existsSync(filePath)) continue;
+    const content = fs.readFileSync(filePath, 'utf8');
+    if (content.includes('max-w-md md:max-w-3xl') || content.includes('max-w-2xl md:max-w-3xl') || content.includes('max-w-md md:max-w-5xl')) {
+      console.error(`FAILURE G9: ${f} contains narrow card constraints causing excessive padding`);
+      allPassed = false;
+    }
+    if (!content.includes('w-full flex-1')) {
+      console.error(`FAILURE G9: ${f} does not expand card with w-full flex-1`);
+      allPassed = false;
+    }
+  }
+  if (allPassed) {
+    console.log('G9 passed: all employee cards expand to full desktop container width');
+    return true;
+  }
+  return false;
+}
+
 export function checkBuild() {
   const result = spawnSync('npm', ['run', 'build'], { encoding: 'utf8', stdio: 'pipe' });
   if (result.status === 0) {
@@ -296,6 +319,8 @@ if (arg === '--emojis') {
   success = checkEmployeeDesktop();
 } else if (arg === '--responsive') {
   success = checkResponsiveCards();
+} else if (arg === '--card-desktop') {
+  success = checkCardDesktop();
 } else if (arg === '--build') {
   success = checkBuild();
 } else if (arg === '--all') {
@@ -306,10 +331,11 @@ if (arg === '--emojis') {
   const r5 = checkLayout();
   const r6 = checkEmployeeDesktop();
   const r7 = checkResponsiveCards();
+  const r9 = checkCardDesktop();
   const r8 = checkBuild();
-  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8;
+  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9;
 } else {
-  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--build|--all]`);
+  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--build|--all]`);
   process.exit(1);
 }
 
