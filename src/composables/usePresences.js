@@ -1,6 +1,7 @@
 import { computed } from 'vue'
 import { db, useLiveQuery } from '../lib/db'
 import { generateUUIDv7 } from '../lib/uuidv7'
+import { getLocalDateString } from '../lib/dateUtils'
 import { useAuth } from './useAuth'
 import { useSyncEngine } from './useSyncEngine'
 
@@ -8,13 +9,13 @@ export function usePresences() {
   const { user } = useAuth()
   const { refreshPendingCount, syncNow } = useSyncEngine()
 
-  const todayStr = new Date().toISOString().slice(0, 10)
-
   /**
    * Observe réactivement le pointage du jour de l'utilisateur connecté via useLiveQuery Dexie.
+   * Utilise la date calendaire locale de l'appareil (sans décalage de fuseau UTC).
    */
   const todayPresence = useLiveQuery(async () => {
     if (!user.value?.id) return null
+    const todayStr = getLocalDateString()
     const list = await db.presences
       .where('user_id')
       .equals(user.value.id)
@@ -32,6 +33,7 @@ export function usePresences() {
 
     const now = new Date()
     const checkInTime = now.toISOString()
+    const todayStr = getLocalDateString(now)
     const id = generateUUIDv7()
     const clientMutationId = generateUUIDv7()
 
@@ -91,7 +93,7 @@ export function usePresences() {
 
   /**
    * Enregistre un pointage de départ (Check-Out).
-   * Transaction Dexie atomique pure.
+   * Transaction Dexie atomique pure avec préservation de l'historique de retard.
    */
   const checkOut = async ({ presenceId, coords, accuracy }) => {
     if (!user.value?.id) throw new Error('Utilisateur non authentifié.')
@@ -100,17 +102,20 @@ export function usePresences() {
     const checkOutTime = now.toISOString()
     const clientMutationId = generateUUIDv7()
 
+    const currentRecord = await db.presences.get(presenceId)
+    if (!currentRecord) throw new Error('Enregistrement de présence introuvable.')
+
+    // Robustesse de l'audit trail : si l'employé était arrivé en retard, on conserve la trace avec 'completed_late'
+    const finalStatus = currentRecord.status === 'late' ? 'completed_late' : 'completed'
+
     const updateFields = {
       check_out_time: checkOutTime,
       check_out_lat: coords.latitude,
       check_out_lng: coords.longitude,
       check_out_accuracy: accuracy || 10,
-      status: 'completed',
+      status: finalStatus,
       updated_at: checkOutTime,
     }
-
-    const currentRecord = await db.presences.get(presenceId)
-    if (!currentRecord) throw new Error('Enregistrement de présence introuvable.')
 
     const payload = {
       ...currentRecord,
@@ -146,7 +151,6 @@ export function usePresences() {
 
   return {
     todayPresence,
-    todayStr,
     checkIn,
     checkOut,
   }

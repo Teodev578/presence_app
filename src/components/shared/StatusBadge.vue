@@ -14,6 +14,8 @@ const badgeConfig = computed(() => {
       return { label: 'Présent', badgeClass: 'badge-success text-success-content' }
     case 'late':
       return { label: 'En retard', badgeClass: 'badge-warning text-warning-content' }
+    case 'completed_late':
+      return { label: 'Terminé (retard)', badgeClass: 'badge-warning text-warning-content' }
     case 'completed':
       return { label: 'Terminé', badgeClass: 'badge-info text-info-content' }
     case 'absent':

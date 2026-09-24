@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import StatusBadge from '../shared/StatusBadge.vue'
+import { formatTime, calculateWorkDuration, calculateElapsedTime } from '../../lib/dateUtils'
 
 const props = defineProps({
   presence: {
@@ -23,11 +24,15 @@ const todayFormatted = computed(() => {
   })
 })
 
-const formatTime = (isoStr) => {
-  if (!isoStr) return '--:--'
-  const d = new Date(isoStr)
-  return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-}
+const workDuration = computed(() => {
+  if (props.presence?.check_in_time && props.presence?.check_out_time) {
+    return calculateWorkDuration(props.presence.check_in_time, props.presence.check_out_time)
+  }
+  if (props.presence?.check_in_time) {
+    return calculateElapsedTime(props.presence.check_in_time)
+  }
+  return null
+})
 </script>
 
 <template>
@@ -62,6 +67,45 @@ const formatTime = (isoStr) => {
         </div>
       </div>
 
+      <!-- Durée de travail ou temps écoulé -->
+      <div
+        v-if="workDuration"
+        class="flex items-center justify-center gap-1.5 text-xs font-medium py-1.5 px-3 rounded-m3-xs bg-base-100/60 border border-base-300/40"
+      >
+        <svg
+          v-if="!presence.check_out_time"
+          xmlns="http://www.w3.org/2000/svg"
+          class="w-3.5 h-3.5 text-warning animate-pulse"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <polyline points="12 6 12 12 16 14" />
+        </svg>
+        <svg
+          v-else
+          xmlns="http://www.w3.org/2000/svg"
+          class="w-3.5 h-3.5 text-success"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+          <polyline points="22 4 12 14.01 9 11.01" />
+        </svg>
+        <span class="text-base-content/70">
+          {{ presence.check_out_time ? 'Durée travaillée :' : 'En poste depuis :' }}
+        </span>
+        <strong class="text-base-content font-bold">{{ workDuration }}</strong>
+      </div>
+
       <!-- Actions principales contextuelles -->
       <div class="card-actions flex flex-col gap-2.5 mt-2">
         <!-- Cas 1 : Aucun pointage d'arrivée -->
@@ -93,10 +137,18 @@ const formatTime = (isoStr) => {
           <span>Pointer le départ</span>
         </button>
 
-        <!-- Cas 3 : Journée achevée -->
-        <div v-else class="alert alert-success/15 border border-success/30 text-success text-xs font-semibold py-2.5 justify-center rounded-m3-md">
-          Journée enregistrée
-        </div>
+        <!-- Cas 3 : Journée achevée (Bouton d'état intégré sans saut visuel) -->
+        <button
+          v-else
+          type="button"
+          disabled
+          class="btn btn-outline border-success/40 text-success bg-success/5 w-full shadow-xs text-base font-bold min-h-14 rounded-m3-md gap-2 cursor-default opacity-95"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-success" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          <span>Journée enregistrée</span>
+        </button>
 
         <button
           type="button"
