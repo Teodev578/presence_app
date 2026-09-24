@@ -25,22 +25,39 @@ const daysConfig = [
   { id: 5, label: 'Vendredi', short: 'Ven' },
 ]
 
+// Date locale au format YYYY-MM-DD (sans décalage UTC)
+const getLocalDateString = (d) => {
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 // Calcul des dates précises pour chaque jour de la semaine sélectionnée
 const daysWithDates = computed(() => {
   const base = new Date(currentWeekStart.value)
+  const todayStr = getLocalDateString(new Date())
   return daysConfig.map((d, index) => {
     const dayDate = new Date(base)
     dayDate.setDate(base.getDate() + index)
+    const dayStr = getLocalDateString(dayDate)
+    const isToday = dayStr === todayStr
+    const isPast = dayStr < todayStr
     return {
       ...d,
       dateFormatted: dayDate.toLocaleDateString('fr-FR', {
         day: 'numeric',
         month: 'short',
       }),
-      isToday:
-        dayDate.toISOString().slice(0, 10) === new Date().toISOString().slice(0, 10),
+      isToday,
+      isPast,
     }
   })
+})
+
+// Détecte si tous les jours ouvrés de la semaine affichée sont révolus
+const isEntireWeekPast = computed(() => {
+  return daysWithDates.value.length > 0 && daysWithDates.value.every((d) => d.isPast)
 })
 
 // Synchronise l'état local du formulaire : si la semaine a été personnalisée, charge ses données ; sinon, coche tous les jours
@@ -59,7 +76,11 @@ watch(
   { immediate: true }
 )
 
-const toggleDay = (dayId) => {
+const toggleDay = (day) => {
+  // Verrouille toute modification sur un jour déjà passé
+  if (day.isPast) return
+
+  const dayId = day.id
   const idx = selectedDays.value.indexOf(dayId)
   if (idx > -1) {
     selectedDays.value = selectedDays.value.filter((id) => id !== dayId)
@@ -69,6 +90,8 @@ const toggleDay = (dayId) => {
 }
 
 const handleSave = async () => {
+  if (isEntireWeekPast.value) return
+
   isSaving.value = true
   saveSuccess.value = false
 
@@ -131,31 +154,37 @@ const handleSave = async () => {
         :key="d.id"
         role="checkbox"
         :aria-checked="selectedDays.includes(d.id)"
-        :aria-label="`${d.label} ${d.dateFormatted}, ${selectedDays.includes(d.id) ? 'Disponible' : 'Non disponible'}`"
-        tabindex="0"
-        class="card border p-3.5 sm:p-4 rounded-m3-md flex flex-row md:flex-col items-center md:items-start justify-between min-h-[76px] md:min-h-[112px] gap-2.5 transition-all select-none cursor-pointer !outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 shadow-xs"
+        :aria-disabled="d.isPast"
+        :aria-label="`${d.label} ${d.dateFormatted}, ${selectedDays.includes(d.id) ? 'Disponible' : 'Non disponible'}${d.isPast ? ', passé et non modifiable' : ''}`"
+        :tabindex="d.isPast ? -1 : 0"
+        class="card border p-3.5 sm:p-4 rounded-m3-md flex flex-row md:flex-col items-center md:items-start justify-between min-h-[76px] md:min-h-[112px] gap-2.5 transition-all select-none !outline-none shadow-xs"
         :class="[
-          selectedDays.includes(d.id)
-            ? 'border-primary bg-primary/10'
-            : 'border-base-300/60 bg-base-100/70 hover:bg-base-100 hover:border-base-content/25'
+          d.isPast
+            ? 'opacity-45 bg-base-300/30 border-base-300/40 cursor-not-allowed'
+            : selectedDays.includes(d.id)
+              ? 'border-primary bg-primary/10 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2'
+              : 'border-base-300/60 bg-base-100/70 hover:bg-base-100 hover:border-base-content/25 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2'
         ]"
-        @click="toggleDay(d.id)"
-        @keydown.space.prevent="toggleDay(d.id)"
-        @keydown.enter.prevent="toggleDay(d.id)"
+        @click="toggleDay(d)"
+        @keydown.space.prevent="toggleDay(d)"
+        @keydown.enter.prevent="toggleDay(d)"
       >
         <div class="flex flex-col">
           <div class="font-bold text-xs sm:text-sm text-base-content flex items-center gap-1.5">
-            <span>{{ d.label }}</span>
-            <span v-if="d.isToday" class="badge badge-primary badge-xs font-bold rounded-m3-xs">Aujourd'hui</span>
+            <span :class="d.isPast ? 'text-base-content/60' : ''">{{ d.label }}</span>
+            <span v-if="d.isPast" class="badge badge-ghost badge-xs text-[10px] text-base-content/50 rounded-m3-xs py-0.5 px-1.5">Passé</span>
+            <span v-else-if="d.isToday" class="badge badge-primary badge-xs font-bold rounded-m3-xs">Aujourd'hui</span>
           </div>
-          <div class="text-[11px] sm:text-xs text-base-content/60 mt-0.5 capitalize">{{ d.dateFormatted }}</div>
+          <div class="text-[11px] sm:text-xs text-base-content/50 mt-0.5 capitalize">{{ d.dateFormatted }}</div>
         </div>
 
-        <!-- Toggle DaisyUI synchronisé -->
+        <!-- Toggle DaisyUI synchronisé (grisé et inactif si passé) -->
         <input
           type="checkbox"
           class="toggle toggle-primary pointer-events-none md:mt-auto"
+          :class="d.isPast ? 'opacity-40' : ''"
           :checked="selectedDays.includes(d.id)"
+          :disabled="d.isPast"
           tabindex="-1"
           aria-hidden="true"
         />
@@ -176,7 +205,8 @@ const handleSave = async () => {
         v-model="note"
         rows="2"
         class="textarea textarea-bordered w-full rounded-m3-sm text-xs sm:text-sm py-1.5 px-3 bg-base-200/60 border-base-300/50 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary"
-        placeholder="Ex : Télétravail mercredi, déplacement client vendredi..."
+        :disabled="isEntireWeekPast"
+        :placeholder="isEntireWeekPast ? 'Semaine archivée' : 'Ex : Télétravail mercredi, déplacement client vendredi...'"
       ></textarea>
     </div>
 
@@ -193,11 +223,12 @@ const handleSave = async () => {
       <button
         type="button"
         class="btn btn-primary w-full text-sm sm:text-base font-bold min-h-12 sm:min-h-13 shadow-xs rounded-m3-md active:scale-95 transition-transform focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-        :disabled="isSaving"
+        :disabled="isSaving || isEntireWeekPast"
         @click="handleSave"
       >
         <span v-if="isSaving" class="loading loading-spinner loading-sm"></span>
         <span v-if="isSaving">Enregistrement en cours...</span>
+        <span v-else-if="isEntireWeekPast">Semaine passée (non modifiable)</span>
         <span v-else>Enregistrer mes disponibilités</span>
       </button>
     </div>

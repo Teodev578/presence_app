@@ -290,6 +290,27 @@ export function checkCardDesktop() {
   return false;
 }
 
+export function checkPastDaysDisabled() {
+  const weekGridPath = path.join(SRC_DIR, 'components', 'employee', 'WeekGrid.vue');
+  if (!fs.existsSync(weekGridPath)) return false;
+  const content = fs.readFileSync(weekGridPath, 'utf8');
+
+  if (!content.includes('isPast')) {
+    console.error('FAILURE G10: WeekGrid.vue does not calculate or check isPast for days');
+    return false;
+  }
+  if (!content.includes(':disabled="d.isPast"')) {
+    console.error('FAILURE G10: WeekGrid.vue does not disable checkbox toggle for past days');
+    return false;
+  }
+  if (!content.includes('if (day.isPast) return')) {
+    console.error('FAILURE G10: WeekGrid.vue toggleDay does not prevent mutating past days');
+    return false;
+  }
+  console.log('G10 passed: past days in WeekGrid are grayed out, disabled and non-mutable');
+  return true;
+}
+
 export function checkBuild() {
   const result = spawnSync('npm', ['run', 'build'], { encoding: 'utf8', stdio: 'pipe' });
   if (result.status === 0) {
@@ -321,6 +342,8 @@ if (arg === '--emojis') {
   success = checkResponsiveCards();
 } else if (arg === '--card-desktop') {
   success = checkCardDesktop();
+} else if (arg === '--past-days') {
+  success = checkPastDaysDisabled();
 } else if (arg === '--build') {
   success = checkBuild();
 } else if (arg === '--all') {
@@ -332,10 +355,11 @@ if (arg === '--emojis') {
   const r6 = checkEmployeeDesktop();
   const r7 = checkResponsiveCards();
   const r9 = checkCardDesktop();
+  const r10 = checkPastDaysDisabled();
   const r8 = checkBuild();
-  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9;
+  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10;
 } else {
-  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--build|--all]`);
+  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--build|--all]`);
   process.exit(1);
 }
 

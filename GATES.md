@@ -48,4 +48,7 @@ Scope: Inverser l'ordre des cartes en format mobile (carte hebdomadaire en premi
   CHECK: node scripts/verify-gates.mjs --card-desktop
   EXPECT: G9 passed: all employee cards expand to full desktop container width
   EVIDENCE: G9 passed: all employee cards expand to full desktop container width (vérifié par node scripts/verify-gates.mjs --card-desktop)
-
+- [x] G10: Verrouillage et grisage non-mutable des jours révolus dans la saisie des disponibilités (WeekGrid)
+  CHECK: node scripts/verify-gates.mjs --past-days
+  EXPECT: G10 passed: past days in WeekGrid are grayed out, disabled and non-mutable
+  EVIDENCE: G10 passed: past days in WeekGrid are grayed out, disabled and non-mutable (vérifié par node scripts/verify-gates.mjs --past-days)

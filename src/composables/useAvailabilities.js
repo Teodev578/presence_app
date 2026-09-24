@@ -16,16 +16,37 @@ export function getMonday(d = new Date()) {
 }
 
 /**
- * Formate une date YYYY-MM-DD en libellé lisible (ex: "Semaine du 22 septembre").
+ * Formate une date YYYY-MM-DD (lundi) en plage hebdomadaire ouvrée (ex: "Semaine du 21 au 25 septembre 2026").
+ * Gère avec exactitude les transitions de mois et d'années.
  */
-export function formatWeekLabel(weekStartStr) {
+export function formatWeekLabel(weekStartStr, { includeWeekend = false } = {}) {
   if (!weekStartStr) return ''
-  const date = new Date(weekStartStr)
-  return `Semaine du ${date.toLocaleDateString('fr-FR', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  })}`
+
+  // Découpage manuel pour s'affranchir des décalages de fuseau UTC
+  const [yearStr, monthStr, dayStr] = weekStartStr.split('-')
+  const start = new Date(Number(yearStr), Number(monthStr) - 1, Number(dayStr))
+
+  const end = new Date(start)
+  end.setDate(start.getDate() + (includeWeekend ? 6 : 4))
+
+  const startDay = start.getDate()
+  const endDay = end.getDate()
+
+  const startMonth = start.toLocaleDateString('fr-FR', { month: 'long' })
+  const endMonth = end.toLocaleDateString('fr-FR', { month: 'long' })
+
+  const startYear = start.getFullYear()
+  const endYear = end.getFullYear()
+
+  if (startYear !== endYear) {
+    return `Semaine du ${startDay} ${startMonth} ${startYear} au ${endDay} ${endMonth} ${endYear}`
+  }
+
+  if (startMonth !== endMonth) {
+    return `Semaine du ${startDay} ${startMonth} au ${endDay} ${endMonth} ${endYear}`
+  }
+
+  return `Semaine du ${startDay} au ${endDay} ${endMonth} ${endYear}`
 }
 
 export function useAvailabilities() {
