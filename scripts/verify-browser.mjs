@@ -8,9 +8,12 @@
  * et la cascade CSS réelle, capture des copies d'écran de preuve, puis nettoie tout.
  *
  * Usage :
- *   node scripts/verify-browser.mjs --theme      bascule de thème
- *   node scripts/verify-browser.mjs --sessions   états des sessions de pointage
- *   node scripts/verify-browser.mjs              les deux
+ *   node scripts/verify-browser.mjs --theme         bascule de thème
+ *   node scripts/verify-browser.mjs --sessions      états des sessions de pointage
+ *   node scripts/verify-browser.mjs --sync-alert    alerte réseau de l'en-tête
+ *   node scripts/verify-browser.mjs --week-tile     densité de la tuile hebdomadaire
+ *   node scripts/verify-browser.mjs --status-badge  sémantique des statuts
+ *   node scripts/verify-browser.mjs                 tous les modes
  *
  * Dépendance d'environnement : un binaire Chrome (CHROME_PATH pour le forcer).
  */
@@ -26,10 +29,14 @@ const VITE_PORT = 5199
 const CDP_PORT = 9224
 const HARNESS_DIR = path.join(ROOT, '__browser-harness__')
 const EVIDENCE_DIR = path.join(ROOT, '.unlazy', 'evidence')
-const TOKEN_THEME = 'browser-verify: theme toggle passed'
-const TOKEN_SESSIONS = 'browser-verify: session states passed'
 
-const MODE = process.argv[2] === '--theme' ? 'theme' : process.argv[2] === '--sessions' ? 'sessions' : 'all'
+const TOKENS = {
+  theme: 'browser-verify: theme toggle passed',
+  sessions: 'browser-verify: session states passed',
+  'sync-alert': 'browser-verify: sync alert states passed',
+  'week-tile': 'browser-verify: week tile passed',
+  'status-badge': 'browser-verify: status badge passed',
+}
 
 const HARNESS_HTML = `<!doctype html>
 <html lang="fr">
@@ -48,8 +55,11 @@ const HARNESS_HTML = `<!doctype html>
 const HARNESS_JS = `import { createApp, h } from 'vue'
 import '../src/style.css'
 import ThemeToggle from '../src/components/shared/ThemeToggle.vue'
+import SyncAlert from '../src/components/shared/SyncAlert.vue'
+import StatusBadge from '../src/components/shared/StatusBadge.vue'
 import WeekSummaryCard from '../src/components/employee/WeekSummaryCard.vue'
 import { getLocalDateString, resolveSessionMinutes } from '../src/lib/dateUtils.js'
+import { useSyncEngine } from '../src/composables/useSyncEngine.js'
 
 const dayOffset = (offset) => {
   const d = new Date()
@@ -92,11 +102,32 @@ const presences = [
 
 const weekTotalMinutes = presences.reduce((sum, presence) => sum + resolveSessionMinutes(presence), 0)
 
+// Sonde sans rendu : expose le compteur d'attente pour simuler l'état réseau depuis l'oracle
+const PendingProbe = {
+  setup() {
+    const { pendingCount } = useSyncEngine()
+    window.__harness.setPendingCount = (value) => {
+      pendingCount.value = value
+    }
+    return () => null
+  },
+}
+
+window.__harness = { presences, weekTotalMinutes }
+
 const app = createApp({
   render: () =>
     h('div', { class: 'p-4 flex flex-col gap-4' }, [
+      h(PendingProbe),
       h('div', { id: 'toggle-host' }, [h(ThemeToggle, { showLabel: true })]),
       h('div', { id: 'toggle-icon-host' }, [h(ThemeToggle)]),
+      h('div', { id: 'sync-alert-host' }, [h(SyncAlert)]),
+      h('div', { id: 'status-badge-host', class: 'flex flex-wrap gap-2' }, [
+        h(StatusBadge, { status: 'present' }),
+        h(StatusBadge, { status: 'late' }),
+        h(StatusBadge, { status: 'completed' }),
+        h(StatusBadge, { status: 'completed_late' }),
+      ]),
       h('div', { id: 'card-host', style: 'max-width:520px' }, [
         h(WeekSummaryCard, {
           recentPresences: presences,
@@ -104,21 +135,26 @@ const app = createApp({
           weekTotalMinutes,
         }),
       ]),
+      h('div', { id: 'card-low-host', style: 'max-width:520px' }, [
+        h(WeekSummaryCard, {
+          recentPresences: presences,
+          weekPresences: presences,
+          weekTotalMinutes: 21,
+        }),
+      ]),
     ]),
 })
 
 app.mount('#app')
-
-// Exposé à l'oracle pour comparer le rendu à la valeur d'agrégation réellement passée
-window.__harness = { presences, weekTotalMinutes, resolveSessionMinutes }
 window.__harnessReady = true
 `
 
 const MEASURE_EXPRESSION = `(() => {
   const collapse = (value) => (value || '').replace(/\\s+/g, ' ').trim()
-  const push = (node) => (node ? getComputedStyle(node).backgroundColor : null)
+  const background = (node) => (node ? getComputedStyle(node).backgroundColor : null)
   const labelButton = document.querySelector('#toggle-host button')
   const iconButton = document.querySelector('#toggle-icon-host button')
+  const alertButton = document.querySelector('#sync-alert-host button')
   const labelRect = labelButton ? labelButton.getBoundingClientRect() : null
   const iconRect = iconButton ? iconButton.getBoundingClientRect() : null
   const meta = document.querySelector('meta[name="theme-color"]')
@@ -134,13 +170,15 @@ const MEASURE_EXPRESSION = `(() => {
         }
       })
     : []
+  const lowProgress = document.querySelector('#card-low-host progress')
 
   return {
     theme: document.documentElement.getAttribute('data-theme'),
     stored: window.localStorage.getItem('presence_theme'),
-    bodyBg: push(document.body),
+    bodyBg: background(document.body),
     meta: meta ? meta.content : null,
     labelText: labelButton ? collapse(labelButton.innerText) : null,
+    labelAria: labelButton ? labelButton.getAttribute('aria-label') : null,
     iconText: iconButton ? collapse(iconButton.innerText) : null,
     iconAria: iconButton ? iconButton.getAttribute('aria-label') : null,
     labelWidth: labelRect ? Math.round(labelRect.width) : 0,
@@ -148,8 +186,18 @@ const MEASURE_EXPRESSION = `(() => {
     iconWidth: iconRect ? Math.round(iconRect.width) : 0,
     iconHeight: iconRect ? Math.round(iconRect.height) : 0,
     labelCenter: labelRect ? { x: Math.round(labelRect.x + labelRect.width / 2), y: Math.round(labelRect.y + labelRect.height / 2) } : null,
+    syncAlertText: alertButton ? collapse(alertButton.innerText) : null,
+    syncAlertAria: alertButton ? alertButton.getAttribute('aria-label') : null,
+    badges: [...document.querySelectorAll('#status-badge-host .badge')].map((badge) => {
+      const dot = badge.querySelector('span.rounded-full')
+      return { text: collapse(badge.innerText), classes: badge.className, dot: dot ? dot.className : null }
+    }),
     rows,
     cardText: document.querySelector('#card-host') ? collapse(document.querySelector('#card-host').innerText) : null,
+    cardBadges: [...document.querySelectorAll('#card-host .badge')].map((badge) => collapse(badge.innerText)),
+    lowCardText: document.querySelector('#card-low-host') ? collapse(document.querySelector('#card-low-host').innerText) : null,
+    lowProgressValue: lowProgress ? lowProgress.getAttribute('value') : null,
+    lowProgressAria: lowProgress ? lowProgress.getAttribute('aria-valuenow') : null,
     weekTotal: window.__harness ? window.__harness.weekTotalMinutes : null,
   }
 })()`
@@ -297,6 +345,7 @@ function assertShape(snapshot) {
 }
 
 async function verifyTheme(cdp) {
+  const before = failures
   console.log('browser-verify: bascule de thème')
 
   const initial = await cdp.measure()
@@ -307,11 +356,12 @@ async function verifyTheme(cdp) {
   check('état initial : surface M3 claire rendue', () => assertEqual(initial.bodyBg, LIGHT_SURFACE, 'fond du corps'))
   check('état initial : meta theme-color alignée sur la surface claire', () => assertEqual(initial.meta, '#fdfcff', 'meta'))
 
-  check('variante libellée : libellé et action annoncés', () => {
-    assertTrue((initial.labelText || '').includes('Apparence : Système'), `libellé inattendu : ${initial.labelText}`)
-    assertTrue((initial.labelText || '').includes('passer au thème clair'), 'action suivante non annoncée')
+  check('variante compacte : mode courant lisible', () => assertEqual(initial.labelText, 'Système', 'libellé'))
+  check('variante compacte : action suivante annoncée', () => {
+    assertTrue((initial.labelAria || '').includes('Apparence : Système'), `aria : ${initial.labelAria}`)
+    assertTrue((initial.labelAria || '').includes('passer au thème clair'), 'action non annoncée')
   })
-  check('variante libellée : cible tactile au moins 44px', () => {
+  check('variante compacte : cible tactile au moins 44px', () => {
     assertTrue(initial.labelWidth >= 44, `largeur ${initial.labelWidth}px`)
     assertTrue(initial.labelHeight >= 44, `hauteur ${initial.labelHeight}px`)
   })
@@ -325,6 +375,7 @@ async function verifyTheme(cdp) {
   check('premier clic : thème clair forcé', () => assertEqual(light.theme, 'light', 'data-theme'))
   check('premier clic : préférence persistée', () => assertEqual(light.stored, 'light', 'localStorage'))
   check('premier clic : surface claire rendue', () => assertEqual(light.bodyBg, LIGHT_SURFACE, 'fond du corps'))
+  check('premier clic : libellé du mode mis à jour', () => assertEqual(light.labelText, 'Clair', 'libellé'))
   await cdp.screenshot('theme-light.png')
 
   await cdp.clickAt(light.labelCenter)
@@ -334,6 +385,7 @@ async function verifyTheme(cdp) {
   check('deuxième clic : surface sombre réellement rendue', () => assertEqual(dark.bodyBg, DARK_SURFACE, 'fond du corps'))
   check('les deux thèmes produisent des surfaces distinctes', () => assertTrue(light.bodyBg !== dark.bodyBg, 'surfaces identiques'))
   check('meta theme-color suit le thème sombre', () => assertEqual(dark.meta, '#111318', 'meta'))
+  check('deuxième clic : libellé du mode mis à jour', () => assertEqual(dark.labelText, 'Sombre', 'libellé'))
   await cdp.screenshot('theme-dark.png')
 
   await cdp.clickAt(dark.labelCenter)
@@ -359,10 +411,11 @@ async function verifyTheme(cdp) {
   const systemLight = await cdp.measure()
   check('mode système : retour à la surface claire', () => assertEqual(systemLight.bodyBg, LIGHT_SURFACE, 'fond du corps'))
 
-  return failures === 0
+  return failures === before
 }
 
 async function verifySessions(cdp) {
+  const before = failures
   console.log('browser-verify: états des sessions')
 
   const snapshot = await cdp.measure()
@@ -374,7 +427,7 @@ async function verifySessions(cdp) {
   const stale = snapshot.rows.find((row) => (row.text || '').includes('Départ manquant'))
   const openToday = snapshot.rows.find((row) => (row.text || '').includes('En cours'))
 
-  check('session close : durée réelle affichée', () => assertTrue(Boolean(closed), `aucune ligne close dans ${JSON.stringify(snapshot.rows.map((r) => r.text))}`))
+  check('session close : durée réelle affichée', () => assertTrue(Boolean(closed), `lignes : ${JSON.stringify(snapshot.rows.map((r) => r.text))}`))
   check('journée révolue sans départ : libellé « Départ manquant »', () => assertTrue(Boolean(stale), 'libellé absent du rendu'))
   check('journée révolue sans départ : pastille non pulsante', () =>
     assertTrue(stale && !String(stale.dot).includes('animate-pulse'), `classes de pastille : ${stale?.dot}`)
@@ -390,14 +443,12 @@ async function verifySessions(cdp) {
     assertTrue(openToday?.badge && openToday.badge !== '--', `badge de durée : ${openToday?.badge}`)
   )
 
-  check('le total hebdomadaire exclut la session oubliée', () => {
-    // 8h30 de session close plus 90 minutes de la session du jour, la veille ouverte comptant zéro
-    assertEqual(snapshot.weekTotal, 600, 'total de la semaine')
-  })
+  check('le total hebdomadaire exclut la session oubliée', () => assertEqual(snapshot.weekTotal, 600, 'total de la semaine'))
   check('la jauge reflète le total recalculé', () => {
     const expected = Math.min(100, Math.round((600 / (35 * 60)) * 100))
     assertTrue((snapshot.cardText || '').includes(`${expected}%`), `pourcentage attendu ${expected}% absent de la tuile`)
   })
+
   // Mesure portée sur la ligne concernée : la tuile affiche aussi un temps restant, qui ne doit pas
   // pouvoir confondre l'oracle
   check('aucune durée écoulée sur la ligne de la veille', () =>
@@ -409,13 +460,120 @@ async function verifySessions(cdp) {
 
   await cdp.screenshot('session-states.png')
 
-  return failures === 0
+  return failures === before
+}
+
+async function verifySyncAlert(cdp) {
+  const before = failures
+  console.log('browser-verify: alerte réseau')
+
+  const healthy = await cdp.measure()
+  check('en-tête silencieux quand tout est synchronisé', () => assertEqual(healthy.syncAlertText, null, 'alerte affichée'))
+
+  await cdp.evaluate('window.__harness.setPendingCount(3)')
+  await sleep(200)
+  const pending = await cdp.measure()
+  check('alerte affichée dès qu\u2019une mutation attend', () =>
+    assertTrue((pending.syncAlertText || '').includes('3 en attente'), `texte : ${pending.syncAlertText}`)
+  )
+
+  await cdp.evaluate("window.dispatchEvent(new Event('offline'))")
+  await sleep(200)
+  const offline = await cdp.measure()
+  check('alerte affichée hors ligne', () => assertTrue((offline.syncAlertText || '').includes('Hors ligne'), `texte : ${offline.syncAlertText}`))
+  check('hors ligne : état annoncé aux lecteurs d\u2019écran', () =>
+    assertTrue((offline.syncAlertAria || '').includes('Hors ligne'), `aria : ${offline.syncAlertAria}`)
+  )
+  await cdp.screenshot('sync-alert.png')
+
+  await cdp.evaluate("window.__harness.setPendingCount(0); window.dispatchEvent(new Event('online'))")
+  await sleep(250)
+  const restored = await cdp.measure()
+  check('retour au silence après résorption', () => assertEqual(restored.syncAlertText, null, 'alerte encore affichée'))
+
+  return failures === before
+}
+
+async function verifyWeekTile(cdp) {
+  const before = failures
+  console.log('browser-verify: tuile hebdomadaire')
+
+  const snapshot = await cdp.measure()
+  assertShape(snapshot)
+
+  // innerText renvoie le texte après application de text-transform : le libellé est mis en capitales par le CSS
+  check('compteur d\u2019anomalies présent', () =>
+    assertTrue(/anomalies/i.test(snapshot.cardText || ''), 'libellé absent de la tuile')
+  )
+  check('anomalie de la semaine comptée', () =>
+    assertTrue((snapshot.cardText || '').includes('1 à corriger'), `tuile : ${snapshot.cardText}`)
+  )
+  check('pointages récents libellés sans progression trompeuse', () =>
+    assertTrue(snapshot.cardBadges.some((text) => text.includes('3 derniers pointages')), `badges : ${JSON.stringify(snapshot.cardBadges)}`)
+  )
+  check('jauge lisible sous 5 % de progression', () => assertEqual(snapshot.lowProgressValue, '3', 'segment de jauge'))
+  check('la progression annoncée reste la valeur réelle', () => assertEqual(snapshot.lowProgressAria, '1', 'aria-valuenow'))
+  check('le pourcentage réel reste affiché', () => assertTrue((snapshot.lowCardText || '').includes('1%'), 'pourcentage absent'))
+
+  await cdp.screenshot('week-tile.png')
+
+  return failures === before
+}
+
+async function verifyStatusBadge(cdp) {
+  const before = failures
+  console.log('browser-verify: statuts de pointage')
+
+  const snapshot = await cdp.measure()
+  const [present, late, done, doneLate] = snapshot.badges
+
+  check('quatre statuts rendus', () => assertEqual(snapshot.badges.length, 4, 'nombre de badges'))
+  check('statut présent inchangé', () => {
+    assertTrue(present?.text.includes('Présent'), `texte : ${present?.text}`)
+    assertTrue(present?.classes.includes('badge-success'), `classes : ${present?.classes}`)
+  })
+  check('retard en cours toujours signalé', () => {
+    assertTrue(late?.text.includes('En retard'), `texte : ${late?.text}`)
+    assertTrue(late?.classes.includes('badge-warning'), `classes : ${late?.classes}`)
+  })
+  check('journée close à l\u2019heure inchangée', () => {
+    assertEqual(done?.text, 'Terminé', 'texte')
+    assertTrue(done?.classes.includes('badge-info'), `classes : ${done?.classes}`)
+  })
+  check('journée close avec retard non alarmante', () => {
+    assertTrue(doneLate?.text.includes('Terminé'), `texte : ${doneLate?.text}`)
+    assertTrue(!doneLate?.classes.includes('badge-warning'), `classes : ${doneLate?.classes}`)
+  })
+  check('retard conservé sur la journée close', () => {
+    assertTrue(doneLate?.text.includes('avec retard'), `texte : ${doneLate?.text}`)
+    assertTrue(String(doneLate?.dot).includes('bg-warning'), `pastille : ${doneLate?.dot}`)
+  })
+
+  await cdp.screenshot('status-badge.png')
+
+  return failures === before
+}
+
+const VERIFIERS = {
+  theme: verifyTheme,
+  sessions: verifySessions,
+  'sync-alert': verifySyncAlert,
+  'week-tile': verifyWeekTile,
+  'status-badge': verifyStatusBadge,
 }
 
 async function main() {
   const chromePath = findChrome()
   if (!chromePath) {
     console.error('FAILURE browser-verify: aucun binaire Chrome trouvé, définir CHROME_PATH')
+    process.exit(1)
+  }
+
+  const requested = process.argv.slice(2).filter((argument) => argument.startsWith('--')).map((argument) => argument.slice(2))
+  const modes = requested.length === 0 || requested.includes('all') ? Object.keys(VERIFIERS) : requested
+  const unknown = modes.filter((mode) => !VERIFIERS[mode])
+  if (unknown.length > 0) {
+    console.error(`FAILURE browser-verify: mode inconnu ${unknown.join(', ')}`)
     process.exit(1)
   }
 
@@ -446,6 +604,7 @@ async function main() {
   )
 
   let cdp = null
+  const passed = new Set()
   try {
     await waitForHttp(`http://127.0.0.1:${CDP_PORT}/json/version`, 25000, 'Chrome DevTools')
     await waitForHttp(`http://127.0.0.1:${VITE_PORT}/`, 40000, 'Serveur Vite')
@@ -459,7 +618,7 @@ async function main() {
     await cdp.send('Runtime.enable')
     await cdp.send('Emulation.setDeviceMetricsOverride', {
       width: 1280,
-      height: 1000,
+      height: 1200,
       deviceScaleFactor: 1,
       mobile: false,
     })
@@ -475,10 +634,9 @@ async function main() {
     if (!ready) throw new Error('le banc d\u2019essai n\u2019a pas monté ses composants')
     await sleep(300)
 
-    let themeOk = true
-    let sessionsOk = true
-    if (MODE === 'theme' || MODE === 'all') themeOk = await verifyTheme(cdp)
-    if (MODE === 'sessions' || MODE === 'all') sessionsOk = await verifySessions(cdp)
+    for (const mode of modes) {
+      if (await VERIFIERS[mode](cdp)) passed.add(mode)
+    }
 
     if (cdp.pageErrors.length > 0) {
       failures += 1
@@ -487,11 +645,8 @@ async function main() {
       console.log('  ok aucune exception de page pendant le parcours')
     }
 
-    if (MODE === 'theme' && themeOk) console.log(TOKEN_THEME)
-    if (MODE === 'sessions' && sessionsOk) console.log(TOKEN_SESSIONS)
-    if (MODE === 'all') {
-      if (themeOk) console.log(TOKEN_THEME)
-      if (sessionsOk) console.log(TOKEN_SESSIONS)
+    for (const mode of modes) {
+      if (passed.has(mode)) console.log(TOKENS[mode])
     }
 
     console.log(`  copies d'écran de preuve : ${path.relative(ROOT, EVIDENCE_DIR)}`)

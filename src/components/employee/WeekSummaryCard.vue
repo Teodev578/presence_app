@@ -61,6 +61,22 @@ const sessionDotClass = (presence) => {
 
 // Durée affichée : '--' tant qu'un départ manquant rend la durée inconnaissable
 const getPresenceDuration = (presence) => formatSessionDuration(presence)
+
+// Sessions ouvertes d'une journée révolue : une journée à réparer côté gestionnaire
+const weekAnomalies = computed(
+  () => (props.weekPresences || []).filter((presence) => resolveSessionState(presence) === 'missing_checkout').length
+)
+
+// Plancher visuel de la jauge : sans lui, une progression de 1 % produit un trait invisible.
+// La valeur annoncée aux lecteurs d'écran reste la progression réelle.
+const progressBarValue = computed(() => (progressPercent.value > 0 ? Math.max(progressPercent.value, 3) : 0))
+
+// Le libellé comptait les lignes affichées sur un plafond de cinq, ce qui se lisait comme une progression
+const recentCountLabel = computed(() => {
+  const count = props.recentPresences.length
+  if (count === 0) return 'Aucun pointage'
+  return count > 1 ? `${count} derniers pointages` : '1 dernier pointage'
+})
 </script>
 <template>
   <div class="card bg-base-200 border border-base-300/60 shadow-xs rounded-m3-lg h-full flex flex-col justify-between overflow-hidden">
@@ -87,7 +103,7 @@ const getPresenceDuration = (presence) => formatSessionDuration(presence)
 
         <progress
           class="progress progress-primary w-full h-2.5 rounded-full bg-base-200"
-          :value="progressPercent"
+          :value="progressBarValue"
           max="100"
           :aria-valuenow="progressPercent"
           aria-valuemin="0"
@@ -98,15 +114,48 @@ const getPresenceDuration = (presence) => formatSessionDuration(presence)
         <!-- Mini-tuiles statistiques métriques compactes -->
         <div class="grid grid-cols-2 gap-2 sm:gap-2.5 pt-0.5">
           <div class="flex items-center gap-2 p-2 rounded-m3-sm bg-base-200/60 border border-base-300/40">
-            <div class="w-6 h-6 rounded-full bg-base-300/80 text-base-content/70 flex items-center justify-center shrink-0">
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <div
+              class="w-6 h-6 rounded-full shrink-0 flex items-center justify-center"
+              :class="weekAnomalies > 0 ? 'bg-warning/15 text-warning' : 'bg-base-300/80 text-base-content/70'"
+            >
+              <svg
+                v-if="weekAnomalies > 0"
+                xmlns="http://www.w3.org/2000/svg"
+                class="w-3.5 h-3.5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                <line x1="12" y1="9" x2="12" y2="13"></line>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+              </svg>
+              <svg
+                v-else
+                xmlns="http://www.w3.org/2000/svg"
+                class="w-3.5 h-3.5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
                 <circle cx="12" cy="12" r="10"></circle>
                 <polyline points="12 6 12 12 16 14"></polyline>
               </svg>
             </div>
             <div class="flex flex-col min-w-0">
-              <span class="text-[10px] font-semibold text-base-content/50 uppercase tracking-wider">Contrat</span>
-              <span class="text-xs sm:text-sm font-bold text-base-content truncate">{{ weeklyTargetHours }}h00</span>
+              <span class="text-[10px] font-semibold text-base-content/50 uppercase tracking-wider">Anomalies</span>
+              <span
+                class="text-xs sm:text-sm font-bold truncate"
+                :class="weekAnomalies > 0 ? 'text-warning' : 'text-base-content'"
+              >
+                {{ weekAnomalies > 0 ? `${weekAnomalies} à corriger` : 'Aucune' }}
+              </span>
             </div>
           </div>
 
@@ -143,7 +192,7 @@ const getPresenceDuration = (presence) => formatSessionDuration(presence)
             Pointages récents
           </span>
           <span class="badge badge-ghost text-[10px] font-semibold py-0.5 px-2 rounded-m3-xs text-base-content/60">
-            {{ recentPresences.length }} / 5 récents
+            {{ recentCountLabel }}
           </span>
         </div>
 

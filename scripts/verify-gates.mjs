@@ -296,53 +296,51 @@ export function checkLayout() {
   return false;
 }
 
+const countOccurrences = (text, needle) => text.split(needle).length - 1;
+
+/**
+ * Le commutateur de thème est consultatif : une seule occurrence par espace, dans le tiroir.
+ */
 export function checkThemePlacement() {
   const layoutFiles = ['ManagerLayout.vue', 'EmployeeLayout.vue'];
   const togglePattern = /<ThemeToggle\b|<theme-toggle\b/i;
-  const sections = {};
+  let ok = true;
 
   for (const layoutName of layoutFiles) {
     const layoutPath = path.join(SRC_DIR, 'layouts', layoutName);
     if (!fs.existsSync(layoutPath)) {
       console.error(`FAILURE G11: Layout file ${layoutName} does not exist`);
-      return false;
+      ok = false;
+      continue;
     }
+
     const content = fs.readFileSync(layoutPath, 'utf8');
     const headerMatch = content.match(/<header[^>]*>([\s\S]*?)<\/header>/i);
     const asideMatch = content.match(/<aside[^>]*>([\s\S]*?)<\/aside>/i);
+    const header = headerMatch ? headerMatch[1] : '';
+    const aside = asideMatch ? asideMatch[1] : '';
+    const occurrences = (content.match(new RegExp(togglePattern.source, 'gi')) || []).length;
 
-    sections[layoutName] = {
-      header: headerMatch ? headerMatch[1] : '',
-      aside: asideMatch ? asideMatch[1] : '',
-      content,
-    };
-  }
-
-  const manager = sections['ManagerLayout.vue'];
-  const employee = sections['EmployeeLayout.vue'];
-  let ok = true;
-
-  if (!togglePattern.test(manager.header)) {
-    console.error('FAILURE G11: ManagerLayout.vue is missing the theme toggle in <header>');
-    ok = false;
-  }
-  for (const layoutName of layoutFiles) {
-    if (!togglePattern.test(sections[layoutName].aside)) {
-      console.error(`FAILURE G11: ${layoutName} is missing the theme toggle in its drawer footer`);
+    if (occurrences !== 1) {
+      console.error(`FAILURE G11: ${layoutName} doit monter le commutateur de thème une seule fois (${occurrences} occurrences)`);
+      ok = false;
+    }
+    if (!togglePattern.test(aside)) {
+      console.error(`FAILURE G11: ${layoutName} is missing the theme toggle in its drawer`);
+      ok = false;
+    }
+    if (togglePattern.test(header)) {
+      console.error(`FAILURE G11: ${layoutName} garde un commutateur de thème dans son en-tête`);
+      ok = false;
+    }
+    if (layoutName === 'EmployeeLayout.vue' && (content.includes('navigation-rail') || content.includes('NavigationRail'))) {
+      console.error('FAILURE G11: Sanctuarisation violée: navigation-rail trouvé dans EmployeeLayout.vue');
       ok = false;
     }
   }
-  if (togglePattern.test(employee.header)) {
-    console.error('FAILURE G11: EmployeeLayout.vue header must stay free of the theme toggle (height constrained at 360px)');
-    ok = false;
-  }
-  if (employee.content.includes('navigation-rail') || employee.content.includes('NavigationRail')) {
-    console.error('FAILURE G11: Sanctuarisation violée: navigation-rail trouvé dans EmployeeLayout.vue');
-    ok = false;
-  }
 
   if (!ok) return false;
-  console.log('G11 passed: theme toggle placed in manager header and both drawers');
+  console.log('G11 passed: single theme toggle per space in the drawer');
   return true;
 }
 
@@ -370,15 +368,20 @@ export function checkSyncIndicatorPreserved() {
       continue;
     }
 
-    const syncLinesOf = (text) =>
-      text
+    // Mesure circonscrite au tiroir : l'instance d'en-tête a été retirée volontairement lors du
+    // dédoublonnage, elle ne relève donc plus de cette non-régression
+    const drawerSyncLines = (text) => {
+      const asideMatch = text.match(/<aside[^>]*>([\s\S]*?)<\/aside>/i);
+      const aside = asideMatch ? asideMatch[1] : '';
+      return aside
         .split('\n')
         .filter(line => line.includes('<SyncIndicator'))
         .map(line => line.trim());
+    };
 
     const current = fs.readFileSync(relativePath, 'utf8');
-    const baselineLines = syncLinesOf(baseline.stdout);
-    const currentLines = syncLinesOf(current);
+    const baselineLines = drawerSyncLines(baseline.stdout);
+    const currentLines = drawerSyncLines(current);
 
     if (baselineLines.length === 0) {
       console.error(`FAILURE G17: aucune occurrence de SyncIndicator dans la révision ${SYNC_INDICATOR_BASELINE} de ${relativePath}`);
@@ -406,7 +409,7 @@ export function checkSyncIndicatorPreserved() {
   }
 
   if (!ok) return false;
-  console.log('G17 passed: SyncIndicator placement unchanged since the baseline revision');
+  console.log('G17 passed: drawer SyncIndicator unchanged since the baseline revision');
   return true;
 }
 
@@ -705,6 +708,111 @@ export function checkOpenSessionConformance() {
   return true;
 }
 
+/** Fichiers écrits par le lot « dédoublonnage des en-têtes et densité de la tuile ». */
+const UX_SCOPE_FILES = [
+  'src/components/shared/SyncAlert.vue',
+  'src/components/shared/ThemeToggle.vue',
+  'src/components/shared/StatusBadge.vue',
+  'src/components/employee/WeekSummaryCard.vue',
+  'src/layouts/ManagerLayout.vue',
+  'src/layouts/EmployeeLayout.vue',
+];
+
+/**
+ * Chaque espace conserve une seule occurrence de chaque contrôle consultatif, et l'en-tête
+ * ne porte plus que l'alerte réseau.
+ */
+export function checkHeaderDeduplication() {
+  const layouts = [
+    { name: 'ManagerLayout.vue', gateway: "handleNav('/employee')" },
+    { name: 'EmployeeLayout.vue', gateway: "handleNav('/manager')" },
+  ];
+  let ok = true;
+
+  for (const { name, gateway } of layouts) {
+    const layoutPath = path.join(SRC_DIR, 'layouts', name);
+    if (!fs.existsSync(layoutPath)) {
+      console.error(`FAILURE G20: ${name} introuvable`);
+      ok = false;
+      continue;
+    }
+
+    const content = fs.readFileSync(layoutPath, 'utf8');
+    const headerMatch = content.match(/<header[^>]*>([\s\S]*?)<\/header>/i);
+    const asideMatch = content.match(/<aside[^>]*>([\s\S]*?)<\/aside>/i);
+    const header = headerMatch ? headerMatch[1] : '';
+    const aside = asideMatch ? asideMatch[1] : '';
+
+    const indicators = countOccurrences(content, '<SyncIndicator');
+    if (indicators !== 1) {
+      console.error(`FAILURE G20: ${name} doit exposer un seul indicateur de synchronisation (${indicators})`);
+      ok = false;
+    }
+    if (header.includes('<SyncIndicator')) {
+      console.error(`FAILURE G20: ${name} garde l'indicateur permanent dans son en-tête`);
+      ok = false;
+    }
+
+    const toggles = countOccurrences(content, '<ThemeToggle');
+    if (toggles !== 1) {
+      console.error(`FAILURE G20: ${name} doit exposer un seul commutateur de thème (${toggles})`);
+      ok = false;
+    }
+
+    const gateways = countOccurrences(content, gateway);
+    if (gateways !== 1) {
+      console.error(`FAILURE G20: ${name} doit exposer une seule passerelle inter-espace (${gateways})`);
+      ok = false;
+    } else if (!aside.includes(gateway)) {
+      console.error(`FAILURE G20: ${name} n'expose pas sa passerelle inter-espace dans le tiroir`);
+      ok = false;
+    }
+
+    if (!/<SyncAlert\b/.test(header)) {
+      console.error(`FAILURE G20: ${name} n'expose pas l'alerte réseau dans son en-tête`);
+      ok = false;
+    }
+  }
+
+  if (!ok) return false;
+  console.log('G20 passed: each space keeps a single instance of each control');
+  return true;
+}
+
+export function checkUxConformance() {
+  const files = UX_SCOPE_FILES.map(file => path.resolve(file)).filter(file => fs.existsSync(file));
+  const vueFiles = files.filter(file => file.endsWith('.vue'));
+  let ok = true;
+
+  const emojiIssues = findEmojis(files);
+  if (emojiIssues.length > 0) {
+    reportIssues(emojiIssues, 'G21', 'Found raw emojis in ux files', i => `${i.file}:${i.line} -> ${i.content}`);
+    ok = false;
+  }
+
+  const radiiIssues = findNonM3Radii(vueFiles);
+  if (radiiIssues.length > 0) {
+    reportIssues(radiiIssues, 'G21', 'Non-M3 rounded classes found in ux files', i => `${i.file} -> ${i.token}`);
+    ok = false;
+  }
+
+  const shadowIssues = findProhibitedShadows(vueFiles);
+  if (shadowIssues.length > 0) {
+    reportIssues(shadowIssues, 'G21', 'Prohibited shadows found in ux files', i => `${i.file} -> ${i.token}`);
+    ok = false;
+  }
+
+  const targetIssues = findProhibitedTargets(vueFiles);
+  if (targetIssues.length > 0) {
+    reportIssues(targetIssues, 'G21', 'Prohibited sub-44px touch targets found in ux files', i => `${i.file}:${i.line} -> ${i.content}`);
+    ok = false;
+  }
+
+  if (!ok) return false;
+  console.log('G21 passed: ux files conform to emoji, radius, shadow and touch target rules');
+  return true;
+}
+
 // Exécution CLI
 const arg = process.argv[2] || '--all';
 let success = true;
@@ -747,6 +855,10 @@ if (arg === '--emojis') {
   success = checkOpenSessionWiring();
 } else if (arg === '--open-session-conformance') {
   success = checkOpenSessionConformance();
+} else if (arg === '--header-deduplication') {
+  success = checkHeaderDeduplication();
+} else if (arg === '--ux-conformance') {
+  success = checkUxConformance();
 } else if (arg === '--all') {
   const r1 = checkEmojis();
   const r2 = checkRadii();
@@ -767,9 +879,11 @@ if (arg === '--emojis') {
   const r17 = checkSyncIndicatorPreserved();
   const r18 = checkOpenSessionWiring();
   const r19 = checkOpenSessionConformance();
-  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19;
+  const r20 = checkHeaderDeduplication();
+  const r21 = checkUxConformance();
+  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21;
 } else {
-  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--build|--all]`);
+  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--build|--all]`);
   process.exit(1);
 }
 

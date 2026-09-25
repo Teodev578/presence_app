@@ -60,17 +60,17 @@ const hint = computed(() => `Apparence : ${currentLabel.value}. Cliquer pour pas
 </script>
 
 <template>
-  <!-- Variante pleine largeur pour les pieds de tiroir : le libellé visible porte le nom accessible -->
+  <!-- Variante compacte pour la rangée de réglages des tiroirs -->
   <button
     v-if="showLabel"
     type="button"
-    class="btn btn-ghost w-full justify-start gap-3 rounded-m3-sm min-h-11 px-3 font-medium text-base-content/80 hover:bg-base-300/60 hover:text-base-content"
+    class="btn btn-ghost btn-sm min-h-11 gap-1.5 rounded-m3-sm px-2.5 font-medium text-base-content/70 hover:text-base-content"
     :title="hint"
+    :aria-label="hint"
     @click="cycleTheme"
   >
     <component :is="currentIcon" />
-    <span class="text-sm">Apparence : {{ currentLabel }}</span>
-    <span class="sr-only">. Cliquer pour passer au thème {{ nextLabel }}.</span>
+    <span class="text-[11px] sm:text-xs leading-none">{{ currentLabel }}</span>
   </button>
 
   <!-- Variante icône seule pour les en-têtes -->

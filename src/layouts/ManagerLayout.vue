@@ -4,6 +4,7 @@ import { useRouter } from '../router'
 import { useAuth } from '../composables/useAuth'
 import { useProfile } from '../composables/useProfile'
 import SyncIndicator from '../components/shared/SyncIndicator.vue'
+import SyncAlert from '../components/shared/SyncAlert.vue'
 import ThemeToggle from '../components/shared/ThemeToggle.vue'
 
 const { currentPath, navigate } = useRouter()
@@ -153,24 +154,9 @@ const handleLogout = async () => {
           </h1>
         </div>
 
-        <!-- Actions de droite : Indicateur de synchronisation discret + Passerelle Pointage personnel -->
+        <!-- Alerte réseau uniquement : silencieuse tant que tout est synchronisé, la consultation permanente vit dans le tiroir -->
         <div class="flex items-center gap-2 sm:gap-3">
-          <ThemeToggle />
-
-          <SyncIndicator compact />
-
-          <button
-            type="button"
-            class="btn btn-ghost btn-sm rounded-m3-sm font-semibold text-primary hover:bg-primary/10 gap-1.5 min-h-9"
-            title="Basculer vers mon espace de pointage personnel"
-            @click="navigate('/employee')"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <polyline points="12 6 12 12 16 14" />
-            </svg>
-            <span class="hidden sm:inline">Mon pointage</span>
-          </button>
+          <SyncAlert />
         </div>
       </header>
 
@@ -247,14 +233,15 @@ const handleLogout = async () => {
           </nav>
         </div>
 
-        <!-- Pied de volet : Statut réseau, Profil utilisateur & Déconnexion -->
+        <!-- Pied de volet : Réglages, Profil utilisateur & Déconnexion -->
         <div class="pt-4 border-t border-base-300/60 flex flex-col gap-3">
-          <div class="flex items-center justify-between px-1">
+          <div class="flex items-center justify-between gap-2 px-1">
             <span class="text-xs text-base-content/60 font-medium">Statut réseau</span>
-            <SyncIndicator />
+            <div class="flex items-center gap-1.5">
+              <SyncIndicator />
+              <ThemeToggle show-label />
+            </div>
           </div>
-
-          <ThemeToggle show-label />
 
           <div class="flex items-center gap-3 px-1">
             <div class="avatar placeholder shrink-0">

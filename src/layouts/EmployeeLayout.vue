@@ -4,6 +4,7 @@ import { useRouter } from '../router'
 import { useAuth } from '../composables/useAuth'
 import { useProfile } from '../composables/useProfile'
 import SyncIndicator from '../components/shared/SyncIndicator.vue'
+import SyncAlert from '../components/shared/SyncAlert.vue'
 import ThemeToggle from '../components/shared/ThemeToggle.vue'
 
 const { currentPath, navigate } = useRouter()
@@ -61,19 +62,9 @@ const handleLogout = async () => {
 
         <div class="flex-1"></div>
 
-        <!-- Actions de droite : Indicateur réseau discret + Raccourci gestionnaire si applicable -->
+        <!-- Alerte réseau uniquement : le raccourci gestionnaire vit dans le tiroir, avec les autres entrées -->
         <div class="flex items-center gap-2">
-          <SyncIndicator compact />
-
-          <button
-            v-if="profile?.role === 'admin' || profile?.role === 'manager'"
-            type="button"
-            class="btn btn-ghost btn-sm font-semibold text-primary hover:bg-primary/10 rounded-m3-sm hidden sm:inline-flex min-h-11 px-3"
-            title="Accéder au tableau de bord gestionnaire"
-            @click="navigate('/manager')"
-          >
-            Tableau de bord
-          </button>
+          <SyncAlert />
         </div>
       </header>
 
@@ -174,12 +165,13 @@ const handleLogout = async () => {
 
         <!-- Pied de volet : Connectivité & Déconnexion -->
         <div class="pt-4 border-t border-base-300/60 flex flex-col gap-3">
-          <div class="flex items-center justify-between px-1">
+          <div class="flex items-center justify-between gap-2 px-1">
             <span class="text-xs text-base-content/60 font-medium">Statut réseau</span>
-            <SyncIndicator />
+            <div class="flex items-center gap-1.5">
+              <SyncIndicator />
+              <ThemeToggle show-label />
+            </div>
           </div>
-
-          <ThemeToggle show-label />
 
           <button
             type="button"
@@ -193,7 +185,6 @@ const handleLogout = async () => {
             </svg>
             <span>Se déconnecter</span>
           </button>
-          <span class="text-[10px] text-base-content/40 text-center">PresenceApp PWA</span>
         </div>
       </aside>
     </div>
