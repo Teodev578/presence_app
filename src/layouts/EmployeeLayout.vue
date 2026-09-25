@@ -165,12 +165,13 @@ const handleLogout = async () => {
 
         <!-- Pied de volet : Connectivité & Déconnexion -->
         <div class="pt-4 border-t border-base-300/60 flex flex-col gap-3">
-          <div class="flex items-center justify-between gap-2 px-1">
-            <span class="text-xs text-base-content/60 font-medium">Statut réseau</span>
-            <div class="flex items-center gap-1.5">
+          <!-- Deux rangées distinctes : le badge de synchronisation ne peut plus comprimer le contrôle d'apparence -->
+          <div class="flex flex-col gap-2 px-1">
+            <div class="flex items-center justify-between gap-2 min-w-0">
+              <span class="text-xs text-base-content/60 font-medium shrink-0">Statut réseau</span>
               <SyncIndicator />
-              <ThemeToggle show-label />
             </div>
+            <ThemeToggle />
           </div>
 
           <button

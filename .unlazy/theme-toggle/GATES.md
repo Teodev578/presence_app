@@ -22,7 +22,7 @@ Scope: Offrir un commutateur manuel à trois états (système, clair, sombre), p
 - [x] G4: Le CSS construit expose les deux blocs de thème forcé avec des surfaces M3 distinctes, donc forcer un thème change effectivement le rendu
   CHECK: node scripts/verify-gates.mjs --theme-css
   EXPECT: G12 passed: built CSS exposes both forced theme blocks with distinct surfaces
-  EVIDENCE: automatic-evidence=v1; definition-sha256=3aa92ca64ccab3131b32877a5991a2fa0d2994658c6d3e3a9182dc2d05fbb7e9; exit=0; EXPECT=matched; output-sha256=61b69386ed5dad61fca25424203aab4e27bb2e14bb77860b4f45c72dd7a518f9; output-bytes=169; shell=/bin/sh; cwd=/home/fabien/Documents/Projets/Pro/PresenceApp/presence-app; path=e20d6bfe21da/22 entries
+  EVIDENCE: automatic-evidence=v1; definition-sha256=3aa92ca64ccab3131b32877a5991a2fa0d2994658c6d3e3a9182dc2d05fbb7e9; exit=0; EXPECT=matched; output-sha256=d8e8b6a3d933276d81d8d4674ee999cf55b3a759cd071564468762f99c9987dd; output-bytes=169; shell=/bin/sh; cwd=/home/fabien/Documents/Projets/Pro/PresenceApp/presence-app; path=e20d6bfe21da/22 entries
 
 - [x] G5: Les fichiers du lot ne contiennent aucun emoji brut ni caractère graphique unicode
   CHECK: node scripts/verify-gates.mjs --theme-emojis
@@ -62,4 +62,4 @@ Scope: Offrir un commutateur manuel à trois états (système, clair, sombre), p
 - [x] G12: La bascule de thème, pilotée par des clics réels dans un navigateur, applique les surfaces M3 claires et sombres, persiste la préférence, respecte le seuil de 44px et suit le réglage système émulé
   CHECK: node scripts/verify-browser.mjs --theme
   EXPECT: browser-verify: theme toggle passed
-  EVIDENCE: automatic-evidence=v1; definition-sha256=c8d1610809bae970a54a58f99e93e9c2472345342c7da5e69ccaa6cb46827773; exit=0; EXPECT=matched; output-sha256=e760600bf2aad35caca9c47dc4d533b06e664a32794dcee272917cfe2d2bb7c8; output-bytes=1337; shell=/bin/sh; cwd=/home/fabien/Documents/Projets/Pro/PresenceApp/presence-app; path=e20d6bfe21da/22 entries
+  EVIDENCE: automatic-evidence=v1; definition-sha256=c8d1610809bae970a54a58f99e93e9c2472345342c7da5e69ccaa6cb46827773; exit=0; EXPECT=matched; output-sha256=220fcdf4c3b2f3e5de1df882d2ec70550dd22eb2443a4d9894d5fda141768ac7; output-bytes=1298; shell=/bin/sh; cwd=/home/fabien/Documents/Projets/Pro/PresenceApp/presence-app; path=e20d6bfe21da/22 entries

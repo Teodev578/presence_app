@@ -2,13 +2,6 @@
 import { computed, h } from 'vue'
 import { useTheme } from '../../composables/useTheme'
 
-defineProps({
-  showLabel: {
-    type: Boolean,
-    default: false,
-  },
-})
-
 const { mode, cycleTheme } = useTheme()
 
 const MODE_LABELS = { system: 'Système', light: 'Clair', dark: 'Sombre' }
@@ -56,32 +49,22 @@ const MODE_ICONS = {
 const currentIcon = computed(() => MODE_ICONS[mode.value] || MODE_ICONS.system)
 const currentLabel = computed(() => MODE_LABELS[mode.value] || MODE_LABELS.system)
 const nextLabel = computed(() => NEXT_THEME_LABELS[mode.value] || 'clair')
-const hint = computed(() => `Apparence : ${currentLabel.value}. Cliquer pour passer au thème ${nextLabel.value}.`)
+
+// Le libellé visible commence le nom accessible, comme l'exige le critère Label in Name
+const visibleLabel = computed(() => `Thème : ${currentLabel.value}`)
+const hint = computed(() => `${visibleLabel.value}. Cliquer pour passer au thème ${nextLabel.value}.`)
 </script>
 
 <template>
-  <!-- Variante compacte pour la rangée de réglages des tiroirs -->
+  <!-- Un seul emplacement, une seule forme : un bouton contourné qui nomme son action et son état -->
   <button
-    v-if="showLabel"
     type="button"
-    class="btn btn-ghost btn-sm min-h-11 gap-1.5 rounded-m3-sm px-2.5 font-medium text-base-content/70 hover:text-base-content"
+    class="btn btn-outline btn-sm w-full justify-start gap-2 min-h-11 px-3 rounded-m3-sm font-medium"
     :title="hint"
     :aria-label="hint"
     @click="cycleTheme"
   >
     <component :is="currentIcon" />
-    <span class="text-[11px] sm:text-xs leading-none">{{ currentLabel }}</span>
-  </button>
-
-  <!-- Variante icône seule pour les en-têtes -->
-  <button
-    v-else
-    type="button"
-    class="btn btn-ghost btn-circle min-h-11 min-w-11 text-base-content/80 hover:text-base-content"
-    :title="hint"
-    :aria-label="hint"
-    @click="cycleTheme"
-  >
-    <component :is="currentIcon" />
+    <span class="truncate">{{ visibleLabel }}</span>
   </button>
 </template>

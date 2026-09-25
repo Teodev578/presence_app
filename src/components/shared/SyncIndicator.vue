@@ -80,7 +80,7 @@ const statusText = computed(() => {
   <button
     v-else
     type="button"
-    class="badge badge-sm py-2.5 px-3 gap-1.5 font-medium cursor-pointer transition-all duration-200 select-none hover:opacity-85 active:scale-95"
+    class="badge badge-sm shrink min-w-0 max-w-full py-2.5 px-3 gap-1.5 font-medium cursor-pointer transition-all duration-200 select-none hover:opacity-85 active:scale-95"
     :class="{
       'badge-ghost border-base-300 bg-base-200 text-base-content/60': !isOnline,
       'badge-warning border-warning/40 bg-warning/10 text-warning-content': isOnline && pendingCount > 0 && !isSyncing,
@@ -91,10 +91,10 @@ const statusText = computed(() => {
     aria-label="État de synchronisation"
     @click="triggerSync"
   >
-    <span v-if="isSyncing" class="loading loading-spinner loading-xs text-info"></span>
+    <span v-if="isSyncing" class="loading loading-spinner loading-xs text-info shrink-0"></span>
     <span
       v-else
-      class="inline-block w-1.5 h-1.5 rounded-full"
+      class="inline-block w-1.5 h-1.5 rounded-full shrink-0"
       :class="{
         'bg-base-content/40': !isOnline,
         'bg-warning animate-pulse': isOnline && pendingCount > 0,
@@ -103,7 +103,9 @@ const statusText = computed(() => {
     ></span>
 
     <Transition name="fade-fast" mode="out-in">
-      <span :key="statusText" class="text-xs">{{ statusText }}</span>
+      <!-- Troncature d'abord : le badge cède sa largeur au lieu de pousser le contrôle d'apparence.
+           min-w-0 est requis, un élément flex ne descendant jamais sous sa largeur de contenu -->
+      <span :key="statusText" class="text-xs truncate min-w-0">{{ statusText }}</span>
     </Transition>
   </button>
 </template>

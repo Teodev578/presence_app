@@ -13,6 +13,7 @@
  *   node scripts/verify-browser.mjs --sync-alert    alerte réseau de l'en-tête
  *   node scripts/verify-browser.mjs --week-tile     densité de la tuile hebdomadaire
  *   node scripts/verify-browser.mjs --status-badge  sémantique des statuts
+ *   node scripts/verify-browser.mjs --appearance-control  pied de tiroir à 375px
  *   node scripts/verify-browser.mjs                 tous les modes
  *
  * Dépendance d'environnement : un binaire Chrome (CHROME_PATH pour le forcer).
@@ -36,6 +37,7 @@ const TOKENS = {
   'sync-alert': 'browser-verify: sync alert states passed',
   'week-tile': 'browser-verify: week tile passed',
   'status-badge': 'browser-verify: status badge passed',
+  'appearance-control': 'browser-verify: appearance control passed',
 }
 
 const HARNESS_HTML = `<!doctype html>
@@ -56,6 +58,7 @@ const HARNESS_JS = `import { createApp, h } from 'vue'
 import '../src/style.css'
 import ThemeToggle from '../src/components/shared/ThemeToggle.vue'
 import SyncAlert from '../src/components/shared/SyncAlert.vue'
+import SyncIndicator from '../src/components/shared/SyncIndicator.vue'
 import StatusBadge from '../src/components/shared/StatusBadge.vue'
 import WeekSummaryCard from '../src/components/employee/WeekSummaryCard.vue'
 import { getLocalDateString, resolveSessionMinutes } from '../src/lib/dateUtils.js'
@@ -102,25 +105,44 @@ const presences = [
 
 const weekTotalMinutes = presences.reduce((sum, presence) => sum + resolveSessionMinutes(presence), 0)
 
-// Sonde sans rendu : expose le compteur d'attente pour simuler l'état réseau depuis l'oracle
-const PendingProbe = {
+// Sonde sans rendu : expose les états du moteur de synchronisation pour simuler le réseau
+const SyncProbe = {
   setup() {
-    const { pendingCount } = useSyncEngine()
+    const { pendingCount, isSyncing } = useSyncEngine()
     window.__harness.setPendingCount = (value) => {
       pendingCount.value = value
+    }
+    window.__harness.setSyncing = (value) => {
+      isSyncing.value = value
     }
     return () => null
   },
 }
+
+// Largeur utile réelle du pied de tiroir à 375px : aside w-72 (288px) moins p-5 (2 x 20px)
+const DRAWER_INNER_WIDTH = 248
+
+// Structure identique au bloc de réglages des deux mises en page, que G22 épingle par ailleurs
+const settingsBlock = (id, width) =>
+  h('div', { id, style: 'width:' + width + 'px', class: 'bg-base-200' }, [
+    h('div', { id: id + '-block', class: 'flex flex-col gap-2 px-1' }, [
+      h('div', { class: 'flex items-center justify-between gap-2 min-w-0' }, [
+        h('span', { class: 'text-xs text-base-content/60 font-medium shrink-0' }, 'Statut réseau'),
+        h(SyncIndicator),
+      ]),
+      h(ThemeToggle),
+    ]),
+  ])
 
 window.__harness = { presences, weekTotalMinutes }
 
 const app = createApp({
   render: () =>
     h('div', { class: 'p-4 flex flex-col gap-4' }, [
-      h(PendingProbe),
-      h('div', { id: 'toggle-host' }, [h(ThemeToggle, { showLabel: true })]),
-      h('div', { id: 'toggle-icon-host' }, [h(ThemeToggle)]),
+      h(SyncProbe),
+      h('div', { id: 'toggle-host' }, [h(ThemeToggle)]),
+      settingsBlock('drawer-settings', DRAWER_INNER_WIDTH),
+      settingsBlock('drawer-settings-narrow', 200),
       h('div', { id: 'sync-alert-host' }, [h(SyncAlert)]),
       h('div', { id: 'status-badge-host', class: 'flex flex-wrap gap-2' }, [
         h(StatusBadge, { status: 'present' }),
@@ -153,10 +175,41 @@ const MEASURE_EXPRESSION = `(() => {
   const collapse = (value) => (value || '').replace(/\\s+/g, ' ').trim()
   const background = (node) => (node ? getComputedStyle(node).backgroundColor : null)
   const labelButton = document.querySelector('#toggle-host button')
-  const iconButton = document.querySelector('#toggle-icon-host button')
   const alertButton = document.querySelector('#sync-alert-host button')
   const labelRect = labelButton ? labelButton.getBoundingClientRect() : null
-  const iconRect = iconButton ? iconButton.getBoundingClientRect() : null
+  const measureSettings = (hostId) => {
+    const host = document.querySelector('#' + hostId)
+    const block = document.querySelector('#' + hostId + '-block')
+    if (!host || !block) return null
+    const blockRect = block.getBoundingClientRect()
+    const button = block.querySelector('button.btn')
+    const badge = block.querySelector('.badge')
+    const badgeText = badge ? badge.querySelector('span[class*="text-xs"]') : null
+    const buttonRect = button ? button.getBoundingClientRect() : null
+    const badgeRect = badge ? badge.getBoundingClientRect() : null
+    const style = button ? getComputedStyle(button) : null
+    return {
+      hostWidth: Math.round(host.getBoundingClientRect().width),
+      scrollWidth: block.scrollWidth,
+      clientWidth: block.clientWidth,
+      right: Math.round(blockRect.right),
+      buttonText: button ? collapse(button.innerText) : null,
+      buttonAria: button ? button.getAttribute('aria-label') : null,
+      buttonWidth: buttonRect ? Math.round(buttonRect.width) : 0,
+      buttonHeight: buttonRect ? Math.round(buttonRect.height) : 0,
+      buttonTop: buttonRect ? Math.round(buttonRect.top) : 0,
+      buttonRight: buttonRect ? Math.round(buttonRect.right) : 0,
+      buttonBottom: buttonRect ? Math.round(buttonRect.bottom) : 0,
+      buttonBorderWidth: style ? style.borderTopWidth : null,
+      buttonBorderColor: style ? style.borderTopColor : null,
+      buttonBackground: style ? style.backgroundColor : null,
+      badgeRight: badgeRect ? Math.round(badgeRect.right) : 0,
+      badgeBottom: badgeRect ? Math.round(badgeRect.bottom) : 0,
+      badgeText: badge ? collapse(badge.innerText) : null,
+      badgeTextScroll: badgeText ? badgeText.scrollWidth : 0,
+      badgeTextClient: badgeText ? badgeText.clientWidth : 0,
+    }
+  }
   const meta = document.querySelector('meta[name="theme-color"]')
   const list = document.querySelector('#card-host .overflow-y-auto')
   const rows = list
@@ -179,13 +232,11 @@ const MEASURE_EXPRESSION = `(() => {
     meta: meta ? meta.content : null,
     labelText: labelButton ? collapse(labelButton.innerText) : null,
     labelAria: labelButton ? labelButton.getAttribute('aria-label') : null,
-    iconText: iconButton ? collapse(iconButton.innerText) : null,
-    iconAria: iconButton ? iconButton.getAttribute('aria-label') : null,
     labelWidth: labelRect ? Math.round(labelRect.width) : 0,
     labelHeight: labelRect ? Math.round(labelRect.height) : 0,
-    iconWidth: iconRect ? Math.round(iconRect.width) : 0,
-    iconHeight: iconRect ? Math.round(iconRect.height) : 0,
     labelCenter: labelRect ? { x: Math.round(labelRect.x + labelRect.width / 2), y: Math.round(labelRect.y + labelRect.height / 2) } : null,
+    settings: measureSettings('drawer-settings'),
+    narrow: measureSettings('drawer-settings-narrow'),
     syncAlertText: alertButton ? collapse(alertButton.innerText) : null,
     syncAlertAria: alertButton ? alertButton.getAttribute('aria-label') : null,
     badges: [...document.querySelectorAll('#status-badge-host .badge')].map((badge) => {
@@ -356,18 +407,14 @@ async function verifyTheme(cdp) {
   check('état initial : surface M3 claire rendue', () => assertEqual(initial.bodyBg, LIGHT_SURFACE, 'fond du corps'))
   check('état initial : meta theme-color alignée sur la surface claire', () => assertEqual(initial.meta, '#fdfcff', 'meta'))
 
-  check('variante compacte : mode courant lisible', () => assertEqual(initial.labelText, 'Système', 'libellé'))
-  check('variante compacte : action suivante annoncée', () => {
-    assertTrue((initial.labelAria || '').includes('Apparence : Système'), `aria : ${initial.labelAria}`)
+  check('bouton unique : mode courant nommé dans le libellé visible', () =>
+    assertEqual(initial.labelText, 'Thème : Système', 'libellé'))
+  check('bouton unique : action suivante annoncée', () => {
+    assertTrue((initial.labelAria || '').includes('Thème : Système'), `nom accessible : ${initial.labelAria}`)
     assertTrue((initial.labelAria || '').includes('passer au thème clair'), 'action non annoncée')
   })
-  check('variante compacte : cible tactile au moins 44px', () => {
-    assertTrue(initial.labelWidth >= 44, `largeur ${initial.labelWidth}px`)
+  check('bouton unique : cible tactile au moins 44px de haut', () => {
     assertTrue(initial.labelHeight >= 44, `hauteur ${initial.labelHeight}px`)
-  })
-  check('variante icône seule : cible 44x44 et nom accessible', () => {
-    assertTrue(initial.iconWidth >= 44 && initial.iconHeight >= 44, `cible ${initial.iconWidth}x${initial.iconHeight}`)
-    assertTrue((initial.iconAria || '').includes('Apparence'), `aria-label manquant : ${initial.iconAria}`)
   })
 
   await cdp.clickAt(initial.labelCenter)
@@ -375,7 +422,7 @@ async function verifyTheme(cdp) {
   check('premier clic : thème clair forcé', () => assertEqual(light.theme, 'light', 'data-theme'))
   check('premier clic : préférence persistée', () => assertEqual(light.stored, 'light', 'localStorage'))
   check('premier clic : surface claire rendue', () => assertEqual(light.bodyBg, LIGHT_SURFACE, 'fond du corps'))
-  check('premier clic : libellé du mode mis à jour', () => assertEqual(light.labelText, 'Clair', 'libellé'))
+  check('premier clic : libellé du mode mis à jour', () => assertEqual(light.labelText, 'Thème : Clair', 'libellé'))
   await cdp.screenshot('theme-light.png')
 
   await cdp.clickAt(light.labelCenter)
@@ -385,7 +432,7 @@ async function verifyTheme(cdp) {
   check('deuxième clic : surface sombre réellement rendue', () => assertEqual(dark.bodyBg, DARK_SURFACE, 'fond du corps'))
   check('les deux thèmes produisent des surfaces distinctes', () => assertTrue(light.bodyBg !== dark.bodyBg, 'surfaces identiques'))
   check('meta theme-color suit le thème sombre', () => assertEqual(dark.meta, '#111318', 'meta'))
-  check('deuxième clic : libellé du mode mis à jour', () => assertEqual(dark.labelText, 'Sombre', 'libellé'))
+  check('deuxième clic : libellé du mode mis à jour', () => assertEqual(dark.labelText, 'Thème : Sombre', 'libellé'))
   await cdp.screenshot('theme-dark.png')
 
   await cdp.clickAt(dark.labelCenter)
@@ -554,12 +601,81 @@ async function verifyStatusBadge(cdp) {
   return failures === before
 }
 
+async function verifyAppearanceControl(cdp) {
+  const before = failures
+  console.log('browser-verify: pied de tiroir')
+
+  // État le plus large possible du badge : c'est lui qui comprimait le commutateur
+  await cdp.evaluate('window.__harness.setSyncing(true)')
+  await sleep(250)
+
+  const snapshot = await cdp.measure()
+  const settings = snapshot.settings
+  const narrow = snapshot.narrow
+  if (!settings || !narrow) {
+    failures += 1
+    console.error('  FAIL bloc de réglages absent du banc d\u2019essai')
+    return false
+  }
+
+  check('le badge prend son état le plus large sans comprimer', () =>
+    assertTrue((settings.badgeText || '').includes('Synchronisation'), `état du badge : ${settings.badgeText}`)
+  )
+  check('aucun débordement horizontal du bloc de réglages', () =>
+    assertTrue(settings.scrollWidth <= settings.clientWidth + 1, `scroll ${settings.scrollWidth} > client ${settings.clientWidth}`)
+  )
+  check('le badge reste contenu dans le pied de tiroir', () =>
+    assertTrue(settings.badgeRight <= settings.right + 0.5, `badge ${settings.badgeRight} > bloc ${settings.right}`)
+  )
+  check('le badge ne pousse plus le contrôle d\u2019apparence', () =>
+    assertTrue(settings.badgeBottom <= settings.buttonTop + 0.5, `bas du badge ${settings.badgeBottom} > haut du bouton ${settings.buttonTop}`)
+  )
+
+  check('le contrôle d\u2019apparence nomme son action', () => {
+    assertTrue((settings.buttonText || '').includes('Thème : Système'), `libellé : ${settings.buttonText}`)
+    assertTrue((settings.buttonAria || '').includes('Thème : Système'), `nom accessible : ${settings.buttonAria}`)
+  })
+  check('le contrôle d\u2019apparence occupe la largeur du pied de tiroir', () =>
+    assertTrue(settings.buttonWidth >= settings.clientWidth - 12, `bouton ${settings.buttonWidth}px pour un bloc de ${settings.clientWidth}px`)
+  )
+  check('le contrôle d\u2019apparence atteint 44px de haut', () =>
+    assertTrue(settings.buttonHeight >= 44, `hauteur ${settings.buttonHeight}px`)
+  )
+  check('le contrôle d\u2019apparence reste dans le tiroir', () =>
+    assertTrue(settings.buttonRight <= settings.right + 0.5, `bouton ${settings.buttonRight} > bloc ${settings.right}`)
+  )
+  check('le contrôle d\u2019apparence porte une bordure visible', () => {
+    assertTrue(parseFloat(settings.buttonBorderWidth) >= 1, `épaisseur de bordure ${settings.buttonBorderWidth}`)
+    assertTrue(settings.buttonBorderColor !== settings.buttonBackground, 'bordure indistinguable du fond')
+    assertTrue(settings.buttonBorderColor !== 'rgba(0, 0, 0, 0)', 'bordure transparente')
+  })
+
+  // Cas de torture : à 200px, la troncature doit s'engager au lieu de déborder. Sans ce contrôle,
+  // l'absence de troncature resterait invisible tant que la largeur suffit.
+  check('sous contrainte extrême, la troncature s\u2019engage', () =>
+    assertTrue(narrow.badgeTextScroll > narrow.badgeTextClient, `texte ${narrow.badgeTextScroll}px pour ${narrow.badgeTextClient}px`)
+  )
+  check('sous contrainte extrême, le bloc ne déborde pas malgré tout', () =>
+    assertTrue(narrow.scrollWidth <= narrow.clientWidth + 1, `scroll ${narrow.scrollWidth} > client ${narrow.clientWidth}`)
+  )
+  check('sous contrainte extrême, le contrôle d\u2019apparence reste entier', () =>
+    assertTrue(narrow.buttonRight <= narrow.right + 0.5, `bouton ${narrow.buttonRight} > bloc ${narrow.right}`)
+  )
+
+  await cdp.evaluate('window.__harness.setSyncing(false)')
+  await sleep(200)
+  await cdp.screenshot('drawer-appearance.png')
+
+  return failures === before
+}
+
 const VERIFIERS = {
   theme: verifyTheme,
   sessions: verifySessions,
   'sync-alert': verifySyncAlert,
   'week-tile': verifyWeekTile,
   'status-badge': verifyStatusBadge,
+  'appearance-control': verifyAppearanceControl,
 }
 
 async function main() {

@@ -813,6 +813,212 @@ export function checkUxConformance() {
   return true;
 }
 
+/* ---------------------------------------------------------------------------
+   Contrôle d'apparence du pied de tiroir
+   --------------------------------------------------------------------------- */
+
+/** Le contenu du `<div>` englobant la position donnée, par comptage de profondeur. */
+function enclosingDivAt(text, index) {
+  const openers = /<div\b[^>]*>/g;
+  let openStart = -1;
+  let match;
+  while ((match = openers.exec(text)) && match.index < index) openStart = match.index;
+  if (openStart === -1) return null;
+
+  const tags = /<div\b[^>]*>|<\/div>/g;
+  tags.lastIndex = openStart;
+  let depth = 0;
+  while ((match = tags.exec(text))) {
+    if (match[0].startsWith('</')) {
+      depth -= 1;
+      if (depth === 0) return { markup: text.slice(openStart, match.index + match[0].length), start: openStart };
+    } else {
+      depth += 1;
+    }
+  }
+  return null;
+}
+
+/** Le contenu du plus proche `<div>` englobant le marqueur. */
+function enclosingDiv(text, marker) {
+  const index = text.indexOf(marker);
+  return index === -1 ? null : enclosingDivAt(text, index);
+}
+
+/**
+ * Le statut réseau et le contrôle d'apparence vivent sur deux rangées distinctes : le badge
+ * de synchronisation n'est plus le frère compressible du commutateur de thème.
+ */
+export function checkDrawerSettingsLayout() {
+  let ok = true;
+
+  for (const layoutName of ['ManagerLayout.vue', 'EmployeeLayout.vue']) {
+    const layoutPath = path.join(SRC_DIR, 'layouts', layoutName);
+    if (!fs.existsSync(layoutPath)) {
+      console.error(`FAILURE G22: ${layoutName} introuvable`);
+      ok = false;
+      continue;
+    }
+
+    const content = fs.readFileSync(layoutPath, 'utf8');
+    const asideMatch = content.match(/<aside[^>]*>([\s\S]*?)<\/aside>/i);
+    const aside = asideMatch ? asideMatch[1] : '';
+
+    const toggles = (aside.match(/<ThemeToggle\b/g) || []).length;
+    if (toggles !== 1) {
+      console.error(`FAILURE G22: ${layoutName} doit exposer un seul contrôle d'apparence dans son tiroir (${toggles})`);
+      ok = false;
+    }
+
+    const statusRow = enclosingDiv(aside, 'Statut réseau');
+    if (!statusRow) {
+      console.error(`FAILURE G22: ${layoutName} n'expose pas de rangée « Statut réseau »`);
+      ok = false;
+      continue;
+    }
+
+    const row = statusRow.markup;
+    if (!/<SyncIndicator\b/.test(row)) {
+      console.error(`FAILURE G22: ${layoutName} ne place pas le badge de synchronisation dans sa rangée de statut`);
+      ok = false;
+    }
+    if (/<ThemeToggle\b/.test(row)) {
+      console.error(`FAILURE G22: ${layoutName} garde le contrôle d'apparence dans la rangée du badge`);
+      ok = false;
+    }
+    if (!/min-w-0/.test(row)) {
+      console.error(`FAILURE G22: ${layoutName} n'autorise pas sa rangée de statut à se comprimer (min-w-0 absent)`);
+      ok = false;
+    }
+    if (!/shrink-0/.test(row)) {
+      console.error(`FAILURE G22: ${layoutName} laisse son libellé de statut se comprimer (shrink-0 absent)`);
+      ok = false;
+    }
+
+    const block = enclosingDivAt(aside, statusRow.start);
+    if (!block) {
+      console.error(`FAILURE G22: ${layoutName} n'englobe pas sa rangée de statut dans un bloc de réglages`);
+      ok = false;
+    } else {
+      const blockTag = block.markup.slice(0, block.markup.indexOf('>') + 1);
+      if (!/flex-col/.test(blockTag)) {
+        console.error(`FAILURE G22: ${layoutName} empile pas ses réglages verticalement (flex-col absent du bloc)`);
+        ok = false;
+      }
+      if (!/<ThemeToggle\b/.test(block.markup)) {
+        console.error(`FAILURE G22: ${layoutName} ne place pas le contrôle d'apparence dans le bloc de réglages`);
+        ok = false;
+      }
+    }
+
+    if (!/<ThemeToggle\s*\/>/.test(aside)) {
+      console.error(`FAILURE G22: ${layoutName} passe encore des attributs au contrôle d'apparence`);
+      ok = false;
+    }
+  }
+
+  if (!ok) return false;
+  console.log('G22 passed: drawer settings split network status and appearance control');
+  return true;
+}
+
+/**
+ * Le contrôle d'apparence est un bouton unique, contourné et pleine largeur, qui nomme son action.
+ * La variante icône, devenue morte, est retirée.
+ */
+export function checkAppearanceControlMarkup() {
+  const file = path.join(SRC_DIR, 'components', 'shared', 'ThemeToggle.vue');
+  if (!fs.existsSync(file)) {
+    console.error('FAILURE G23: ThemeToggle.vue introuvable');
+    return false;
+  }
+
+  const content = fs.readFileSync(file, 'utf8');
+  const buttons = content.match(/<button\b/g) || [];
+  let ok = true;
+
+  if (buttons.length !== 1) {
+    console.error(`FAILURE G23: un seul bouton attendu, ${buttons.length} trouvés`);
+    ok = false;
+  }
+  if (/defineProps/.test(content)) {
+    console.error('FAILURE G23: la variante à propriété subsiste alors que plus rien ne l\'utilise');
+    ok = false;
+  }
+
+  const buttonTag = content.match(/<button[^>]*>/s);
+  const buttonMarkup = buttonTag ? buttonTag[0] : '';
+  for (const token of ['btn-outline', 'w-full', 'min-h-11']) {
+    if (!buttonMarkup.includes(token)) {
+      console.error(`FAILURE G23: la classe ${token} manque au bouton d'apparence`);
+      ok = false;
+    }
+  }
+
+  if (!/Thème : \$\{|Thème : /.test(content)) {
+    console.error("FAILURE G23: le libellé visible n'annonce pas « Thème : <mode> »");
+    ok = false;
+  }
+  if (!/:aria-label="hint"/.test(buttonMarkup)) {
+    console.error("FAILURE G23: le bouton n'expose pas son nom accessible via hint");
+    ok = false;
+  }
+
+  if (!ok) return false;
+  console.log('G23 passed: appearance control is a single full-width outlined button');
+  return true;
+}
+
+/** Le badge de synchronisation cède sa largeur au lieu de pousser ses voisins hors du tiroir. */
+export function checkSyncBadgeTruncation() {
+  const file = path.join(SRC_DIR, 'components', 'shared', 'SyncIndicator.vue');
+  if (!fs.existsSync(file)) {
+    console.error('FAILURE G24: SyncIndicator.vue introuvable');
+    return false;
+  }
+
+  const content = fs.readFileSync(file, 'utf8');
+  const badgeTag = content.match(/<button\b[^>]*badge-sm[^>]*>/s);
+  const badgeMarkup = badgeTag ? badgeTag[0] : '';
+  let ok = true;
+
+  if (!badgeMarkup) {
+    console.error('FAILURE G24: variante badge de SyncIndicator introuvable');
+    return false;
+  }
+  for (const token of ['min-w-0', 'max-w-full']) {
+    if (!badgeMarkup.includes(token)) {
+      console.error(`FAILURE G24: la classe ${token} manque au badge de synchronisation`);
+      ok = false;
+    }
+  }
+  // DaisyUI impose flex-shrink: 0 sur .badge : sans cette permission, min-w-0 reste inopérant
+  if (!/\bshrink(?!-)/.test(badgeMarkup)) {
+    console.error('FAILURE G24: le badge n\'a pas la permission de se comprimer (shrink absent)');
+    ok = false;
+  }
+
+  // Mesure portée sur la variante badge : la variante compacte porte le même marqueur de clé
+  const badgeSection = content.slice(content.indexOf(badgeTag[0]));
+  const statusSpan = badgeSection.match(/<span :key="statusText"[^>]*>/);
+  if (!statusSpan) {
+    console.error('FAILURE G24: libellé du badge introuvable');
+    ok = false;
+  } else {
+    // min-w-0 est indispensable : la troncature seule ne suffit pas sur un élément flex
+    for (const token of ['truncate', 'min-w-0']) {
+      if (!statusSpan[0].includes(token)) {
+        console.error(`FAILURE G24: la classe ${token} manque au libellé du badge`);
+        ok = false;
+      }
+    }
+  }
+
+  if (!ok) return false;
+  console.log('G24 passed: sync badge truncates instead of overflowing');
+  return true;
+}
+
 // Exécution CLI
 const arg = process.argv[2] || '--all';
 let success = true;
@@ -859,6 +1065,12 @@ if (arg === '--emojis') {
   success = checkHeaderDeduplication();
 } else if (arg === '--ux-conformance') {
   success = checkUxConformance();
+} else if (arg === '--drawer-settings-layout') {
+  success = checkDrawerSettingsLayout();
+} else if (arg === '--appearance-control-markup') {
+  success = checkAppearanceControlMarkup();
+} else if (arg === '--sync-badge-truncation') {
+  success = checkSyncBadgeTruncation();
 } else if (arg === '--all') {
   const r1 = checkEmojis();
   const r2 = checkRadii();
@@ -883,7 +1095,7 @@ if (arg === '--emojis') {
   const r21 = checkUxConformance();
   success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21;
 } else {
-  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--build|--all]`);
+  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--build|--all]`);
   process.exit(1);
 }
 

@@ -32,7 +32,7 @@ Scope: Appliquer le principe « une action, un emplacement » aux deux espaces :
 - [x] G6: Le commutateur de thème conserve ses garanties au format compact, à une instance par espace
   CHECK: node scripts/verify-browser.mjs --theme
   EXPECT: browser-verify: theme toggle passed
-  EVIDENCE: automatic-evidence=v1; definition-sha256=c8d1610809bae970a54a58f99e93e9c2472345342c7da5e69ccaa6cb46827773; exit=0; EXPECT=matched; output-sha256=e760600bf2aad35caca9c47dc4d533b06e664a32794dcee272917cfe2d2bb7c8; output-bytes=1337; shell=/bin/sh; cwd=/home/fabien/Documents/Projets/Pro/PresenceApp/presence-app; path=e20d6bfe21da/22 entries
+  EVIDENCE: automatic-evidence=v1; definition-sha256=c8d1610809bae970a54a58f99e93e9c2472345342c7da5e69ccaa6cb46827773; exit=0; EXPECT=matched; output-sha256=220fcdf4c3b2f3e5de1df882d2ec70550dd22eb2443a4d9894d5fda141768ac7; output-bytes=1298; shell=/bin/sh; cwd=/home/fabien/Documents/Projets/Pro/PresenceApp/presence-app; path=e20d6bfe21da/22 entries
 
 - [x] G7: Les fichiers du lot respectent les règles d'emoji, d'arrondi Material 3, d'ombre et de cible tactile
   CHECK: node scripts/verify-gates.mjs --ux-conformance
