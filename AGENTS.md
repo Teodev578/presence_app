@@ -33,6 +33,7 @@ Le répertoire `.agents/` héberge les directives et compétences modulaires pou
   - `06-animation-standards.md` : fluidité GPU, anti-jank et prefers-reduced-motion.
   - `07-design-system.md` : synergie Material 3 & DaisyUI v5, tokens et hiérarchie de formes.
   - `08-skills-activation.md` : matrice déterministe d'activation des compétences selon la tâche.
+  - `09-ui-copy-and-tone.md` : ton des textes d'interface, lexique proscrit et étiquette des libellés d'état.
 - `.agents/skills/` : Protocoles procéduraux déclenchés sur demande ou selon le besoin technique. Le périmètre des compétences actives et inactives est consigné dans [`.agents/skills-scope.md`](.agents/skills-scope.md).
   - Déclencheur discipline & grand livre (`unlazy`) : invoquer obligatoirement avant toute intervention substantielle, refactoring transverse ou correctif multi-fichiers pour établir et prouver les gates d'acceptation dans `GATES.md`.
   - Déclencheur communication & prose (`stop-slop`) : invoquer pour tout texte rédigé, commentaire de code, documentation ou réponse utilisateur afin de bannir le jargon artificiel, les adverbes superflus et les tirets cadratins.

@@ -62,8 +62,9 @@ const sessionDotClass = (presence) => {
 // Durée affichée : '--' tant qu'un départ manquant rend la durée inconnaissable
 const getPresenceDuration = (presence) => formatSessionDuration(presence)
 
-// Sessions ouvertes d'une journée révolue : une journée à réparer côté gestionnaire
-const weekAnomalies = computed(
+// Journées révolues dont le départ n'a pas été enregistré. Un fait clos, que l'employé ne peut plus
+// corriger : le libellé le constate et ne réclame rien.
+const weekMissingDepartures = computed(
   () => (props.weekPresences || []).filter((presence) => resolveSessionState(presence) === 'missing_checkout').length
 )
 
@@ -116,10 +117,9 @@ const recentCountLabel = computed(() => {
           <div class="flex items-center gap-2 p-2 rounded-m3-sm bg-base-200/60 border border-base-300/40">
             <div
               class="w-6 h-6 rounded-full shrink-0 flex items-center justify-center"
-              :class="weekAnomalies > 0 ? 'bg-warning/15 text-warning' : 'bg-base-300/80 text-base-content/70'"
+              :class="weekMissingDepartures > 0 ? 'bg-warning/15 text-warning' : 'bg-base-300/80 text-base-content/70'"
             >
               <svg
-                v-if="weekAnomalies > 0"
                 xmlns="http://www.w3.org/2000/svg"
                 class="w-3.5 h-3.5"
                 viewBox="0 0 24 24"
@@ -128,33 +128,20 @@ const recentCountLabel = computed(() => {
                 stroke-width="2"
                 stroke-linecap="round"
                 stroke-linejoin="round"
+                aria-hidden="true"
               >
-                <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                <line x1="12" y1="9" x2="12" y2="13"></line>
-                <line x1="12" y1="17" x2="12.01" y2="17"></line>
-              </svg>
-              <svg
-                v-else
-                xmlns="http://www.w3.org/2000/svg"
-                class="w-3.5 h-3.5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <circle cx="12" cy="12" r="10"></circle>
-                <polyline points="12 6 12 12 16 14"></polyline>
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
               </svg>
             </div>
             <div class="flex flex-col min-w-0">
-              <span class="text-[10px] font-semibold text-base-content/50 uppercase tracking-wider">Anomalies</span>
+              <span class="text-[10px] font-semibold text-base-content/50 uppercase tracking-wider">Départs</span>
               <span
                 class="text-xs sm:text-sm font-bold truncate"
-                :class="weekAnomalies > 0 ? 'text-warning' : 'text-base-content'"
+                :class="weekMissingDepartures > 0 ? 'text-warning' : 'text-base-content'"
               >
-                {{ weekAnomalies > 0 ? `${weekAnomalies} à corriger` : 'Aucune' }}
+                {{ weekMissingDepartures > 0 ? `${weekMissingDepartures} manquant${weekMissingDepartures > 1 ? 's' : ''}` : 'Tous enregistrés' }}
               </span>
             </div>
           </div>

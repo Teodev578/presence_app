@@ -7,6 +7,7 @@ import { useProfile } from '../../composables/useProfile'
 import { db } from '../../lib/db'
 import { supabase } from '../../lib/supabase'
 import GpsRing from '../../components/employee/GpsRing.vue'
+import CheckConfirmationOverlay from '../../components/employee/CheckConfirmationOverlay.vue'
 
 const { navigate } = useRouter()
 const {
@@ -95,9 +96,25 @@ const perimeterResult = computed(() => {
   return checkPerimeter(selectedLocation.value)
 })
 
+// État unique du bouton : anime le libellé sans provoquer de décalage de mise en page
+const buttonState = computed(() => {
+  if (isSubmitting.value) return 'submitting'
+  if (isSuccess.value) return 'success'
+  return perimeterResult.value.inPerimeter ? 'ready' : 'out-of-range'
+})
+
+const BUTTON_LABELS = {
+  submitting: 'Validation de votre arrivée en cours...',
+  success: 'Arrivée validée',
+  ready: 'Confirmer mon arrivée',
+  'out-of-range': 'Rapprochez-vous pour valider',
+}
+
+const buttonText = computed(() => BUTTON_LABELS[buttonState.value])
+
 const handleConfirmCheckIn = async () => {
   if (!selectedLocation.value) {
-    errorMessage.value = 'Veuillez sélectionner un lieu de travail.'
+    errorMessage.value = 'Sélectionnez votre lieu de travail pour continuer.'
     return
   }
 
@@ -120,7 +137,7 @@ const handleConfirmCheckIn = async () => {
       navigator.vibrate(40)
     }
     isSuccess.value = true
-    await new Promise((r) => setTimeout(r, 700))
+    await new Promise((r) => setTimeout(r, 900))
     navigate('/employee')
   } catch (err) {
     errorMessage.value = `Erreur : ${err.message}`
@@ -132,7 +149,15 @@ const handleConfirmCheckIn = async () => {
 
 <template>
   <div class="flex-1 flex flex-col w-full h-full min-h-0 overflow-y-auto md:overflow-hidden py-1 md:py-1.5">
-    <div class="card bg-base-200 border border-base-300/60 shadow-xs rounded-m3-xl p-3.5 sm:p-5 lg:p-6 w-full flex-1 flex flex-col justify-between gap-3 sm:gap-4 md:gap-5">
+    <div class="card relative bg-base-200 border border-base-300/60 shadow-xs rounded-m3-xl p-3.5 sm:p-5 lg:p-6 w-full flex-1 flex flex-col justify-between gap-3 sm:gap-4 md:gap-5">
+      <!-- Aboutissement visuel du pointage, avant la redirection automatique -->
+      <CheckConfirmationOverlay
+        :visible="isSuccess"
+        title="Arrivée validée"
+        message="Votre pointage a bien été enregistré."
+        :site-name="selectedLocation?.name || ''"
+      />
+
       <!-- En-tête navigation avec touch target 44px+ -->
       <div class="flex items-center justify-between border-b border-base-300/40 pb-2.5 sm:pb-3.5 shrink-0">
         <button
@@ -261,7 +286,7 @@ const handleConfirmCheckIn = async () => {
             <!-- Conseils contextuels d'acquisition GPS si hors périmètre ou signal imprécis -->
             <div
               v-if="!perimeterResult.inPerimeter && !isLocating && locations.length > 0 && !isSuccess"
-              class="flex items-start gap-2.5 p-2.5 sm:p-3 rounded-m3-md bg-base-200/70 border border-base-300/60 text-xs text-base-content/75 shadow-2xs"
+              class="flex items-start gap-2.5 p-2.5 sm:p-3 rounded-m3-md bg-base-200/70 border border-base-300/60 text-xs text-base-content/75 shadow-xs"
             >
               <div class="w-5 h-5 rounded-full bg-info/10 text-info flex items-center justify-center shrink-0 mt-0.5">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -303,18 +328,25 @@ const handleConfirmCheckIn = async () => {
               :disabled="!perimeterResult.inPerimeter || isSubmitting || isSuccess || locations.length === 0"
               @click="handleConfirmCheckIn"
             >
-              <span v-if="isSubmitting" class="loading loading-spinner loading-sm"></span>
-              <span v-if="isSubmitting">Validation de votre arrivée en cours...</span>
-              <template v-else-if="isSuccess">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-                <span>Arrivée validée</span>
-              </template>
-              <span v-else-if="perimeterResult.inPerimeter">
-                Confirmer mon arrivée
-              </span>
-              <span v-else>Rapprochez-vous pour valider</span>
+              <Transition name="fade-fast" mode="out-in">
+                <span :key="buttonState" class="inline-flex items-center justify-center gap-2">
+                  <span v-if="buttonState === 'submitting'" class="loading loading-spinner loading-sm"></span>
+                  <svg
+                    v-else-if="buttonState === 'success'"
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="w-5 h-5 shrink-0"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                  <span>{{ buttonText }}</span>
+                </span>
+              </Transition>
             </button>
           </div>
         </div>
@@ -322,3 +354,15 @@ const handleConfirmCheckIn = async () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.fade-fast-enter-active,
+.fade-fast-leave-active {
+  transition: opacity 120ms ease;
+}
+
+.fade-fast-enter-from,
+.fade-fast-leave-to {
+  opacity: 0;
+}
+</style>

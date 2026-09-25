@@ -2,6 +2,8 @@
 import { ref, computed, watch } from 'vue'
 import { useAvailabilities, formatWeekLabel } from '../../composables/useAvailabilities'
 import { useToast } from '../../composables/useToast'
+import { summarizeAvailability } from '../../lib/availabilitySummary'
+import AvailabilitySummary from './AvailabilitySummary.vue'
 
 const { success: toastSuccess, error: toastError } = useToast()
 
@@ -62,6 +64,11 @@ const daysWithDates = computed(() => {
 const isEntireWeekPast = computed(() => {
   return daysWithDates.value.length > 0 && daysWithDates.value.every((d) => d.isPast)
 })
+
+// Résumé actionnable : expose ce que l'enregistrement s'apprête à transmettre, avant le clic
+const availabilitySummary = computed(() =>
+  summarizeAvailability(selectedDays.value, daysWithDates.value)
+)
 
 // Synchronise l'état local du formulaire : si la semaine a été personnalisée, charge ses données ; sinon, coche tous les jours
 watch(
@@ -214,6 +221,9 @@ const handleSave = async () => {
       ></textarea>
     </div>
 
+    <!-- Résumé de ce qui sera transmis, rendu avant l'action pour éviter l'enregistrement à l'aveugle -->
+    <AvailabilitySummary :count="availabilitySummary.count" :labels="availabilitySummary.labels" />
+
     <!-- Bouton d'enregistrement principal avec feedback de succès intégré (zéro décalage de mise en page) -->
     <div class="pt-2 border-t border-base-300/40 mt-auto">
       <button
@@ -225,6 +235,7 @@ const handleSave = async () => {
             : 'btn-primary focus-visible:ring-primary'
         ]"
         :disabled="isSaving || isEntireWeekPast"
+        :aria-label="`Enregistrer : ${availabilitySummary.label}`"
         @click="handleSave"
       >
         <span v-if="isSaving" class="loading loading-spinner loading-sm"></span>

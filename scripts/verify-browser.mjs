@@ -14,6 +14,8 @@
  *   node scripts/verify-browser.mjs --week-tile     densité de la tuile hebdomadaire
  *   node scripts/verify-browser.mjs --status-badge  sémantique des statuts
  *   node scripts/verify-browser.mjs --appearance-control  pied de tiroir à 375px
+ *   node scripts/verify-browser.mjs --check-overlay       volet de confirmation de pointage
+ *   node scripts/verify-browser.mjs --availability-summary résumé de disponibilités
  *   node scripts/verify-browser.mjs                 tous les modes
  *
  * Dépendance d'environnement : un binaire Chrome (CHROME_PATH pour le forcer).
@@ -38,6 +40,8 @@ const TOKENS = {
   'week-tile': 'browser-verify: week tile passed',
   'status-badge': 'browser-verify: status badge passed',
   'appearance-control': 'browser-verify: appearance control passed',
+  'check-overlay': 'browser-verify: check overlay passed',
+  'availability-summary': 'browser-verify: availability summary passed',
 }
 
 const HARNESS_HTML = `<!doctype html>
@@ -54,13 +58,15 @@ const HARNESS_HTML = `<!doctype html>
 </html>
 `
 
-const HARNESS_JS = `import { createApp, h } from 'vue'
+const HARNESS_JS = `import { createApp, h, ref } from 'vue'
 import '../src/style.css'
 import ThemeToggle from '../src/components/shared/ThemeToggle.vue'
 import SyncAlert from '../src/components/shared/SyncAlert.vue'
 import SyncIndicator from '../src/components/shared/SyncIndicator.vue'
 import StatusBadge from '../src/components/shared/StatusBadge.vue'
 import WeekSummaryCard from '../src/components/employee/WeekSummaryCard.vue'
+import CheckConfirmationOverlay from '../src/components/employee/CheckConfirmationOverlay.vue'
+import AvailabilitySummary from '../src/components/employee/AvailabilitySummary.vue'
 import { getLocalDateString, resolveSessionMinutes } from '../src/lib/dateUtils.js'
 import { useSyncEngine } from '../src/composables/useSyncEngine.js'
 
@@ -119,6 +125,41 @@ const SyncProbe = {
   },
 }
 
+// Sonde du volet de confirmation : monte et démonte la surface à la demande du vérificateur
+const OverlayProbe = {
+  setup() {
+    const visible = ref(false)
+    window.__harness.setOverlayVisible = (value) => {
+      visible.value = value
+    }
+    return () =>
+      h('div', { id: 'overlay-host', class: 'relative w-[420px] h-[320px] border border-base-300 bg-base-200 rounded-m3-lg' }, [
+        h(CheckConfirmationOverlay, {
+          visible: visible.value,
+          title: 'Arrivée validée',
+          message: 'Votre pointage a bien été enregistré.',
+          siteName: 'Siège Lyon',
+        }),
+      ])
+  },
+}
+
+// Sonde du résumé : permet de faire varier la sélection pour éprouver l'animation du compteur
+const SummaryProbe = {
+  setup() {
+    const count = ref(5)
+    const labels = ref(['Lun', 'Mar', 'Mer', 'Jeu', 'Ven'])
+    window.__harness.setSummaryCount = (value) => {
+      count.value = value
+      labels.value = value > 0 ? ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven'].slice(0, value) : []
+    }
+    return () =>
+      h('div', { id: 'summary-host', class: 'w-[420px] bg-base-200' }, [
+        h(AvailabilitySummary, { count: count.value, labels: labels.value }),
+      ])
+  },
+}
+
 // Largeur utile réelle du pied de tiroir à 375px : aside w-72 (288px) moins p-5 (2 x 20px)
 const DRAWER_INNER_WIDTH = 248
 
@@ -134,12 +175,21 @@ const settingsBlock = (id, width) =>
     ]),
   ])
 
-window.__harness = { presences, weekTotalMinutes }
+window.__harness = {
+  presences,
+  weekTotalMinutes,
+  afterPaint: () => new Promise((resolve) => requestAnimationFrame(() => resolve())),
+}
 
 const app = createApp({
   render: () =>
     h('div', { class: 'p-4 flex flex-col gap-4' }, [
       h(SyncProbe),
+      h(OverlayProbe),
+      h(SummaryProbe),
+      h('div', { id: 'summary-empty-host', class: 'w-[420px] bg-base-200' }, [
+        h(AvailabilitySummary, { count: 0, labels: [] }),
+      ]),
       h('div', { id: 'toggle-host' }, [h(ThemeToggle)]),
       settingsBlock('drawer-settings', DRAWER_INNER_WIDTH),
       settingsBlock('drawer-settings-narrow', 200),
@@ -162,6 +212,13 @@ const app = createApp({
           recentPresences: presences,
           weekPresences: presences,
           weekTotalMinutes: 21,
+        }),
+      ]),
+      h('div', { id: 'card-clean-host', style: 'max-width:520px' }, [
+        h(WeekSummaryCard, {
+          recentPresences: presences.filter((presence) => presence.check_out_time),
+          weekPresences: presences.filter((presence) => presence.check_out_time),
+          weekTotalMinutes: 510,
         }),
       ]),
     ]),
@@ -224,6 +281,13 @@ const MEASURE_EXPRESSION = `(() => {
       })
     : []
   const lowProgress = document.querySelector('#card-low-host progress')
+  const overlayHost = document.querySelector('#overlay-host')
+  const overlayBox = overlayHost ? overlayHost.querySelector('[role="status"]') : null
+  const overlayStyle = overlayBox ? getComputedStyle(overlayBox) : null
+  const summaryHost = document.querySelector('#summary-host')
+  const summaryBadge = summaryHost ? summaryHost.querySelector('.badge') : null
+  const summaryBadgeStyle = summaryBadge ? getComputedStyle(summaryBadge) : null
+  const summaryEmptyHost = document.querySelector('#summary-empty-host')
 
   return {
     theme: document.documentElement.getAttribute('data-theme'),
@@ -247,8 +311,27 @@ const MEASURE_EXPRESSION = `(() => {
     cardText: document.querySelector('#card-host') ? collapse(document.querySelector('#card-host').innerText) : null,
     cardBadges: [...document.querySelectorAll('#card-host .badge')].map((badge) => collapse(badge.innerText)),
     lowCardText: document.querySelector('#card-low-host') ? collapse(document.querySelector('#card-low-host').innerText) : null,
+    cleanCardText: document.querySelector('#card-clean-host') ? collapse(document.querySelector('#card-clean-host').innerText) : null,
     lowProgressValue: lowProgress ? lowProgress.getAttribute('value') : null,
     lowProgressAria: lowProgress ? lowProgress.getAttribute('aria-valuenow') : null,
+    overlay: {
+      present: Boolean(overlayBox),
+      text: overlayBox ? collapse(overlayBox.innerText) : null,
+      role: overlayBox ? overlayBox.getAttribute('role') : null,
+      live: overlayBox ? overlayBox.getAttribute('aria-live') : null,
+      position: overlayStyle ? overlayStyle.position : null,
+      opacity: overlayStyle ? overlayStyle.opacity : null,
+      transitionDuration: overlayStyle ? overlayStyle.transitionDuration : null,
+    },
+    summary: {
+      text: summaryHost ? collapse(summaryHost.innerText) : null,
+      badgeText: summaryBadge ? collapse(summaryBadge.innerText) : null,
+      badgeTransition: summaryBadgeStyle ? summaryBadgeStyle.transitionDuration : null,
+      chips: summaryHost ? [...summaryHost.querySelectorAll('.badge')].map((badge) => collapse(badge.innerText)) : [],
+    },
+    summaryEmpty: {
+      text: summaryEmptyHost ? collapse(summaryEmptyHost.innerText) : null,
+    },
     weekTotal: window.__harness ? window.__harness.weekTotalMinutes : null,
   }
 })()`
@@ -349,6 +432,13 @@ class Cdp {
 
   async measure() {
     return this.evaluate(MEASURE_EXPRESSION)
+  }
+
+  /** Déclenche une action puis mesure dans la même image, pour saisir une transition en cours. */
+  async measureAfter(action) {
+    return this.evaluate(
+      `(async () => { ${action}; await window.__harness.afterPaint(); return ${MEASURE_EXPRESSION}; })()`
+    )
   }
 
   async clickAt(point) {
@@ -549,11 +639,18 @@ async function verifyWeekTile(cdp) {
   assertShape(snapshot)
 
   // innerText renvoie le texte après application de text-transform : le libellé est mis en capitales par le CSS
-  check('compteur d\u2019anomalies présent', () =>
-    assertTrue(/anomalies/i.test(snapshot.cardText || ''), 'libellé absent de la tuile')
+  check('départ manquant constaté sur la semaine', () => {
+    assertTrue(/départs/i.test(snapshot.cardText || ''), 'libellé absent de la tuile')
+    assertTrue((snapshot.cardText || '').includes('1 manquant'), `tuile : ${snapshot.cardText}`)
+  })
+  check('ni terme administratif ni injonction dans la tuile', () =>
+    assertTrue(!/anomalie|à corriger|à compléter/i.test(snapshot.cardText || ''), `tuile : ${snapshot.cardText}`)
   )
-  check('anomalie de la semaine comptée', () =>
-    assertTrue((snapshot.cardText || '').includes('1 à corriger'), `tuile : ${snapshot.cardText}`)
+  check('état sain annoncé sans réserve', () =>
+    assertTrue((snapshot.cleanCardText || '').includes('Tous enregistrés'), `tuile saine : ${snapshot.cleanCardText}`)
+  )
+  check('état sain exempt de terme administratif', () =>
+    assertTrue(!/anomalie|à corriger|à compléter/i.test(snapshot.cleanCardText || ''), `tuile saine : ${snapshot.cleanCardText}`)
   )
   check('pointages récents libellés sans progression trompeuse', () =>
     assertTrue(snapshot.cardBadges.some((text) => text.includes('3 derniers pointages')), `badges : ${JSON.stringify(snapshot.cardBadges)}`)
@@ -669,6 +766,97 @@ async function verifyAppearanceControl(cdp) {
   return failures === before
 }
 
+const assertBatchFields = (snapshot) => {
+  for (const field of ['overlay', 'summary', 'summaryEmpty']) {
+    if (!snapshot[field]) throw new Error(`mesure incomplète : champ ${field} absent`)
+  }
+}
+
+async function verifyCheckOverlay(cdp) {
+  const before = failures
+  console.log('browser-verify: volet de confirmation de pointage')
+
+  const initial = await cdp.measure()
+  assertShape(initial)
+  assertBatchFields(initial)
+
+  check('volet masqué au repos', () => assertEqual(initial.overlay.present, false, 'présence'))
+  check('aucune surface de statut rendue au repos', () => assertEqual(initial.overlay.role, null, 'role'))
+
+  // Mesure dans l'image qui suit l'activation : la transition d'entrée est encore en cours,
+  // ce qui prouve que l'apparition est animée et non instantanée.
+  const entering = await cdp.measureAfter('window.__harness.setOverlayVisible(true)')
+  check('volet monté à l’activation', () => assertEqual(entering.overlay.present, true, 'présence'))
+  check('surface de statut annoncée poliment', () => {
+    assertEqual(entering.overlay.role, 'status', 'role')
+    assertEqual(entering.overlay.live, 'polite', 'aria-live')
+  })
+  check('volet ancré sur la carte', () => assertEqual(entering.overlay.position, 'absolute', 'position'))
+  check('entrée réellement animée', () =>
+    assertTrue(parseFloat(entering.overlay.transitionDuration) > 0, `transition : ${entering.overlay.transitionDuration}`)
+  )
+
+  await sleep(320)
+  const settled = await cdp.measure()
+  check('volet pleinement visible après l’entrée', () => assertEqual(settled.overlay.opacity, '1', 'opacité'))
+  check('titre, message et site rendus', () => {
+    const text = settled.overlay.text || ''
+    assertTrue(text.includes('Arrivée validée'), `titre : ${text}`)
+    assertTrue(text.includes('bien été enregistré'), 'message absent')
+    assertTrue(text.includes('Siège Lyon'), 'site absent')
+  })
+  await cdp.screenshot('check-overlay.png')
+
+  await cdp.evaluate('window.__harness.setOverlayVisible(false)')
+  await sleep(320)
+  const gone = await cdp.measure()
+  check('volet retiré après désactivation', () => assertEqual(gone.overlay.present, false, 'présence'))
+
+  return failures === before
+}
+
+async function verifyAvailabilitySummary(cdp) {
+  const before = failures
+  console.log('browser-verify: résumé des disponibilités')
+
+  const initial = await cdp.measure()
+  assertShape(initial)
+  assertBatchFields(initial)
+
+  check('compte et jours rendus', () => {
+    assertTrue((initial.summary.badgeText || '').includes('5 jours sélectionnés'), `compte : ${initial.summary.badgeText}`)
+    assertTrue(
+      initial.summary.chips.includes('Lun') && initial.summary.chips.includes('Ven'),
+      `jours : ${JSON.stringify(initial.summary.chips)}`
+    )
+  })
+  check('état vide explicite et conséquence annoncée', () => {
+    const text = initial.summaryEmpty.text || ''
+    assertTrue(text.includes('Aucun jour sélectionné'), `texte : ${text}`)
+    assertTrue(text.includes('retirera'), 'conséquence non annoncée')
+  })
+
+  const entering = await cdp.measureAfter('window.__harness.setSummaryCount(2)')
+  check('changement de sélection animé', () =>
+    assertTrue(parseFloat(entering.summary.badgeTransition) > 0, `transition : ${entering.summary.badgeTransition}`)
+  )
+
+  await sleep(380)
+  const settled = await cdp.measure()
+  check('nouveau compte et jours après la transition', () => {
+    assertTrue((settled.summary.badgeText || '').includes('2 jours sélectionnés'), `compte : ${settled.summary.badgeText}`)
+    assertTrue(settled.summary.chips.includes('Lun'), `jours : ${JSON.stringify(settled.summary.chips)}`)
+    assertTrue(settled.summary.chips.includes('Mar'), `jours : ${JSON.stringify(settled.summary.chips)}`)
+    assertTrue(
+      !settled.summary.chips.includes('Mer') && !settled.summary.chips.includes('Ven'),
+      `jours restants : ${JSON.stringify(settled.summary.chips)}`
+    )
+  })
+  await cdp.screenshot('availability-summary.png')
+
+  return failures === before
+}
+
 const VERIFIERS = {
   theme: verifyTheme,
   sessions: verifySessions,
@@ -676,6 +864,8 @@ const VERIFIERS = {
   'week-tile': verifyWeekTile,
   'status-badge': verifyStatusBadge,
   'appearance-control': verifyAppearanceControl,
+  'check-overlay': verifyCheckOverlay,
+  'availability-summary': verifyAvailabilitySummary,
 }
 
 async function main() {
