@@ -1,6 +1,8 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { supabase } from '../../lib/supabase'
+import ConfirmModal from '../../components/shared/ConfirmModal.vue'
+import { useToast } from '../../composables/useToast'
 
 const teams = ref([])
 const loading = ref(true)
@@ -29,34 +31,50 @@ onMounted(() => {
   loadTeams()
 })
 
+const { success, error: toastError } = useToast()
+const teamToArchive = ref(null)
+const isArchiving = ref(false)
+
 const handleCreateTeam = async () => {
-  if (!newTeamName.value.trim()) return
+  const name = newTeamName.value.trim()
+  if (!name) return
   isCreating.value = true
   try {
     const { error } = await supabase.from('teams').insert({
-      name: newTeamName.value.trim(),
+      name,
     })
     if (error) throw error
+    success(`L'équipe « ${name} » a été créée avec succès.`)
     newTeamName.value = ''
     await loadTeams()
   } catch (err) {
-    alert(`Erreur création équipe : ${err.message}`)
+    toastError(`Erreur création équipe : ${err.message}`)
   } finally {
     isCreating.value = false
   }
 }
 
-const archiveTeam = async (team) => {
-  if (!confirm(`Confirmer la désactivation de l'équipe "${team.name}" ?`)) return
+const requestArchive = (team) => {
+  teamToArchive.value = team
+}
+
+const confirmArchive = async () => {
+  if (!teamToArchive.value) return
+  isArchiving.value = true
+  const target = teamToArchive.value
   try {
     const { error } = await supabase
       .from('teams')
       .update({ deleted_at: new Date().toISOString(), is_active: false })
-      .eq('id', team.id)
+      .eq('id', target.id)
     if (error) throw error
+    success(`L'équipe « ${target.name} » a été désactivée.`)
+    teamToArchive.value = null
     await loadTeams()
   } catch (err) {
-    alert(`Erreur d'archivage : ${err.message}`)
+    toastError(`Erreur d'archivage : ${err.message}`)
+  } finally {
+    isArchiving.value = false
   }
 }
 </script>
@@ -124,7 +142,7 @@ const archiveTeam = async (team) => {
             class="btn btn-ghost btn-circle btn-sm text-error min-w-11 min-h-11"
             title="Archiver l'équipe"
             aria-label="Archiver l'équipe"
-            @click="archiveTeam(team)"
+            @click="requestArchive(team)"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="3 6 5 6 21 6"></polyline>
@@ -157,5 +175,17 @@ const archiveTeam = async (team) => {
         </div>
       </div>
     </div>
+
+    <!-- Modale de confirmation d'archivage équipe -->
+    <ConfirmModal
+      :open="!!teamToArchive"
+      title="Désactiver l'équipe"
+      :message="`Confirmez-vous la désactivation de l'équipe « ${teamToArchive?.name} » ?`"
+      confirm-text="Désactiver"
+      confirm-class="btn-error"
+      :loading="isArchiving"
+      @confirm="confirmArchive"
+      @cancel="teamToArchive = null"
+    />
   </div>
 </template>

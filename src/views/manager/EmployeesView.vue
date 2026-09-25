@@ -1,6 +1,8 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { supabase } from '../../lib/supabase'
+import ConfirmModal from '../../components/shared/ConfirmModal.vue'
+import { useToast } from '../../composables/useToast'
 
 const employees = ref([])
 const teams = ref([])
@@ -70,27 +72,42 @@ const saveEmployee = async () => {
       .eq('id', editingEmployee.value.id)
 
     if (error) throw error
+    success('Profil mis à jour avec succès.')
     editingEmployee.value = null
     await loadData()
   } catch (err) {
-    alert(`Erreur de mise à jour : ${err.message}`)
+    toastError(`Erreur de mise à jour : ${err.message}`)
   } finally {
     isSaving.value = false
   }
 }
 
-const archiveEmployee = async (emp) => {
-  if (!confirm(`Confirmer l'archivage du collaborateur "${emp.full_name}" ?`)) return
+const { success, error: toastError } = useToast()
+const employeeToArchive = ref(null)
+const isArchiving = ref(false)
+
+const requestArchive = (emp) => {
+  employeeToArchive.value = emp
+}
+
+const confirmArchive = async () => {
+  if (!employeeToArchive.value) return
+  isArchiving.value = true
+  const target = employeeToArchive.value
   try {
     const { error } = await supabase
       .from('profiles')
       .update({ deleted_at: new Date().toISOString(), is_active: false })
-      .eq('id', emp.id)
+      .eq('id', target.id)
 
     if (error) throw error
+    success(`Le collaborateur « ${target.full_name} » a été archivé.`)
+    employeeToArchive.value = null
     await loadData()
   } catch (err) {
-    alert(`Erreur d'archivage : ${err.message}`)
+    toastError(`Erreur d'archivage : ${err.message}`)
+  } finally {
+    isArchiving.value = false
   }
 }
 </script>
@@ -159,7 +176,7 @@ const archiveEmployee = async (emp) => {
                   <button
                     type="button"
                     class="btn btn-ghost btn-sm text-error font-semibold gap-1.5 rounded-m3-sm min-h-11 px-3"
-                    @click="archiveEmployee(emp)"
+                    @click="requestArchive(emp)"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                       <polyline points="21 8 21 21 3 21 3 8"></polyline>
@@ -225,5 +242,17 @@ const archiveEmployee = async (emp) => {
         <button>close</button>
       </form>
     </dialog>
+
+    <!-- Modale de confirmation d'archivage collaborateur -->
+    <ConfirmModal
+      :open="!!employeeToArchive"
+      title="Archiver le collaborateur"
+      :message="`Confirmez-vous l'archivage de « ${employeeToArchive?.full_name} » ? Ses accès seront suspendus.`"
+      confirm-text="Archiver"
+      confirm-class="btn-error"
+      :loading="isArchiving"
+      @confirm="confirmArchive"
+      @cancel="employeeToArchive = null"
+    />
   </div>
 </template>

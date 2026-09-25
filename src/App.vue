@@ -8,6 +8,7 @@ import { useSyncEngine } from './composables/useSyncEngine'
 // Layouts
 import EmployeeLayout from './layouts/EmployeeLayout.vue'
 import ManagerLayout from './layouts/ManagerLayout.vue'
+import ToastContainer from './components/shared/ToastContainer.vue'
 
 // Vues
 import LoginView from './views/auth/LoginView.vue'
@@ -105,6 +106,9 @@ watch([() => route.value.path, isManager, () => profile.value, profileLoading], 
       <HomeView v-else />
     </Transition>
   </EmployeeLayout>
+
+  <!-- Conteneur global de notifications Toast -->
+  <ToastContainer />
 </template>
 
 <style>

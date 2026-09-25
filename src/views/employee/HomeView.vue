@@ -35,10 +35,10 @@ const displayName = computed(() => {
       </div>
     </div>
 
-    <!-- Grille adaptative : mono-colonne sur mobile (ordre inversé), 2 colonnes dès tablette (md: 768px) et grand écran (lg: 1024px) -->
+    <!-- Grille adaptative : mono-colonne sur mobile (carte du jour prioritaire), 2 colonnes dès tablette (md: 768px) et grand écran (lg: 1024px) -->
     <div class="grid grid-cols-1 md:grid-cols-12 lg:grid-cols-12 gap-3.5 md:gap-4 lg:gap-5 xl:gap-6 items-stretch flex-1 min-h-0">
-      <!-- Carte statut du jour (en 2e position sur mobile, colonne gauche 6/12 tablette, 7/12 desktop) -->
-      <div class="order-2 md:order-1 md:col-span-6 lg:col-span-7 flex flex-col min-h-0">
+      <!-- Carte statut du jour (en 1re position sur mobile pour pointage direct, colonne gauche 6/12 tablette, 7/12 desktop) -->
+      <div class="order-1 md:col-span-6 lg:col-span-7 flex flex-col min-h-0">
         <DayCard
           :presence="todayPresence"
           :expected-arrival-time="profile?.expected_arrival_time || '09:00:00'"
@@ -48,8 +48,8 @@ const displayName = computed(() => {
         />
       </div>
 
-      <!-- Carte synthèse hebdomadaire (en 1re position sur mobile, colonne droite 6/12 tablette, 5/12 desktop) -->
-      <div class="order-1 md:order-2 md:col-span-6 lg:col-span-5 flex flex-col min-h-0">
+      <!-- Carte synthèse hebdomadaire (en 2e position sur mobile, colonne droite 6/12 tablette, 5/12 desktop) -->
+      <div class="order-2 md:col-span-6 lg:col-span-5 flex flex-col min-h-0">
         <WeekSummaryCard
           :recent-presences="recentPresences"
           :week-presences="weekPresences"

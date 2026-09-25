@@ -1,6 +1,9 @@
 <script setup>
 import { ref } from 'vue'
 import { supabase } from '../../lib/supabase'
+import { useToast } from '../../composables/useToast'
+
+const { success, error: toastError, warning } = useToast()
 
 const todayStr = new Date().toISOString().slice(0, 10)
 const firstDayOfMonth = new Date()
@@ -28,7 +31,7 @@ const generateCSV = async () => {
     if (error) throw error
 
     if (!data || !data.length) {
-      alert('Aucun enregistrement trouvé pour la période sélectionnée.')
+      warning('Aucun enregistrement trouvé pour la période sélectionnée.')
       return
     }
 
@@ -78,11 +81,13 @@ const generateCSV = async () => {
     link.click()
     document.body.removeChild(link)
 
+    success(`${data.length} pointage(s) exporté(s) en CSV.`)
+
     setTimeout(() => {
       exportCount.value = null
     }, 4000)
   } catch (err) {
-    alert(`Erreur lors de l'export CSV : ${err.message}`)
+    toastError(`Erreur lors de l'export CSV : ${err.message}`)
   } finally {
     isExporting.value = false
   }

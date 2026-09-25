@@ -39,8 +39,8 @@ Le module cartographique de [`LocationsView.vue`](file:///home/fabien/Documents/
 
 ## 3. Points de Friction et Vulnérabilités Identifiés
 
-### 1. Ergonomie d'accessibilité tactile (Thumb Zone) sur mobile
-L'analyse de [`HomeView.vue`](file:///home/fabien/Documents/Projets/Pro/PresenceApp/presence-app/src/views/employee/HomeView.vue#L39-L59) confirme la pertinence de l'ordonnancement actuel : sur les smartphones modernes dotés d'écrans allongés (ratios 19:9 ou 20:9), la moitié inférieure de l'écran constitue la zone de préhension naturelle du pouce (*thumb zone*). Placer la carte du jour (`DayCard`) en partie basse permet de déclencher le pointage ou de déclarer les disponibilités d'une seule main sans étirement digital ni fatigue musculaire.
+### 1. Ordonnancement d'affichage mobile : Carte du jour prioritaire (Résolu)
+Dans [`HomeView.vue`](file:///home/fabien/Documents/Projets/Pro/PresenceApp/presence-app/src/views/employee/HomeView.vue#L38-L59), la carte de pointage du jour (`DayCard`) est désormais positionnée en première position (`order-1`) sur smartphone. L'employé accède immédiatement au bouton de prise ou de clôture de poste sans défilement vertical préalable, tandis que la synthèse hebdomadaire (`WeekSummaryCard`) s'affiche en seconde position (`order-2`).
 
 ### 2. Visibilité de l'indicateur de synchronisation réseau (Résolu)
 Initialement relégué au pied du tiroir latéral masqué ([`EmployeeLayout.vue`](file:///home/fabien/Documents/Projets/Pro/PresenceApp/presence-app/src/layouts/EmployeeLayout.vue) et [`ManagerLayout.vue`](file:///home/fabien/Documents/Projets/Pro/PresenceApp/presence-app/src/layouts/ManagerLayout.vue)), le composant [`SyncIndicator.vue`](file:///home/fabien/Documents/Projets/Pro/PresenceApp/presence-app/src/components/shared/SyncIndicator.vue) a été remonté directement dans la barre d'en-tête supérieure sous une forme compacte et discrète (pastille réactive avec état hors-ligne, mutation en attente et succès).
@@ -48,8 +48,10 @@ Initialement relégué au pied du tiroir latéral masqué ([`EmployeeLayout.vue`
 ### 3. Guidage d'acquisition GPS (Résolu)
 Dans [`CheckInView.vue`](file:///home/fabien/Documents/Projets/Pro/PresenceApp/presence-app/src/views/employee/CheckInView.vue) et [`CheckOutView.vue`](file:///home/fabien/Documents/Projets/Pro/PresenceApp/presence-app/src/views/employee/CheckOutView.vue), un panneau de guidage contextuel informe désormais l'utilisateur des actions concrètes à mener en cas de signal satellite imprécis (activation du Wi-Fi pour triangulation) ou d'éloignement par rapport au site.
 
-### 4. Persistance de dialogues modaux bloquants natifs
-Plusieurs vues utilisent encore `window.confirm()` et `window.alert()` pour valider des suppressions ou afficher des erreurs techniques ([`LocationsView.vue`](file:///home/fabien/Documents/Projets/Pro/PresenceApp/presence-app/src/views/manager/LocationsView.vue#L291), [`EmployeesView.vue`](file:///home/fabien/Documents/Projets/Pro/PresenceApp/presence-app/src/views/manager/EmployeesView.vue#L83), [`TeamsView.vue`](file:///home/fabien/Documents/Projets/Pro/PresenceApp/presence-app/src/views/manager/TeamsView.vue#L50), [`ExportView.vue`](file:///home/fabien/Documents/Projets/Pro/PresenceApp/presence-app/src/views/manager/ExportView.vue#L31)). Ces dialogues bloquent le moteur d'exécution, brisent l'esthétique PWA et nuisent à la perception de qualité globale.
+### 4. Remplacement des dialogues modaux bloquants natifs (Résolu)
+L'ensemble des appels JavaScript bloquants `window.confirm()` et `window.alert()` ont été éradiqués de l'application :
+- Les suppressions et archivages de sites ([`LocationsView.vue`](file:///home/fabien/Documents/Projets/Pro/PresenceApp/presence-app/src/views/manager/LocationsView.vue)), de collaborateurs ([`EmployeesView.vue`](file:///home/fabien/Documents/Projets/Pro/PresenceApp/presence-app/src/views/manager/EmployeesView.vue)) et d'équipes ([`TeamsView.vue`](file:///home/fabien/Documents/Projets/Pro/PresenceApp/presence-app/src/views/manager/TeamsView.vue)) utilisent désormais la modale réutilisable Material 3 [`ConfirmModal.vue`](file:///home/fabien/Documents/Projets/Pro/PresenceApp/presence-app/src/components/shared/ConfirmModal.vue).
+- Les retours d'erreurs, de succès et d'avertissements (notamment dans [`ExportView.vue`](file:///home/fabien/Documents/Projets/Pro/PresenceApp/presence-app/src/views/manager/ExportView.vue) et [`WeekGrid.vue`](file:///home/fabien/Documents/Projets/Pro/PresenceApp/presence-app/src/components/employee/WeekGrid.vue)) sont pris en charge de façon non bloquante par le composable réactif [`useToast.js`](file:///home/fabien/Documents/Projets/Pro/PresenceApp/presence-app/src/composables/useToast.js) et le composant [`ToastContainer.vue`](file:///home/fabien/Documents/Projets/Pro/PresenceApp/presence-app/src/components/shared/ToastContainer.vue).
 
 ### 5. Absence d'un commutateur de thème interactif
 Bien que les feuilles de style supportent à la fois le thème clair et le thème sombre, aucun contrôle d'interface ne permet à l'utilisateur de forcer ce réglage manuellement. L'affichage dépend exclusivement de `prefers-color-scheme`, ce qui pose problème aux utilisateurs terrain souhaitant basculer en mode clair à fort contraste sous une lumière solaire vive.
@@ -66,9 +68,9 @@ Dans les vues [`PresencesView.vue`](file:///home/fabien/Documents/Projets/Pro/Pr
 
 Chaque piste d'évolution ci-dessous fait l'objet d'un statut explicite et de sa justification technique :
 
-### Proposition 1 : Maintien de la carte du jour en partie basse sur smartphone (Thumb Zone)
-- **Avis : Confirmé & Acté**
-- **Justification** : L'ergonomie physique d'un smartphone allongé privilégie l'accès direct aux boutons d'action clés (pointage d'arrivée, départ, disponibilités) dans la zone basse de préhension naturelle du pouce sans étirer la main.
+### Proposition 1 : Priorité de la carte du jour sur smartphone (DayCard en tête)
+- **Avis : Recommandé & Implémenté**
+- **Justification** : L'employé ouvre l'application pour pointer son arrivée ou son départ. Positionner la carte du jour (`DayCard`) en tête sur smartphone supprime toute manipulation de défilement superflue et maximise l'efficacité opérationnelle.
 
 ### Proposition 2 : Intégrer l'indicateur de connectivité discret dans l'en-tête persistant
 - **Avis : Recommandé & Implémenté**
@@ -79,8 +81,8 @@ Chaque piste d'évolution ci-dessous fait l'objet d'un statut explicite et de sa
 - **Justification** : Fournit une explication constructive et des conseils pratiques (activation du Wi-Fi pour triangulation, distance par rapport à l'entrée) lorsque le bouton de confirmation est désactivé.
 
 ### Proposition 4 : Remplacer les appels `alert()` et `confirm()` par des composants DaisyUI
-- **Avis : Recommandé**
-- **Justification** : L'implémentation de fenêtres modales dédiées (`<dialog class="modal">`) et de bannières éphémères (toasts) harmonise les interactions avec la charte Material 3 et préserve la réactivité de l'application sans bloquer l'interface.
+- **Avis : Recommandé & Implémenté**
+- **Justification** : L'implémentation de [`ConfirmModal.vue`](file:///home/fabien/Documents/Projets/Pro/PresenceApp/presence-app/src/components/shared/ConfirmModal.vue) et du système de notification non bloquant [`ToastContainer.vue`](file:///home/fabien/Documents/Projets/Pro/PresenceApp/presence-app/src/components/shared/ToastContainer.vue) harmonise les interactions avec la charte Material 3 et préserve la fluidité de l'application sans bloquer l'interface.
 
 ### Proposition 5 : Ajouter un bouton d'alternance Thème Clair / Thème Sombre
 - **Avis : Recommandé**

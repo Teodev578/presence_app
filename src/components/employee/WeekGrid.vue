@@ -1,6 +1,9 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useAvailabilities, formatWeekLabel } from '../../composables/useAvailabilities'
+import { useToast } from '../../composables/useToast'
+
+const { success: toastSuccess, error: toastError } = useToast()
 
 const {
   currentWeekStart,
@@ -102,11 +105,12 @@ const handleSave = async () => {
       note: note.value.trim(),
     })
     saveSuccess.value = true
+    toastSuccess('Vos disponibilités ont été enregistrées avec succès.')
     setTimeout(() => {
       saveSuccess.value = false
     }, 4000)
   } catch (err) {
-    alert(`Erreur d’enregistrement : ${err.message}`)
+    toastError(`Erreur d’enregistrement : ${err.message}`)
   } finally {
     isSaving.value = false
   }

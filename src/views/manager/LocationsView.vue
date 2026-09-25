@@ -3,6 +3,8 @@ import { ref, computed, onMounted } from 'vue'
 import { useLocations } from '../../composables/useLocations'
 import { useGeolocation } from '../../composables/useGeolocation'
 import { parseGeoInput, parseAndResolveGeoInput } from '../../lib/geoParser'
+import ConfirmModal from '../../components/shared/ConfirmModal.vue'
+import { useToast } from '../../composables/useToast'
 
 const { locations, ensureLoaded, createLocation, updateLocation, deleteLocation } = useLocations()
 const { currentCoords, isLocating, gpsError, startWatching, stopWatching } = useGeolocation()
@@ -268,12 +270,37 @@ const handleSubmit = async () => {
         radius_meters: form.value.radius_meters,
         is_active: form.value.is_active,
       })
+      success(`Le site « ${form.value.name} » a été créé avec succès.`)
     }
     closeModal()
   } catch (err) {
     formError.value = err.message || 'Une erreur est survenue lors de l’enregistrement.'
   } finally {
     isSubmitting.value = false
+  }
+}
+
+// État et confirmation de suppression via ConfirmModal
+const { success, error: toastError } = useToast()
+const locationToDelete = ref(null)
+const isDeleting = ref(false)
+
+const requestDelete = (loc) => {
+  locationToDelete.value = loc
+}
+
+const confirmDelete = async () => {
+  if (!locationToDelete.value) return
+  isDeleting.value = true
+  const target = locationToDelete.value
+  try {
+    await deleteLocation(target.id)
+    success(`Le site « ${target.name} » a été supprimé.`)
+    locationToDelete.value = null
+  } catch (err) {
+    toastError(`Erreur de suppression : ${err.message}`)
+  } finally {
+    isDeleting.value = false
   }
 }
 
@@ -286,16 +313,7 @@ const toggleStatus = async (loc) => {
   }
 }
 
-// Suppression avec confirmation
-const handleDelete = async (loc) => {
-  if (confirm(`Confirmez-vous la suppression du site "${loc.name}" ?`)) {
-    try {
-      await deleteLocation(loc.id)
-    } catch (err) {
-      alert(`Erreur : ${err.message}`)
-    }
-  }
-}
+
 </script>
 
 <template>
@@ -458,7 +476,7 @@ const handleDelete = async (loc) => {
           <button
             type="button"
             class="btn btn-ghost btn-sm text-error font-medium rounded-m3-sm min-h-11 px-3"
-            @click="handleDelete(loc)"
+            @click="requestDelete(loc)"
             title="Supprimer ce site"
           >
             Supprimer
@@ -742,5 +760,17 @@ const handleDelete = async (loc) => {
         <button type="button">fermer</button>
       </form>
     </dialog>
+
+    <!-- Modale de confirmation de suppression Material 3 -->
+    <ConfirmModal
+      :open="!!locationToDelete"
+      title="Supprimer le site"
+      :message="`Confirmez-vous la suppression définitive du site « ${locationToDelete?.name} » ? Cette action est irréversible.`"
+      confirm-text="Supprimer"
+      confirm-class="btn-error"
+      :loading="isDeleting"
+      @confirm="confirmDelete"
+      @cancel="locationToDelete = null"
+    />
   </div>
 </template>
