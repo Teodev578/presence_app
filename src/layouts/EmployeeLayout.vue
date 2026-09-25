@@ -60,9 +60,12 @@ const handleLogout = async () => {
 
         <div class="flex-1"></div>
 
-        <!-- Actions de droite : Raccourci gestionnaire si applicable -->
-        <div v-if="profile?.role === 'admin' || profile?.role === 'manager'" class="flex items-center gap-2">
+        <!-- Actions de droite : Indicateur réseau discret + Raccourci gestionnaire si applicable -->
+        <div class="flex items-center gap-2">
+          <SyncIndicator compact />
+
           <button
+            v-if="profile?.role === 'admin' || profile?.role === 'manager'"
             type="button"
             class="btn btn-ghost btn-sm font-semibold text-primary hover:bg-primary/10 rounded-m3-sm hidden sm:inline-flex min-h-11 px-3"
             title="Accéder au tableau de bord gestionnaire"

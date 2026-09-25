@@ -152,8 +152,10 @@ const handleLogout = async () => {
           </h1>
         </div>
 
-        <!-- Actions de droite : Passerelle Pointage personnel -->
+        <!-- Actions de droite : Indicateur de synchronisation discret + Passerelle Pointage personnel -->
         <div class="flex items-center gap-2 sm:gap-3">
+          <SyncIndicator compact />
+
           <button
             type="button"
             class="btn btn-ghost btn-sm rounded-m3-sm font-semibold text-primary hover:bg-primary/10 gap-1.5 min-h-9"

@@ -234,8 +234,31 @@ const handleConfirmCheckOut = async () => {
             </div>
           </div>
 
-          <!-- Partie basse : Alertes et action de confirmation départ -->
+          <!-- Partie basse : Guidage contextuel, alertes et action de confirmation départ -->
           <div class="flex flex-col gap-2.5 mt-auto">
+            <!-- Conseils contextuels d'acquisition GPS si hors périmètre ou signal imprécis -->
+            <div
+              v-if="!perimeterResult.inPerimeter && !isLocating && activeLocation && !isSuccess"
+              class="flex items-start gap-2.5 p-2.5 sm:p-3 rounded-m3-md bg-base-200/70 border border-base-300/60 text-xs text-base-content/75 shadow-2xs"
+            >
+              <div class="w-5 h-5 rounded-full bg-info/10 text-info flex items-center justify-center shrink-0 mt-0.5">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="16" x2="12" y2="12"></line>
+                  <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+              </div>
+              <div class="flex flex-col gap-0.5">
+                <span class="font-bold text-base-content text-[11px] uppercase tracking-wider">Aide à la localisation</span>
+                <span v-if="gpsAccuracy && gpsAccuracy > 35" class="leading-relaxed">
+                  Précision satellite fluctuante (±{{ Math.round(gpsAccuracy) }} m). Activer le Wi-Fi (même sans s'y connecter) ou vous approcher d'une ouverture permet de stabiliser le signal.
+                </span>
+                <span v-else class="leading-relaxed">
+                  Vous devez être situé sur votre lieu de travail (<strong class="text-base-content">{{ activeLocation.name }}</strong>, à {{ formatDistance(perimeterResult.distance) }}) pour valider votre départ.
+                </span>
+              </div>
+            </div>
+
             <div v-if="gpsError" class="alert alert-error text-xs py-2 sm:py-2.5 rounded-m3-md">
               <span>{{ gpsError }}</span>
             </div>
