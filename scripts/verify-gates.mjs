@@ -347,35 +347,53 @@ export function checkThemePlacement() {
 }
 
 /**
+ * Révision de référence, antérieure au lot « commutateur de thème ». La comparaison ne peut pas viser
+ * HEAD : une fois le lot commité, l'oracle comparerait l'arbre à lui-même et ne prouverait plus rien.
+ * À déplacer volontairement si l'indicateur de synchronisation doit légitimement évoluer.
+ * Surchargeable par SYNC_INDICATOR_BASELINE, notamment pour éprouver que l'oracle sait échouer.
+ */
+const SYNC_INDICATOR_BASELINE = process.env.SYNC_INDICATOR_BASELINE || 'f46026c';
+
+/**
  * Non-régression ciblée : l'indicateur de synchronisation des deux mises en page garde exactement
- * les mêmes lignes que la révision de référence HEAD, et reste présent dans chaque tiroir.
+ * les mêmes lignes que la révision de référence, et reste présent dans chaque tiroir.
  */
 export function checkSyncIndicatorPreserved() {
   const layoutFiles = ['src/layouts/ManagerLayout.vue', 'src/layouts/EmployeeLayout.vue'];
   let ok = true;
 
   for (const relativePath of layoutFiles) {
-    const atHead = spawnSync('git', ['show', `HEAD:${relativePath}`], { encoding: 'utf8' });
-    if (atHead.status !== 0) {
-      console.error(`FAILURE G17: git show HEAD:${relativePath} indisponible`);
+    const baseline = spawnSync('git', ['show', `${SYNC_INDICATOR_BASELINE}:${relativePath}`], { encoding: 'utf8' });
+    if (baseline.status !== 0) {
+      console.error(`FAILURE G17: git show ${SYNC_INDICATOR_BASELINE}:${relativePath} indisponible`);
       ok = false;
       continue;
     }
+
+    const syncLinesOf = (text) =>
+      text
+        .split('\n')
+        .filter(line => line.includes('<SyncIndicator'))
+        .map(line => line.trim());
 
     const current = fs.readFileSync(relativePath, 'utf8');
-    const headLines = atHead.stdout
-      .split('\n')
-      .filter(line => line.includes('<SyncIndicator'))
-      .map(line => line.trim());
-    const missing = headLines.filter(line => !current.includes(line));
+    const baselineLines = syncLinesOf(baseline.stdout);
+    const currentLines = syncLinesOf(current);
 
-    if (headLines.length === 0) {
-      console.error(`FAILURE G17: aucune occurrence de SyncIndicator dans la révision HEAD de ${relativePath}`);
+    if (baselineLines.length === 0) {
+      console.error(`FAILURE G17: aucune occurrence de SyncIndicator dans la révision ${SYNC_INDICATOR_BASELINE} de ${relativePath}`);
       ok = false;
       continue;
     }
-    if (missing.length > 0) {
-      console.error(`FAILURE G17: ${relativePath} a perdu ou modifié des lignes SyncIndicator (${missing.join(' | ')})`);
+
+    // Comparaison symétrique : une ligne retirée comme une ligne ajoutée doivent faire échouer l'oracle
+    const missing = baselineLines.filter(line => !currentLines.includes(line));
+    const added = currentLines.filter(line => !baselineLines.includes(line));
+    if (missing.length > 0 || added.length > 0 || baselineLines.length !== currentLines.length) {
+      console.error(
+        `FAILURE G17: ${relativePath} a modifié ses lignes SyncIndicator depuis ${SYNC_INDICATOR_BASELINE}` +
+          ` (retirées: ${missing.join(' | ') || 'aucune'} ; ajoutées: ${added.join(' | ') || 'aucune'})`
+      );
       ok = false;
     }
 
@@ -388,7 +406,7 @@ export function checkSyncIndicatorPreserved() {
   }
 
   if (!ok) return false;
-  console.log('G17 passed: SyncIndicator placement unchanged from HEAD');
+  console.log('G17 passed: SyncIndicator placement unchanged since the baseline revision');
   return true;
 }
 

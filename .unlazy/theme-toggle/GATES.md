@@ -1,6 +1,6 @@
 # Gates: Commutateur manuel de thème clair / sombre
 
-OWNS: src/composables/useTheme.js, src/components/shared/ThemeToggle.vue, src/layouts/ManagerLayout.vue, src/layouts/EmployeeLayout.vue, index.html, scripts/verify-gates.mjs, scripts/test-theme-toggle.mjs, .unlazy/theme-toggle/**
+OWNS: src/composables/useTheme.js, src/components/shared/ThemeToggle.vue, src/layouts/ManagerLayout.vue, src/layouts/EmployeeLayout.vue, index.html, scripts/verify-gates.mjs, scripts/test-theme-toggle.mjs, scripts/verify-browser.mjs, .unlazy/theme-toggle/**, .unlazy/evidence/**
 
 Scope: Offrir un commutateur manuel à trois états (système, clair, sombre), persistant entre les sessions et sans flash au démarrage, accessible depuis l'en-tête et le pied du tiroir manager ainsi que depuis le pied du tiroir employé, sans introduire de rail de navigation et sans modifier les entrées de navigation des deux espaces.
 
@@ -44,10 +44,10 @@ Scope: Offrir un commutateur manuel à trois états (système, clair, sombre), p
   EXPECT: G16 passed: all theme toggle touch targets meet 44px
   EVIDENCE: automatic-evidence=v1; definition-sha256=a3a0fd54e58c302a26ce5c4b3a685ee445a9c8a4f1bd17b3958126ccd23364d2; exit=0; EXPECT=matched; output-sha256=f456b82fc53aa12da53f876d1ff3fd38324acf2785323f855e52784de405d12e; output-bytes=53; shell=/bin/sh; cwd=/home/fabien/Documents/Projets/Pro/PresenceApp/presence-app; path=e20d6bfe21da/22 entries
 
-- [x] G9: Les lignes `SyncIndicator` des deux mises en page sont identiques à la révision de référence HEAD, et l'indicateur reste présent dans chaque tiroir
+- [x] G9: Les lignes `SyncIndicator` des deux mises en page sont identiques à la révision de référence antérieure au lot, et l'indicateur reste présent dans chaque tiroir
   CHECK: node scripts/verify-gates.mjs --sync-indicator-preserved
-  EXPECT: G17 passed: SyncIndicator placement unchanged from HEAD
-  EVIDENCE: automatic-evidence=v1; definition-sha256=d6db8fb7e1251cdd4f6be45fb51f8ba629cfb7059eaa62e7d2858a89eae30174; exit=0; EXPECT=matched; output-sha256=376dcddebe93d9c7bf2d1d25182d26c323c1397f77ca11f251149e796dcf0bd9; output-bytes=56; shell=/bin/sh; cwd=/home/fabien/Documents/Projets/Pro/PresenceApp/presence-app; path=e20d6bfe21da/22 entries
+  EXPECT: G17 passed: SyncIndicator placement unchanged since the baseline revision
+  EVIDENCE: automatic-evidence=v1; definition-sha256=25538e76d4b2c42bd88d4f2be201091d09d321197b6b2968cae93ce9558239a4; exit=0; EXPECT=matched; output-sha256=a5a38dc5a53b07123991c336c1ae9b3529f1829d9748ccd4629313c47d5ce06c; output-bytes=74; shell=/bin/sh; cwd=/home/fabien/Documents/Projets/Pro/PresenceApp/presence-app; path=e20d6bfe21da/22 entries
 
 - [x] G10: Sanctuarisation de la navigation employé préservée, aucun rail introduit
   CHECK: node scripts/verify-gates.mjs --employee-desktop
@@ -59,5 +59,7 @@ Scope: Offrir un commutateur manuel à trois états (système, clair, sombre), p
   EXPECT: G6 passed: build succeeded with exit code 0
   EVIDENCE: automatic-evidence=v1; definition-sha256=231dd9b32ce6131ee7e1044400956fe62366d562e32245bfa6bbc3e9bee8d6a1; exit=0; EXPECT=matched; output-sha256=7223850f796fd789ed509a33f2e02a91e0612def6eebbf3561099c1f1b1ca8c8; output-bytes=44; shell=/bin/sh; cwd=/home/fabien/Documents/Projets/Pro/PresenceApp/presence-app; path=e20d6bfe21da/22 entries
 
-- [ ] G12: Rendu visuel du commutateur dans chaque espace et bascule effective des surfaces M3, confirmé par l'utilisateur
-  EVIDENCE: pending
+- [x] G12: La bascule de thème, pilotée par des clics réels dans un navigateur, applique les surfaces M3 claires et sombres, persiste la préférence, respecte le seuil de 44px et suit le réglage système émulé
+  CHECK: node scripts/verify-browser.mjs --theme
+  EXPECT: browser-verify: theme toggle passed
+  EVIDENCE: automatic-evidence=v1; definition-sha256=c8d1610809bae970a54a58f99e93e9c2472345342c7da5e69ccaa6cb46827773; exit=0; EXPECT=matched; output-sha256=9c628170174fa61dff954a0c6f6665e49756ee7001532857125f23d28528b90d; output-bytes=1196; shell=/bin/sh; cwd=/home/fabien/Documents/Projets/Pro/PresenceApp/presence-app; path=e20d6bfe21da/22 entries

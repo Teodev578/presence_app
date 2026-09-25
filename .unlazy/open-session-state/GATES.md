@@ -1,6 +1,6 @@
 # Gates: État des sessions ouvertes et journées révolues
 
-OWNS: src/lib/dateUtils.js, src/components/employee/WeekSummaryCard.vue, src/composables/usePresences.js, src/views/manager/PresencesView.vue, scripts/verify-gates.mjs, scripts/test-session-state.mjs, .unlazy/open-session-state/**
+OWNS: src/lib/dateUtils.js, src/components/employee/WeekSummaryCard.vue, src/composables/usePresences.js, src/views/manager/PresencesView.vue, scripts/verify-gates.mjs, scripts/test-session-state.mjs, scripts/verify-browser.mjs, .unlazy/open-session-state/**, .unlazy/evidence/**
 
 Scope: Une session ouverte ne doit plus être présentée comme « en cours » dès lors que sa date de travail n'est plus la journée locale courante. Les trois surfaces concernées (tuile de récapitulation employé, total hebdomadaire, tableau gestionnaire) partagent une règle unique : session close, session en cours du jour, ou départ manquant sur une journée révolue, cette dernière contribuant zéro minute au total hebdomadaire.
 
@@ -29,5 +29,7 @@ Scope: Une session ouverte ne doit plus être présentée comme « en cours » d
   EXPECT: G6 passed: build succeeded with exit code 0
   EVIDENCE: automatic-evidence=v1; definition-sha256=231dd9b32ce6131ee7e1044400956fe62366d562e32245bfa6bbc3e9bee8d6a1; exit=0; EXPECT=matched; output-sha256=7223850f796fd789ed509a33f2e02a91e0612def6eebbf3561099c1f1b1ca8c8; output-bytes=44; shell=/bin/sh; cwd=/home/fabien/Documents/Projets/Pro/PresenceApp/presence-app; path=e20d6bfe21da/22 entries
 
-- [ ] G6: Rendu des trois états dans la tuile employé et le tableau gestionnaire confirmé par l'utilisateur
-  EVIDENCE: pending
+- [x] G6: La tuile employé, rendue dans un navigateur, distingue la session close, la session du jour en cours et le départ manquant, et la jauge hebdomadaire exclut la session oubliée
+  CHECK: node scripts/verify-browser.mjs --sessions
+  EXPECT: browser-verify: session states passed
+  EVIDENCE: automatic-evidence=v1; definition-sha256=a70be8175b8532e7cd1b83141dacb706bf4d508e1394615b1d48b18366972af8; exit=0; EXPECT=matched; output-sha256=16d0171c3e04577f39fe2a96e01c95db6be50e699697f254f3e58edda35f03dc; output-bytes=851; shell=/bin/sh; cwd=/home/fabien/Documents/Projets/Pro/PresenceApp/presence-app; path=e20d6bfe21da/22 entries
