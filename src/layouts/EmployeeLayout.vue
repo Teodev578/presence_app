@@ -4,6 +4,7 @@ import { useRouter } from '../router'
 import { useAuth } from '../composables/useAuth'
 import { useProfile } from '../composables/useProfile'
 import SyncIndicator from '../components/shared/SyncIndicator.vue'
+import ThemeToggle from '../components/shared/ThemeToggle.vue'
 
 const { currentPath, navigate } = useRouter()
 const { signOut } = useAuth()
@@ -177,6 +178,8 @@ const handleLogout = async () => {
             <span class="text-xs text-base-content/60 font-medium">Statut réseau</span>
             <SyncIndicator />
           </div>
+
+          <ThemeToggle show-label />
 
           <button
             type="button"

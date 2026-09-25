@@ -4,6 +4,7 @@ import { useRouter } from '../router'
 import { useAuth } from '../composables/useAuth'
 import { useProfile } from '../composables/useProfile'
 import SyncIndicator from '../components/shared/SyncIndicator.vue'
+import ThemeToggle from '../components/shared/ThemeToggle.vue'
 
 const { currentPath, navigate } = useRouter()
 const { signOut } = useAuth()
@@ -154,6 +155,8 @@ const handleLogout = async () => {
 
         <!-- Actions de droite : Indicateur de synchronisation discret + Passerelle Pointage personnel -->
         <div class="flex items-center gap-2 sm:gap-3">
+          <ThemeToggle />
+
           <SyncIndicator compact />
 
           <button
@@ -250,6 +253,8 @@ const handleLogout = async () => {
             <span class="text-xs text-base-content/60 font-medium">Statut réseau</span>
             <SyncIndicator />
           </div>
+
+          <ThemeToggle show-label />
 
           <div class="flex items-center gap-3 px-1">
             <div class="avatar placeholder shrink-0">

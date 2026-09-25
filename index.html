@@ -4,10 +4,24 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="theme-color" content="#2563eb" />
+    <meta name="theme-color" content="#fdfcff" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>PresenceApp — Pointage & Disponibilités</title>
+    <script>
+      // Applique le thème forcé avant le premier rendu : sans cela, un utilisateur en thème sombre
+      // reçoit un écran clair pendant le chargement du bundle. La clé est celle de src/composables/useTheme.js.
+      (function () {
+        try {
+          var mode = window.localStorage.getItem('presence_theme')
+          if (mode === 'light' || mode === 'dark') {
+            document.documentElement.setAttribute('data-theme', mode)
+          }
+        } catch (error) {
+          // Stockage inaccessible : le thème suit alors le réglage du système
+        }
+      })()
+    </script>
   </head>
   <body>
     <div id="app"></div>
