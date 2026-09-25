@@ -122,3 +122,71 @@ export function formatWorkDate(dateVal) {
   return formatted.charAt(0).toUpperCase() + formatted.slice(1)
 }
 
+/* ---------------------------------------------------------------------------
+   États d'une session de pointage
+   ---------------------------------------------------------------------------
+   Une session ouverte n'est « en cours » que si sa date de travail est la journée locale
+   courante. Au-delà, le départ manque : la durée reste inconnue et ne doit plus être mesurée
+   contre l'instant présent, sinon le total croît indéfiniment (règle 03, intégrité locale).
+*/
+
+/**
+ * Indique si une date de travail correspond à la journée locale courante.
+ *
+ * @param {string} workDate 'YYYY-MM-DD'
+ * @param {Date} [now=new Date()]
+ * @returns {boolean}
+ */
+export function isSessionInProgress(workDate, now = new Date()) {
+  if (!workDate) return false
+  return workDate === getLocalDateString(now)
+}
+
+/**
+ * Détermine l'état d'un pointage : 'empty', 'closed', 'in_progress' ou 'missing_checkout'.
+ *
+ * @param {object} presence
+ * @param {Date} [now=new Date()]
+ * @returns {'empty'|'closed'|'in_progress'|'missing_checkout'}
+ */
+export function resolveSessionState(presence, now = new Date()) {
+  if (!presence || !presence.check_in_time) return 'empty'
+  if (presence.check_out_time) return 'closed'
+  return isSessionInProgress(presence.work_date, now) ? 'in_progress' : 'missing_checkout'
+}
+
+/**
+ * Minutes exploitables d'un pointage. Une session close compte sa durée réelle, une session
+ * du jour en cours compte le temps écoulé, un départ manquant ou une arrivée absente compte zéro.
+ *
+ * @param {object} presence
+ * @param {Date} [now=new Date()]
+ * @returns {number}
+ */
+export function resolveSessionMinutes(presence, now = new Date()) {
+  const state = resolveSessionState(presence, now)
+  if (state !== 'closed' && state !== 'in_progress') return 0
+
+  const start = new Date(presence.check_in_time).getTime()
+  if (isNaN(start)) return 0
+
+  const end = state === 'closed' ? new Date(presence.check_out_time).getTime() : new Date(now).getTime()
+  if (isNaN(end) || end <= start) return 0
+
+  return Math.floor((end - start) / 60000)
+}
+
+/**
+ * Formate la durée affichable d'un pointage, ou '--' quand la durée n'est pas connaissable.
+ *
+ * @param {object} presence
+ * @param {Date} [now=new Date()]
+ * @returns {string}
+ */
+export function formatSessionDuration(presence, now = new Date()) {
+  const state = resolveSessionState(presence, now)
+  if (state === 'closed') return calculateWorkDuration(presence.check_in_time, presence.check_out_time) || '--'
+  if (state === 'in_progress') return calculateElapsedTime(presence.check_in_time, now) || '--'
+  return '--'
+}
+

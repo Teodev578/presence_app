@@ -1,7 +1,7 @@
 import { computed } from 'vue'
 import { db, useLiveQuery } from '../lib/db'
 import { generateUUIDv7 } from '../lib/uuidv7'
-import { getLocalDateString, getMonday } from '../lib/dateUtils'
+import { getLocalDateString, getMonday, resolveSessionMinutes } from '../lib/dateUtils'
 import { useAuth } from './useAuth'
 import { useSyncEngine } from './useSyncEngine'
 
@@ -54,24 +54,14 @@ export function usePresences() {
 
   /**
    * Calcule le total cumulé des minutes travaillées cette semaine.
+   * Un départ manquant sur une journée révolue contribue zéro minute : le total ne peut plus
+   * croître indéfiniment à cause d'une session oubliée.
    */
   const weekTotalMinutes = computed(() => {
     if (!weekPresences.value || !weekPresences.value.length) return 0
     let total = 0
     for (const p of weekPresences.value) {
-      if (p.check_in_time && p.check_out_time) {
-        const start = new Date(p.check_in_time).getTime()
-        const end = new Date(p.check_out_time).getTime()
-        if (!isNaN(start) && !isNaN(end) && end > start) {
-          total += Math.floor((end - start) / 60000)
-        }
-      } else if (p.check_in_time && !p.check_out_time) {
-        const start = new Date(p.check_in_time).getTime()
-        const now = Date.now()
-        if (!isNaN(start) && now > start) {
-          total += Math.floor((now - start) / 60000)
-        }
-      }
+      total += resolveSessionMinutes(p)
     }
     return total
   })

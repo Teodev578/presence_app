@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase'
 import { db } from '../../lib/db'
 import { generateUUIDv7 } from '../../lib/uuidv7'
 import { useProfile } from '../../composables/useProfile'
-import { getLocalDateString, formatTime, calculateWorkDuration, calculateElapsedTime } from '../../lib/dateUtils'
+import { getLocalDateString, formatTime, formatSessionDuration, resolveSessionState } from '../../lib/dateUtils'
 import StatusBadge from '../../components/shared/StatusBadge.vue'
 
 const { profile } = useProfile()
@@ -292,12 +292,20 @@ const saveEdit = async () => {
               <td class="font-mono text-xs font-semibold">{{ formatTime(p.check_in_time) }}</td>
               <td class="font-mono text-xs font-semibold">{{ formatTime(p.check_out_time) }}</td>
               <td class="text-xs font-medium text-base-content/80">
-                <span v-if="p.check_out_time">
-                  {{ calculateWorkDuration(p.check_in_time, p.check_out_time) || '--' }}
+                <span v-if="resolveSessionState(p) === 'closed'">
+                  {{ formatSessionDuration(p) }}
                 </span>
-                <span v-else-if="p.check_in_time" class="text-warning text-[11px] font-medium flex items-center gap-1">
+                <span v-else-if="resolveSessionState(p) === 'in_progress'" class="text-warning text-[11px] font-medium flex items-center gap-1">
                   <span class="w-1.5 h-1.5 rounded-full bg-warning animate-pulse"></span>
                   En cours
+                </span>
+                <span
+                  v-else-if="resolveSessionState(p) === 'missing_checkout'"
+                  class="text-warning text-[11px] font-medium flex items-center gap-1"
+                  title="Arrivée pointée sans départ : durée indisponible tant que le pointage n'est pas corrigé"
+                >
+                  <span class="w-1.5 h-1.5 rounded-full bg-warning"></span>
+                  Départ manquant
                 </span>
                 <span v-else>--</span>
               </td>

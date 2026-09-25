@@ -2,10 +2,10 @@
 import { computed } from 'vue'
 import {
   formatTime,
-  calculateWorkDuration,
-  calculateElapsedTime,
   formatHoursMinutes,
   formatWorkDate,
+  formatSessionDuration,
+  resolveSessionState,
 } from '../../lib/dateUtils'
 
 const props = defineProps({
@@ -40,16 +40,27 @@ const weekHoursFormatted = computed(() => {
   return formatHoursMinutes(props.weekTotalMinutes)
 })
 
-// Détermination de la durée pour chaque ligne d'historique
-const getPresenceDuration = (presence) => {
-  if (presence.check_in_time && presence.check_out_time) {
-    return calculateWorkDuration(presence.check_in_time, presence.check_out_time)
-  }
-  if (presence.check_in_time && !presence.check_out_time) {
-    return calculateElapsedTime(presence.check_in_time)
-  }
-  return '--'
+// Libellé de fin de ligne : heure de départ, session du jour en cours, ou départ manquant
+const OUT_LABELS = {
+  in_progress: 'En cours',
+  missing_checkout: 'Départ manquant',
 }
+
+const sessionOutLabel = (presence) => {
+  if (presence.check_out_time) return formatTime(presence.check_out_time)
+  return OUT_LABELS[resolveSessionState(presence)] || '--:--'
+}
+
+// Une session ouverte d'une journée révolue n'est plus « en cours » : la pastille cesse de pulser
+const sessionDotClass = (presence) => {
+  const state = resolveSessionState(presence)
+  if (state === 'closed') return 'bg-success'
+  if (state === 'in_progress') return 'bg-warning animate-pulse'
+  return 'bg-warning'
+}
+
+// Durée affichée : '--' tant qu'un départ manquant rend la durée inconnaissable
+const getPresenceDuration = (presence) => formatSessionDuration(presence)
 </script>
 <template>
   <div class="card bg-base-200 border border-base-300/60 shadow-xs rounded-m3-lg h-full flex flex-col justify-between overflow-hidden">
@@ -146,14 +157,14 @@ const getPresenceDuration = (presence) => {
             <div class="flex items-center gap-2">
               <span
                 class="w-2 h-2 rounded-full shrink-0"
-                :class="item.check_out_time ? 'bg-success' : 'bg-warning animate-pulse'"
+                :class="sessionDotClass(item)"
               ></span>
               <span class="font-bold text-base-content">{{ formatWorkDate(item.work_date) }}</span>
             </div>
 
             <div class="flex items-center gap-2.5">
               <span class="font-mono text-base-content/75 text-[11px] sm:text-xs">
-                {{ formatTime(item.check_in_time) }} → {{ item.check_out_time ? formatTime(item.check_out_time) : 'En cours' }}
+                {{ formatTime(item.check_in_time) }} → {{ sessionOutLabel(item) }}
               </span>
               <span class="badge badge-ghost font-bold rounded-m3-xs py-0.5 px-1.5 text-[10px] sm:text-[11px]">
                 {{ getPresenceDuration(item) }}

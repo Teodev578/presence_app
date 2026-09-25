@@ -572,6 +572,121 @@ export function checkThemeCss() {
   return true;
 }
 
+/** Fichiers écrits par le lot « état des sessions ouvertes ». */
+const OPEN_SESSION_SCOPE_FILES = [
+  'src/lib/dateUtils.js',
+  'src/components/employee/WeekSummaryCard.vue',
+  'src/composables/usePresences.js',
+  'src/views/manager/PresencesView.vue',
+];
+
+/**
+ * Vérifie que les trois surfaces consomment la règle partagée au lieu de dériver l'état
+ * du seul check_out_time. Le détecteur d'appel détourné est éprouvé sur échantillon témoin
+ * pour qu'une absence de résultat reste probante.
+ */
+export function checkOpenSessionWiring() {
+  const forbiddenToken = 'calculateElapsedTime';
+  const detects = (content, token) => content.includes(token);
+
+  if (!detects(`const duree = ${forbiddenToken}(debut)`, forbiddenToken)) {
+    console.error('FAILURE G18: le détecteur est aveugle, oracle invalide');
+    return false;
+  }
+  if (detects('const duree = calculateWorkDuration(debut, fin)', forbiddenToken)) {
+    console.error('FAILURE G18: le détecteur confond calculateWorkDuration et calculateElapsedTime');
+    return false;
+  }
+
+  const requirements = [
+    {
+      file: 'src/lib/dateUtils.js',
+      must: [
+        'export function isSessionInProgress',
+        'export function resolveSessionState',
+        'export function resolveSessionMinutes',
+        'export function formatSessionDuration',
+      ],
+    },
+    {
+      file: 'src/components/employee/WeekSummaryCard.vue',
+      must: ['resolveSessionState', 'formatSessionDuration', 'missing_checkout'],
+      forbidden: [forbiddenToken],
+    },
+    {
+      file: 'src/views/manager/PresencesView.vue',
+      must: ['resolveSessionState', 'formatSessionDuration', 'missing_checkout'],
+      forbidden: [forbiddenToken],
+    },
+    {
+      file: 'src/composables/usePresences.js',
+      must: ['resolveSessionMinutes'],
+      forbidden: [forbiddenToken],
+    },
+  ];
+
+  let ok = true;
+  for (const { file, must = [], forbidden = [] } of requirements) {
+    const resolved = path.resolve(file);
+    if (!fs.existsSync(resolved)) {
+      console.error(`FAILURE G18: ${file} introuvable`);
+      ok = false;
+      continue;
+    }
+    const content = fs.readFileSync(resolved, 'utf8');
+    for (const token of must) {
+      if (!content.includes(token)) {
+        console.error(`FAILURE G18: ${file} ne référence pas ${token}`);
+        ok = false;
+      }
+    }
+    for (const token of forbidden) {
+      if (content.includes(token)) {
+        console.error(`FAILURE G18: ${file} mesure encore une durée écoulée hors de la règle partagée (${token})`);
+        ok = false;
+      }
+    }
+  }
+
+  if (!ok) return false;
+  console.log('G18 passed: open-session rule wired through the three surfaces');
+  return true;
+}
+
+export function checkOpenSessionConformance() {
+  const files = OPEN_SESSION_SCOPE_FILES.map(file => path.resolve(file)).filter(file => fs.existsSync(file));
+  const vueFiles = files.filter(file => file.endsWith('.vue'));
+  let ok = true;
+
+  const emojiIssues = findEmojis(files);
+  if (emojiIssues.length > 0) {
+    reportIssues(emojiIssues, 'G19', 'Found raw emojis in open-session files', i => `${i.file}:${i.line} -> ${i.content}`);
+    ok = false;
+  }
+
+  const radiiIssues = findNonM3Radii(vueFiles);
+  if (radiiIssues.length > 0) {
+    reportIssues(radiiIssues, 'G19', 'Non-M3 rounded classes found in open-session files', i => `${i.file} -> ${i.token}`);
+    ok = false;
+  }
+
+  const shadowIssues = findProhibitedShadows(vueFiles);
+  if (shadowIssues.length > 0) {
+    reportIssues(shadowIssues, 'G19', 'Prohibited shadows found in open-session files', i => `${i.file} -> ${i.token}`);
+    ok = false;
+  }
+
+  const targetIssues = findProhibitedTargets(vueFiles);
+  if (targetIssues.length > 0) {
+    reportIssues(targetIssues, 'G19', 'Prohibited sub-44px touch targets found in open-session files', i => `${i.file}:${i.line} -> ${i.content}`);
+    ok = false;
+  }
+
+  if (!ok) return false;
+  console.log('G19 passed: open-session files conform to emoji, radius, shadow and touch target rules');
+  return true;
+}
+
 // Exécution CLI
 const arg = process.argv[2] || '--all';
 let success = true;
@@ -610,6 +725,10 @@ if (arg === '--emojis') {
   success = checkThemeTargets();
 } else if (arg === '--sync-indicator-preserved') {
   success = checkSyncIndicatorPreserved();
+} else if (arg === '--open-session-wiring') {
+  success = checkOpenSessionWiring();
+} else if (arg === '--open-session-conformance') {
+  success = checkOpenSessionConformance();
 } else if (arg === '--all') {
   const r1 = checkEmojis();
   const r2 = checkRadii();
@@ -628,9 +747,11 @@ if (arg === '--emojis') {
   const r15 = checkThemeShadows();
   const r16 = checkThemeTargets();
   const r17 = checkSyncIndicatorPreserved();
-  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17;
+  const r18 = checkOpenSessionWiring();
+  const r19 = checkOpenSessionConformance();
+  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19;
 } else {
-  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--build|--all]`);
+  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--build|--all]`);
   process.exit(1);
 }
 
