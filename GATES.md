@@ -238,3 +238,17 @@ Scope: Constat à 1440px avant correctif : la poignée était posée en `absolut
   CHECK: CHROME_PATH=$(command -v google-chrome-stable) node scripts/verify-browser.mjs --sidebar-rail
   EXPECT: browser-verify: sidebar rail passed
   EVIDENCE: browser-verify: sidebar rail passed, 20 assertions vertes ; browser-verify: navigation docking passed, 7 assertions vertes ; G48 passed: production build succeeds with exit code 0 (vérifiés par les parcours Chrome headless et npm run build)
+
+---
+
+# Gates: Dégagement de la Poignée en Rail
+
+OWNS: src/style.css, scripts/verify-browser.mjs, GATES.md
+
+Scope: Constat en barre repliée : la poignée absolue (marge haute 0,5rem + cible 44px, soit 52px) chevauchait le haut de la marque centrée (retrait haut 2,5rem = 40px) de 12px. Le chevron mordait le logo. Le retrait haut de l'en-tête du rail passe à 3,5rem : la poignée garde sa rangée, la marque commence après elle, les deux espaces partageant la règle.
+
+- [x] G52: En rail, la poignée de repli ne recouvre plus la marque centrée : le bas de la cible (52px) précède le haut du bloc marque (56px), mesuré dans la cascade réelle
+  CHECK: CHROME_PATH=$(command -v google-chrome-stable) node scripts/verify-browser.mjs --sidebar-rail
+  EXPECT: browser-verify: sidebar rail passed
+  EVIDENCE: browser-verify: sidebar rail passed, 21 assertions vertes (dégagement poignée/marque compris), aucune exception de page (vérifié par le parcours Chrome headless)
+

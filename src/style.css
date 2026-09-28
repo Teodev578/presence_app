@@ -348,10 +348,12 @@ html, body {
     margin-left: 0;
   }
 
-  /* En-tête du rail : contenu centré, poignée en coin */
+  /* En-tête du rail : contenu centré, poignée en coin. Le retrait laisse à la poignée
+     (0,5rem de marge haute + 44px de cible) la place de la rangée avant le logo : sans
+     lui, le chevron mordait le haut de la marque de 12px. */
   .drawer-rail .rail-header {
     justify-content: center;
-    padding-top: 2.5rem;
+    padding-top: 3.5rem;
   }
 
   /* Repliée, la poignée quitte le flux de l'en-tête pour se loger en coin, au-dessus

@@ -513,6 +513,7 @@ const MEASURE_EXPRESSION = `(() => {
         headerBottom: Math.round(boxOf(railHeader)?.bottom || 0),
         headerLeft: Math.round(boxOf(railHeader)?.left || 0),
         headerRight: Math.round(boxOf(railHeader)?.right || 0),
+        brandBlockTop: Math.round(boxOf(railBrandBlock)?.top || 0),
         brandBlockRight: Math.round(boxOf(railBrandBlock)?.right || 0),
         handleLeft: Math.round(boxOf(railHandle)?.left || 0),
         handleRight: Math.round(boxOf(railHandle)?.right || 0),
@@ -1244,6 +1245,12 @@ async function verifySidebarRail(cdp) {
     assertTrue(auto.rail.handleWidth >= 44 && auto.rail.handleHeight >= 44, `poignée ${auto.rail.handleWidth}x${auto.rail.handleHeight}`)
     assertTrue(auto.rail.entryHeight >= 44, `entrée ${auto.rail.entryHeight}px`)
   })
+  check('repliée : la poignée ne mord pas la marque centrée', () =>
+    assertTrue(
+      auto.rail.handleBottom <= auto.rail.brandBlockTop,
+      `poignée finissant à ${auto.rail.handleBottom}px, marque débutant à ${auto.rail.brandBlockTop}px`
+    )
+  )
   check('repliée : chaque entrée reste nommée pour le survol et les lecteurs d\u2019écran', () => {
     assertEqual(auto.rail.entryTip, 'Tableau de bord', 'libellé d\u2019infobulle')
     assertEqual(auto.rail.entryAria, 'Tableau de bord', 'libellé accessible')
