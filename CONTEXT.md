@@ -34,5 +34,5 @@ Ce document constitue la source unique de vérité terminologique et conceptuell
 - **Seuils d'Adaptabilité Responsive (Encore)** :
   - **600px** : Bascule des collections de carrousel horizontal tactile vers une grille multi-colonnes.
   - **840px** : Bascule du tiroir superposé (libellés complets) vers la barre latérale ancrée. Aucune barre de navigation basse n'est admise.
-  - **840px à 1024px** : La barre ancrée se replie d'elle-même en rail d'icônes pour épargner la largeur de la vue ; une poignée en tête grave un choix explicite qui prime ensuite sur ce seuil. Sous 840px, le rail n'a pas d'objet et le tiroir garde ses libellés. État porté par `src/composables/useSidebarNav.js`, style par `.drawer-docked` / `.drawer-rail` dans `src/style.css`.
+  - **840px à 1024px** : La barre ancrée se replie d'elle-même en rail d'icônes pour épargner la largeur de la vue, et se déploie au delà. Un clic sur la poignée en tête ne vaut que pour la bande courante ; tout franchissement de seuil le révoque et rend la main au seuil. Sous 840px, le rail n'a pas d'objet et le tiroir garde ses libellés. État porté par `src/composables/useSidebarNav.js`, style par `.drawer-docked` / `.drawer-rail` dans `src/style.css`.
 - **Surface Tactile Frugale** : Dimension minimale de 44×44 pixels pour tout élément interactif (56dp pour les boutons d'action critiques sur mobile).

@@ -252,3 +252,27 @@ Scope: Constat en barre repliée : la poignée absolue (marge haute 0,5rem + cib
   EXPECT: browser-verify: sidebar rail passed
   EVIDENCE: browser-verify: sidebar rail passed, 21 assertions vertes (dégagement poignée/marque compris), aucune exception de page (vérifié par le parcours Chrome headless)
 
+---
+
+# Gates: Priorité du Seuil sur le Choix de Repli
+
+OWNS: src/composables/useSidebarNav.js, scripts/test-sidebar-nav.mjs, scripts/verify-browser.mjs, scripts/verify-gates.mjs, CONTEXT.md, AGENTS.md, .agents/rules/07-design-system.md, GATES.md
+
+Scope: Jusqu'ici, un clic sur la poignée gravait une préférence persistante qui primait ensuite sur le seuil, si bien qu'une barre repliée le restait en desktop. Le seuil gagne désormais toujours : le clic ne vaut que pour la bande courante, et chaque franchissement (tablette ↔ desktop, ou mobile) révoque la préférence stockée, en repli comme en déploiement. La bande tablette reste 840–1024 px.
+
+- [x] G53: Le composable révoque la préférence à chaque franchissement de seuil, vérifié sans DOM réel par la suite comportementale
+  CHECK: node scripts/test-sidebar-nav.mjs
+  EXPECT: sidebar-nav: behavior suite passed
+  EVIDENCE: sidebar-nav: behavior suite passed, 32 assertions vertes (vérifié par node scripts/test-sidebar-nav.mjs)
+
+- [x] G54: Le contrat de repli reste câblé (clé, seuils, persistance du clic) et le rail demeure confiné à la media query de 840px
+  CHECK: node scripts/verify-gates.mjs --sidebar-rail
+  EXPECT: G45 passed: docked sidebars collapse into an icon rail and keep their labels below 840px
+  EVIDENCE: G45 passed: docked sidebars collapse into an icon rail and keep their labels below 840px (vérifié par node scripts/verify-gates.mjs --sidebar-rail)
+
+- [x] G55: Dans la cascade réelle, franchir vers le desktop redéploie malgré un clic déployé stocké, franchir vers la bande replie malgré un clic replié stocké, la préférence étant révoquée à chaque fois
+  CHECK: CHROME_PATH=$(command -v google-chrome-stable) node scripts/verify-browser.mjs --sidebar-rail
+  EXPECT: browser-verify: sidebar rail passed
+  EVIDENCE: browser-verify: sidebar rail passed, 23 assertions vertes, aucune exception de page (vérifié par le parcours Chrome headless)
+
+

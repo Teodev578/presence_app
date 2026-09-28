@@ -542,7 +542,14 @@ const MEASURE_EXPRESSION = `(() => {
               center: centerOf(item),
             }))
           : [],
-        stored: window.localStorage.getItem('presence_nav_collapsed'),
+        stored: (() => {
+          try {
+            const raw = window.localStorage.getItem('presence_nav_collapsed')
+            return raw ? JSON.parse(raw) : null
+          } catch {
+            return null
+          }
+        })(),
       }
     : null
 
@@ -1197,9 +1204,10 @@ async function verifyNavDocking(cdp) {
 }
 
 /**
- * Le repli en rail d'icônes : à 841px, la barre ancrée se replie d'elle-même ; la poignée grave
- * un choix explicite qui prime ensuite sur le seuil ; sous 840px le rail disparaît au profit du
- * volet à libellés complets ; repliée, le contrôle d'apparence s'ouvre en menu nommé.
+ * Le repli en rail d'icônes : à 841px, la barre ancrée se replie d'elle-même ; un clic sur la
+ * poignée grave un choix qui ne vaut que pour la bande courante, tout franchissement de seuil
+ * le révoquant au profit du seuil ; sous 840px le rail disparaît au profit du volet à libellés
+ * complets ; repliée, le contrôle d'apparence s'ouvre en menu nommé.
  */
 async function verifySidebarRail(cdp) {
   const before = failures
@@ -1271,25 +1279,29 @@ async function verifySidebarRail(cdp) {
   check('le déploiement rend les libellés et persiste le choix', () => {
     assertTrue(expanded.rail.brandDisplay !== 'none', 'marque masquée')
     assertTrue(expanded.rail.entryLabelDisplay !== 'none', 'libellé d\u2019entrée masqué')
-    assertEqual(expanded.rail.stored, 'false', 'préférence stockée')
+    assertEqual(expanded.rail.stored?.collapsed, false, 'préférence stockée')
+    assertEqual(expanded.rail.stored?.band, 'tablet', 'bande de la préférence')
   })
 
-  // 3. Le choix déployé tient hors de la bande automatique.
+  // 3. Le franchissement vers le desktop révoque le choix : le seuil redéploie.
   const wide = await settle(1280)
-  check('au delà de 1024 px : le choix déployé tient', () => assertTrue(!wide.rail.hostRailed, 'barre repliée contre le choix'))
+  check('au delà de 1024 px : le franchissement révoque le choix', () => assertEqual(wide.rail.stored, null, 'préférence stockée'))
+  check('au delà de 1024 px : le seuil déploie malgré le clic', () => assertTrue(!wide.rail.hostRailed, 'barre repliée contre le seuil'))
   check('au delà de 1024 px : la barre déployée reprend sa largeur pleine', () =>
     assertTrue(wide.rail.asideWidth >= 280, `largeur ${wide.rail.asideWidth}px`)
   )
 
-  // 4. Un second clic replie volontairement, et ce choix prime sur le seuil.
+  // 4. Un second clic replie volontairement ; le choix vaut pour la bande desktop courante.
   const handleWide = await focusAndMeasure('#rail-handle')
   const railed = await clickCenter(handleWide.rail.handleCenter)
   check('un second clic replie volontairement la barre', () => {
     assertTrue(railed.rail.hostRailed, 'classe drawer-rail absente')
-    assertEqual(railed.rail.stored, 'true', 'préférence stockée')
+    assertEqual(railed.rail.stored?.collapsed, true, 'préférence stockée')
+    assertEqual(railed.rail.stored?.band, 'desktop', 'bande de la préférence')
   })
   const railedInBand = await settle(841)
-  check('de retour dans la bande : le repli volontaire tient', () => assertTrue(railedInBand.rail.hostRailed, 'barre déployée contre le choix'))
+  check('franchir vers la bande révoque le choix', () => assertEqual(railedInBand.rail.stored, null, 'préférence stockée'))
+  check('de retour dans la bande : le seuil replie', () => assertTrue(railedInBand.rail.hostRailed, 'barre déployée contre le seuil'))
 
   // 5. Sous 840 px, le rail n'a pas d'objet.
   const narrow = await settle(839)
@@ -1301,7 +1313,7 @@ async function verifySidebarRail(cdp) {
 
   // 6. Repliée, le contrôle d'apparence s'ouvre en menu nommé.
   const backInBand = await settle(841)
-  check('de retour dans la bande : le repli volontaire reprend', () => assertTrue(backInBand.rail.hostRailed, 'rail absent'))
+  check('de retour dans la bande : le seuil replie', () => assertTrue(backInBand.rail.hostRailed, 'rail absent'))
   const railFooter = await focusAndMeasure('#rail-aside button[aria-haspopup="true"]')
   check('repliée : le contrôle d\u2019apparence devient un déclencheur nommé', () => {
     assertTrue(!railFooter.rail.groupPresent, 'groupe segmenté encore rendu')

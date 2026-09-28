@@ -1987,9 +1987,9 @@ function extractMediaBlock(css, opener) {
 
 /**
  * Le repli en rail d'icônes du lot éponyme : le composable porte le contrat (clé de persistance,
- * seuil d'ancrage de 840px, bande de repli automatique de 840 à 1024px, priorité du choix
- * explicite), les deux espaces câblent la poignée et les libellés masquables, et le style
- * reste confiné à la media query d'ancrage. Sous 840px, le rail n'a pas d'objet.
+ * seuil d'ancrage de 840px, bande de repli automatique de 840 à 1024px, révocation du choix au
+ * franchissement des seuils), les deux espaces câblent la poignée et les libellés masquables, et
+ * le style reste confiné à la media query d'ancrage. Sous 840px, le rail n'a pas d'objet.
  */
 export function checkSidebarRail() {
   const COMPOSABLE_TOKENS = [
