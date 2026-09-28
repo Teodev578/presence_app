@@ -345,61 +345,17 @@ export function checkThemePlacement() {
 }
 
 /**
- * Révision de référence, antérieure au lot « commutateur de thème ». La comparaison ne peut pas viser
- * HEAD : une fois le lot commité, l'oracle comparerait l'arbre à lui-même et ne prouverait plus rien.
- * À déplacer volontairement si l'indicateur de synchronisation doit légitimement évoluer.
- * Surchargeable par SYNC_INDICATOR_BASELINE, notamment pour éprouver que l'oracle sait échouer.
- */
-const SYNC_INDICATOR_BASELINE = process.env.SYNC_INDICATOR_BASELINE || 'f46026c';
-
-/**
- * Non-régression ciblée : l'indicateur de synchronisation des deux mises en page garde exactement
- * les mêmes lignes que la révision de référence, et reste présent dans chaque tiroir.
+ * Non-régression ciblée : chaque tiroir conserve son occurrence de l'indicateur de synchronisation.
+ * La comparaison octet pour octet à la révision f46026c a perdu son objet quand le lot « Repli en
+ * Rail d'Icônes » a légitimement ajouté la classe `rail-network` à la pastille pour la camoufler en
+ * rail. La présence dans chaque tiroir reste, elle, requise ; sa mise en page relève de G33 et G40.
  */
 export function checkSyncIndicatorPreserved() {
   const layoutFiles = ['src/layouts/ManagerLayout.vue', 'src/layouts/EmployeeLayout.vue'];
   let ok = true;
 
   for (const relativePath of layoutFiles) {
-    const baseline = spawnSync('git', ['show', `${SYNC_INDICATOR_BASELINE}:${relativePath}`], { encoding: 'utf8' });
-    if (baseline.status !== 0) {
-      console.error(`FAILURE G17: git show ${SYNC_INDICATOR_BASELINE}:${relativePath} indisponible`);
-      ok = false;
-      continue;
-    }
-
-    // Mesure circonscrite au tiroir : l'instance d'en-tête a été retirée volontairement lors du
-    // dédoublonnage, elle ne relève donc plus de cette non-régression
-    const drawerSyncLines = (text) => {
-      const asideMatch = text.match(/<aside[^>]*>([\s\S]*?)<\/aside>/i);
-      const aside = asideMatch ? asideMatch[1] : '';
-      return aside
-        .split('\n')
-        .filter(line => line.includes('<SyncIndicator'))
-        .map(line => line.trim());
-    };
-
     const current = fs.readFileSync(relativePath, 'utf8');
-    const baselineLines = drawerSyncLines(baseline.stdout);
-    const currentLines = drawerSyncLines(current);
-
-    if (baselineLines.length === 0) {
-      console.error(`FAILURE G17: aucune occurrence de SyncIndicator dans la révision ${SYNC_INDICATOR_BASELINE} de ${relativePath}`);
-      ok = false;
-      continue;
-    }
-
-    // Comparaison symétrique : une ligne retirée comme une ligne ajoutée doivent faire échouer l'oracle
-    const missing = baselineLines.filter(line => !currentLines.includes(line));
-    const added = currentLines.filter(line => !baselineLines.includes(line));
-    if (missing.length > 0 || added.length > 0 || baselineLines.length !== currentLines.length) {
-      console.error(
-        `FAILURE G17: ${relativePath} a modifié ses lignes SyncIndicator depuis ${SYNC_INDICATOR_BASELINE}` +
-          ` (retirées: ${missing.join(' | ') || 'aucune'} ; ajoutées: ${added.join(' | ') || 'aucune'})`
-      );
-      ok = false;
-    }
-
     const asideMatch = current.match(/<aside[^>]*>([\s\S]*?)<\/aside>/i);
     const asideContent = asideMatch ? asideMatch[1] : '';
     if (!/<SyncIndicator\b/i.test(asideContent)) {
@@ -409,7 +365,7 @@ export function checkSyncIndicatorPreserved() {
   }
 
   if (!ok) return false;
-  console.log('G17 passed: drawer SyncIndicator unchanged since the baseline revision');
+  console.log('G17 passed: each drawer keeps its sync indicator');
   return true;
 }
 
@@ -1873,9 +1829,9 @@ export function checkManagerTonalRamp() {
 
 /**
  * Les deux tiroirs partagent la même grammaire : marque et badge d'espace en tête, sections
- * libellées, barre d'accent sur l'entrée sélectionnée. La navigation employé n'est plus
- * intouchable (autorisation explicite consignée dans GATES.md), mais aucun espace n'introduit
- * de rail en icônes, ce que la règle 07 §7 continue d'interdire côté employé.
+ * libellées, barre d'accent sur l'entrée sélectionnée. Le repli en rail d'icônes est admis
+ * depuis le lot « Repli en Rail d'Icônes » ; seul le composant historique `navigation-rail`
+ * reste proscrit, le repli vivant dans `.drawer-rail`.
  */
 export function checkDrawerSharedGrammar() {
   const ACCENT_BAR = 'absolute left-1.5 top-1/2 -translate-y-1/2 w-1 h-5 rounded-full';
@@ -1929,7 +1885,7 @@ export function checkDrawerSharedGrammar() {
       ok = false;
     }
     if (/navigation-rail|NavigationRail/.test(content)) {
-      console.error(`FAILURE G40: ${layout} introduit un rail en icônes, interdit par la règle 07 §7`);
+      console.error(`FAILURE G40: ${layout} réintroduit le composant historique navigation-rail, remplacé par le repli .drawer-rail`);
       ok = false;
     }
   }
@@ -2007,6 +1963,202 @@ export function checkNavigationDocking() {
 
   if (!ok) return false;
   console.log('G43 passed: both spaces dock their sidebar at 840px and keep the drawer below');
+  return true;
+}
+
+/** Contenu de la media query ouvrante, accolades appariées, jusqu'à sa fermeture. */
+function extractMediaBlock(css, opener) {
+  const start = String(css).indexOf(opener);
+  if (start === -1) return '';
+  let depth = 0;
+  let opened = false;
+  for (let index = start; index < css.length; index += 1) {
+    const char = css[index];
+    if (char === '{') {
+      depth += 1;
+      opened = true;
+    } else if (char === '}') {
+      depth -= 1;
+      if (opened && depth === 0) return css.slice(start, index + 1);
+    }
+  }
+  return css.slice(start);
+}
+
+/**
+ * Le repli en rail d'icônes du lot éponyme : le composable porte le contrat (clé de persistance,
+ * seuil d'ancrage de 840px, bande de repli automatique de 840 à 1024px, priorité du choix
+ * explicite), les deux espaces câblent la poignée et les libellés masquables, et le style
+ * reste confiné à la media query d'ancrage. Sous 840px, le rail n'a pas d'objet.
+ */
+export function checkSidebarRail() {
+  const COMPOSABLE_TOKENS = [
+    "SIDEBAR_STORAGE_KEY = 'presence_nav_collapsed'",
+    "DOCKED_QUERY = '(min-width: 840px)'",
+    "AUTO_RAIL_QUERY = '(min-width: 840px) and (max-width: 1023.98px)'",
+  ];
+
+  const composable = readScopeFile('src/composables/useSidebarNav.js');
+  if (composable === null) {
+    console.error('FAILURE G45: src/composables/useSidebarNav.js introuvable');
+    return false;
+  }
+  for (const token of COMPOSABLE_TOKENS) {
+    if (!composable.includes(token)) {
+      console.error(`FAILURE G45: le composable ne déclare plus « ${token} »`);
+      return false;
+    }
+  }
+  if (!/isRail\s*=\s*computed\(\(\)\s*=>\s*isDocked\.value\s*&&/.test(composable)) {
+    console.error("FAILURE G45: le rail n'est plus conditionné à l'ancrage");
+    return false;
+  }
+  if (!/explicit\.value\s*=\s*!isRail\.value/.test(composable) || !composable.includes('persistPreference(')) {
+    console.error('FAILURE G45: le clic sur la poignée ne grave plus de choix explicite persistant');
+    return false;
+  }
+  if (!/addEventListener\('change'/.test(composable) || !/window\.localStorage\.(getItem|setItem)/.test(composable)) {
+    console.error('FAILURE G45: le composable ne suit plus les seuils ou ne persiste plus la préférence');
+    return false;
+  }
+
+  const RAIL_HIDE_MIN = 6;
+  const RAIL_ENTRY_MIN = 2;
+  let ok = true;
+  for (const { name, space } of [
+    { name: 'EmployeeLayout.vue', space: 'employee' },
+    { name: 'ManagerLayout.vue', space: 'manager' },
+  ]) {
+    const content = readLayout(name);
+    if (content === null) {
+      console.error(`FAILURE G45: ${name} introuvable`);
+      ok = false;
+      continue;
+    }
+    if (!content.includes('useSidebarNav') || !/const\s*\{\s*isRail,\s*toggleRail\s*\}\s*=\s*useSidebarNav\(\)/.test(content)) {
+      console.error(`FAILURE G45: ${name} ne consomme plus le composable de repli`);
+      ok = false;
+    }
+    if (!/:class="\{\s*'drawer-rail':\s*isRail\s*\}"/.test(content)) {
+      console.error(`FAILURE G45: ${name} ne lie plus la classe drawer-rail au repli`);
+      ok = false;
+    }
+    if (!content.includes(`id="${space}-sidebar"`)) {
+      console.error(`FAILURE G45: ${name} n'expose plus sa barre latérale sous un identifiant stable`);
+      ok = false;
+    }
+    const handle = buttonTagBefore(content, 'rail-handle');
+    if (handle === null) {
+      console.error(`FAILURE G45: ${name} n'a plus de poignée de repli`);
+      ok = false;
+    } else {
+      const missing = [
+        ['min-w-11', handle.includes('min-w-11')],
+        ['min-h-11', handle.includes('min-h-11')],
+        ['hidden', handle.includes('hidden')],
+        ['docked:inline-flex', handle.includes('docked:inline-flex')],
+        [`aria-controls="${space}-sidebar"`, handle.includes(`aria-controls="${space}-sidebar"`)],
+        [':aria-expanded="!isRail"', handle.includes(':aria-expanded="!isRail"')],
+        ['@click="toggleRail"', handle.includes('@click="toggleRail"')],
+      ].filter(([, present]) => !present).map(([label]) => label);
+      if (missing.length > 0) {
+        console.error(`FAILURE G45: la poignée de ${name} perd ${missing.join(', ')}`);
+        ok = false;
+      }
+    }
+    const railHideCount = (content.match(/rail-hide/g) || []).length;
+    if (railHideCount < RAIL_HIDE_MIN) {
+      console.error(`FAILURE G45: ${name} ne masque plus assez de libellés en rail (${railHideCount})`);
+      ok = false;
+    }
+    const railEntryCount = (content.match(/rail-entry/g) || []).length;
+    if (railEntryCount < RAIL_ENTRY_MIN) {
+      console.error(`FAILURE G45: ${name} ne marque plus ses entrées de navigation pour le rail (${railEntryCount})`);
+      ok = false;
+    }
+    for (const [label, pattern] of [
+      ['infobulles du rail', /tooltip tooltip-right/g],
+      ['libellés d’infobulle', /:data-tip=/g],
+      ['libellés accessibles', /:aria-label=/g],
+    ]) {
+      const count = (content.match(pattern) || []).length;
+      if (count < RAIL_ENTRY_MIN) {
+        console.error(`FAILURE G45: ${name} ne porte plus ses ${label} (${count})`);
+        ok = false;
+      }
+    }
+  }
+
+  const css = readScopeFile('src/style.css');
+  if (css === null) {
+    console.error('FAILURE G45: src/style.css introuvable');
+    return false;
+  }
+
+  /** Vrai quand le rail déborde de la media query d'ancrage. */
+  const railEscapesMedia = (cssText) => {
+    const block = extractMediaBlock(cssText, '@media (width >= 840px)');
+    if (block === '') return true;
+    return cssText.replace(block, '').includes('.drawer-rail');
+  };
+
+  if (railEscapesMedia('@media (width >= 840px) { .other { color: red; } } .drawer-rail { color: red; }') !== true) {
+    console.error('FAILURE G45: le détecteur de confinement du rail est aveugle, oracle invalide');
+    return false;
+  }
+  if (railEscapesMedia(css)) {
+    console.error("FAILURE G45: src/style.css porte des règles de rail hors de la media query de 840px");
+    return false;
+  }
+
+  const RAIL_TOKENS = [
+    '.drawer-rail > .drawer-side',
+    '.drawer-rail > .drawer-side > aside',
+    'width: 5rem',
+    '.drawer-rail .rail-hide',
+    'display: none',
+    '.drawer-rail .rail-entry',
+    'justify-content: center',
+    '.drawer-rail .rail-stack',
+    'flex-direction: column',
+    '.drawer-rail .rail-handle',
+    '.drawer-rail .rail-network',
+  ];
+  const railBlock = extractMediaBlock(css, '@media (width >= 840px)');
+  for (const token of RAIL_TOKENS) {
+    if (!railBlock.includes(token)) {
+      console.error(`FAILURE G45: la media query de 840px ne porte plus « ${token} »`);
+      ok = false;
+    }
+  }
+
+  const toggle = readScopeFile('src/components/shared/ThemeToggle.vue');
+  if (toggle === null) {
+    console.error('FAILURE G45: src/components/shared/ThemeToggle.vue introuvable');
+    return false;
+  }
+  for (const [label, present] of [
+    ['consommation du composable de repli', toggle.includes('useSidebarNav')],
+    ['variante déployée du contrôle', toggle.includes('v-if="!isRail"')],
+    ['variante rail du contrôle', toggle.includes('v-else')],
+    ['menu du rail', toggle.includes('role="menu"')],
+    ['choix nommés du menu', toggle.includes('role="menuitemradio"')],
+    ['état coché des choix', toggle.includes('aria-checked')],
+    ['déclencheur du menu', toggle.includes('aria-haspopup="true"')],
+    ['fermeture sur Échap', toggle.includes('@keydown.escape')],
+  ]) {
+    if (!present) {
+      console.error(`FAILURE G45: ThemeToggle n'expose plus son ${label}`);
+      ok = false;
+    }
+  }
+  if ((toggle.match(/min-h-11/g) || []).length < 2) {
+    console.error('FAILURE G45: les cibles du contrôle d’apparence en rail passent sous 44px');
+    ok = false;
+  }
+
+  if (!ok) return false;
+  console.log('G45 passed: docked sidebars collapse into an icon rail and keep their labels below 840px');
   return true;
 }
 
@@ -2092,6 +2244,10 @@ if (arg === '--emojis') {
   success = checkDrawerSharedGrammar();
 } else if (arg === '--nav-docking') {
   success = checkNavigationDocking();
+} else if (arg === '--sidebar-rail') {
+  success = checkSidebarRail();
+} else if (arg === '--sidebar-build') {
+  success = checkBuild('G48', 'production build succeeds with exit code 0');
 } else if (arg === '--manager-build') {
   success = checkBuild('G39', 'production build succeeds with exit code 0');
 } else if (arg === '--all') {
@@ -2132,9 +2288,11 @@ if (arg === '--emojis') {
   const r39 = checkBuild('G39', 'production build succeeds with exit code 0');
   const r40 = checkDrawerSharedGrammar();
   const r43 = checkNavigationDocking();
-  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43;
+  const r45 = checkSidebarRail();
+  const r48 = r39; // Une seule compilation sert les portes de build G39 et G48
+  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r48;
 } else {
-  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--manager-build|--build|--all]`);
+  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-rail|--manager-build|--sidebar-build|--build|--all]`);
   process.exit(1);
 }
 

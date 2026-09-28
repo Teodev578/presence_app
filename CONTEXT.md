@@ -33,6 +33,6 @@ Ce document constitue la source unique de vérité terminologique et conceptuell
 - **Échelle d'Arrondis M3** : Utilisation stricte des tokens d'arrondis calibrés (`rounded-m3-xs` à 4px, `rounded-m3-sm` à 8px, `rounded-m3-md` à 12px, `rounded-m3-lg` à 16px, `rounded-m3-xl` à 28px, `rounded-full` à 9999px).
 - **Seuils d'Adaptabilité Responsive (Encore)** :
   - **600px** : Bascule des collections de carrousel horizontal tactile vers une grille multi-colonnes.
-  - **840px** : Bascule de la navigation basse (`Bottom Navigation`) vers la barre latérale compacte (`Sidebar Rail`).
-  - **1200px** : Déploiement complet de la barre latérale (`Navigation Drawer`).
+  - **840px** : Bascule du tiroir superposé (libellés complets) vers la barre latérale ancrée. Aucune barre de navigation basse n'est admise.
+  - **840px à 1024px** : La barre ancrée se replie d'elle-même en rail d'icônes pour épargner la largeur de la vue ; une poignée en tête grave un choix explicite qui prime ensuite sur ce seuil. Sous 840px, le rail n'a pas d'objet et le tiroir garde ses libellés. État porté par `src/composables/useSidebarNav.js`, style par `.drawer-docked` / `.drawer-rail` dans `src/style.css`.
 - **Surface Tactile Frugale** : Dimension minimale de 44×44 pixels pour tout élément interactif (56dp pour les boutons d'action critiques sur mobile).

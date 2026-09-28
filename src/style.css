@@ -274,6 +274,9 @@ html, body {
    DaisyUI ne précompile `drawer-open` que pour ses propres seuils (640, 768,
    1024, 1280, 1536), d'où cette règle locale qui reproduit son effet au seuil
    du projet. Le tiroir superposé gouverne en dessous, l'ancrage au delà.
+
+   Le repli en rail d'icônes vit dans le même seuil : il n'a d'objet qu'une fois
+   la barre ancrée, et sous 840 px le tiroir superposé garde ses libellés complets.
    ========================================================================== */
 @media (width >= 840px) {
   .drawer-docked > .drawer-toggle {
@@ -301,6 +304,69 @@ html, body {
 
   .drawer-docked > .drawer-toggle ~ .drawer-side > :not(.drawer-overlay) {
     translate: 0%;
+  }
+
+  /* --- Repli volontaire en rail d'icônes --- */
+
+  /* Les infobulles du rail débordent la barre : le volet cesse de rogner son contenu.
+     Un rail ne porte que des icônes, il n'a donc rien à faire défiler. */
+  .drawer-rail > .drawer-side {
+    overflow: visible;
+  }
+
+  .drawer-rail > .drawer-side > aside {
+    width: 5rem;
+    padding-inline: 0.5rem;
+  }
+
+  /* Libellés, marque et textes d'identité cèdent la place aux seules icônes */
+  .drawer-rail .rail-hide {
+    display: none;
+  }
+
+  /* L'entrée n'a plus qu'une icône à centrer, l'anneau de sélection reste au gabarit partagé */
+  .drawer-rail .rail-entry {
+    justify-content: center;
+    gap: 0;
+    padding-inline: 0;
+  }
+
+  .drawer-rail .rail-center {
+    justify-content: center;
+    padding-inline: 0;
+  }
+
+  /* Le rail empile ses commandes de pied : aucune rangée n'y tiendrait sur une ligne */
+  .drawer-rail .rail-stack {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding-inline: 0;
+  }
+
+  .drawer-rail .rail-stack > .btn {
+    margin-left: 0;
+  }
+
+  /* La poignée occupe le coin haut droit du rail, au dessus de la marque laissée en retrait */
+  .drawer-rail .rail-header {
+    padding-top: 3.5rem;
+  }
+
+  .drawer-rail .rail-handle {
+    top: 0.5rem;
+    right: 0.5rem;
+  }
+
+  /* Le libellé d'état du réseau quitte l'œil mais pas les lecteurs d'écran :
+     seule la pastille reste visible dans la largeur du rail */
+  .drawer-rail .rail-network > span:last-child {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 }
 

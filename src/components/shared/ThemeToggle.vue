@@ -1,8 +1,13 @@
 <script setup>
-import { h } from 'vue'
+import { ref, computed, watch, h } from 'vue'
 import { useTheme } from '../../composables/useTheme'
+import { useSidebarNav } from '../../composables/useSidebarNav'
 
 const { mode, setMode } = useTheme()
+const { isRail } = useSidebarNav()
+
+/** Menu du rail : ouvert sur demande, refermé dès qu'un choix est retenu ou que la barre se déploie. */
+const menuOpen = ref(false)
 
 const createIcon = (paths) => () =>
   h(
@@ -21,7 +26,7 @@ const createIcon = (paths) => () =>
   )
 
 /**
- * Trois segments, un par état possible. Le libellé visible porte le nom du mode, ce qui satisfait
+ * Trois états possibles. Le libellé visible porte le nom du mode, ce qui satisfait
  * le critère Label in Name, et l'état sélectionné se signale par aria-pressed.
  */
 const MODES = [
@@ -58,12 +63,24 @@ const MODES = [
     icon: createIcon([['path', { d: 'M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z' }]]),
   },
 ]
+
+const activeMode = computed(() => MODES.find((option) => option.value === mode.value) ?? MODES[0])
+
+const chooseMode = (value) => {
+  setMode(value)
+  menuOpen.value = false
+}
+
+watch(isRail, (railed) => {
+  if (!railed) menuOpen.value = false
+})
 </script>
 
 <template>
-  <!-- Un seul contrôle, trois segments joints : l'état retenu porte la teinte primaire,
-       les autres restent en retrait et se signalent au survol -->
+  <!-- Barre déployée : un seul contrôle, trois segments joints. L'état retenu porte la teinte
+       primaire, les autres restent en retrait et se signalent au survol. -->
   <div
+    v-if="!isRail"
     class="join w-full rounded-m3-sm border border-base-300 overflow-hidden"
     role="group"
     aria-label="Apparence de l'interface"
@@ -82,5 +99,47 @@ const MODES = [
       <component :is="option.icon" />
       <span class="text-xs truncate">{{ option.label }}</span>
     </button>
+  </div>
+
+  <!-- Barre repliée en rail : les trois segments n'y tiennent plus. L'icône de l'état retenu
+       ouvre un menu latéral portant les mêmes choix nommés, hors du rail pour rester lisible. -->
+  <div v-else class="relative flex w-full justify-center" @keydown.escape="menuOpen = false">
+    <button
+      type="button"
+      class="btn btn-ghost btn-circle min-w-11 min-h-11 text-base-content/80"
+      :class="menuOpen ? 'bg-base-300/60 text-base-content' : ''"
+      aria-haspopup="true"
+      aria-controls="appearance-rail-menu"
+      :aria-expanded="menuOpen"
+      :aria-label="`Apparence : ${activeMode.label}`"
+      :title="`Apparence : ${activeMode.label}`"
+      @click="menuOpen = !menuOpen"
+    >
+      <component :is="activeMode.icon" />
+    </button>
+
+    <ul
+      v-show="menuOpen"
+      id="appearance-rail-menu"
+      role="menu"
+      aria-label="Apparence de l'interface"
+      class="menu absolute bottom-0 left-full z-50 ml-2 w-44 gap-0.5 rounded-m3-sm border border-base-300/60 bg-base-100 p-1"
+    >
+      <li v-for="option in MODES" :key="option.value">
+        <button
+          type="button"
+          role="menuitemradio"
+          class="min-h-11 gap-2"
+          :class="mode === option.value ? 'bg-primary/15 text-primary font-bold' : 'text-base-content/80'"
+          :aria-checked="mode === option.value"
+          :aria-label="`Thème ${option.label}`"
+          :title="option.hint"
+          @click="chooseMode(option.value)"
+        >
+          <component :is="option.icon" />
+          <span class="text-xs">{{ option.label }}</span>
+        </button>
+      </li>
+    </ul>
   </div>
 </template>

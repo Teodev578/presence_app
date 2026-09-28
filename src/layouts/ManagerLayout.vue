@@ -3,6 +3,7 @@ import { ref, computed, h } from 'vue'
 import { useRouter } from '../router'
 import { useAuth } from '../composables/useAuth'
 import { useProfile } from '../composables/useProfile'
+import { useSidebarNav } from '../composables/useSidebarNav'
 import SyncIndicator from '../components/shared/SyncIndicator.vue'
 import SyncAlert from '../components/shared/SyncAlert.vue'
 import ThemeToggle from '../components/shared/ThemeToggle.vue'
@@ -10,6 +11,7 @@ import ThemeToggle from '../components/shared/ThemeToggle.vue'
 const { currentPath, navigate } = useRouter()
 const { signOut } = useAuth()
 const { profile } = useProfile()
+const { isRail, toggleRail } = useSidebarNav()
 
 const drawerOpen = ref(false)
 
@@ -17,6 +19,8 @@ const userInitial = computed(() => {
   const name = profile.value?.full_name || 'U'
   return name.trim()[0].toUpperCase()
 })
+
+const railHandleLabel = computed(() => (isRail.value ? 'Déplier la navigation' : 'Replier la navigation'))
 
 const createIcon = (paths) => () =>
   h(
@@ -120,7 +124,10 @@ const handleLogout = async () => {
 </script>
 
 <template>
-  <div class="drawer drawer-docked min-h-screen bg-base-100 text-base-content">
+  <div
+    class="drawer drawer-docked min-h-screen bg-base-100 text-base-content"
+    :class="{ 'drawer-rail': isRail }"
+  >
     <input id="manager-drawer" type="checkbox" class="drawer-toggle" v-model="drawerOpen" />
 
     <!-- Conteneur principal -->
@@ -128,7 +135,7 @@ const handleLogout = async () => {
       <!-- En-tête supérieur adaptatif -->
       <header class="navbar bg-base-100/90 backdrop-blur-md border-b border-base-300 px-4 sm:px-6 min-h-14 lg:min-h-16 sticky top-0 z-30 justify-between">
         <div class="flex items-center gap-2 sm:gap-3">
-          <!-- Bouton hamburger (mobile et tablette < 1024px) -->
+          <!-- Bouton hamburger (mobile et tablette < 840px) -->
           <label
             for="manager-drawer"
             class="btn btn-ghost btn-circle btn-sm min-h-12 min-w-12 sm:min-h-10 sm:min-w-10 text-base-content docked:hidden cursor-pointer"
@@ -169,10 +176,13 @@ const handleLogout = async () => {
     <!-- Volet latéral / Sidebar (drawer-side) -->
     <div class="drawer-side z-50">
       <label for="manager-drawer" aria-label="Fermer le menu" class="drawer-overlay"></label>
-      <aside class="bg-base-200 border-r border-base-300/60 min-h-full w-72 sm:w-80 p-5 flex flex-col justify-between text-base-content">
+      <aside
+        id="manager-sidebar"
+        class="relative bg-base-200 border-r border-base-300/60 min-h-full w-72 sm:w-80 p-5 flex flex-col justify-between text-base-content"
+      >
         <div>
-          <!-- En-tête Marque & Logo -->
-          <div class="flex items-center justify-between pb-4 border-b border-base-300/60">
+          <!-- En-tête Marque & Logo, poignée de repli comprise -->
+          <div class="rail-header flex items-center justify-between pb-4 border-b border-base-300/60">
             <div class="flex items-center gap-2.5">
               <div class="w-8 h-8 rounded-m3-sm bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
@@ -180,13 +190,13 @@ const handleLogout = async () => {
                   <polyline points="12 6 12 12 16 14" />
                 </svg>
               </div>
-              <div class="flex flex-col">
+              <div class="rail-hide flex flex-col">
                 <span class="font-bold text-base tracking-tight text-base-content">PresenceApp</span>
                 <span class="badge badge-primary badge-xs uppercase font-bold tracking-wider">Espace Manager</span>
               </div>
             </div>
 
-            <!-- Bouton de fermeture mobile -->
+            <!-- Bouton de fermeture du tiroir superposé (< 840px) -->
             <label
               for="manager-drawer"
               class="btn btn-ghost btn-circle btn-sm text-base-content/60 hover:text-base-content cursor-pointer docked:hidden"
@@ -196,19 +206,49 @@ const handleLogout = async () => {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </label>
+
+            <!-- Poignée de repli : offerte une fois la barre ancrée, seul moyen de passer en rail -->
+            <button
+              type="button"
+              class="rail-handle hidden docked:inline-flex btn btn-ghost btn-circle absolute top-5 right-4 min-w-11 min-h-11 text-base-content/60 hover:text-base-content"
+              aria-controls="manager-sidebar"
+              :aria-expanded="!isRail"
+              :aria-label="railHandleLabel"
+              :title="railHandleLabel"
+              @click="toggleRail"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="w-5 h-5 transition-transform"
+                :class="isRail ? 'rotate-180' : ''"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </button>
           </div>
 
           <!-- Navigation principale -->
           <nav class="mt-6" aria-label="Navigation latérale">
-            <p class="px-3.5 text-xs font-medium uppercase tracking-wide text-base-content/60">Navigation</p>
+            <p class="rail-hide px-3.5 text-xs font-medium uppercase tracking-wide text-base-content/60">Navigation</p>
             <ul class="menu bg-transparent w-full p-0 gap-1.5 font-medium mt-2">
               <li v-for="item in navItems" :key="item.path">
                 <button
                   type="button"
-                  class="relative flex items-center gap-3 py-3 px-3.5 rounded-m3-md transition-colors"
-                  :class="currentPath === item.path
-                    ? 'bg-primary/15 text-primary font-bold'
-                    : 'hover:bg-base-300/60 text-base-content/80'"
+                  class="rail-entry relative flex items-center gap-3 py-3 px-3.5 rounded-m3-md transition-colors"
+                  :class="[
+                    currentPath === item.path
+                      ? 'bg-primary/15 text-primary font-bold'
+                      : 'hover:bg-base-300/60 text-base-content/80',
+                    isRail ? 'tooltip tooltip-right' : '',
+                  ]"
+                  :aria-label="item.label"
+                  :data-tip="isRail ? item.label : null"
                   @click="handleNav(item.path)"
                 >
                   <span
@@ -217,26 +257,29 @@ const handleLogout = async () => {
                     :class="currentPath === item.path ? 'bg-primary' : 'bg-transparent'"
                   ></span>
                   <component :is="item.icon" />
-                  <span class="text-sm">{{ item.label }}</span>
+                  <span class="rail-hide text-sm">{{ item.label }}</span>
                 </button>
               </li>
             </ul>
 
             <!-- Passerelle vers mon espace de pointage personnel. Rangée neutre : la teinte
                  primaire est réservée à l'entrée sélectionnée. -->
-            <p class="mt-5 px-3.5 text-xs font-medium uppercase tracking-wide text-base-content/60">Mon espace</p>
+            <p class="rail-hide mt-5 px-3.5 text-xs font-medium uppercase tracking-wide text-base-content/60">Mon espace</p>
             <ul class="menu bg-transparent w-full p-0 gap-1.5 font-medium mt-2">
               <li>
                 <button
                   type="button"
-                  class="flex items-center gap-3 py-3 px-3.5 rounded-m3-md transition-colors text-base-content/80 hover:bg-base-300/60"
+                  class="rail-entry flex items-center gap-3 py-3 px-3.5 rounded-m3-md transition-colors text-base-content/80 hover:bg-base-300/60"
+                  :class="isRail ? 'tooltip tooltip-right' : ''"
+                  aria-label="Mon pointage personnel"
+                  :data-tip="isRail ? 'Mon pointage personnel' : null"
                   @click="handleNav('/employee')"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="10" />
                     <polyline points="12 6 12 12 16 14" />
                   </svg>
-                  <span class="text-sm">Mon pointage personnel</span>
+                  <span class="rail-hide text-sm">Mon pointage personnel</span>
                 </button>
               </li>
             </ul>
@@ -246,21 +289,21 @@ const handleLogout = async () => {
         <!-- Pied de volet : réglages, identité et sortie -->
         <div class="pt-4 border-t border-base-300/60 flex flex-col gap-3">
           <!-- Deux rangées distinctes : le badge de synchronisation ne peut plus comprimer le contrôle d'apparence -->
-          <div class="flex flex-col gap-2 px-1">
-            <div class="flex items-center justify-between gap-2 min-w-0">
-              <span class="text-xs text-base-content/60 font-medium shrink-0">Statut réseau</span>
-              <SyncIndicator />
+          <div class="rail-center flex flex-col gap-2 px-1">
+            <div class="rail-center flex items-center justify-between gap-2 min-w-0">
+              <span class="rail-hide text-xs text-base-content/60 font-medium shrink-0">Statut réseau</span>
+              <SyncIndicator class="rail-network" />
             </div>
             <ThemeToggle />
           </div>
 
-          <div class="flex items-center gap-3 px-1">
+          <div class="rail-stack flex items-center gap-3 px-1">
             <div class="avatar placeholder shrink-0">
               <div class="bg-primary/15 text-primary rounded-full w-10 h-10 font-bold text-sm flex items-center justify-center">
                 <span>{{ userInitial }}</span>
               </div>
             </div>
-            <div class="flex flex-col min-w-0">
+            <div class="rail-hide flex flex-col min-w-0">
               <span class="font-bold text-sm text-base-content truncate">{{ profile?.full_name || 'Gestionnaire' }}</span>
               <span class="text-xs text-base-content/60 truncate">{{ profile?.email || 'Compte gestionnaire' }}</span>
             </div>

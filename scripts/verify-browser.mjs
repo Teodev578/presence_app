@@ -15,6 +15,7 @@
  *   node scripts/verify-browser.mjs --status-badge  sémantique des statuts
  *   node scripts/verify-browser.mjs --appearance-control  pied de tiroir à 375px
  *   node scripts/verify-browser.mjs --nav-docking         ancrage à 840px
+ *   node scripts/verify-browser.mjs --sidebar-rail        repli en rail d'icônes
  *   node scripts/verify-browser.mjs --check-overlay       volet de confirmation de pointage
  *   node scripts/verify-browser.mjs --availability-summary résumé de disponibilités
  *   node scripts/verify-browser.mjs                 tous les modes
@@ -42,6 +43,7 @@ const TOKENS = {
   'status-badge': 'browser-verify: status badge passed',
   'appearance-control': 'browser-verify: appearance control passed',
   'nav-docking': 'browser-verify: navigation docking passed',
+  'sidebar-rail': 'browser-verify: sidebar rail passed',
   'check-overlay': 'browser-verify: check overlay passed',
   'availability-summary': 'browser-verify: availability summary passed',
 }
@@ -71,6 +73,7 @@ import CheckConfirmationOverlay from '../src/components/employee/CheckConfirmati
 import AvailabilitySummary from '../src/components/employee/AvailabilitySummary.vue'
 import { getLocalDateString, resolveSessionMinutes } from '../src/lib/dateUtils.js'
 import { useSyncEngine } from '../src/composables/useSyncEngine.js'
+import { useSidebarNav } from '../src/composables/useSidebarNav.js'
 
 const dayOffset = (offset) => {
   const d = new Date()
@@ -177,6 +180,135 @@ const settingsBlock = (id, width) =>
     ]),
   ])
 
+/**
+ * Banc du repli : reprend les classes des deux mises en page, poignée et contrôle d'apparence
+ * compris, et consomme le composable réel. Le rail n'agit qu'une fois la barre ancrée.
+ */
+const railIcon = () =>
+  h(
+    'svg',
+    { viewBox: '0 0 24 24', class: 'w-5 h-5 shrink-0', fill: 'none', stroke: 'currentColor', 'stroke-width': 2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' },
+    [h('circle', { cx: 12, cy: 12, r: 10 })]
+  )
+
+const RailProbe = {
+  setup() {
+    const { isRail, toggleRail } = useSidebarNav()
+    return () =>
+      h(
+        'div',
+        {
+          id: 'rail-host',
+          class: ['drawer', 'drawer-docked', 'min-h-screen', 'bg-base-100', isRail.value ? 'drawer-rail' : ''],
+          style: 'width:100%;height:640px',
+        },
+        [
+          h('input', { id: 'rail-toggle', type: 'checkbox', class: 'drawer-toggle' }),
+          h('div', { class: 'drawer-content flex flex-col' }, [
+            h('main', { id: 'rail-content', class: 'flex-1 p-4' }, 'Vue active'),
+          ]),
+          h('div', { class: 'drawer-side z-50' }, [
+            h('label', { for: 'rail-toggle', class: 'drawer-overlay' }),
+            h(
+              'aside',
+              {
+                id: 'rail-aside',
+                class:
+                  'relative bg-base-200 border-r border-base-300/60 min-h-full w-72 sm:w-80 p-5 flex flex-col justify-between text-base-content',
+              },
+              [
+                h('div', [
+                  h('div', { class: 'rail-header flex items-center justify-between pb-4 border-b border-base-300/60' }, [
+                    h('div', { class: 'flex items-center gap-2.5' }, [
+                      h('div', { class: 'w-8 h-8 rounded-m3-sm bg-primary/10 border border-primary/20' }),
+                      h('div', { class: 'rail-hide flex flex-col' }, [
+                        h('span', { id: 'rail-brand', class: 'rail-hide font-bold text-base' }, 'PresenceApp'),
+                        h('span', { class: 'badge badge-primary badge-xs uppercase font-bold tracking-wider' }, 'Espace Collaborateur'),
+                      ]),
+                    ]),
+                    h(
+                      'button',
+                      {
+                        id: 'rail-handle',
+                        type: 'button',
+                        class:
+                          'rail-handle hidden docked:inline-flex btn btn-ghost btn-circle absolute top-5 right-4 min-w-11 min-h-11 text-base-content/60',
+                        'aria-controls': 'rail-aside',
+                        'aria-expanded': String(!isRail.value),
+                        'aria-label': isRail.value ? 'Déplier la navigation' : 'Replier la navigation',
+                        onClick: toggleRail,
+                      },
+                      [
+                        h(
+                          'svg',
+                          {
+                            viewBox: '0 0 24 24',
+                            class: ['w-5', 'h-5', 'transition-transform', isRail.value ? 'rotate-180' : ''],
+                            fill: 'none',
+                            stroke: 'currentColor',
+                            'stroke-width': 2,
+                            'stroke-linecap': 'round',
+                            'stroke-linejoin': 'round',
+                          },
+                          [h('polyline', { points: '15 18 9 12 15 6' })]
+                        ),
+                      ]
+                    ),
+                  ]),
+                  h('nav', { class: 'mt-6', 'aria-label': 'Navigation latérale' }, [
+                    h('p', { id: 'rail-section', class: 'rail-hide px-3.5 text-xs font-medium uppercase tracking-wide text-base-content/60' }, 'Navigation'),
+                    h('ul', { class: 'menu bg-transparent w-full p-0 gap-1.5 font-medium mt-2' }, [
+                      h('li', [
+                        h(
+                          'button',
+                          {
+                            id: 'rail-entry',
+                            type: 'button',
+                            class: [
+                              'rail-entry',
+                              'relative',
+                              'flex',
+                              'items-center',
+                              'gap-3',
+                              'py-3',
+                              'px-3.5',
+                              'rounded-m3-md',
+                              'transition-colors',
+                              'bg-primary/15',
+                              'text-primary',
+                              'font-bold',
+                              isRail.value ? 'tooltip tooltip-right' : '',
+                            ],
+                            'aria-label': 'Tableau de bord',
+                            'data-tip': isRail.value ? 'Tableau de bord' : null,
+                          },
+                          [
+                            h('span', { 'aria-hidden': 'true', class: 'absolute left-1.5 top-1/2 -translate-y-1/2 w-1 h-5 rounded-full bg-primary' }),
+                            railIcon(),
+                            h('span', { id: 'rail-entry-label', class: 'rail-hide text-sm' }, 'Tableau de bord'),
+                          ]
+                        ),
+                      ]),
+                    ]),
+                  ]),
+                ]),
+                h('div', { class: 'pt-4 border-t border-base-300/60 flex flex-col gap-3' }, [
+                  h('div', { class: 'rail-center flex flex-col gap-2 px-1' }, [
+                    h('div', { class: 'rail-center flex items-center justify-between gap-2 min-w-0' }, [
+                      h('span', { class: 'rail-hide text-xs text-base-content/60 font-medium shrink-0' }, 'Statut réseau'),
+                      h(SyncIndicator, { class: 'rail-network' }),
+                    ]),
+                    h(ThemeToggle),
+                  ]),
+                ]),
+              ]
+            ),
+          ]),
+        ]
+      )
+  },
+}
+
 window.__harness = {
   presences,
   weekTotalMinutes,
@@ -228,6 +360,8 @@ const app = createApp({
           h('aside', { id: 'docking-aside', class: 'bg-base-200 w-72 p-5' }, 'Navigation'),
         ]),
       ]),
+      // Banc du repli : mêmes classes que les mises en page, monté pour éprouver le rail d'icônes
+      h(RailProbe),
       h('div', { id: 'card-clean-host', style: 'max-width:520px' }, [
         h(WeekSummaryCard, {
           recentPresences: presences.filter((presence) => presence.check_out_time),
@@ -349,8 +483,58 @@ const MEASURE_EXPRESSION = `(() => {
       }
     : null
 
+  const railHost = document.querySelector('#rail-host')
+  const railAside = railHost ? railHost.querySelector('aside') : null
+  const railHandle = document.querySelector('#rail-handle')
+  const railBrand = document.querySelector('#rail-brand')
+  const railSection = document.querySelector('#rail-section')
+  const railEntry = document.querySelector('#rail-entry')
+  const railEntryLabel = document.querySelector('#rail-entry-label')
+  const railContent = document.querySelector('#rail-content')
+  const railAppearanceButton = railAside ? railAside.querySelector('button[aria-haspopup="true"]') : null
+  const railAppearanceGroup = railAside ? railAside.querySelector('[role="group"]') : null
+  const railAppearanceMenu = railAside ? railAside.querySelector('[role="menu"]') : null
+  const boxOf = (node) => (node ? node.getBoundingClientRect() : null)
+  const centerOf = (node) => {
+    const box = boxOf(node)
+    return box ? { x: Math.round(box.x + box.width / 2), y: Math.round(box.y + box.height / 2) } : null
+  }
+  const rail = railHost
+    ? {
+        hostRailed: railHost.classList.contains('drawer-rail'),
+        asideWidth: Math.round(boxOf(railAside)?.width || 0),
+        asideRight: Math.round(boxOf(railAside)?.right || 0),
+        contentLeft: Math.round(boxOf(railContent)?.left || 0),
+        handleDisplay: railHandle ? getComputedStyle(railHandle).display : null,
+        handleWidth: Math.round(boxOf(railHandle)?.width || 0),
+        handleHeight: Math.round(boxOf(railHandle)?.height || 0),
+        handleCenter: centerOf(railHandle),
+        handleExpanded: railHandle ? railHandle.getAttribute('aria-expanded') : null,
+        brandDisplay: railBrand ? getComputedStyle(railBrand).display : null,
+        sectionDisplay: railSection ? getComputedStyle(railSection).display : null,
+        entryLabelDisplay: railEntryLabel ? getComputedStyle(railEntryLabel).display : null,
+        entryTip: railEntry ? railEntry.getAttribute('data-tip') : null,
+        entryAria: railEntry ? railEntry.getAttribute('aria-label') : null,
+        entryHeight: Math.round(boxOf(railEntry)?.height || 0),
+        groupPresent: Boolean(railAppearanceGroup),
+        appearanceButtonPresent: Boolean(railAppearanceButton),
+        appearanceButtonLabel: railAppearanceButton ? railAppearanceButton.getAttribute('aria-label') : null,
+        appearanceButtonCenter: centerOf(railAppearanceButton),
+        menuDisplay: railAppearanceMenu ? getComputedStyle(railAppearanceMenu).display : null,
+        menuItems: railAppearanceMenu
+          ? [...railAppearanceMenu.querySelectorAll('[role="menuitemradio"]')].map((item) => ({
+              text: collapse(item.innerText),
+              checked: item.getAttribute('aria-checked'),
+              center: centerOf(item),
+            }))
+          : [],
+        stored: window.localStorage.getItem('presence_nav_collapsed'),
+      }
+    : null
+
   return {
     docking,
+    rail,
     theme: document.documentElement.getAttribute('data-theme'),
     stored: window.localStorage.getItem('presence_theme'),
     bodyBg: background(document.body),
@@ -393,12 +577,15 @@ const MEASURE_EXPRESSION = `(() => {
   }
 })()`
 
-const REQUIRED_FIELDS = ['theme', 'stored', 'bodyBg', 'meta', 'rows', 'cardText', 'weekTotal', 'docking']
+const REQUIRED_FIELDS = ['theme', 'stored', 'bodyBg', 'meta', 'rows', 'cardText', 'weekTotal', 'docking', 'rail']
 
 const LIGHT_SURFACE = 'rgb(253, 252, 255)'
 const DARK_SURFACE = 'rgb(17, 19, 24)'
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+// La bascule du volet est animée : mesurer avant la fin de la transition saisit une position transitoire
+const LAYOUT_SETTLE_MS = 450
 
 function findChrome() {
   const candidates = [
@@ -943,7 +1130,7 @@ async function verifyNavDocking(cdp) {
     deviceScaleFactor: 1,
     mobile: false,
   })
-  await sleep(300)
+  await sleep(LAYOUT_SETTLE_MS)
   const narrow = await cdp.measure()
   assertShape(narrow)
 
@@ -961,7 +1148,7 @@ async function verifyNavDocking(cdp) {
     deviceScaleFactor: 1,
     mobile: false,
   })
-  await sleep(300)
+  await sleep(LAYOUT_SETTLE_MS)
   const wide = await cdp.measure()
 
   check('au delà de 840px : le tiroir s\u2019ancre dans la mise en page', () => {
@@ -990,7 +1177,146 @@ async function verifyNavDocking(cdp) {
     deviceScaleFactor: 1,
     mobile: false,
   })
-  await sleep(200)
+  await sleep(LAYOUT_SETTLE_MS)
+
+  return failures === before
+}
+
+/**
+ * Le repli en rail d'icônes : à 841px, la barre ancrée se replie d'elle-même ; la poignée grave
+ * un choix explicite qui prime ensuite sur le seuil ; sous 840px le rail disparaît au profit du
+ * volet à libellés complets ; repliée, le contrôle d'apparence s'ouvre en menu nommé.
+ */
+async function verifySidebarRail(cdp) {
+  const before = failures
+  console.log('browser-verify: repli en rail d\u2019icônes')
+
+  const settle = async (width) => {
+    await cdp.send('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: false })
+    await sleep(LAYOUT_SETTLE_MS)
+    return cdp.measure()
+  }
+
+  const clickCenter = async (center) => {
+    if (!center) throw new Error('cible absente du banc de rail')
+    await cdp.clickAt(center)
+    await sleep(220)
+    return cdp.measure()
+  }
+
+  const focusAndMeasure = async (selector) => {
+    await cdp.evaluate(`document.querySelector('${selector}')?.scrollIntoView({ block: 'center' })`)
+    await sleep(150)
+    return cdp.measure()
+  }
+
+  // 1. Repli automatique dans la bande 840-1024 px, sans choix préalable.
+  const auto = await settle(841)
+  assertShape(auto)
+  check('entre 840 et 1024 px : le rail s\u2019applique de lui-même', () => {
+    assertTrue(auto.rail.hostRailed, 'classe drawer-rail absente')
+    assertTrue(Math.abs(auto.rail.asideWidth - 80) <= 1, `largeur de rail ${auto.rail.asideWidth}px`)
+    // La poignée est hors flux (`absolute`) : le navigateur blockifie `inline-flex` en `flex`.
+    assertTrue(
+      auto.rail.handleDisplay === 'flex' || auto.rail.handleDisplay === 'inline-flex',
+      `affichage de la poignée : ${auto.rail.handleDisplay}`
+    )
+  })
+  check('repliée : les libellés cèdent la place aux icônes', () => {
+    assertEqual(auto.rail.brandDisplay, 'none', 'marque visible')
+    assertEqual(auto.rail.sectionDisplay, 'none', 'libellé de section visible')
+    assertEqual(auto.rail.entryLabelDisplay, 'none', 'libellé d\u2019entrée visible')
+  })
+  check('repliée : la poignée et les entrées gardent leur cible de 44px', () => {
+    assertTrue(auto.rail.handleWidth >= 44 && auto.rail.handleHeight >= 44, `poignée ${auto.rail.handleWidth}x${auto.rail.handleHeight}`)
+    assertTrue(auto.rail.entryHeight >= 44, `entrée ${auto.rail.entryHeight}px`)
+  })
+  check('repliée : chaque entrée reste nommée pour le survol et les lecteurs d\u2019écran', () => {
+    assertEqual(auto.rail.entryTip, 'Tableau de bord', 'libellé d\u2019infobulle')
+    assertEqual(auto.rail.entryAria, 'Tableau de bord', 'libellé accessible')
+  })
+  check('repliée : le contenu suit la largeur du rail', () =>
+    assertTrue(auto.rail.contentLeft >= auto.rail.asideRight - 1, `contenu à ${auto.rail.contentLeft}px, rail finissant à ${auto.rail.asideRight}px`)
+  )
+  check('repliée : la poignée annonce son état', () => assertEqual(auto.rail.handleExpanded, 'false', 'aria-expanded'))
+
+  // 2. Le clic sur la poignée déploie et grave un choix explicite.
+  const handleTarget = await focusAndMeasure('#rail-handle')
+  const expanded = await clickCenter(handleTarget.rail.handleCenter)
+  check('un clic sur la poignée déploie la barre', () => {
+    assertTrue(!expanded.rail.hostRailed, 'classe drawer-rail toujours posée')
+    assertTrue(expanded.rail.asideWidth >= 280, `largeur déployée ${expanded.rail.asideWidth}px`)
+    assertEqual(expanded.rail.handleExpanded, 'true', 'aria-expanded')
+  })
+  check('le déploiement rend les libellés et persiste le choix', () => {
+    assertTrue(expanded.rail.brandDisplay !== 'none', 'marque masquée')
+    assertTrue(expanded.rail.entryLabelDisplay !== 'none', 'libellé d\u2019entrée masqué')
+    assertEqual(expanded.rail.stored, 'false', 'préférence stockée')
+  })
+
+  // 3. Le choix déployé tient hors de la bande automatique.
+  const wide = await settle(1280)
+  check('au delà de 1024 px : le choix déployé tient', () => assertTrue(!wide.rail.hostRailed, 'barre repliée contre le choix'))
+  check('au delà de 1024 px : la barre déployée reprend sa largeur pleine', () =>
+    assertTrue(wide.rail.asideWidth >= 280, `largeur ${wide.rail.asideWidth}px`)
+  )
+
+  // 4. Un second clic replie volontairement, et ce choix prime sur le seuil.
+  const handleWide = await focusAndMeasure('#rail-handle')
+  const railed = await clickCenter(handleWide.rail.handleCenter)
+  check('un second clic replie volontairement la barre', () => {
+    assertTrue(railed.rail.hostRailed, 'classe drawer-rail absente')
+    assertEqual(railed.rail.stored, 'true', 'préférence stockée')
+  })
+  const railedInBand = await settle(841)
+  check('de retour dans la bande : le repli volontaire tient', () => assertTrue(railedInBand.rail.hostRailed, 'barre déployée contre le choix'))
+
+  // 5. Sous 840 px, le rail n'a pas d'objet.
+  const narrow = await settle(839)
+  check('sous 840 px : la barre redevient un volet à libellés complets', () => {
+    assertTrue(!narrow.rail.hostRailed, 'classe drawer-rail persistante')
+    assertTrue(narrow.rail.entryLabelDisplay !== 'none', 'libellé d\u2019entrée masqué')
+    assertEqual(narrow.rail.handleDisplay, 'none', 'poignée offerte hors ancrage')
+  })
+
+  // 6. Repliée, le contrôle d'apparence s'ouvre en menu nommé.
+  const backInBand = await settle(841)
+  check('de retour dans la bande : le repli volontaire reprend', () => assertTrue(backInBand.rail.hostRailed, 'rail absent'))
+  const railFooter = await focusAndMeasure('#rail-aside button[aria-haspopup="true"]')
+  check('repliée : le contrôle d\u2019apparence devient un déclencheur nommé', () => {
+    assertTrue(!railFooter.rail.groupPresent, 'groupe segmenté encore rendu')
+    assertTrue(railFooter.rail.appearanceButtonPresent, 'déclencheur absent')
+    assertTrue((railFooter.rail.appearanceButtonLabel || '').startsWith('Apparence'), `libellé : ${railFooter.rail.appearanceButtonLabel}`)
+    assertEqual(railFooter.rail.menuDisplay, 'none', 'menu ouvert au repos')
+  })
+  const menuOpen = await clickCenter(railFooter.rail.appearanceButtonCenter)
+  check('le déclencheur ouvre les trois états nommés, un seul coché', () => {
+    assertTrue(menuOpen.rail.menuDisplay !== 'none', 'menu fermé')
+    assertEqual(menuOpen.rail.menuItems.length, 3, 'choix du menu')
+    const checked = menuOpen.rail.menuItems.filter((item) => item.checked === 'true')
+    assertEqual(checked.length, 1, 'choix cochés')
+    assertTrue(menuOpen.rail.menuItems.every((item) => item.text.length > 0), 'choix non nommés')
+  })
+  await cdp.screenshot('sidebar-rail.png')
+  const darkItem = menuOpen.rail.menuItems.find((item) => item.text.includes('Sombre'))
+  const dark = await clickCenter(darkItem ? darkItem.center : null)
+  check('un choix referme le menu et s\u2019applique', () => {
+    assertEqual(dark.rail.menuDisplay, 'none', 'menu encore ouvert')
+    assertEqual(dark.theme, 'dark', 'thème appliqué')
+    assertTrue((dark.rail.appearanceButtonLabel || '').includes('Sombre'), `libellé du déclencheur : ${dark.rail.appearanceButtonLabel}`)
+  })
+
+  // 7. Remise en état : barre déployée hors bande et thème rendu au système.
+  const restored = await settle(1280)
+  if (restored.rail.hostRailed) {
+    await clickCenter((await focusAndMeasure('#rail-handle')).rail.handleCenter)
+  }
+  // Le défilement a suivi le rail : on ramène le contrôle d'apparence dans la fenêtre avant de le viser.
+  const reopened = await focusAndMeasure('#toggle-host')
+  check('remise en état : barre déployée', () => assertTrue(!reopened.rail.hostRailed, 'barre laissée repliée'))
+  const systemSegment = (reopened.toggle?.segments || []).find((segment) => segment.text === 'Système')
+  const system = await clickCenter(systemSegment ? systemSegment.center : null)
+  check('remise en état : thème rendu au système', () => assertEqual(system.theme, null, 'data-theme'))
 
   return failures === before
 }
@@ -1005,6 +1331,7 @@ const VERIFIERS = {
   'check-overlay': verifyCheckOverlay,
   'availability-summary': verifyAvailabilitySummary,
   'nav-docking': verifyNavDocking,
+  'sidebar-rail': verifySidebarRail,
 }
 
 async function main() {

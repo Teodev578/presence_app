@@ -170,3 +170,48 @@ Scope: Sous 840px, les deux espaces naviguent par tiroir superposé déclenché 
   CHECK: node scripts/verify-gates.mjs --drawer-shared-grammar
   EXPECT: G40 passed: both drawers share one navigation grammar
   EVIDENCE: G40 passed: both drawers share one navigation grammar (vérifié par node scripts/verify-gates.mjs --drawer-shared-grammar)
+
+---
+
+# Gates: Repli en Rail d'Icônes
+
+OWNS: src/composables/useSidebarNav.js, src/layouts/EmployeeLayout.vue, src/layouts/ManagerLayout.vue, src/components/shared/ThemeToggle.vue, src/style.css, scripts/verify-gates.mjs, scripts/verify-browser.mjs, scripts/test-sidebar-nav.mjs, CONTEXT.md, .agents/rules/07-design-system.md, GATES.md, AGENTS.md
+
+Scope: Une fois la barre ancrée à 840px, une poignée en tête la replie en rail d'icônes : libellés masqués au profit des seules icônes, infobulle et libellé accessible nommant chaque entrée, marque et pied réduits. Le contrôle d'apparence y devient un menu latéral portant les trois états nommés. Entre 840px et 1024px, le repli s'applique de lui-même pour épargner la largeur de la vue ; un clic sur la poignée grave un choix explicite qui prime ensuite sur le seuil. Sous 840px, le rail n'a pas d'objet : le tiroir superposé garde ses libellés complets. Aucune barre de navigation basse n'est introduite, et le pointage employé conserve sa pleine largeur sous 840px. La porte G17, qui figeait les lignes de l'indicateur de synchronisation, est réécrite en simple contrôle de présence, la classe `rail-network` modifiant légitimement la pastille.
+
+Hors périmètre, constaté avant ce lot sur des fichiers que ce lot ne touche pas : `G1`, `G3` et `G4` échouent déjà sur `src/components/shared/ToastContainer.vue` (caractère graphique brut, `shadow-md`, cible `btn-xs`) et `src/components/shared/SyncIndicator.vue` (`shadow-2xs`) ; `G8` échoue sur `src/views/employee/HomeView.vue` (inversion mobile des cartes absente). L'état de ces portes reste inchangé par ce lot.
+
+- [x] G45: Le contrat du repli est câblé dans les deux espaces : seuil d'ancrage et bande de repli automatique dérivés du composable partagé, poignée de 44px masquée hors ancrage, libellés et infobulles des entrées, règles CSS confinées à la media query de 840px
+  CHECK: node scripts/verify-gates.mjs --sidebar-rail
+  EXPECT: G45 passed: docked sidebars collapse into an icon rail and keep their labels below 840px
+  EVIDENCE: G45 passed: docked sidebars collapse into an icon rail and keep their labels below 840px (vérifié par node scripts/verify-gates.mjs --sidebar-rail)
+
+- [x] G46: La suite comportementale du composable de repli couvre le suivi des deux seuils, la priorité du choix explicite, la persistance, la garde hors ancrage et la robustesse du stockage
+  CHECK: node scripts/test-sidebar-nav.mjs
+  EXPECT: sidebar-nav: behavior suite passed
+  EVIDENCE: sidebar-nav: behavior suite passed, 26 assertions vertes (vérifié par node scripts/test-sidebar-nav.mjs)
+
+- [x] G47: Le repli est éprouvé dans la cascade réelle : rail automatique à 841px, déploiement et repli volontaires persistants, retour au seuil automatique déjoué, aucun rail à 839px, menu d'apparence nommé en rail
+  CHECK: CHROME_PATH=$(command -v google-chrome-stable) node scripts/verify-browser.mjs --sidebar-rail
+  EXPECT: browser-verify: sidebar rail passed
+  EVIDENCE: browser-verify: sidebar rail passed, 20 assertions vertes, aucune exception de page (vérifié par le parcours Chrome headless, copie dans .unlazy/evidence/sidebar-rail.png)
+
+- [x] G17 (réécrite): La porte qui exigeait des lignes `SyncIndicator` identiques octet pour octet à la révision f46026c perd son objet : le lot ajoute légitimement la classe `rail-network` à la pastille pour la camoufler en rail. L'immobilité est remplacée par la seule présence requise de l'indicateur dans chaque tiroir, la mise en page relevant désormais de G33 et G40
+  CHECK: node scripts/verify-gates.mjs --sync-indicator-preserved
+  EXPECT: G17 passed: each drawer keeps its sync indicator
+  EVIDENCE: G17 passed: each drawer keeps its sync indicator (vérifié par node scripts/verify-gates.mjs --sync-indicator-preserved)
+
+- [x] G44 (revalidée): L'ancrage à 840px tient après l'ajout du repli, voile inerte et contenu poussé compris
+  CHECK: CHROME_PATH=$(command -v google-chrome-stable) node scripts/verify-browser.mjs --nav-docking
+  EXPECT: browser-verify: navigation docking passed
+  EVIDENCE: browser-verify: navigation docking passed, 7 assertions vertes, aucune exception de page (vérifié par le parcours Chrome headless, copies dans .unlazy/evidence)
+
+- [x] G40 (revalidée): La parité de grammaire des deux tiroirs tient après l'ajout du repli, le composant historique `navigation-rail` restant proscrit
+  CHECK: node scripts/verify-gates.mjs --drawer-shared-grammar
+  EXPECT: G40 passed: both drawers share one navigation grammar
+  EVIDENCE: G40 passed: both drawers share one navigation grammar (vérifié par node scripts/verify-gates.mjs --drawer-shared-grammar)
+
+- [x] G48: Compilation de production Vite sans erreur validée par le code retour du sous-processus
+  CHECK: node scripts/verify-gates.mjs --sidebar-build
+  EXPECT: G48 passed: production build succeeds with exit code 0
+  EVIDENCE: G48 passed: production build succeeds with exit code 0 (vérifié par node scripts/verify-gates.mjs --sidebar-build)
