@@ -215,3 +215,26 @@ Hors périmètre, constaté avant ce lot sur des fichiers que ce lot ne touche p
   CHECK: node scripts/verify-gates.mjs --sidebar-build
   EXPECT: G48 passed: production build succeeds with exit code 0
   EVIDENCE: G48 passed: production build succeeds with exit code 0 (vérifié par node scripts/verify-gates.mjs --sidebar-build)
+
+---
+
+# Gates: Intégration de la Poignée de Repli à l'En-tête
+
+OWNS: src/layouts/EmployeeLayout.vue, src/layouts/ManagerLayout.vue, src/style.css, scripts/verify-gates.mjs, scripts/verify-browser.mjs, .agents/rules/07-design-system.md, GATES.md
+
+Scope: Constat à 1440px avant correctif : la poignée était posée en `absolute top-4 right-4` sur un en-tête `justify-center`, si bien que le badge d'espace passait sous le bouton (chevauchement de 21px) et que le bouton traversait le filet d'en-tête (débord de 3px). La barre déployée garde désormais la poignée en flux dans la rangée de son en-tête, à la droite d'un bloc marque borné (`min-w-0`) sur un en-tête `justify-between relative`. Seul le repli en rail la sort du flux, dans la media query d'ancrage. Les deux espaces partagent cette grammaire, le `relative` manquant de l'en-tête gestionnaire étant rétabli.
+
+- [x] G49: Le contrat d'intégration est vérifié sur les deux fichiers réels : en-tête `items-center justify-between gap-2 relative`, bloc marque borné, poignée en flux (`shrink-0`) sans `absolute`, et reprise en absolu confinée à la media query de 840px
+  CHECK: node scripts/verify-gates.mjs --sidebar-handle
+  EXPECT: G49 passed: the collapse handle stays in the header row without overflowing it
+  EVIDENCE: G49 passed: the collapse handle stays in the header row without overflowing it (vérifié par node scripts/verify-gates.mjs --sidebar-handle, contrôle négatif de l'oracle compris)
+
+- [x] G50: La géométrie réelle est mesurée dans la cascade : à 1440px et 1024px, la poignée siège à droite de la marque, tient dans les quatre bords de l'en-tête et garde sa cible de 44px
+  CHECK: CHROME_PATH=$(command -v google-chrome-stable) node scripts/verify-browser.mjs --sidebar-handle
+  EXPECT: browser-verify: sidebar handle passed
+  EVIDENCE: browser-verify: sidebar handle passed, 9 assertions vertes (4 par largeur + aucune exception de page), chevauchement et débord éliminés (vérifié par le parcours Chrome headless)
+
+- [x] G51 (revalidées): Le repli en rail, l'ancrage à 840px et la compilation de production tiennent après la remise en flux de la poignée
+  CHECK: CHROME_PATH=$(command -v google-chrome-stable) node scripts/verify-browser.mjs --sidebar-rail
+  EXPECT: browser-verify: sidebar rail passed
+  EVIDENCE: browser-verify: sidebar rail passed, 20 assertions vertes ; browser-verify: navigation docking passed, 7 assertions vertes ; G48 passed: production build succeeds with exit code 0 (vérifiés par les parcours Chrome headless et npm run build)

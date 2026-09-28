@@ -2162,6 +2162,97 @@ export function checkSidebarRail() {
   return true;
 }
 
+/**
+ * G49 : La poignée de repli est intégrée à l'en-tête de la barre ancrée. Déployée, la barre la
+ * garde en flux dans sa rangée, à la droite d'un bloc marque borné (`min-w-0`), sur un en-tête
+ * `justify-between` positionné. Seul le repli la sort du flux, et uniquement dans la media query
+ * d'ancrage. La géométrie résultante est prouvée par `verify-browser.mjs --sidebar-handle`.
+ */
+export function checkSidebarHandle() {
+  /** La balise ouvrante du conteneur qui porte le marqueur donné. */
+  const containerTagBefore = (text, marker) => {
+    const index = text.indexOf(marker);
+    if (index === -1) return null;
+    const open = text.lastIndexOf('<div', index);
+    const close = text.indexOf('>', index);
+    return open === -1 || close === -1 ? null : text.slice(open, close + 1);
+  };
+
+  /** Vrai quand l'en-tête et la poignée forment une rangée où marque et commande cohabitent. */
+  const integration = (text) => {
+    const header = containerTagBefore(text, 'rail-header');
+    const handle = buttonTagBefore(text, 'rail-handle');
+    if (header === null || handle === null) return { ok: false, reason: 'en-tête ou poignée introuvable' };
+    const misses = [];
+    for (const token of ['items-center', 'justify-between', 'gap-2', 'relative']) {
+      if (!header.includes(token)) misses.push(`en-tête sans ${token}`);
+    }
+    if (!handle.includes('shrink-0')) misses.push('poignée sans shrink-0');
+    if (/\babsolute\b/.test(handle)) misses.push('poignée encore hors flux en barre déployée');
+    for (const token of ['min-w-11', 'min-h-11', 'hidden', 'docked:inline-flex']) {
+      if (!handle.includes(token)) misses.push(`poignée sans ${token}`);
+    }
+    return { ok: misses.length === 0, reason: misses.join(', ') };
+  };
+
+  // Contrôle négatif : un en-tête resté centré et une poignée absolue doivent être refusés.
+  const bogus = integration(
+    '<div class="rail-header flex items-center justify-center pb-4">'
+      + '<button class="rail-handle hidden docked:inline-flex btn absolute top-4 right-4 min-w-11 min-h-11">x</button></div>'
+  );
+  if (bogus.ok) {
+    console.error("FAILURE G49: le détecteur d'intégration de la poignée est aveugle, oracle invalide");
+    return false;
+  }
+
+  let ok = true;
+  for (const name of ['EmployeeLayout.vue', 'ManagerLayout.vue']) {
+    const content = readLayout(name);
+    if (content === null) {
+      console.error(`FAILURE G49: ${name} introuvable`);
+      ok = false;
+      continue;
+    }
+    if (containerTagBefore(content, 'rail-header') === null) {
+      console.error(`FAILURE G49: ${name} n'expose plus d'en-tête de barre latérale`);
+      ok = false;
+      continue;
+    }
+    if (!content.includes('class="flex items-center gap-2.5 min-w-0"')) {
+      console.error(`FAILURE G49: ${name} ne borne plus le bloc marque (min-w-0)`);
+      ok = false;
+    }
+    const verdict = integration(content);
+    if (!verdict.ok) {
+      console.error(`FAILURE G49: dans ${name}, ${verdict.reason}`);
+      ok = false;
+    }
+  }
+
+  const css = readScopeFile('src/style.css');
+  if (css === null) {
+    console.error('FAILURE G49: src/style.css introuvable');
+    return false;
+  }
+  const railBlock = extractMediaBlock(css, '@media (width >= 840px)');
+  const handleRule = railBlock.match(/\.drawer-rail \.rail-handle \{([^}]*)\}/);
+  if (!handleRule) {
+    console.error("FAILURE G49: la media query de 840px ne reprend plus la poignée en rail");
+    ok = false;
+  } else {
+    for (const token of ['position: absolute', 'top: 0.5rem', 'right: 0.5rem']) {
+      if (!handleRule[1].includes(token)) {
+        console.error(`FAILURE G49: la poignée en rail perd « ${token} »`);
+        ok = false;
+      }
+    }
+  }
+
+  if (!ok) return false;
+  console.log('G49 passed: the collapse handle stays in the header row without overflowing it');
+  return true;
+}
+
 // Exécution CLI
 const arg = process.argv[2] || '--all';
 let success = true;
@@ -2244,6 +2335,8 @@ if (arg === '--emojis') {
   success = checkDrawerSharedGrammar();
 } else if (arg === '--nav-docking') {
   success = checkNavigationDocking();
+} else if (arg === '--sidebar-handle') {
+  success = checkSidebarHandle();
 } else if (arg === '--sidebar-rail') {
   success = checkSidebarRail();
 } else if (arg === '--sidebar-build') {
@@ -2289,10 +2382,11 @@ if (arg === '--emojis') {
   const r40 = checkDrawerSharedGrammar();
   const r43 = checkNavigationDocking();
   const r45 = checkSidebarRail();
+  const r49 = checkSidebarHandle();
   const r48 = r39; // Une seule compilation sert les portes de build G39 et G48
-  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r48;
+  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48;
 } else {
-  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-rail|--manager-build|--sidebar-build|--build|--all]`);
+  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--manager-build|--sidebar-build|--build|--all]`);
   process.exit(1);
 }
 

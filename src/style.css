@@ -354,7 +354,10 @@ html, body {
     padding-top: 2.5rem;
   }
 
+  /* Repliée, la poignée quitte le flux de l'en-tête pour se loger en coin, au-dessus
+     du logo centré : la barre déployée la garde en flux, à la droite de la marque. */
   .drawer-rail .rail-handle {
+    position: absolute;
     top: 0.5rem;
     right: 0.5rem;
   }

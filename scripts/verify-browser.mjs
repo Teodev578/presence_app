@@ -15,6 +15,7 @@
  *   node scripts/verify-browser.mjs --status-badge  sémantique des statuts
  *   node scripts/verify-browser.mjs --appearance-control  pied de tiroir à 375px
  *   node scripts/verify-browser.mjs --nav-docking         ancrage à 840px
+ *   node scripts/verify-browser.mjs --sidebar-handle      intégration de la poignée d'en-tête
  *   node scripts/verify-browser.mjs --sidebar-rail        repli en rail d'icônes
  *   node scripts/verify-browser.mjs --check-overlay       volet de confirmation de pointage
  *   node scripts/verify-browser.mjs --availability-summary résumé de disponibilités
@@ -43,6 +44,7 @@ const TOKENS = {
   'status-badge': 'browser-verify: status badge passed',
   'appearance-control': 'browser-verify: appearance control passed',
   'nav-docking': 'browser-verify: navigation docking passed',
+  'sidebar-handle': 'browser-verify: sidebar handle passed',
   'sidebar-rail': 'browser-verify: sidebar rail passed',
   'check-overlay': 'browser-verify: check overlay passed',
   'availability-summary': 'browser-verify: availability summary passed',
@@ -218,8 +220,8 @@ const RailProbe = {
               },
               [
                 h('div', [
-                  h('div', { class: 'rail-header flex items-center justify-between pb-4 border-b border-base-300/60' }, [
-                    h('div', { class: 'flex items-center gap-2.5' }, [
+                  h('div', { class: 'rail-header flex items-center justify-between gap-2 pb-4 border-b border-base-300/60 relative' }, [
+                    h('div', { id: 'rail-brand-block', class: 'flex items-center gap-2.5 min-w-0' }, [
                       h('div', { class: 'w-8 h-8 rounded-m3-sm bg-primary/10 border border-primary/20' }),
                       h('div', { class: 'rail-hide flex flex-col' }, [
                         h('span', { id: 'rail-brand', class: 'rail-hide font-bold text-base' }, 'PresenceApp'),
@@ -232,7 +234,7 @@ const RailProbe = {
                         id: 'rail-handle',
                         type: 'button',
                         class:
-                          'rail-handle hidden docked:inline-flex btn btn-ghost btn-circle absolute top-5 right-4 min-w-11 min-h-11 text-base-content/60',
+                          'rail-handle hidden docked:inline-flex btn btn-ghost btn-circle shrink-0 min-w-11 min-h-11 text-base-content/60',
                         'aria-controls': 'rail-aside',
                         'aria-expanded': String(!isRail.value),
                         'aria-label': isRail.value ? 'Déplier la navigation' : 'Replier la navigation',
@@ -485,6 +487,8 @@ const MEASURE_EXPRESSION = `(() => {
 
   const railHost = document.querySelector('#rail-host')
   const railAside = railHost ? railHost.querySelector('aside') : null
+  const railHeader = railAside ? railAside.querySelector('.rail-header') : null
+  const railBrandBlock = document.querySelector('#rail-brand-block')
   const railHandle = document.querySelector('#rail-handle')
   const railBrand = document.querySelector('#rail-brand')
   const railSection = document.querySelector('#rail-section')
@@ -505,6 +509,15 @@ const MEASURE_EXPRESSION = `(() => {
         asideWidth: Math.round(boxOf(railAside)?.width || 0),
         asideRight: Math.round(boxOf(railAside)?.right || 0),
         contentLeft: Math.round(boxOf(railContent)?.left || 0),
+        headerTop: Math.round(boxOf(railHeader)?.top || 0),
+        headerBottom: Math.round(boxOf(railHeader)?.bottom || 0),
+        headerLeft: Math.round(boxOf(railHeader)?.left || 0),
+        headerRight: Math.round(boxOf(railHeader)?.right || 0),
+        brandBlockRight: Math.round(boxOf(railBrandBlock)?.right || 0),
+        handleLeft: Math.round(boxOf(railHandle)?.left || 0),
+        handleRight: Math.round(boxOf(railHandle)?.right || 0),
+        handleTop: Math.round(boxOf(railHandle)?.top || 0),
+        handleBottom: Math.round(boxOf(railHandle)?.bottom || 0),
         handleDisplay: railHandle ? getComputedStyle(railHandle).display : null,
         handleWidth: Math.round(boxOf(railHandle)?.width || 0),
         handleHeight: Math.round(boxOf(railHandle)?.height || 0),
@@ -1321,6 +1334,45 @@ async function verifySidebarRail(cdp) {
   return failures === before
 }
 
+/**
+ * L'intégration de la poignée de repli dans l'en-tête ancré : la barre déployée la garde dans
+ * sa rangée, à la droite de la marque, sans chevauchement ni débord du filet d'en-tête.
+ */
+async function verifySidebarHandle(cdp) {
+  const before = failures
+  console.log('browser-verify: intégration de la poignée d\u2019en-tête')
+
+  for (const width of [1440, 1024]) {
+    await cdp.send('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: false })
+    await sleep(LAYOUT_SETTLE_MS)
+    const snapshot = await cdp.measure()
+    assertShape(snapshot)
+    const rail = snapshot.rail
+    check(`à ${width}px : la barre ancrée reste déployée`, () => assertTrue(!rail.hostRailed, 'barre repliée en rail'))
+    check(`à ${width}px : la poignée siège à droite de la marque`, () =>
+      assertTrue(
+        rail.brandBlockRight <= rail.handleLeft,
+        `marque finissant à ${rail.brandBlockRight}px, poignée débutant à ${rail.handleLeft}px`
+      ))
+    check(`à ${width}px : la poignée tient dans l\u2019en-tête`, () => {
+      assertTrue(rail.handleTop >= rail.headerTop - 1, `poignée haute à ${rail.handleTop}px, en-tête à ${rail.headerTop}px`)
+      assertTrue(rail.handleBottom <= rail.headerBottom, `poignée basse à ${rail.handleBottom}px, en-tête finissant à ${rail.headerBottom}px`)
+      assertTrue(
+        rail.handleLeft >= rail.headerLeft && rail.handleRight <= rail.headerRight + 1,
+        `poignée hors des marges de l'en-tête (${rail.handleLeft}→${rail.handleRight})`
+      )
+    })
+    check(`à ${width}px : la poignée garde sa cible de 44px`, () =>
+      assertTrue(rail.handleWidth >= 44 && rail.handleHeight >= 44, `poignée ${rail.handleWidth}x${rail.handleHeight}`))
+  }
+
+  // Restauration d'une largeur large pour ne pas contaminer les modes suivants.
+  await cdp.send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false })
+  await sleep(LAYOUT_SETTLE_MS)
+
+  return failures === before
+}
+
 const VERIFIERS = {
   theme: verifyTheme,
   sessions: verifySessions,
@@ -1331,6 +1383,7 @@ const VERIFIERS = {
   'check-overlay': verifyCheckOverlay,
   'availability-summary': verifyAvailabilitySummary,
   'nav-docking': verifyNavDocking,
+  'sidebar-handle': verifySidebarHandle,
   'sidebar-rail': verifySidebarRail,
 }
 
