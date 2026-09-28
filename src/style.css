@@ -17,6 +17,10 @@
   --radius-m3-lg: 16px;
   --radius-m3-xl: 28px;
   --radius-m3-full: 9999px;
+
+  /* Seuil d'ancrage de la barre latérale, canonique dans la règle 07 §7.
+     Tailwind ne le propose pas nativement : le jeton ouvre la variante `docked:`. */
+  --breakpoint-docked: 840px;
 }
 
 /* ==========================================================================
@@ -262,6 +266,42 @@ html, body {
   color: var(--color-base-content);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* ==========================================================================
+   Ancrage de la barre latérale dès 840 px
+
+   DaisyUI ne précompile `drawer-open` que pour ses propres seuils (640, 768,
+   1024, 1280, 1536), d'où cette règle locale qui reproduit son effet au seuil
+   du projet. Le tiroir superposé gouverne en dessous, l'ancrage au delà.
+   ========================================================================== */
+@media (width >= 840px) {
+  .drawer-docked > .drawer-toggle {
+    display: none;
+  }
+
+  .drawer-docked > .drawer-side {
+    display: block;
+    position: sticky;
+    width: auto;
+    overflow-y: auto;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    overscroll-behavior: auto;
+  }
+
+  /* Une fois ancrée, la barre ne se ferme plus : le voile ne doit ni assombrir
+     la vue ni capter le clic destiné au contenu. */
+  .drawer-docked > .drawer-side > .drawer-overlay {
+    background-color: transparent;
+    cursor: default;
+    pointer-events: none;
+  }
+
+  .drawer-docked > .drawer-toggle ~ .drawer-side > :not(.drawer-overlay) {
+    translate: 0%;
+  }
 }
 
 /* Neutralisation du double outline DaisyUI au focus avec anneau M3 */

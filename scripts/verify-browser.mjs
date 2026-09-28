@@ -14,6 +14,7 @@
  *   node scripts/verify-browser.mjs --week-tile     densité de la tuile hebdomadaire
  *   node scripts/verify-browser.mjs --status-badge  sémantique des statuts
  *   node scripts/verify-browser.mjs --appearance-control  pied de tiroir à 375px
+ *   node scripts/verify-browser.mjs --nav-docking         ancrage à 840px
  *   node scripts/verify-browser.mjs --check-overlay       volet de confirmation de pointage
  *   node scripts/verify-browser.mjs --availability-summary résumé de disponibilités
  *   node scripts/verify-browser.mjs                 tous les modes
@@ -40,6 +41,7 @@ const TOKENS = {
   'week-tile': 'browser-verify: week tile passed',
   'status-badge': 'browser-verify: status badge passed',
   'appearance-control': 'browser-verify: appearance control passed',
+  'nav-docking': 'browser-verify: navigation docking passed',
   'check-overlay': 'browser-verify: check overlay passed',
   'availability-summary': 'browser-verify: availability summary passed',
 }
@@ -214,6 +216,18 @@ const app = createApp({
           weekTotalMinutes: 21,
         }),
       ]),
+      // Banc d'ancrage : mêmes classes que les mises en page, monté pour éprouver le seuil de 840px
+      h('div', { id: 'docking-host', class: 'drawer drawer-docked min-h-screen bg-base-100', style: 'width:100%;height:520px' }, [
+        h('input', { id: 'docking-toggle', type: 'checkbox', class: 'drawer-toggle' }),
+        h('div', { class: 'drawer-content flex flex-col' }, [
+          h('label', { id: 'docking-hamburger', for: 'docking-toggle', class: 'btn btn-ghost btn-circle btn-sm docked:hidden' }, 'M'),
+          h('main', { id: 'docking-content', class: 'flex-1 p-4' }, 'Contenu de la vue active'),
+        ]),
+        h('div', { class: 'drawer-side z-50' }, [
+          h('label', { for: 'docking-toggle', class: 'drawer-overlay' }),
+          h('aside', { id: 'docking-aside', class: 'bg-base-200 w-72 p-5' }, 'Navigation'),
+        ]),
+      ]),
       h('div', { id: 'card-clean-host', style: 'max-width:520px' }, [
         h(WeekSummaryCard, {
           recentPresences: presences.filter((presence) => presence.check_out_time),
@@ -313,8 +327,30 @@ const MEASURE_EXPRESSION = `(() => {
   const summaryBadge = summaryHost ? summaryHost.querySelector('.badge') : null
   const summaryBadgeStyle = summaryBadge ? getComputedStyle(summaryBadge) : null
   const summaryEmptyHost = document.querySelector('#summary-empty-host')
+  const dockingHost = document.querySelector('#docking-host')
+  const dockingSide = dockingHost ? dockingHost.querySelector('.drawer-side') : null
+  const dockingOverlay = dockingHost ? dockingHost.querySelector('.drawer-overlay') : null
+  const dockingToggle = document.querySelector('#docking-toggle')
+  const dockingHamburger = document.querySelector('#docking-hamburger')
+  const dockingAside = document.querySelector('#docking-aside')
+  const dockingContent = document.querySelector('#docking-content')
+  const rectOf = (node) => (node ? node.getBoundingClientRect() : null)
+  const docking = dockingHost
+    ? {
+        toggleDisplay: dockingToggle ? getComputedStyle(dockingToggle).display : null,
+        hamburgerDisplay: dockingHamburger ? getComputedStyle(dockingHamburger).display : null,
+        sideVisibility: dockingSide ? getComputedStyle(dockingSide).visibility : null,
+        sidePosition: dockingSide ? getComputedStyle(dockingSide).position : null,
+        asideRight: rectOf(dockingAside) ? Math.round(rectOf(dockingAside).right) : 0,
+        asideWidth: rectOf(dockingAside) ? Math.round(rectOf(dockingAside).width) : 0,
+        overlayBackground: dockingOverlay ? getComputedStyle(dockingOverlay).backgroundColor : null,
+        overlayPointerEvents: dockingOverlay ? getComputedStyle(dockingOverlay).pointerEvents : null,
+        contentLeft: rectOf(dockingContent) ? Math.round(rectOf(dockingContent).left) : 0,
+      }
+    : null
 
   return {
+    docking,
     theme: document.documentElement.getAttribute('data-theme'),
     stored: window.localStorage.getItem('presence_theme'),
     bodyBg: background(document.body),
@@ -357,7 +393,7 @@ const MEASURE_EXPRESSION = `(() => {
   }
 })()`
 
-const REQUIRED_FIELDS = ['theme', 'stored', 'bodyBg', 'meta', 'rows', 'cardText', 'weekTotal']
+const REQUIRED_FIELDS = ['theme', 'stored', 'bodyBg', 'meta', 'rows', 'cardText', 'weekTotal', 'docking']
 
 const LIGHT_SURFACE = 'rgb(253, 252, 255)'
 const DARK_SURFACE = 'rgb(17, 19, 24)'
@@ -893,6 +929,72 @@ async function verifyAvailabilitySummary(cdp) {
   return failures === before
 }
 
+/**
+ * Le seuil canonique de 840px : tiroir superposé en dessous, barre latérale ancrée au delà.
+ * Le banc reproduit les classes des mises en page, et la mesure porte sur les styles calculés.
+ */
+async function verifyNavDocking(cdp) {
+  const before = failures
+  console.log('browser-verify: ancrage à 840px')
+
+  await cdp.send('Emulation.setDeviceMetricsOverride', {
+    width: 839,
+    height: 900,
+    deviceScaleFactor: 1,
+    mobile: false,
+  })
+  await sleep(300)
+  const narrow = await cdp.measure()
+  assertShape(narrow)
+
+  check('sous 840px : le tiroir reste un volet superposé', () => {
+    assertTrue(narrow.docking.toggleDisplay !== 'none', 'interrupteur du tiroir masqué')
+    assertTrue(narrow.docking.asideRight <= 1, `barre latérale visible à ${narrow.docking.asideRight}px du bord`)
+  })
+  check('sous 840px : le hamburger reste offert', () =>
+    assertTrue(narrow.docking.hamburgerDisplay !== 'none', `affichage du hamburger : ${narrow.docking.hamburgerDisplay}`)
+  )
+
+  await cdp.send('Emulation.setDeviceMetricsOverride', {
+    width: 841,
+    height: 900,
+    deviceScaleFactor: 1,
+    mobile: false,
+  })
+  await sleep(300)
+  const wide = await cdp.measure()
+
+  check('au delà de 840px : le tiroir s\u2019ancre dans la mise en page', () => {
+    assertEqual(wide.docking.toggleDisplay, 'none', "affichage de l'interrupteur")
+    assertEqual(wide.docking.sidePosition, 'sticky', 'position de la barre latérale')
+    assertEqual(wide.docking.sideVisibility, 'visible', 'visibilité de la barre latérale')
+  })
+  check('au delà de 840px : la barre occupe sa largeur et pousse le contenu', () => {
+    assertTrue(wide.docking.asideWidth >= 280, `largeur de barre ${wide.docking.asideWidth}px`)
+    assertTrue(wide.docking.contentLeft >= wide.docking.asideRight - 1, `contenu à ${wide.docking.contentLeft}px, barre finissant à ${wide.docking.asideRight}px`)
+  })
+  check('au delà de 840px : les contrôles de tiroir disparaissent', () =>
+    assertEqual(wide.docking.hamburgerDisplay, 'none', 'affichage du hamburger')
+  )
+  check('au delà de 840px : le voile ne capte plus le clic ni n\u2019assombrit la vue', () => {
+    assertEqual(wide.docking.overlayPointerEvents, 'none', 'interception du volet')
+    assertTrue(
+      wide.docking.overlayBackground === 'rgba(0, 0, 0, 0)' || wide.docking.overlayBackground === 'transparent',
+      `fond du volet : ${wide.docking.overlayBackground}`
+    )
+  })
+
+  await cdp.send('Emulation.setDeviceMetricsOverride', {
+    width: 1280,
+    height: 1200,
+    deviceScaleFactor: 1,
+    mobile: false,
+  })
+  await sleep(200)
+
+  return failures === before
+}
+
 const VERIFIERS = {
   theme: verifyTheme,
   sessions: verifySessions,
@@ -902,6 +1004,7 @@ const VERIFIERS = {
   'appearance-control': verifyAppearanceControl,
   'check-overlay': verifyCheckOverlay,
   'availability-summary': verifyAvailabilitySummary,
+  'nav-docking': verifyNavDocking,
 }
 
 async function main() {

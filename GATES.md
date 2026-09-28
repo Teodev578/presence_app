@@ -109,7 +109,7 @@ Hors périmètre, constaté avant ce lot sur des fichiers que ce lot ne touche p
 
 OWNS: src/layouts/ManagerLayout.vue, src/layouts/EmployeeLayout.vue, src/components/shared/ThemeToggle.vue, src/composables/useTheme.js, scripts/verify-gates.mjs, scripts/verify-browser.mjs, scripts/test-theme-toggle.mjs, GATES.md, AGENTS.md
 
-Scope: Transposer la grammaire de la maquette dans les deux tiroirs, sans panneau flottant : marque et badge d'espace en tête, libellés de section Navigation puis Mon espace, barre d'accent sur l'entrée sélectionnée, passagère neutre, pied ordonné en statut réseau, apparence, identité et déconnexion en icône. Le contrôle d'apparence devient un groupe segmenté à trois états. Le seuil de déploiement à 1024 px reste inchangé, et ni compteurs ni recherche ne sont ajoutés.
+Scope: Transposer la grammaire de la maquette dans les deux tiroirs, sans panneau flottant : marque et badge d'espace en tête, libellés de section Navigation puis Mon espace, barre d'accent sur l'entrée sélectionnée, passagère neutre, pied ordonné en statut réseau, apparence, identité et déconnexion en icône. Le contrôle d'apparence devient un groupe segmenté à trois états. Le seuil de déploiement reste à 1024 px dans ce lot, avant d'être porté à 840 px par le lot « Ancrage de la Barre Latérale ». Ni compteurs ni recherche ne sont ajoutés.
 
 - [x] G23 (réécrite): Le contrôle d'apparence est un groupe segmenté à trois états nommés, chacun doté d'un libellé visible, d'un état aria-pressed et d'une cible de 44px
   CHECK: node scripts/verify-gates.mjs --appearance-control-markup
@@ -147,3 +147,26 @@ Scope: Transposer la grammaire de la maquette dans les deux tiroirs, sans pannea
   CHECK: node scripts/verify-gates.mjs --manager-build
   EXPECT: G39 passed: production build succeeds with exit code 0
   EVIDENCE: G39 passed: production build succeeds with exit code 0 (vérifié par node scripts/verify-gates.mjs --manager-build)
+
+---
+
+# Gates: Ancrage de la Barre Latérale à 840px
+
+OWNS: src/style.css, src/layouts/ManagerLayout.vue, src/layouts/EmployeeLayout.vue, scripts/verify-gates.mjs, scripts/verify-browser.mjs, GATES.md, AGENTS.md, .agents/rules/07-design-system.md
+
+Scope: Sous 840px, les deux espaces naviguent par tiroir superposé déclenché par le hamburger. À partir de 840px, la barre latérale s'ancre dans la mise en page avec ses libellés complets, dans les deux espaces. Aucun rail en icônes seules, aucune barre de navigation basse. DaisyUI ne précompile `drawer-open` que pour ses propres seuils, d'où le jeton `--breakpoint-docked: 840px` et la classe `.drawer-docked` posés dans `src/style.css`. La réserve employé d'AGENTS.md et de la règle 07 §7 est levée en conséquence, l'espace employé conservant sa pleine largeur de pointage sous 840px.
+
+- [x] G43: Les deux espaces ancrent leur barre latérale au seuil de 840px déclaré dans le thème, masquent les contrôles de tiroir une fois ancrées, et l'espace employé conserve son verrouillage onepage
+  CHECK: node scripts/verify-gates.mjs --nav-docking
+  EXPECT: G43 passed: both spaces dock their sidebar at 840px and keep the drawer below
+  EVIDENCE: G43 passed: both spaces dock their sidebar at 840px and keep the drawer below (vérifié par node scripts/verify-gates.mjs --nav-docking)
+
+- [x] G44: L'ancrage est éprouvé dans la cascade réelle de part et d'autre du seuil : volet superposé à 839px, barre ancrée à 841px, contenu poussé, voile inerte
+  CHECK: CHROME_PATH=$(command -v google-chrome-stable) node scripts/verify-browser.mjs --nav-docking
+  EXPECT: browser-verify: navigation docking passed
+  EVIDENCE: browser-verify: navigation docking passed, 6 assertions vertes aux deux largeurs, aucune exception de page (vérifié par le parcours Chrome headless, copies dans .unlazy/evidence)
+
+- [x] G40 (revalidée): La parité de grammaire des deux tiroirs tient après le passage à l'ancrage, et aucun rail n'est introduit
+  CHECK: node scripts/verify-gates.mjs --drawer-shared-grammar
+  EXPECT: G40 passed: both drawers share one navigation grammar
+  EVIDENCE: G40 passed: both drawers share one navigation grammar (vérifié par node scripts/verify-gates.mjs --drawer-shared-grammar)

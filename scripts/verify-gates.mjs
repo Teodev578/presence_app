@@ -1543,15 +1543,15 @@ function navEntryBlocks(aside) {
   return blocks;
 }
 
-const RAMP_ROOT = /class="drawer lg:drawer-open[^"]*bg-base-100/;
+const RAMP_ROOT = /class="drawer drawer-docked[^"]*bg-base-100/;
 
 /** Le fond de vue gestionnaire et son tiroir respectent la rampe tonale de la règle 07. */
 export function checkManagerRamp() {
   const drawerOnContainer = (tag) => tag.includes('bg-base-200') && !tag.includes('bg-base-100');
 
   if (
-    !RAMP_ROOT.test('<div class="drawer lg:drawer-open min-h-screen bg-base-100">') ||
-    RAMP_ROOT.test('<div class="drawer lg:drawer-open min-h-screen bg-base-200">')
+    !RAMP_ROOT.test('<div class="drawer drawer-docked min-h-screen bg-base-100">') ||
+    RAMP_ROOT.test('<div class="drawer drawer-docked min-h-screen bg-base-200">')
   ) {
     console.error('FAILURE G32: le détecteur de fond de vue est aveugle, oracle invalide');
     return false;
@@ -1939,6 +1939,77 @@ export function checkDrawerSharedGrammar() {
   return true;
 }
 
+/**
+ * Le tiroir superposé gouverne sous 840 px, l'ancrage au delà, dans les deux espaces.
+ * DaisyUI ne précompile `drawer-open` que pour ses propres seuils : le projet pose donc
+ * lui-même son jeton de seuil et la règle d'ancrage qui va avec.
+ */
+export function checkNavigationDocking() {
+  const DOCKING_TOKENS = ['--breakpoint-docked: 840px'];
+  const DOCKING_RULES = ['.drawer-docked > .drawer-toggle', 'position: sticky', 'pointer-events: none'];
+
+  const declaresDocking = (css) =>
+    DOCKING_TOKENS.every((token) => css.includes(token)) && DOCKING_RULES.every((rule) => css.includes(rule));
+
+  if (declaresDocking(':root { --radius-m3-xs: 4px; }')) {
+    console.error('FAILURE G43: le détecteur de jeton de seuil est aveugle, oracle invalide');
+    return false;
+  }
+
+  const dockedLayout = (content) =>
+    content.includes('drawer drawer-docked') &&
+    (content.match(/docked:hidden/g) || []).length === 2 &&
+    !content.includes('lg:drawer-open');
+
+  if (dockedLayout('<div class="drawer lg:drawer-open">')) {
+    console.error("FAILURE G43: le détecteur d'ancrage est aveugle, oracle invalide");
+    return false;
+  }
+
+  const css = readScopeFile('src/style.css');
+  if (css === null) {
+    console.error('FAILURE G43: src/style.css introuvable');
+    return false;
+  }
+  if (!declaresDocking(css)) {
+    console.error("FAILURE G43: src/style.css ne déclare pas le seuil d'ancrage de 840px et sa règle");
+    return false;
+  }
+
+  let ok = true;
+  for (const layoutName of ['ManagerLayout.vue', 'EmployeeLayout.vue']) {
+    const content = readLayout(layoutName);
+    if (content === null) {
+      console.error(`FAILURE G43: ${layoutName} introuvable`);
+      ok = false;
+      continue;
+    }
+    if (!dockedLayout(content)) {
+      console.error(
+        `FAILURE G43: ${layoutName} n'ancre pas sa barre latérale, ou laisse des contrôles visibles une fois ancrée`
+      );
+      ok = false;
+    }
+    if (!content.includes('drawer-overlay')) {
+      console.error(`FAILURE G43: ${layoutName} n'expose plus son voile de fermeture sous 840px`);
+      ok = false;
+    }
+  }
+
+  // L'espace employé conserve son pointage pleine largeur et son verrouillage onepage
+  const employee = readLayout('EmployeeLayout.vue') || '';
+  for (const token of ['flex-1', 'max-w-6xl', 'md:overflow-hidden']) {
+    if (!employee.includes(token)) {
+      console.error(`FAILURE G43: l'espace employé a perdu ${token}`);
+      ok = false;
+    }
+  }
+
+  if (!ok) return false;
+  console.log('G43 passed: both spaces dock their sidebar at 840px and keep the drawer below');
+  return true;
+}
+
 // Exécution CLI
 const arg = process.argv[2] || '--all';
 let success = true;
@@ -2019,6 +2090,8 @@ if (arg === '--emojis') {
   success = checkManagerTonalRamp();
 } else if (arg === '--drawer-shared-grammar') {
   success = checkDrawerSharedGrammar();
+} else if (arg === '--nav-docking') {
+  success = checkNavigationDocking();
 } else if (arg === '--manager-build') {
   success = checkBuild('G39', 'production build succeeds with exit code 0');
 } else if (arg === '--all') {
@@ -2058,9 +2131,10 @@ if (arg === '--emojis') {
   const r37 = checkManagerTonalRamp();
   const r39 = checkBuild('G39', 'production build succeeds with exit code 0');
   const r40 = checkDrawerSharedGrammar();
-  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40;
+  const r43 = checkNavigationDocking();
+  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43;
 } else {
-  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--manager-build|--build|--all]`);
+  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--manager-build|--build|--all]`);
   process.exit(1);
 }
 

@@ -93,8 +93,10 @@ Ce volet applique les spécifications du skill `responsive-adaptive-ui`, inspir�
 
 ### Seuils de bascule critiques (Breakpoints)
 - **Bascule Carrousel vers Grille (600px)** : Sous 600px, les collections denses s'affichent en carrousel horizontal à défilement tactile avec pagination discrète. À partir de 600px, elles adoptent une grille responsive à colonnes (`grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4`).
-- **Bascule Navigation Basse vers Rail (840px)** : Sous 840px, l'application utilise une Bottom Navigation fixe. À partir de 840px, la navigation bascule en Sidebar Rail latérale compacte (icônes seules). *(Exception absolue : cette règle ne concerne pas la partie employé. Dans l'espace employé, interdiction stricte de toucher ou d'introduire un « Navigation rail »).*
-- **Bascule Rail vers Tiroir Déployé (1200px)** : À partir de 1200px, la barre latérale se déploie avec libellés complets et indicateurs d'état permanents (espace gestionnaire uniquement).
+- **Bascule Tiroir vers Barre Latérale Ancrée (840px)** : Sous 840px, les deux espaces naviguent par tiroir superposé, déclenché par le hamburger. À partir de 840px, la barre latérale s'ancre dans la mise en page avec ses libellés complets, dans les deux espaces. Le seuil vit dans `src/style.css` sous le jeton `--breakpoint-docked`, Tailwind ne le proposant pas nativement, et le comportement d'ancrage est porté par la classe `.drawer-docked`.
+- **Aucun rail en icônes, aucune barre basse** : La navigation ne se replie jamais en bande d'icônes seules. Sous 840px, le tiroir superposé tient ce rôle et réserve toute la largeur à la vue active.
+
+Le garde-fou exécutable de ces seuils est `node scripts/verify-gates.mjs --nav-docking`.
 
 ### Ergonomie tactile et cibles cliquables
 - **Surface tactile minimale** : 44×44 pixels obligatoires pour tout élément interactif. Sur mobile tactile, les boutons d'action clés (pointage, validation) occupent une hauteur minimale de 56dp. Sur desktop (souris/pointeur), la hauteur minimale est de 48dp.

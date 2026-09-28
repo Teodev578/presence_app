@@ -120,7 +120,7 @@ const handleLogout = async () => {
 </script>
 
 <template>
-  <div class="drawer lg:drawer-open min-h-screen bg-base-100 text-base-content">
+  <div class="drawer drawer-docked min-h-screen bg-base-100 text-base-content">
     <input id="manager-drawer" type="checkbox" class="drawer-toggle" v-model="drawerOpen" />
 
     <!-- Conteneur principal -->
@@ -131,7 +131,7 @@ const handleLogout = async () => {
           <!-- Bouton hamburger (mobile et tablette < 1024px) -->
           <label
             for="manager-drawer"
-            class="btn btn-ghost btn-circle btn-sm min-h-12 min-w-12 sm:min-h-10 sm:min-w-10 text-base-content lg:hidden cursor-pointer"
+            class="btn btn-ghost btn-circle btn-sm min-h-12 min-w-12 sm:min-h-10 sm:min-w-10 text-base-content docked:hidden cursor-pointer"
             aria-label="Ouvrir le menu de gestion"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -189,7 +189,7 @@ const handleLogout = async () => {
             <!-- Bouton de fermeture mobile -->
             <label
               for="manager-drawer"
-              class="btn btn-ghost btn-circle btn-sm text-base-content/60 hover:text-base-content cursor-pointer lg:hidden"
+              class="btn btn-ghost btn-circle btn-sm text-base-content/60 hover:text-base-content cursor-pointer docked:hidden"
               aria-label="Fermer le menu"
             >
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
