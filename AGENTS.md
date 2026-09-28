@@ -68,7 +68,7 @@ Pour éviter la perte de contexte entre sessions de travail :
 2. **Grand livre de vérification déterministe (`unlazy`)** : Toute tâche substantielle ou multi-fichiers exige la rédaction préalable d'un fichier `GATES.md` doté d'oracles exécutables (`CHECK:`) et de sorties attendues (`EXPECT:`). Aucune tâche n'est déclarée achevée sans preuve concrète d'exécution (`EVIDENCE:`).
 3. **Plan préalable obligatoire** : Présenter une reformulation claire et un plan d'action structuré avant toute modification architecturale, création de fichier structurant ou refactorisation transverse.
 4. **Validation locale systématique** : Vérifier la compilation (`npm run build`) avant de déclarer toute tâche terminée.
-5. **Sanctuarisation de la navigation employé** : Interdiction formelle de modifier, altérer ou introduire un « Navigation rail » dans la partie employé (`src/layouts/EmployeeLayout.vue` et vues associées). La navigation employé ne doit pas être touchée.
+5. **Navigation employé : parité de grammaire, jamais de rail** : La sanctuarisation de la navigation employé est levée par autorisation explicite de l'utilisateur (consignée dans `GATES.md`, lot « Grammaire de Tiroir Commune »). Les deux espaces partagent désormais une seule grammaire de tiroir : marque et badge d'espace en tête, sections « Navigation » et « Mon espace », barre d'accent sur l'entrée sélectionnée, passerelle neutre, pied ordonné en statut réseau, contrôle d'apparence, identité et déconnexion en icône. Interdiction formelle d'introduire un « Navigation rail » dans la partie employé : l'espace collaborateur conserve son tiroir, et la fonctionnalité de pointage ne doit pas être altérée.
 
 ## Agent skills
 

@@ -198,39 +198,35 @@ const handleLogout = async () => {
             </label>
           </div>
 
-          <!-- Bloc identité : même grammaire que le tiroir employé -->
-          <div class="flex items-center gap-3 py-4 border-b border-base-300/60">
-            <div class="avatar placeholder shrink-0">
-              <div class="bg-primary/15 text-primary rounded-full w-10 h-10 font-bold text-sm flex items-center justify-center">
-                <span>{{ userInitial }}</span>
-              </div>
-            </div>
-            <div class="flex flex-col min-w-0">
-              <span class="font-bold text-sm text-base-content truncate">{{ profile?.full_name || 'Gestionnaire' }}</span>
-              <span class="text-xs text-base-content/60 truncate">{{ profile?.email || 'Compte gestionnaire' }}</span>
-            </div>
-          </div>
-
           <!-- Navigation principale -->
-          <nav class="mt-4 sm:mt-6" aria-label="Navigation latérale">
-            <ul class="menu bg-transparent w-full p-0 gap-1.5 font-medium">
+          <nav class="mt-6" aria-label="Navigation latérale">
+            <p class="px-3.5 text-xs font-medium uppercase tracking-wide text-base-content/60">Navigation</p>
+            <ul class="menu bg-transparent w-full p-0 gap-1.5 font-medium mt-2">
               <li v-for="item in navItems" :key="item.path">
                 <button
                   type="button"
-                  class="flex items-center gap-3 py-3 px-3.5 rounded-m3-md transition-colors"
+                  class="relative flex items-center gap-3 py-3 px-3.5 rounded-m3-md transition-colors"
                   :class="currentPath === item.path
                     ? 'bg-primary/15 text-primary font-bold'
                     : 'hover:bg-base-300/60 text-base-content/80'"
                   @click="handleNav(item.path)"
                 >
+                  <span
+                    aria-hidden="true"
+                    class="absolute left-1.5 top-1/2 -translate-y-1/2 w-1 h-5 rounded-full transition-colors"
+                    :class="currentPath === item.path ? 'bg-primary' : 'bg-transparent'"
+                  ></span>
                   <component :is="item.icon" />
                   <span class="text-sm">{{ item.label }}</span>
                 </button>
               </li>
+            </ul>
 
-              <!-- Passerelle vers mon espace de pointage personnel.
-                   Rangée neutre : la teinte primaire est réservée à l'entrée sélectionnée. -->
-              <li class="pt-2 border-t border-base-300/40 mt-2">
+            <!-- Passerelle vers mon espace de pointage personnel. Rangée neutre : la teinte
+                 primaire est réservée à l'entrée sélectionnée. -->
+            <p class="mt-5 px-3.5 text-xs font-medium uppercase tracking-wide text-base-content/60">Mon espace</p>
+            <ul class="menu bg-transparent w-full p-0 gap-1.5 font-medium mt-2">
+              <li>
                 <button
                   type="button"
                   class="flex items-center gap-3 py-3 px-3.5 rounded-m3-md transition-colors text-base-content/80 hover:bg-base-300/60"
@@ -247,7 +243,7 @@ const handleLogout = async () => {
           </nav>
         </div>
 
-        <!-- Pied de volet : Réglages & Déconnexion (le profil vit en tête, comme dans le tiroir employé) -->
+        <!-- Pied de volet : réglages, identité et sortie -->
         <div class="pt-4 border-t border-base-300/60 flex flex-col gap-3">
           <!-- Deux rangées distinctes : le badge de synchronisation ne peut plus comprimer le contrôle d'apparence -->
           <div class="flex flex-col gap-2 px-1">
@@ -258,18 +254,30 @@ const handleLogout = async () => {
             <ThemeToggle />
           </div>
 
-          <button
-            type="button"
-            class="btn btn-outline btn-error btn-sm w-full gap-2 rounded-m3-sm min-h-10"
-            @click="handleLogout"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-              <polyline points="16 17 21 12 16 7"></polyline>
-              <line x1="21" y1="12" x2="9" y2="12"></line>
-            </svg>
-            <span>Se déconnecter</span>
-          </button>
+          <div class="flex items-center gap-3 px-1">
+            <div class="avatar placeholder shrink-0">
+              <div class="bg-primary/15 text-primary rounded-full w-10 h-10 font-bold text-sm flex items-center justify-center">
+                <span>{{ userInitial }}</span>
+              </div>
+            </div>
+            <div class="flex flex-col min-w-0">
+              <span class="font-bold text-sm text-base-content truncate">{{ profile?.full_name || 'Gestionnaire' }}</span>
+              <span class="text-xs text-base-content/60 truncate">{{ profile?.email || 'Compte gestionnaire' }}</span>
+            </div>
+            <button
+              type="button"
+              class="btn btn-ghost btn-circle text-error min-w-11 min-h-11 ml-auto shrink-0"
+              aria-label="Se déconnecter"
+              title="Se déconnecter"
+              @click="handleLogout"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+              </svg>
+            </button>
+          </div>
         </div>
       </aside>
     </div>

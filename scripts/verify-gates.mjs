@@ -923,10 +923,26 @@ export function checkDrawerSettingsLayout() {
 }
 
 /**
- * Le contrôle d'apparence est un bouton unique, contourné et pleine largeur, qui nomme son action.
- * La variante icône, devenue morte, est retirée.
+ * Le contrôle d'apparence est un groupe segmenté à trois états nommés. Chaque segment porte un
+ * libellé visible, un état aria-pressed et un nom accessible, et atteint la cible de 44px.
  */
 export function checkAppearanceControlMarkup() {
+  const SEGMENT_TOKENS = ['join-item', 'flex-1', 'min-h-11'];
+
+  const segmentComplete = (tag) =>
+    SEGMENT_TOKENS.every((token) => tag.includes(token)) &&
+    /:aria-pressed=/.test(tag) &&
+    /:aria-label=/.test(tag);
+
+  if (segmentComplete('<button class="join-item btn">')) {
+    console.error('FAILURE G23: le détecteur de segment est aveugle, oracle invalide');
+    return false;
+  }
+  if (!segmentComplete('<button class="join-item flex-1 min-h-11" :aria-pressed="x" :aria-label="y">')) {
+    console.error('FAILURE G23: le détecteur rejette un segment conforme');
+    return false;
+  }
+
   const file = path.join(SRC_DIR, 'components', 'shared', 'ThemeToggle.vue');
   if (!fs.existsSync(file)) {
     console.error('FAILURE G23: ThemeToggle.vue introuvable');
@@ -938,34 +954,41 @@ export function checkAppearanceControlMarkup() {
   let ok = true;
 
   if (buttons.length !== 1) {
-    console.error(`FAILURE G23: un seul bouton attendu, ${buttons.length} trouvés`);
+    console.error(`FAILURE G23: un seul gabarit de segment attendu, ${buttons.length} trouvés`);
     ok = false;
   }
   if (/defineProps/.test(content)) {
-    console.error('FAILURE G23: la variante à propriété subsiste alors que plus rien ne l\'utilise');
+    console.error("FAILURE G23: la variante à propriété subsiste alors que plus rien ne l'utilise");
     ok = false;
   }
 
-  const buttonTag = content.match(/<button[^>]*>/s);
-  const buttonMarkup = buttonTag ? buttonTag[0] : '';
-  for (const token of ['btn-outline', 'w-full', 'min-h-11']) {
-    if (!buttonMarkup.includes(token)) {
-      console.error(`FAILURE G23: la classe ${token} manque au bouton d'apparence`);
+  const buttonMarkup = (content.match(/<button[^>]*>/s) || [''])[0];
+  if (!segmentComplete(buttonMarkup)) {
+    console.error(`FAILURE G23: segment incomplet (${buttonMarkup.trim()})`);
+    ok = false;
+  }
+
+  for (const value of ['system', 'light', 'dark']) {
+    if (!content.includes(`value: '${value}'`)) {
+      console.error(`FAILURE G23: l'état ${value} n'est pas déclaré`);
       ok = false;
     }
   }
 
-  if (!/Thème : \$\{|Thème : /.test(content)) {
-    console.error("FAILURE G23: le libellé visible n'annonce pas « Thème : <mode> »");
-    ok = false;
+  const groupTag = (content.match(/<div[^>]*role="group"[^>]*>/s) || [''])[0];
+  for (const token of ['role="group"', 'aria-label=', 'join']) {
+    if (!groupTag.includes(token)) {
+      console.error(`FAILURE G23: le groupe segmenté n'expose pas ${token}`);
+      ok = false;
+    }
   }
-  if (!/:aria-label="hint"/.test(buttonMarkup)) {
-    console.error("FAILURE G23: le bouton n'expose pas son nom accessible via hint");
+  if (!/\{\{ option\.label \}\}/.test(content)) {
+    console.error("FAILURE G23: le segment n'expose pas son libellé visible");
     ok = false;
   }
 
   if (!ok) return false;
-  console.log('G23 passed: appearance control is a single full-width outlined button');
+  console.log('G23 passed: appearance control is a three-state segmented group');
   return true;
 }
 
@@ -1655,67 +1678,78 @@ export function checkManagerNavTargets() {
   return true;
 }
 
-/** Le bloc identité vit en tête du tiroir, le pied ne porte que les réglages. */
-export function checkDrawerIdentity() {
-  const identityHeads = (aside) => {
+/**
+ * Le pied des deux tiroirs suit la même séquence : statut réseau, apparence, identité, sortie.
+ * L'identité vit au pied, à côté d'une déconnexion en icône, et la marque reste en tête.
+ */
+export function checkDrawerFooter() {
+  const footerOrdered = (aside) => {
+    const status = aside.indexOf('Statut réseau');
     const identity = aside.indexOf('userInitial');
-    const nav = aside.indexOf('<nav');
-    return identity !== -1 && nav !== -1 && identity < nav;
+    const logout = aside.indexOf('aria-label="Se déconnecter"');
+    return status !== -1 && identity !== -1 && logout !== -1 && status < identity && identity < logout;
   };
 
-  if (identityHeads('<nav></nav><span>{{ userInitial }}</span>')) {
-    console.error('FAILURE G35: le détecteur de position du bloc identité est aveugle, oracle invalide');
+  if (footerOrdered('<span>{{ userInitial }}</span>Statut réseau aria-label="Se déconnecter"')) {
+    console.error('FAILURE G35: le détecteur d\'ordre du pied est aveugle, oracle invalide');
     return false;
   }
 
-  const manager = readLayout('ManagerLayout.vue');
-  const employee = readLayout('EmployeeLayout.vue');
-  if (manager === null || employee === null) {
-    console.error('FAILURE G35: une des deux mises en page est introuvable');
-    return false;
-  }
-
-  const aside = extractAside(manager);
-  const footerAt = aside.indexOf('Statut réseau');
-  const footer = footerAt === -1 ? '' : aside.slice(footerAt);
   let ok = true;
+  for (const layoutName of ['ManagerLayout.vue', 'EmployeeLayout.vue']) {
+    const content = readLayout(layoutName);
+    if (content === null) {
+      console.error(`FAILURE G35: ${layoutName} introuvable`);
+      ok = false;
+      continue;
+    }
 
-  if (!identityHeads(aside)) {
-    console.error("FAILURE G35: le bloc identité du gestionnaire n'est pas monté en tête de tiroir");
-    ok = false;
-  }
-  if (!identityHeads(extractAside(employee))) {
-    console.error('FAILURE G35: le tiroir employé de référence a perdu son bloc identité en tête');
-    ok = false;
-  }
-  for (const token of ['w-10 h-10', 'font-bold text-sm']) {
-    if (!aside.includes(token)) {
-      console.error(`FAILURE G35: le bloc identité gestionnaire n'aligne pas ${token} sur l'employé`);
+    const aside = extractAside(content);
+    const footerAt = aside.indexOf('Statut réseau');
+    const footer = footerAt === -1 ? '' : aside.slice(footerAt);
+    const header = aside.slice(0, aside.indexOf('<nav'));
+
+    if (!footerOrdered(aside)) {
+      console.error(`FAILURE G35: ${layoutName} n'ordonne pas son pied statut, identité puis sortie`);
+      ok = false;
+      continue;
+    }
+    for (const token of ['w-10 h-10', 'font-bold text-sm']) {
+      if (!footer.includes(token)) {
+        console.error(`FAILURE G35: ${layoutName} n'aligne pas le bloc identité sur ${token}`);
+        ok = false;
+      }
+    }
+    for (const token of ['<SyncIndicator', '<ThemeToggle', 'handleLogout']) {
+      if (!footer.includes(token)) {
+        console.error(`FAILURE G35: le pied de ${layoutName} n'expose plus ${token}`);
+        ok = false;
+      }
+    }
+    if (!header.includes('PresenceApp')) {
+      console.error(`FAILURE G35: l'en-tête de ${layoutName} ne porte plus la marque`);
       ok = false;
     }
-  }
-  if (footerAt === -1) {
-    console.error("FAILURE G35: le pied de tiroir gestionnaire n'expose plus son statut réseau");
-    ok = false;
-  }
-  if (footer.includes('userInitial')) {
-    console.error('FAILURE G35: le pied de tiroir répète le bloc identité');
-    ok = false;
-  }
-  for (const token of ['<SyncIndicator', '<ThemeToggle', 'handleLogout']) {
-    if (!footer.includes(token)) {
-      console.error(`FAILURE G35: le pied de tiroir gestionnaire n'expose plus ${token}`);
+    if (!header.includes('badge badge-primary badge-xs')) {
+      console.error(`FAILURE G35: l'en-tête de ${layoutName} ne porte plus de badge d'espace`);
+      ok = false;
+    }
+    if (/btn-outline btn-error btn-sm w-full/.test(aside)) {
+      console.error(`FAILURE G35: ${layoutName} garde une déconnexion pleine largeur en plus de l'icône`);
       ok = false;
     }
   }
 
   if (!ok) return false;
-  console.log('G35 passed: manager identity sits in the drawer header and the footer keeps only settings');
+  console.log('G35 passed: both drawers end with settings, identity and an icon logout');
   return true;
 }
 
-/** La passerelle inter-espace ne concurrence plus l'entrée sélectionnée. */
-export function checkManagerGatewayNeutral() {
+/**
+ * Dans les deux espaces, la passerelle inter-espace reste neutre : la teinte primaire et la
+ * pastille pleine sont réservées à l'entrée sélectionnée, qui doit rester unique.
+ */
+export function checkGatewayNeutral() {
   const isNeutral = (tag) => tag !== null && !tag.includes('text-primary') && !tag.includes('bg-primary');
 
   if (
@@ -1727,31 +1761,39 @@ export function checkManagerGatewayNeutral() {
     return false;
   }
 
-  const manager = readLayout('ManagerLayout.vue');
-  if (manager === null) {
-    console.error('FAILURE G36: ManagerLayout.vue introuvable');
-    return false;
-  }
+  const gateways = [
+    { layout: 'ManagerLayout.vue', marker: "handleNav('/employee')" },
+    { layout: 'EmployeeLayout.vue', marker: "handleNav('/manager')" },
+  ];
 
-  const aside = extractAside(manager);
-  const gateway = buttonTagBefore(aside, "handleNav('/employee')");
-  const selected = (aside.match(/bg-primary\/15 text-primary font-bold/g) || []).length;
   let ok = true;
+  for (const { layout, marker } of gateways) {
+    const content = readLayout(layout);
+    if (content === null) {
+      console.error(`FAILURE G36: ${layout} introuvable`);
+      ok = false;
+      continue;
+    }
 
-  if (gateway === null) {
-    console.error("FAILURE G36: la passerelle vers l'espace personnel est introuvable dans le tiroir");
-    ok = false;
-  } else if (!isNeutral(gateway)) {
-    console.error(`FAILURE G36: la passerelle porte encore la teinte primaire (${gateway.trim()})`);
-    ok = false;
-  }
-  if (selected !== 1) {
-    console.error(`FAILURE G36: une seule entrée sélectionnée attendue, ${selected} trouvées`);
-    ok = false;
+    const aside = extractAside(content);
+    const gateway = buttonTagBefore(aside, marker);
+    const selected = (aside.match(/bg-primary\/15 text-primary font-bold/g) || []).length;
+
+    if (gateway === null) {
+      console.error(`FAILURE G36: la passerelle de ${layout} est introuvable dans le tiroir`);
+      ok = false;
+    } else if (!isNeutral(gateway)) {
+      console.error(`FAILURE G36: la passerelle de ${layout} porte encore la teinte primaire (${gateway.trim()})`);
+      ok = false;
+    }
+    if (selected !== 1) {
+      console.error(`FAILURE G36: une seule entrée sélectionnée attendue dans ${layout}, ${selected} trouvées`);
+      ok = false;
+    }
   }
 
   if (!ok) return false;
-  console.log('G36 passed: the gateway no longer mimics a selected entry');
+  console.log('G36 passed: no gateway entry mimics a selected destination');
   return true;
 }
 
@@ -1830,29 +1872,71 @@ export function checkManagerTonalRamp() {
 }
 
 /**
- * Révision de référence, antérieure au lot : la comparaison prouve que ce lot n'a pas touché la
- * navigation employé. Surchargeable pour éprouver que l'oracle sait échouer.
+ * Les deux tiroirs partagent la même grammaire : marque et badge d'espace en tête, sections
+ * libellées, barre d'accent sur l'entrée sélectionnée. La navigation employé n'est plus
+ * intouchable (autorisation explicite consignée dans GATES.md), mais aucun espace n'introduit
+ * de rail en icônes, ce que la règle 07 §7 continue d'interdire côté employé.
  */
-const EMPLOYEE_LAYOUT_BASELINE = process.env.EMPLOYEE_LAYOUT_BASELINE || 'cdb558f';
+export function checkDrawerSharedGrammar() {
+  const ACCENT_BAR = 'absolute left-1.5 top-1/2 -translate-y-1/2 w-1 h-5 rounded-full';
+  const SECTION_LABEL = 'px-3.5 text-xs font-medium uppercase tracking-wide text-base-content/60';
 
-/** La navigation employé reste intacte, octet pour octet. */
-export function checkEmployeeUntouched() {
-  const target = 'src/layouts/EmployeeLayout.vue';
-  const result = spawnSync('git', ['diff', '--quiet', EMPLOYEE_LAYOUT_BASELINE, '--', target], {
-    encoding: 'utf8',
-  });
+  const grammarComplete = (aside) =>
+    ['Navigation', 'Mon espace', 'PresenceApp'].every((token) => aside.includes(token)) &&
+    aside.includes(ACCENT_BAR) &&
+    aside.includes(SECTION_LABEL);
 
-  if (result.status === 0) {
-    console.log('G38 passed: employee layout is byte-identical to the baseline revision');
-    return true;
-  }
-  if (result.status === 1) {
-    console.error(`FAILURE G38: ${target} a changé depuis ${EMPLOYEE_LAYOUT_BASELINE}`);
+  if (grammarComplete('<aside></aside>')) {
+    console.error('FAILURE G40: le détecteur de grammaire est aveugle, oracle invalide');
     return false;
   }
-  console.error(`FAILURE G38: git diff indisponible sur ${EMPLOYEE_LAYOUT_BASELINE} (statut ${result.status})`);
-  if (result.stderr) console.error(result.stderr.trim());
-  return false;
+
+  const spaces = [
+    { layout: 'ManagerLayout.vue', badge: 'Espace Manager' },
+    { layout: 'EmployeeLayout.vue', badge: 'Espace Collaborateur' },
+  ];
+
+  let ok = true;
+  for (const { layout, badge } of spaces) {
+    const content = readLayout(layout);
+    if (content === null) {
+      console.error(`FAILURE G40: ${layout} introuvable`);
+      ok = false;
+      continue;
+    }
+
+    const aside = extractAside(content);
+    if (!grammarComplete(aside)) {
+      console.error(`FAILURE G40: ${layout} ne partage pas la grammaire de tiroir (sections, accent, marque)`);
+      ok = false;
+    }
+    if (!aside.includes(`>${badge}<`)) {
+      console.error(`FAILURE G40: ${layout} n'annonce pas son badge « ${badge} »`);
+      ok = false;
+    }
+
+    const nav = aside.slice(aside.indexOf('<nav'), aside.indexOf('</nav>'));
+    if ((nav.match(new RegExp(ACCENT_BAR, 'g')) || []).length !== 1) {
+      console.error(`FAILURE G40: ${layout} ne monte pas exactement une barre d'accent dans sa navigation`);
+      ok = false;
+    }
+    if (!/aria-hidden="true"/.test(nav)) {
+      console.error(`FAILURE G40: la barre d'accent de ${layout} n'est pas masquée aux lecteurs d'écran`);
+      ok = false;
+    }
+    if (nav.indexOf('Navigation') > nav.indexOf('Mon espace')) {
+      console.error(`FAILURE G40: ${layout} n'ordonne pas ses sections Navigation puis Mon espace`);
+      ok = false;
+    }
+    if (/navigation-rail|NavigationRail/.test(content)) {
+      console.error(`FAILURE G40: ${layout} introduit un rail en icônes, interdit par la règle 07 §7`);
+      ok = false;
+    }
+  }
+
+  if (!ok) return false;
+  console.log('G40 passed: both drawers share one navigation grammar');
+  return true;
 }
 
 // Exécution CLI
@@ -1927,14 +2011,14 @@ if (arg === '--emojis') {
   success = checkDrawerParity();
 } else if (arg === '--manager-nav-targets') {
   success = checkManagerNavTargets();
-} else if (arg === '--drawer-identity') {
-  success = checkDrawerIdentity();
-} else if (arg === '--manager-gateway-neutral') {
-  success = checkManagerGatewayNeutral();
+} else if (arg === '--drawer-footer') {
+  success = checkDrawerFooter();
+} else if (arg === '--gateway-neutral') {
+  success = checkGatewayNeutral();
 } else if (arg === '--manager-tonal-ramp') {
   success = checkManagerTonalRamp();
-} else if (arg === '--employee-untouched') {
-  success = checkEmployeeUntouched();
+} else if (arg === '--drawer-shared-grammar') {
+  success = checkDrawerSharedGrammar();
 } else if (arg === '--manager-build') {
   success = checkBuild('G39', 'production build succeeds with exit code 0');
 } else if (arg === '--all') {
@@ -1969,14 +2053,14 @@ if (arg === '--emojis') {
   const r32 = checkManagerRamp();
   const r33 = checkDrawerParity();
   const r34 = checkManagerNavTargets();
-  const r35 = checkDrawerIdentity();
-  const r36 = checkManagerGatewayNeutral();
+  const r35 = checkDrawerFooter();
+  const r36 = checkGatewayNeutral();
   const r37 = checkManagerTonalRamp();
-  const r38 = checkEmployeeUntouched();
   const r39 = checkBuild('G39', 'production build succeeds with exit code 0');
-  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r38 && r39;
+  const r40 = checkDrawerSharedGrammar();
+  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40;
 } else {
-  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-identity|--manager-gateway-neutral|--manager-tonal-ramp|--employee-untouched|--manager-build|--build|--all]`);
+  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--manager-build|--build|--all]`);
   process.exit(1);
 }
 

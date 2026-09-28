@@ -231,35 +231,60 @@ window.__harnessReady = true
 const MEASURE_EXPRESSION = `(() => {
   const collapse = (value) => (value || '').replace(/\\s+/g, ' ').trim()
   const background = (node) => (node ? getComputedStyle(node).backgroundColor : null)
-  const labelButton = document.querySelector('#toggle-host button')
   const alertButton = document.querySelector('#sync-alert-host button')
-  const labelRect = labelButton ? labelButton.getBoundingClientRect() : null
+  const measureToggle = (hostSelector) => {
+    const group = document.querySelector(hostSelector + ' [role="group"]')
+    const segments = group ? [...group.querySelectorAll('button')] : []
+    return {
+      groupAria: group ? group.getAttribute('aria-label') : null,
+      groupWidth: group ? Math.round(group.getBoundingClientRect().width) : 0,
+      groupHeight: group ? Math.round(group.getBoundingClientRect().height) : 0,
+      segments: segments.map((segment) => {
+        const rect = segment.getBoundingClientRect()
+        const label = segment.querySelector('span')
+        return {
+          text: collapse(segment.innerText),
+          aria: segment.getAttribute('aria-label'),
+          pressed: segment.getAttribute('aria-pressed'),
+          width: Math.round(rect.width),
+          height: Math.round(rect.height),
+          center: { x: Math.round(rect.x + rect.width / 2), y: Math.round(rect.y + rect.height / 2) },
+          overflow: label ? Math.max(0, label.scrollWidth - label.clientWidth) : 0,
+        }
+      }),
+    }
+  }
   const measureSettings = (hostId) => {
     const host = document.querySelector('#' + hostId)
     const block = document.querySelector('#' + hostId + '-block')
     if (!host || !block) return null
     const blockRect = block.getBoundingClientRect()
-    const button = block.querySelector('button.btn')
+    const group = block.querySelector('[role="group"]')
+    const segments = group ? [...group.querySelectorAll('button')] : []
     const badge = block.querySelector('.badge')
     const badgeText = badge ? badge.querySelector('span[class*="text-xs"]') : null
-    const buttonRect = button ? button.getBoundingClientRect() : null
+    const groupRect = group ? group.getBoundingClientRect() : null
     const badgeRect = badge ? badge.getBoundingClientRect() : null
-    const style = button ? getComputedStyle(button) : null
+    const groupStyle = group ? getComputedStyle(group) : null
+    const labelOverflow = segments.reduce((worst, segment) => {
+      const label = segment.querySelector('span')
+      return label ? Math.max(worst, label.scrollWidth - label.clientWidth) : worst
+    }, 0)
     return {
       hostWidth: Math.round(host.getBoundingClientRect().width),
       scrollWidth: block.scrollWidth,
       clientWidth: block.clientWidth,
       right: Math.round(blockRect.right),
-      buttonText: button ? collapse(button.innerText) : null,
-      buttonAria: button ? button.getAttribute('aria-label') : null,
-      buttonWidth: buttonRect ? Math.round(buttonRect.width) : 0,
-      buttonHeight: buttonRect ? Math.round(buttonRect.height) : 0,
-      buttonTop: buttonRect ? Math.round(buttonRect.top) : 0,
-      buttonRight: buttonRect ? Math.round(buttonRect.right) : 0,
-      buttonBottom: buttonRect ? Math.round(buttonRect.bottom) : 0,
-      buttonBorderWidth: style ? style.borderTopWidth : null,
-      buttonBorderColor: style ? style.borderTopColor : null,
-      buttonBackground: style ? style.backgroundColor : null,
+      groupTop: groupRect ? Math.round(groupRect.top) : 0,
+      groupRight: groupRect ? Math.round(groupRect.right) : 0,
+      groupWidth: groupRect ? Math.round(groupRect.width) : 0,
+      groupHeight: groupRect ? Math.round(groupRect.height) : 0,
+      groupBorderWidth: groupStyle ? groupStyle.borderTopWidth : null,
+      groupBorderColor: groupStyle ? groupStyle.borderTopColor : null,
+      groupBackground: groupStyle ? groupStyle.backgroundColor : null,
+      segmentCount: segments.length,
+      segmentHeights: segments.map((segment) => Math.round(segment.getBoundingClientRect().height)),
+      labelOverflow,
       badgeRight: badgeRect ? Math.round(badgeRect.right) : 0,
       badgeBottom: badgeRect ? Math.round(badgeRect.bottom) : 0,
       badgeText: badge ? collapse(badge.innerText) : null,
@@ -294,11 +319,7 @@ const MEASURE_EXPRESSION = `(() => {
     stored: window.localStorage.getItem('presence_theme'),
     bodyBg: background(document.body),
     meta: meta ? meta.content : null,
-    labelText: labelButton ? collapse(labelButton.innerText) : null,
-    labelAria: labelButton ? labelButton.getAttribute('aria-label') : null,
-    labelWidth: labelRect ? Math.round(labelRect.width) : 0,
-    labelHeight: labelRect ? Math.round(labelRect.height) : 0,
-    labelCenter: labelRect ? { x: Math.round(labelRect.x + labelRect.width / 2), y: Math.round(labelRect.y + labelRect.height / 2) } : null,
+    toggle: measureToggle('#toggle-host'),
     settings: measureSettings('drawer-settings'),
     narrow: measureSettings('drawer-settings-narrow'),
     syncAlertText: alertButton ? collapse(alertButton.innerText) : null,
@@ -497,37 +518,47 @@ async function verifyTheme(cdp) {
   check('état initial : surface M3 claire rendue', () => assertEqual(initial.bodyBg, LIGHT_SURFACE, 'fond du corps'))
   check('état initial : meta theme-color alignée sur la surface claire', () => assertEqual(initial.meta, '#fdfcff', 'meta'))
 
-  check('bouton unique : mode courant nommé dans le libellé visible', () =>
-    assertEqual(initial.labelText, 'Thème : Système', 'libellé'))
-  check('bouton unique : action suivante annoncée', () => {
-    assertTrue((initial.labelAria || '').includes('Thème : Système'), `nom accessible : ${initial.labelAria}`)
-    assertTrue((initial.labelAria || '').includes('passer au thème clair'), 'action non annoncée')
-  })
-  check('bouton unique : cible tactile au moins 44px de haut', () => {
-    assertTrue(initial.labelHeight >= 44, `hauteur ${initial.labelHeight}px`)
-  })
+  const segment = (snapshot, label) =>
+    (snapshot.toggle?.segments || []).find((entry) => entry.text === label)
 
-  await cdp.clickAt(initial.labelCenter)
+  check('contrôle segmenté monté', () => assertTrue(Boolean(initial.toggle), 'aucun groupe segmenté mesuré'))
+  check('contrôle segmenté : trois états nommés', () =>
+    assertEqual((initial.toggle.segments || []).map((entry) => entry.text).join('|'), 'Système|Clair|Sombre', 'segments'))
+  check('contrôle segmenté : groupe nommé', () =>
+    assertEqual(initial.toggle.groupAria, "Apparence de l'interface", 'nom du groupe'))
+  check('contrôle segmenté : état courant annoncé par aria-pressed', () => {
+    assertEqual(segment(initial, 'Système')?.pressed, 'true', 'segment Système')
+    assertEqual(segment(initial, 'Clair')?.pressed, 'false', 'segment Clair')
+  })
+  check('contrôle segmenté : chaque segment nomme son mode', () =>
+    assertTrue((segment(initial, 'Clair')?.aria || '').includes('Clair'), `nom accessible : ${segment(initial, 'Clair')?.aria}`))
+  check('contrôle segmenté : cibles tactiles au moins 44px de haut', () =>
+    assertTrue(
+      (initial.toggle.segments || []).every((entry) => entry.height >= 44),
+      `hauteurs : ${JSON.stringify((initial.toggle.segments || []).map((entry) => entry.height))}`
+    ))
+
+  await cdp.clickAt(segment(initial, 'Clair').center)
   const light = await cdp.measure()
-  check('premier clic : thème clair forcé', () => assertEqual(light.theme, 'light', 'data-theme'))
-  check('premier clic : préférence persistée', () => assertEqual(light.stored, 'light', 'localStorage'))
-  check('premier clic : surface claire rendue', () => assertEqual(light.bodyBg, LIGHT_SURFACE, 'fond du corps'))
-  check('premier clic : libellé du mode mis à jour', () => assertEqual(light.labelText, 'Thème : Clair', 'libellé'))
+  check('segment clair : thème clair forcé', () => assertEqual(light.theme, 'light', 'data-theme'))
+  check('segment clair : préférence persistée', () => assertEqual(light.stored, 'light', 'localStorage'))
+  check('segment clair : surface claire rendue', () => assertEqual(light.bodyBg, LIGHT_SURFACE, 'fond du corps'))
+  check('segment clair : état porté par le segment clair', () =>
+    assertEqual(segment(light, 'Clair')?.pressed, 'true', 'segment Clair'))
   await cdp.screenshot('theme-light.png')
 
-  await cdp.clickAt(light.labelCenter)
+  await cdp.clickAt(segment(light, 'Sombre').center)
   const dark = await cdp.measure()
-  check('deuxième clic : thème sombre forcé', () => assertEqual(dark.theme, 'dark', 'data-theme'))
-  check('deuxième clic : préférence persistée', () => assertEqual(dark.stored, 'dark', 'localStorage'))
-  check('deuxième clic : surface sombre réellement rendue', () => assertEqual(dark.bodyBg, DARK_SURFACE, 'fond du corps'))
+  check('segment sombre : thème sombre forcé', () => assertEqual(dark.theme, 'dark', 'data-theme'))
+  check('segment sombre : préférence persistée', () => assertEqual(dark.stored, 'dark', 'localStorage'))
+  check('segment sombre : surface sombre réellement rendue', () => assertEqual(dark.bodyBg, DARK_SURFACE, 'fond du corps'))
   check('les deux thèmes produisent des surfaces distinctes', () => assertTrue(light.bodyBg !== dark.bodyBg, 'surfaces identiques'))
   check('meta theme-color suit le thème sombre', () => assertEqual(dark.meta, '#111318', 'meta'))
-  check('deuxième clic : libellé du mode mis à jour', () => assertEqual(dark.labelText, 'Thème : Sombre', 'libellé'))
   await cdp.screenshot('theme-dark.png')
 
-  await cdp.clickAt(dark.labelCenter)
+  await cdp.clickAt(segment(dark, 'Système').center)
   const backToSystem = await cdp.measure()
-  check('troisième clic : retour au réglage système', () => assertEqual(backToSystem.theme, null, 'data-theme'))
+  check('segment système : retour au réglage système', () => assertEqual(backToSystem.theme, null, 'data-theme'))
   check('retour système : préférence effacée', () => assertEqual(backToSystem.stored, null, 'localStorage'))
 
   // Le réglage système est émulé au niveau du moteur : le thème doit suivre sans préférence forcée
@@ -725,26 +756,28 @@ async function verifyAppearanceControl(cdp) {
     assertTrue(settings.badgeRight <= settings.right + 0.5, `badge ${settings.badgeRight} > bloc ${settings.right}`)
   )
   check('le badge ne pousse plus le contrôle d\u2019apparence', () =>
-    assertTrue(settings.badgeBottom <= settings.buttonTop + 0.5, `bas du badge ${settings.badgeBottom} > haut du bouton ${settings.buttonTop}`)
+    assertTrue(settings.badgeBottom <= settings.groupTop + 0.5, `bas du badge ${settings.badgeBottom} > haut du groupe ${settings.groupTop}`)
   )
 
-  check('le contrôle d\u2019apparence nomme son action', () => {
-    assertTrue((settings.buttonText || '').includes('Thème : Système'), `libellé : ${settings.buttonText}`)
-    assertTrue((settings.buttonAria || '').includes('Thème : Système'), `nom accessible : ${settings.buttonAria}`)
-  })
+  check('le contrôle d\u2019apparence présente ses trois états', () =>
+    assertEqual(settings.segmentCount, 3, 'segments')
+  )
   check('le contrôle d\u2019apparence occupe la largeur du pied de tiroir', () =>
-    assertTrue(settings.buttonWidth >= settings.clientWidth - 12, `bouton ${settings.buttonWidth}px pour un bloc de ${settings.clientWidth}px`)
+    assertTrue(settings.groupWidth >= settings.clientWidth - 12, `groupe ${settings.groupWidth}px pour un bloc de ${settings.clientWidth}px`)
   )
   check('le contrôle d\u2019apparence atteint 44px de haut', () =>
-    assertTrue(settings.buttonHeight >= 44, `hauteur ${settings.buttonHeight}px`)
+    assertTrue(
+      settings.groupHeight >= 44 && settings.segmentHeights.every((height) => height >= 44),
+      `groupe ${settings.groupHeight}px, segments ${JSON.stringify(settings.segmentHeights)}`
+    )
   )
   check('le contrôle d\u2019apparence reste dans le tiroir', () =>
-    assertTrue(settings.buttonRight <= settings.right + 0.5, `bouton ${settings.buttonRight} > bloc ${settings.right}`)
+    assertTrue(settings.groupRight <= settings.right + 0.5, `groupe ${settings.groupRight} > bloc ${settings.right}`)
   )
   check('le contrôle d\u2019apparence porte une bordure visible', () => {
-    assertTrue(parseFloat(settings.buttonBorderWidth) >= 1, `épaisseur de bordure ${settings.buttonBorderWidth}`)
-    assertTrue(settings.buttonBorderColor !== settings.buttonBackground, 'bordure indistinguable du fond')
-    assertTrue(settings.buttonBorderColor !== 'rgba(0, 0, 0, 0)', 'bordure transparente')
+    assertTrue(parseFloat(settings.groupBorderWidth) >= 1, `épaisseur de bordure ${settings.groupBorderWidth}`)
+    assertTrue(settings.groupBorderColor !== settings.groupBackground, 'bordure indistinguable du fond')
+    assertTrue(settings.groupBorderColor !== 'rgba(0, 0, 0, 0)', 'bordure transparente')
   })
 
   // Cas de torture : à 200px, la troncature doit s'engager au lieu de déborder. Sans ce contrôle,
@@ -752,11 +785,14 @@ async function verifyAppearanceControl(cdp) {
   check('sous contrainte extrême, la troncature s\u2019engage', () =>
     assertTrue(narrow.badgeTextScroll > narrow.badgeTextClient, `texte ${narrow.badgeTextScroll}px pour ${narrow.badgeTextClient}px`)
   )
+  check('sous contrainte extrême, un libellé de segment se tronque', () =>
+    assertTrue(narrow.labelOverflow > 0, `débordement mesuré : ${narrow.labelOverflow}px`)
+  )
   check('sous contrainte extrême, le bloc ne déborde pas malgré tout', () =>
     assertTrue(narrow.scrollWidth <= narrow.clientWidth + 1, `scroll ${narrow.scrollWidth} > client ${narrow.clientWidth}`)
   )
   check('sous contrainte extrême, le contrôle d\u2019apparence reste entier', () =>
-    assertTrue(narrow.buttonRight <= narrow.right + 0.5, `bouton ${narrow.buttonRight} > bloc ${narrow.right}`)
+    assertTrue(narrow.groupRight <= narrow.right + 0.5, `groupe ${narrow.groupRight} > bloc ${narrow.right}`)
   )
 
   await cdp.evaluate('window.__harness.setSyncing(false)')

@@ -126,21 +126,26 @@ async function runBehaviorSuite() {
   check('aucun attribut data-theme en mode système', () => assert.equal(first.dom.root.getAttribute('data-theme'), null))
   check('meta theme-color alignée sur la surface claire', () => assert.equal(first.dom.meta.content, LIGHT_SURFACE))
 
-  // 2. Cycle complet système vers clair, sombre, puis retour au système
-  firstTheme.cycleTheme()
-  check('cycle 1 : thème clair', () => assert.equal(firstTheme.mode.value, 'light'))
+  // 2. Sélection explicite de chaque état, puis retour au suivi système
+  firstTheme.setMode('light')
+  check('état clair forcé', () => assert.equal(firstTheme.mode.value, 'light'))
   check('attribut data-theme posé à light', () => assert.equal(first.dom.root.getAttribute('data-theme'), 'light'))
   check('préférence claire persistée', () => assert.equal(first.dom.storage.get('presence_theme'), 'light'))
 
-  firstTheme.cycleTheme()
-  check('cycle 2 : thème sombre', () => assert.equal(firstTheme.mode.value, 'dark'))
+  firstTheme.setMode('dark')
+  check('état sombre forcé', () => assert.equal(firstTheme.mode.value, 'dark'))
   check('attribut data-theme posé à dark', () => assert.equal(first.dom.root.getAttribute('data-theme'), 'dark'))
   check('meta theme-color alignée sur la surface sombre', () => assert.equal(first.dom.meta.content, DARK_SURFACE))
 
-  firstTheme.cycleTheme()
-  check('cycle 3 : retour au système', () => assert.equal(firstTheme.mode.value, 'system'))
+  firstTheme.setMode('system')
+  check('retour au suivi système', () => assert.equal(firstTheme.mode.value, 'system'))
   check('attribut supprimé au retour au système', () => assert.equal(first.dom.root.getAttribute('data-theme'), null))
   check('préférence effacée au retour au système', () => assert.equal(first.dom.storage.has('presence_theme'), false))
+
+  // 2 bis. Un état hors des valeurs connues ne change rien et n'écrit rien
+  firstTheme.setMode('blue')
+  check('état inconnu ignoré', () => assert.equal(firstTheme.mode.value, 'system'))
+  check('aucune préférence écrite pour un état inconnu', () => assert.equal(first.dom.storage.has('presence_theme'), false))
 
   // 3. Préférence stockée restaurée au chargement
   const restored = await freshModule({ stored: 'dark' })
@@ -161,8 +166,8 @@ async function runBehaviorSuite() {
   following.dom.emitSystemChange(false)
   check('changement de réglage système suivi par la meta', () => assert.equal(following.dom.meta.content, LIGHT_SURFACE))
 
-  following.module.useTheme().cycleTheme()
-  check('cycle depuis le système avec système sombre : thème clair forcé', () =>
+  following.module.useTheme().setMode('light')
+  check('thème clair forcé depuis le suivi système avec système sombre', () =>
     assert.equal(following.dom.root.getAttribute('data-theme'), 'light')
   )
   following.dom.emitSystemChange(true)
@@ -172,7 +177,7 @@ async function runBehaviorSuite() {
   const shared = await freshModule()
   const consumer = shared.module.useTheme()
   const otherConsumer = shared.module.useTheme()
-  consumer.cycleTheme()
+  consumer.setMode('light')
   check('état partagé entre deux consommateurs', () => assert.equal(otherConsumer.mode.value, 'light'))
   check('un seul écouteur système enregistré', () =>
     assert.equal(shared.dom.listeners.filter((entry) => entry.type === 'change').length, 1)
@@ -187,8 +192,8 @@ async function runBehaviorSuite() {
   const bare = await import(`${MODULE_URL}?scenario=${scenarioCounter}`)
   const bareTheme = bare.useTheme()
   check('absence de DOM : mode système sans exception', () => assert.equal(bareTheme.mode.value, 'system'))
-  check('absence de DOM : le cycle ne lève pas', () => {
-    bareTheme.cycleTheme()
+  check('absence de DOM : la sélection ne lève pas', () => {
+    bareTheme.setMode('light')
     assert.equal(bareTheme.mode.value, 'light')
   })
   check('clé de stockage exportée', () => assert.equal(bare.THEME_STORAGE_KEY, 'presence_theme'))

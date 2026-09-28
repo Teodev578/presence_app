@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, h } from 'vue'
 import { useRouter } from '../router'
 import { useAuth } from '../composables/useAuth'
 import { useProfile } from '../composables/useProfile'
@@ -17,6 +17,49 @@ const userInitial = computed(() => {
   const name = profile.value?.full_name || 'U'
   return name.trim()[0].toUpperCase()
 })
+
+const expectedArrival = computed(() => (profile.value?.expected_arrival_time || '09:00:00').slice(0, 5))
+
+const createIcon = (paths) => () =>
+  h(
+    'svg',
+    {
+      xmlns: 'http://www.w3.org/2000/svg',
+      viewBox: '0 0 24 24',
+      fill: 'none',
+      stroke: 'currentColor',
+      strokeWidth: '2',
+      strokeLinecap: 'round',
+      strokeLinejoin: 'round',
+      class: 'w-5 h-5 shrink-0',
+    },
+    paths.map(([tag, attrs]) => h(tag, attrs))
+  )
+
+const navItems = [
+  {
+    path: '/employee',
+    label: 'Pointage de présence',
+    isActive: (path) => path === '/employee' || path.includes('/employee/check'),
+    icon: createIcon([
+      ['circle', { cx: '12', cy: '12', r: '10' }],
+      ['polyline', { points: '12 6 12 12 16 14' }],
+    ]),
+  },
+  {
+    path: '/employee/availabilities',
+    label: 'Mes disponibilités',
+    isActive: (path) => path === '/employee/availabilities',
+    icon: createIcon([
+      ['rect', { x: '3', y: '4', width: '18', height: '18', rx: '2', ry: '2' }],
+      ['line', { x1: '16', y1: '2', x2: '16', y2: '6' }],
+      ['line', { x1: '8', y1: '2', x2: '8', y2: '6' }],
+      ['line', { x1: '3', y1: '10', x2: '21', y2: '10' }],
+    ]),
+  },
+]
+
+const canReachManagerSpace = computed(() => profile.value?.role === 'admin' || profile.value?.role === 'manager')
 
 const handleNav = (path) => {
   drawerOpen.value = false
@@ -79,17 +122,18 @@ const handleLogout = async () => {
       <label for="employee-drawer" aria-label="Fermer le menu" class="drawer-overlay"></label>
       <aside class="bg-base-200 border-r border-base-300/60 min-h-full w-72 sm:w-80 p-5 flex flex-col justify-between text-base-content">
         <div>
-          <!-- En-tête du volet : Profil utilisateur -->
+          <!-- En-tête Marque & Logo -->
           <div class="flex items-center justify-between pb-4 border-b border-base-300/60">
-            <div class="flex items-center gap-3 overflow-hidden">
-              <div class="avatar placeholder shrink-0">
-                <div class="bg-primary/15 text-primary rounded-full w-10 h-10 font-bold text-sm flex items-center justify-center">
-                  <span>{{ userInitial }}</span>
-                </div>
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-m3-sm bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
               </div>
-              <div class="flex flex-col min-w-0">
-                <span class="font-bold text-sm text-base-content truncate">{{ profile?.full_name || 'Mon compte' }}</span>
-                <span class="text-xs text-base-content/60 truncate">Prévu à {{ (profile?.expected_arrival_time || '09:00:00').slice(0, 5) }}</span>
+              <div class="flex flex-col">
+                <span class="font-bold text-base tracking-tight text-base-content">PresenceApp</span>
+                <span class="badge badge-primary badge-xs uppercase font-bold tracking-wider">Espace Collaborateur</span>
               </div>
             </div>
 
@@ -107,63 +151,54 @@ const handleLogout = async () => {
 
           <!-- Menu de navigation principal -->
           <nav class="mt-6" aria-label="Navigation latérale">
-            <ul class="menu bg-transparent w-full p-0 gap-1.5 font-medium">
-              <li>
+            <p class="px-3.5 text-xs font-medium uppercase tracking-wide text-base-content/60">Navigation</p>
+            <ul class="menu bg-transparent w-full p-0 gap-1.5 font-medium mt-2">
+              <li v-for="item in navItems" :key="item.path">
                 <button
                   type="button"
-                  class="flex items-center gap-3 py-3 px-3.5 rounded-m3-md transition-colors"
-                  :class="currentPath === '/employee' || currentPath.includes('/employee/check')
+                  class="relative flex items-center gap-3 py-3 px-3.5 rounded-m3-md transition-colors"
+                  :class="item.isActive(currentPath)
                     ? 'bg-primary/15 text-primary font-bold'
                     : 'hover:bg-base-300/60 text-base-content/80'"
-                  @click="handleNav('/employee')"
+                  @click="handleNav(item.path)"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10" />
-                    <polyline points="12 6 12 12 16 14" />
-                  </svg>
-                  <span>Pointage de présence</span>
-                </button>
-              </li>
-
-              <li>
-                <button
-                  type="button"
-                  class="flex items-center gap-3 py-3 px-3.5 rounded-m3-md transition-colors"
-                  :class="currentPath === '/employee/availabilities'
-                    ? 'bg-primary/15 text-primary font-bold'
-                    : 'hover:bg-base-300/60 text-base-content/80'"
-                  @click="handleNav('/employee/availabilities')"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                  </svg>
-                  <span>Mes disponibilités</span>
-                </button>
-              </li>
-
-              <li v-if="profile?.role === 'admin' || profile?.role === 'manager'" class="pt-2 border-t border-base-300/40 mt-2">
-                <button
-                  type="button"
-                  class="flex items-center gap-3 py-3 px-3.5 rounded-m3-md text-primary hover:bg-primary/10 transition-colors"
-                  @click="handleNav('/manager')"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="3" width="7" height="7"></rect>
-                    <rect x="14" y="3" width="7" height="7"></rect>
-                    <rect x="14" y="14" width="7" height="7"></rect>
-                    <rect x="3" y="14" width="7" height="7"></rect>
-                  </svg>
-                  <span>Espace Gestionnaire</span>
+                  <span
+                    aria-hidden="true"
+                    class="absolute left-1.5 top-1/2 -translate-y-1/2 w-1 h-5 rounded-full transition-colors"
+                    :class="item.isActive(currentPath) ? 'bg-primary' : 'bg-transparent'"
+                  ></span>
+                  <component :is="item.icon" />
+                  <span>{{ item.label }}</span>
                 </button>
               </li>
             </ul>
+
+            <!-- Passerelle vers l'espace de gestion. Rangée neutre : la teinte primaire
+                 est réservée à l'entrée sélectionnée. -->
+            <template v-if="canReachManagerSpace">
+              <p class="mt-5 px-3.5 text-xs font-medium uppercase tracking-wide text-base-content/60">Mon espace</p>
+              <ul class="menu bg-transparent w-full p-0 gap-1.5 font-medium mt-2">
+                <li>
+                  <button
+                    type="button"
+                    class="flex items-center gap-3 py-3 px-3.5 rounded-m3-md transition-colors text-base-content/80 hover:bg-base-300/60"
+                    @click="handleNav('/manager')"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="3" width="7" height="7"></rect>
+                      <rect x="14" y="3" width="7" height="7"></rect>
+                      <rect x="14" y="14" width="7" height="7"></rect>
+                      <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                    <span>Espace Gestionnaire</span>
+                  </button>
+                </li>
+              </ul>
+            </template>
           </nav>
         </div>
 
-        <!-- Pied de volet : Connectivité & Déconnexion -->
+        <!-- Pied de volet : réglages, identité et sortie -->
         <div class="pt-4 border-t border-base-300/60 flex flex-col gap-3">
           <!-- Deux rangées distinctes : le badge de synchronisation ne peut plus comprimer le contrôle d'apparence -->
           <div class="flex flex-col gap-2 px-1">
@@ -174,18 +209,30 @@ const handleLogout = async () => {
             <ThemeToggle />
           </div>
 
-          <button
-            type="button"
-            class="btn btn-outline btn-error btn-sm w-full gap-2 rounded-m3-sm min-h-10"
-            @click="handleLogout"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-              <polyline points="16 17 21 12 16 7"></polyline>
-              <line x1="21" y1="12" x2="9" y2="12"></line>
-            </svg>
-            <span>Se déconnecter</span>
-          </button>
+          <div class="flex items-center gap-3 px-1">
+            <div class="avatar placeholder shrink-0">
+              <div class="bg-primary/15 text-primary rounded-full w-10 h-10 font-bold text-sm flex items-center justify-center">
+                <span>{{ userInitial }}</span>
+              </div>
+            </div>
+            <div class="flex flex-col min-w-0">
+              <span class="font-bold text-sm text-base-content truncate">{{ profile?.full_name || 'Mon compte' }}</span>
+              <span class="text-xs text-base-content/60 truncate">Prévu à {{ expectedArrival }}</span>
+            </div>
+            <button
+              type="button"
+              class="btn btn-ghost btn-circle text-error min-w-11 min-h-11 ml-auto shrink-0"
+              aria-label="Se déconnecter"
+              title="Se déconnecter"
+              @click="handleLogout"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+              </svg>
+            </button>
+          </div>
         </div>
       </aside>
     </div>

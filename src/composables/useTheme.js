@@ -6,7 +6,7 @@ import { ref } from 'vue'
  */
 export const THEME_STORAGE_KEY = 'presence_theme'
 
-/** Ordre du cycle du commutateur : le réglage système reste accessible. */
+/** Ordre canonique des états d'apparence, du suivi système aux deux thèmes forcés. */
 export const THEME_MODES = ['system', 'light', 'dark']
 
 const mode = ref('system')
@@ -81,13 +81,9 @@ export function initTheme() {
 export function useTheme() {
   initTheme()
 
-  const cycleTheme = () => {
-    const currentIndex = THEME_MODES.indexOf(mode.value)
-    setMode(THEME_MODES[(currentIndex + 1) % THEME_MODES.length])
-  }
-
+  // Le contrôle segmenté vise un état nommé : le cycle pas à pas n'a plus d'appelant.
   return {
     mode,
-    cycleTheme,
+    setMode,
   }
 }

@@ -102,3 +102,48 @@ Hors périmètre, constaté avant ce lot sur des fichiers que ce lot ne touche p
   CHECK: node scripts/verify-gates.mjs --manager-build
   EXPECT: G39 passed: production build succeeds with exit code 0
   EVIDENCE: G39 passed: production build succeeds with exit code 0 (vérifié par node scripts/verify-gates.mjs --manager-build)
+
+---
+
+# Gates: Grammaire de Tiroir Commune, Sections et Contrôle Segmenté
+
+OWNS: src/layouts/ManagerLayout.vue, src/layouts/EmployeeLayout.vue, src/components/shared/ThemeToggle.vue, src/composables/useTheme.js, scripts/verify-gates.mjs, scripts/verify-browser.mjs, scripts/test-theme-toggle.mjs, GATES.md, AGENTS.md
+
+Scope: Transposer la grammaire de la maquette dans les deux tiroirs, sans panneau flottant : marque et badge d'espace en tête, libellés de section Navigation puis Mon espace, barre d'accent sur l'entrée sélectionnée, passagère neutre, pied ordonné en statut réseau, apparence, identité et déconnexion en icône. Le contrôle d'apparence devient un groupe segmenté à trois états. Le seuil de déploiement à 1024 px reste inchangé, et ni compteurs ni recherche ne sont ajoutés.
+
+- [x] G23 (réécrite): Le contrôle d'apparence est un groupe segmenté à trois états nommés, chacun doté d'un libellé visible, d'un état aria-pressed et d'une cible de 44px
+  CHECK: node scripts/verify-gates.mjs --appearance-control-markup
+  EXPECT: G23 passed: appearance control is a three-state segmented group
+  EVIDENCE: G23 passed: appearance control is a three-state segmented group (vérifié par node scripts/verify-gates.mjs --appearance-control-markup)
+
+- [x] G35 (réécrite): Les deux pieds de tiroir ordonnent statut réseau, apparence, identité puis déconnexion en icône, la marque restant en tête
+  CHECK: node scripts/verify-gates.mjs --drawer-footer
+  EXPECT: G35 passed: both drawers end with settings, identity and an icon logout
+  EVIDENCE: G35 passed: both drawers end with settings, identity and an icon logout (vérifié par node scripts/verify-gates.mjs --drawer-footer)
+
+- [x] G36 (étendue): Aucune passerelle inter-espace ne singe une entrée sélectionnée, dans l'un ou l'autre espace
+  CHECK: node scripts/verify-gates.mjs --gateway-neutral
+  EXPECT: G36 passed: no gateway entry mimics a selected destination
+  EVIDENCE: G36 passed: no gateway entry mimics a selected destination (vérifié par node scripts/verify-gates.mjs --gateway-neutral)
+
+- [x] G40: Les deux tiroirs partagent une seule grammaire (marque, badge d'espace, sections libellées, barre d'accent masquée aux lecteurs d'écran) et n'introduisent aucun rail en icônes
+  CHECK: node scripts/verify-gates.mjs --drawer-shared-grammar
+  EXPECT: G40 passed: both drawers share one navigation grammar
+  EVIDENCE: G40 passed: both drawers share one navigation grammar (vérifié par node scripts/verify-gates.mjs --drawer-shared-grammar)
+
+- [x] G41: Le contrôle segmenté tient dans la cascade CSS réelle : nom de groupe, aria-pressed, cibles de 44px, bordure visible et troncature sous contrainte extrême
+  CHECK: CHROME_PATH=$(command -v google-chrome-stable) node scripts/verify-browser.mjs --theme --appearance-control
+  EXPECT: browser-verify: theme toggle passed
+  EVIDENCE: browser-verify: theme toggle passed et browser-verify: appearance control passed, 38 assertions vertes, aucune exception de page (vérifié par le parcours Chrome headless, copies dans .unlazy/evidence)
+
+- [x] G42: La suite comportementale du compositeur d'apparence couvre la sélection explicite de chaque état et le rejet d'un état inconnu
+  CHECK: node scripts/test-theme-toggle.mjs
+  EXPECT: theme-toggle: behavior suite passed
+  EVIDENCE: theme-toggle: behavior suite passed, 28 assertions vertes (vérifié par node scripts/test-theme-toggle.mjs)
+
+- [x] G38 (retirée): La porte qui exigeait un EmployeeLayout.vue identique octet pour octet à la révision cdb558f perd son objet, la sanctuarisation de la navigation employé ayant été levée par autorisation explicite de l'utilisateur. G40 la remplace et vérifie la parité de grammaire au lieu de l'immobilité.
+
+- [x] G39: Compilation de production Vite sans erreur validée par le code retour du sous-processus
+  CHECK: node scripts/verify-gates.mjs --manager-build
+  EXPECT: G39 passed: production build succeeds with exit code 0
+  EVIDENCE: G39 passed: production build succeeds with exit code 0 (vérifié par node scripts/verify-gates.mjs --manager-build)
