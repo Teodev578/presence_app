@@ -2253,6 +2253,65 @@ export function checkSidebarHandle() {
   return true;
 }
 
+/**
+ * G56 : Le dialogue de site et sa barre de recherche sont dimensionnés pour la lecture.
+ * Le dialogue est élargi, chaque champ texte remplit son conteneur et offre 44px de haut,
+ * le curseur occupe la largeur, et la recherche prend toute la largeur de sa carte.
+ */
+export function checkLocationsForm() {
+  const sliceDialog = (text) => {
+    const start = text.indexOf('<dialog');
+    const end = text.indexOf('</dialog>');
+    return start === -1 || end === -1 ? '' : text.slice(start, end + '</dialog>'.length);
+  };
+
+  const formGaps = (dialog) => {
+    const gaps = [];
+    if (!dialog.includes('max-w-xl')) gaps.push('dialogue non élargi');
+    if (!dialog.includes('bg-base-100')) gaps.push('dialogue hors élévation 3');
+    if (dialog.includes('input-sm')) gaps.push('champ rétréci (input-sm)');
+    if (dialog.includes('max-w-md')) gaps.push('largeur étroite (max-w-md)');
+    const inputs = dialog.match(/<input[\s\S]*?\/>/g) || [];
+    const textInputs = inputs.filter((tag) => /type="(text|number)"/.test(tag));
+    if (textInputs.length < 5) gaps.push(`champs texte insuffisants (${textInputs.length})`);
+    for (const tag of textInputs) {
+      if (!tag.includes('w-full')) gaps.push('champ sans w-full');
+      if (!tag.includes('min-h-11')) gaps.push('champ sous 44px');
+    }
+    const range = inputs.find((tag) => tag.includes('type="range"'));
+    if (!range || !range.includes('w-full')) gaps.push('curseur non pleine largeur');
+    return gaps;
+  };
+
+  // Contrôle négatif : un dialogue étroit aux champs rétrécis doit être refusé.
+  const bogus = sliceDialog(
+    '<dialog><div class="modal-box max-w-md bg-base-100">'
+      + '<input type="text" class="input input-sm" />'
+      + '<input type="range" class="range range-xs" /></div></dialog>'
+  );
+  if (formGaps(bogus).length === 0) {
+    console.error('FAILURE G56: le détecteur de dimensionnement est aveugle, oracle invalide');
+    return false;
+  }
+
+  const file = path.join(SRC_DIR, 'views', 'manager', 'LocationsView.vue');
+  if (!fs.existsSync(file)) {
+    console.error('FAILURE G56: LocationsView.vue introuvable');
+    return false;
+  }
+  const content = fs.readFileSync(file, 'utf8');
+  const gaps = formGaps(sliceDialog(content));
+  const searchFullWidth = /class="input input-bordered flex w-full/.test(content) && !content.includes('sm:w-80');
+  if (!searchFullWidth) gaps.push('barre de recherche non pleine largeur');
+
+  if (gaps.length > 0) {
+    console.error(`FAILURE G56: le dialogue de site reste sous-dimensionné -> ${[...new Set(gaps)].join(', ')}`);
+    return false;
+  }
+  console.log('G56 passed: the locations dialog fields and search fill their containers at 44px');
+  return true;
+}
+
 // Exécution CLI
 const arg = process.argv[2] || '--all';
 let success = true;
@@ -2339,6 +2398,8 @@ if (arg === '--emojis') {
   success = checkSidebarHandle();
 } else if (arg === '--sidebar-rail') {
   success = checkSidebarRail();
+} else if (arg === '--locations-form') {
+  success = checkLocationsForm();
 } else if (arg === '--sidebar-build') {
   success = checkBuild('G48', 'production build succeeds with exit code 0');
 } else if (arg === '--manager-build') {
@@ -2383,10 +2444,11 @@ if (arg === '--emojis') {
   const r43 = checkNavigationDocking();
   const r45 = checkSidebarRail();
   const r49 = checkSidebarHandle();
+  const r56 = checkLocationsForm();
   const r48 = r39; // Une seule compilation sert les portes de build G39 et G48
-  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48;
+  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56;
 } else {
-  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--manager-build|--sidebar-build|--build|--all]`);
+  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--manager-build|--sidebar-build|--build|--all]`);
   process.exit(1);
 }
 

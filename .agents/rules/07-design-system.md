@@ -101,6 +101,7 @@ Le garde-fou exécutable de ces seuils est `node scripts/verify-gates.mjs --nav-
 
 ### Ergonomie tactile et cibles cliquables
 - **Surface tactile minimale** : 44×44 pixels obligatoires pour tout élément interactif. Sur mobile tactile, les boutons d'action clés (pointage, validation) occupent une hauteur minimale de 56dp. Sur desktop (souris/pointeur), la hauteur minimale est de 48dp.
+- **Lisibilité des formulaires** : les champs texte et les barres de recherche occupent toute la largeur de leur conteneur, avec une hauteur utile d'au moins 44px. Disposition en colonne simple, sauf paires logiques sur une même rangée (latitude/longitude). Labels au-dessus du champ, jamais l'inverse.
 - **Affordance tactile** : Tout bouton ou carte interactive intègre un feedback au toucher (`active:scale-95 transition-transform duration-150`).
 - **Marges matérielles (Safe Areas)** : Tout conteneur d'en-tête ou de pied de page applique les variables d'encoche matérielles (`env(safe-area-inset-top)`, `env(safe-area-inset-bottom)`).
 

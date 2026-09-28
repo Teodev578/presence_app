@@ -351,53 +351,51 @@ const toggleStatus = async (loc) => {
     </div>
 
     <!-- Filtres et recherche -->
-    <div class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg p-4">
-      <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
-        <!-- Recherche -->
-        <div class="w-full sm:w-80">
-          <label class="input input-bordered input-sm flex items-center gap-2 rounded-m3-md bg-base-300/50">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-base-content/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="8"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-            <input
-              v-model="searchQuery"
-              type="text"
-              class="grow text-xs"
-              placeholder="Rechercher un site par nom..."
-            />
-          </label>
-        </div>
+    <div class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg p-4 flex flex-col gap-3">
+      <!-- Recherche : pleine largeur du conteneur, cible confortable -->
+      <div class="w-full">
+        <label class="input input-bordered flex w-full items-center gap-2 rounded-m3-md bg-base-300/50 min-h-11">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0 text-base-content/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input
+            v-model="searchQuery"
+            type="text"
+            class="grow text-sm"
+            placeholder="Rechercher un site par nom..."
+          />
+        </label>
+      </div>
 
-        <!-- Filtre Statut -->
-        <div class="flex items-center gap-2 self-start sm:self-auto">
-          <span class="text-xs font-semibold text-base-content/60">Statut :</span>
-          <div class="join">
-            <button
-              type="button"
-              class="btn btn-sm join-item min-h-11 px-3 rounded-l-m3-sm"
-              :class="{ 'btn-primary': filterStatus === 'all' }"
-              @click="filterStatus = 'all'"
-            >
-              Tous ({{ (locations || []).length }})
-            </button>
-            <button
-              type="button"
-              class="btn btn-sm join-item min-h-11 px-3"
-              :class="{ 'btn-primary': filterStatus === 'active' }"
-              @click="filterStatus = 'active'"
-            >
-              Actifs
-            </button>
-            <button
-              type="button"
-              class="btn btn-sm join-item min-h-11 px-3 rounded-r-m3-sm"
-              :class="{ 'btn-primary': filterStatus === 'inactive' }"
-              @click="filterStatus = 'inactive'"
-            >
-              Inactifs
-            </button>
-          </div>
+      <!-- Filtre Statut -->
+      <div class="flex items-center gap-2 self-start">
+        <span class="text-sm font-semibold text-base-content/60">Statut :</span>
+        <div class="join">
+          <button
+            type="button"
+            class="btn join-item min-h-11 px-3 rounded-l-m3-sm"
+            :class="{ 'btn-primary': filterStatus === 'all' }"
+            @click="filterStatus = 'all'"
+          >
+            Tous ({{ (locations || []).length }})
+          </button>
+          <button
+            type="button"
+            class="btn join-item min-h-11 px-3"
+            :class="{ 'btn-primary': filterStatus === 'active' }"
+            @click="filterStatus = 'active'"
+          >
+            Actifs
+          </button>
+          <button
+            type="button"
+            class="btn join-item min-h-11 px-3 rounded-r-m3-sm"
+            :class="{ 'btn-primary': filterStatus === 'inactive' }"
+            @click="filterStatus = 'inactive'"
+          >
+            Inactifs
+          </button>
         </div>
       </div>
     </div>
@@ -418,7 +416,7 @@ const toggleStatus = async (loc) => {
         <button
           v-if="!searchQuery"
           type="button"
-          class="btn btn-primary btn-sm rounded-m3-sm"
+          class="btn btn-primary min-h-11 rounded-m3-sm"
           @click="openCreateModal"
         >
           Créer un site
@@ -498,9 +496,9 @@ const toggleStatus = async (loc) => {
 
     <!-- Modal d'Ajout / Édition -->
     <dialog class="modal" :class="{ 'modal-open': isModalOpen }">
-      <div class="modal-box rounded-m3-xl max-w-md p-5 sm:p-6 bg-base-100 border border-base-300 shadow-sm">
+      <div class="modal-box max-w-xl rounded-m3-xl p-5 sm:p-6 bg-base-100 border border-base-300 shadow-sm">
         <div class="flex items-center justify-between mb-4 pb-2 border-b border-base-200">
-          <h3 class="font-black text-lg text-base-content flex items-center gap-2">
+          <h3 class="font-black text-xl text-base-content flex items-center gap-2">
             <svg v-if="isEditing" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -513,7 +511,7 @@ const toggleStatus = async (loc) => {
           </h3>
           <button
             type="button"
-            class="btn btn-sm btn-circle btn-ghost"
+            class="btn btn-circle btn-ghost min-w-11 min-h-11"
             aria-label="Fermer la modale"
             @click="closeModal"
           >
@@ -534,29 +532,29 @@ const toggleStatus = async (loc) => {
           <span>{{ formError }}</span>
         </div>
 
-        <form class="flex flex-col gap-4" @submit.prevent="handleSubmit">
+        <form class="flex flex-col gap-5" @submit.prevent="handleSubmit">
           <!-- Nom du site -->
           <div class="form-control">
             <label class="label py-1">
-              <span class="label-text font-bold text-xs">Nom du site *</span>
+              <span class="label-text font-bold text-sm">Nom du site *</span>
             </label>
             <input
               v-model="form.name"
               type="text"
-              class="input input-bordered rounded-m3-md text-sm"
+              class="input input-bordered w-full min-h-11 rounded-m3-md text-sm"
               placeholder="ex: Siège social, Chantier Alpha, Dépôt..."
               required
             />
           </div>
 
           <!-- Assistant de localisation rapide -->
-          <div class="bg-base-200/60 p-3 rounded-m3-lg flex flex-col gap-2.5">
-            <span class="text-xs font-bold text-base-content/70">Assistant de localisation</span>
+          <div class="bg-base-200/60 p-4 rounded-m3-lg flex flex-col gap-3">
+            <span class="text-sm font-bold text-base-content/70">Assistant de localisation</span>
 
             <!-- Bouton GPS actuel -->
             <button
               type="button"
-              class="btn btn-sm btn-outline btn-primary rounded-m3-sm font-bold flex items-center justify-center gap-2"
+              class="btn btn-outline btn-primary min-h-11 w-full rounded-m3-sm font-bold flex items-center justify-center gap-2"
               :disabled="isLocating"
               @click="useCurrentLocation"
             >
@@ -573,14 +571,14 @@ const toggleStatus = async (loc) => {
                 <input
                   v-model="mapUrlInput"
                   type="text"
-                  class="input input-bordered input-sm rounded-m3-md text-xs w-full pl-8"
+                  class="input input-bordered w-full min-h-11 rounded-m3-md text-sm pl-9"
                   placeholder="Coller un lien (Google Maps, Apple Maps) ou coordonnées..."
                   @input="handleMapInput"
                   @paste="handleMapPaste"
                 />
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  class="w-3.5 h-3.5 absolute left-2.5 text-base-content/50 pointer-events-none"
+                  class="w-4 h-4 absolute left-3 text-base-content/50 pointer-events-none"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -644,7 +642,7 @@ const toggleStatus = async (loc) => {
                 <input
                   v-model="addressQuery"
                   type="text"
-                  class="input input-bordered input-sm rounded-m3-md text-xs"
+                  class="input input-bordered w-full min-h-11 rounded-m3-md text-sm"
                   placeholder="Rechercher une adresse (France)..."
                   @input="onAddressInput"
                 />
@@ -673,26 +671,26 @@ const toggleStatus = async (loc) => {
           <div class="grid grid-cols-2 gap-3">
             <div class="form-control">
               <label class="label py-1">
-                <span class="label-text font-bold text-xs">Latitude *</span>
+                <span class="label-text font-bold text-sm">Latitude *</span>
               </label>
               <input
                 v-model.number="form.latitude"
                 type="number"
                 step="0.000001"
-                class="input input-bordered rounded-m3-md text-xs font-mono"
+                class="input input-bordered w-full min-h-11 rounded-m3-md text-sm font-mono"
                 placeholder="48.8566"
                 required
               />
             </div>
             <div class="form-control">
               <label class="label py-1">
-                <span class="label-text font-bold text-xs">Longitude *</span>
+                <span class="label-text font-bold text-sm">Longitude *</span>
               </label>
               <input
                 v-model.number="form.longitude"
                 type="number"
                 step="0.000001"
-                class="input input-bordered rounded-m3-md text-xs font-mono"
+                class="input input-bordered w-full min-h-11 rounded-m3-md text-sm font-mono"
                 placeholder="2.3522"
                 required
               />
@@ -702,7 +700,7 @@ const toggleStatus = async (loc) => {
           <!-- Rayon de tolérance en mètres -->
           <div class="form-control">
             <div class="flex items-center justify-between py-1">
-              <span class="label-text font-bold text-xs">Rayon de tolérance</span>
+              <span class="label-text font-bold text-sm">Rayon de tolérance</span>
               <span class="badge badge-primary badge-sm font-bold">{{ form.radius_meters }} mètres</span>
             </div>
             <input
@@ -711,9 +709,9 @@ const toggleStatus = async (loc) => {
               min="20"
               max="500"
               step="10"
-              class="range range-primary range-xs mt-2"
+              class="range range-primary range-sm w-full mt-3"
             />
-            <div class="w-full flex justify-between text-[10px] text-base-content/50 px-1 mt-1 font-mono">
+            <div class="w-full flex justify-between text-xs text-base-content/50 px-1 mt-1 font-mono">
               <span>20m</span>
               <span>100m</span>
               <span>250m</span>
@@ -723,23 +721,23 @@ const toggleStatus = async (loc) => {
 
           <!-- Statut actif -->
           <div class="form-control mt-1">
-            <label class="label cursor-pointer justify-start gap-3 py-1">
+            <label class="label cursor-pointer justify-start gap-3 py-1 min-h-11">
               <input
                 v-model="form.is_active"
                 type="checkbox"
-                class="checkbox checkbox-primary checkbox-sm rounded-m3-xs"
+                class="checkbox checkbox-primary rounded-m3-xs"
               />
-              <span class="label-text font-semibold text-xs text-base-content">
+              <span class="label-text font-semibold text-sm text-base-content">
                 Site actif pour le pointage
               </span>
             </label>
           </div>
 
           <!-- Boutons de validation -->
-          <div class="modal-action mt-4 pt-3 border-t border-base-200">
+          <div class="modal-action mt-2 pt-4 border-t border-base-200 gap-2">
             <button
               type="button"
-              class="btn btn-ghost btn-sm rounded-m3-sm font-medium"
+              class="btn btn-ghost min-h-11 rounded-m3-sm font-medium"
               :disabled="isSubmitting"
               @click="closeModal"
             >
@@ -747,7 +745,7 @@ const toggleStatus = async (loc) => {
             </button>
             <button
               type="submit"
-              class="btn btn-primary btn-sm rounded-m3-sm font-bold shadow-xs"
+              class="btn btn-primary min-h-11 rounded-m3-sm font-bold shadow-xs"
               :disabled="isSubmitting"
             >
               <span v-if="isSubmitting" class="loading loading-spinner loading-xs"></span>

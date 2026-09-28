@@ -276,3 +276,21 @@ Scope: Jusqu'ici, un clic sur la poignée gravait une préférence persistante q
   EVIDENCE: browser-verify: sidebar rail passed, 23 assertions vertes, aucune exception de page (vérifié par le parcours Chrome headless)
 
 
+
+---
+
+# Gates: Lisibilité du Dialogue de Site
+
+OWNS: src/views/manager/LocationsView.vue, scripts/verify-gates.mjs, scripts/verify-browser.mjs, .agents/rules/07-design-system.md, GATES.md
+
+Scope: Enseignements des forums et guides UX (Nielsen Norman Group « Website Forms Usability », Smashing Magazine « Designing Efficient Web Forms », bonnes pratiques de modales) : colonne simple sauf paires logiques, labels au-dessus du champ, champs dimensionnés pour la lecture, cibles de 44px, action primaire distincte de l'action secondaire. Le dialogue « Modifier le site » passe de `max-w-md` à `max-w-xl` ; ses champs texte et sa barre de recherche occupent la largeur de leur conteneur à 44px de haut ; la barre de recherche du filtre prend la largeur de sa carte, le filtre de statut glissant sur sa propre rangée ; boutons et fermeture atteignent 44px.
+
+- [x] G56: Le dimensionnement est vérifié au niveau source : dialogue élargi (`max-w-xl`), aucun champ rétréci (`input-sm`), chaque champ texte en `w-full` à `min-h-11`, curseur pleine largeur, barre de recherche pleine largeur sans retour à `sm:w-80`
+  CHECK: node scripts/verify-gates.mjs --locations-form
+  EXPECT: G56 passed: the locations dialog fields and search fill their containers at 44px
+  EVIDENCE: G56 passed: the locations dialog fields and search fill their containers at 44px (vérifié par node scripts/verify-gates.mjs --locations-form, contrôle négatif de l'oracle compris)
+
+- [x] G57: La géométrie réelle de la vue gestionnaire montée confirme le contrat : dialogue ≥ 520px, chaque champ texte à la largeur de son conteneur et ≥ 44px de haut, recherche à la largeur utile de sa carte, boutons du dialogue ≥ 44px
+  CHECK: CHROME_PATH=$(command -v google-chrome-stable) node scripts/verify-browser.mjs --locations-form
+  EXPECT: browser-verify: locations dialog passed
+  EVIDENCE: browser-verify: locations dialog passed, 8 assertions vertes, aucune exception de page (vérifié par le parcours Chrome headless, copie dans .unlazy/evidence/locations-dialog.png)

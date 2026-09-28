@@ -17,6 +17,7 @@
  *   node scripts/verify-browser.mjs --nav-docking         ancrage à 840px
  *   node scripts/verify-browser.mjs --sidebar-handle      intégration de la poignée d'en-tête
  *   node scripts/verify-browser.mjs --sidebar-rail        repli en rail d'icônes
+ *   node scripts/verify-browser.mjs --locations-form      dialogue de site et recherche
  *   node scripts/verify-browser.mjs --check-overlay       volet de confirmation de pointage
  *   node scripts/verify-browser.mjs --availability-summary résumé de disponibilités
  *   node scripts/verify-browser.mjs                 tous les modes
@@ -46,6 +47,7 @@ const TOKENS = {
   'nav-docking': 'browser-verify: navigation docking passed',
   'sidebar-handle': 'browser-verify: sidebar handle passed',
   'sidebar-rail': 'browser-verify: sidebar rail passed',
+  'locations-form': 'browser-verify: locations dialog passed',
   'check-overlay': 'browser-verify: check overlay passed',
   'availability-summary': 'browser-verify: availability summary passed',
 }
@@ -73,6 +75,7 @@ import StatusBadge from '../src/components/shared/StatusBadge.vue'
 import WeekSummaryCard from '../src/components/employee/WeekSummaryCard.vue'
 import CheckConfirmationOverlay from '../src/components/employee/CheckConfirmationOverlay.vue'
 import AvailabilitySummary from '../src/components/employee/AvailabilitySummary.vue'
+import LocationsView from '../src/views/manager/LocationsView.vue'
 import { getLocalDateString, resolveSessionMinutes } from '../src/lib/dateUtils.js'
 import { useSyncEngine } from '../src/composables/useSyncEngine.js'
 import { useSidebarNav } from '../src/composables/useSidebarNav.js'
@@ -315,6 +318,16 @@ window.__harness = {
   presences,
   weekTotalMinutes,
   afterPaint: () => new Promise((resolve) => requestAnimationFrame(() => resolve())),
+  openLocationsDialog: () => {
+    const host = document.querySelector('#locations-host')
+    const button = host ? [...host.querySelectorAll('button')].find((b) => /Nouveau Site/.test(b.textContent)) : null
+    if (button) button.click()
+  },
+  closeLocationsDialog: () => {
+    const host = document.querySelector('#locations-host')
+    const button = host ? host.querySelector('.modal-box button[aria-label="Fermer la modale"]') : null
+    if (button) button.click()
+  },
 }
 
 const app = createApp({
@@ -364,6 +377,8 @@ const app = createApp({
       ]),
       // Banc du repli : mêmes classes que les mises en page, monté pour éprouver le rail d'icônes
       h(RailProbe),
+      // Vue gestionnaire réelle : le dialogue de site et sa barre de recherche sont mesurés en place
+      h('div', { id: 'locations-host' }, [h(LocationsView)]),
       h('div', { id: 'card-clean-host', style: 'max-width:520px' }, [
         h(WeekSummaryCard, {
           recentPresences: presences.filter((presence) => presence.check_out_time),
@@ -553,9 +568,52 @@ const MEASURE_EXPRESSION = `(() => {
       }
     : null
 
+  const locationsHost = document.querySelector('#locations-host')
+  const locationsDialog = locationsHost ? locationsHost.querySelector('.modal-box') : null
+  const locationsOpen = locationsHost ? locationsHost.querySelector('.modal.modal-open') : null
+  const locationsInputs = locationsDialog
+    ? [...locationsDialog.querySelectorAll('input')].map((input) => {
+        const wrap = input.closest('.form-control') || input.closest('.relative') || input.parentElement
+        const rect = input.getBoundingClientRect()
+        const wrapRect = wrap.getBoundingClientRect()
+        return {
+          type: input.type,
+          width: Math.round(rect.width),
+          height: Math.round(rect.height),
+          wrapWidth: Math.round(wrapRect.width),
+          fullWidth: Math.abs(rect.width - wrapRect.width) <= 1,
+        }
+      })
+    : []
+  const locationsSearch = locationsHost ? locationsHost.querySelector('.card label.input') : null
+  const locationsSearchCard = locationsSearch ? locationsSearch.closest('.card') : null
+  const locationsCardPadding = locationsSearchCard ? parseFloat(getComputedStyle(locationsSearchCard).paddingLeft) : 0
+  const locationsForm = {
+    present: Boolean(locationsDialog),
+    open: Boolean(locationsOpen),
+    width: locationsDialog ? Math.round(locationsDialog.getBoundingClientRect().width) : 0,
+    inputs: locationsInputs,
+    search: locationsSearch
+      ? {
+          controlWidth: Math.round(locationsSearch.getBoundingClientRect().width),
+          inputWidth: Math.round(locationsSearch.querySelector('input').getBoundingClientRect().width),
+          cardInnerWidth: locationsSearchCard
+            ? Math.round(locationsSearchCard.getBoundingClientRect().width - 2 * locationsCardPadding)
+            : 0,
+        }
+      : null,
+    buttons: locationsDialog
+      ? [...locationsDialog.querySelectorAll('button')].map((button) => ({
+          label: collapse(button.innerText),
+          height: Math.round(button.getBoundingClientRect().height),
+        }))
+      : [],
+  }
+
   return {
     docking,
     rail,
+    locations: locationsForm,
     theme: document.documentElement.getAttribute('data-theme'),
     stored: window.localStorage.getItem('presence_theme'),
     bodyBg: background(document.body),
@@ -598,7 +656,7 @@ const MEASURE_EXPRESSION = `(() => {
   }
 })()`
 
-const REQUIRED_FIELDS = ['theme', 'stored', 'bodyBg', 'meta', 'rows', 'cardText', 'weekTotal', 'docking', 'rail']
+const REQUIRED_FIELDS = ['theme', 'stored', 'bodyBg', 'meta', 'rows', 'cardText', 'weekTotal', 'docking', 'rail', 'locations']
 
 const LIGHT_SURFACE = 'rgb(253, 252, 255)'
 const DARK_SURFACE = 'rgb(17, 19, 24)'
@@ -1392,6 +1450,61 @@ async function verifySidebarHandle(cdp) {
   return failures === before
 }
 
+/**
+ * Le dialogue de site monté sur la vue gestionnaire réelle : champs de saisie et barre de
+ * recherche à la largeur de leur conteneur, cibles de 44px, dialogue élargi sans débordement.
+ */
+async function verifyLocationsForm(cdp) {
+  const before = failures
+  console.log('browser-verify: dialogue des sites')
+
+  await cdp.send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 950, deviceScaleFactor: 1, mobile: false })
+  await sleep(LAYOUT_SETTLE_MS)
+  await cdp.evaluate('window.__harness.openLocationsDialog()')
+  await sleep(LAYOUT_SETTLE_MS)
+
+  const snapshot = await cdp.measure()
+  assertShape(snapshot)
+  const form = snapshot.locations
+
+  check('le dialogue s’ouvre sur la vue réelle', () => assertTrue(form.present && form.open, 'dialogue non monté ou fermé'))
+  check('le dialogue est élargi', () => assertTrue(form.width >= 520, `largeur ${form.width}px`))
+
+  const textFields = form.inputs.filter((input) => ['text', 'number'].includes(input.type))
+  check('les champs texte sont présents', () => assertTrue(textFields.length >= 5, `${textFields.length} champs`))
+  check('chaque champ texte remplit son conteneur', () =>
+    assertTrue(
+      textFields.every((input) => input.fullWidth),
+      JSON.stringify(textFields.map((input) => `${input.width}/${input.wrapWidth}`))
+    )
+  )
+  check('chaque champ texte atteint 44px de haut', () =>
+    assertTrue(
+      textFields.every((input) => input.height >= 44),
+      JSON.stringify(textFields.map((input) => input.height))
+    )
+  )
+  check('la barre de recherche occupe la largeur de sa carte', () => {
+    assertTrue(Boolean(form.search), 'barre de recherche introuvable')
+    assertTrue(
+      form.search.controlWidth >= form.search.cardInnerWidth - 2,
+      `contrôle ${form.search.controlWidth}px pour une carte utile de ${form.search.cardInnerWidth}px`
+    )
+  })
+  check('le dialogue garde ses cibles de 44px', () =>
+    assertTrue(
+      form.buttons.length > 0 && form.buttons.every((button) => button.height >= 44),
+      JSON.stringify(form.buttons.map((button) => `${button.label}:${button.height}`))
+    )
+  )
+
+  await cdp.screenshot('locations-dialog.png')
+  await cdp.evaluate('window.__harness.closeLocationsDialog()')
+  await sleep(200)
+
+  return failures === before
+}
+
 const VERIFIERS = {
   theme: verifyTheme,
   sessions: verifySessions,
@@ -1404,6 +1517,7 @@ const VERIFIERS = {
   'nav-docking': verifyNavDocking,
   'sidebar-handle': verifySidebarHandle,
   'sidebar-rail': verifySidebarRail,
+  'locations-form': verifyLocationsForm,
 }
 
 async function main() {
