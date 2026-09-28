@@ -526,13 +526,13 @@ export function checkPastDaysDisabled() {
   return true;
 }
 
-export function checkBuild() {
+export function checkBuild(label = 'G6', wording = 'build succeeded with exit code 0') {
   const result = spawnSync('npm', ['run', 'build'], { encoding: 'utf8', stdio: 'pipe' });
   if (result.status === 0) {
-    console.log('G6 passed: build succeeded with exit code 0');
+    console.log(`${label} passed: ${wording}`);
     return true;
   }
-  console.error('FAILURE G6: npm run build failed with exit code', result.status);
+  console.error(`FAILURE ${label}: npm run build failed with exit code`, result.status);
   if (result.stderr) console.error(result.stderr);
   return false;
 }
@@ -1463,6 +1463,398 @@ export function checkToneRuleRegistered() {
   return true;
 }
 
+/* ---------------------------------------------------------------------------
+   Lot « alignement du tiroir gestionnaire et rampe tonale M3 »
+   --------------------------------------------------------------------------- */
+
+/** Fichiers de l'espace gestionnaire écrits par ce lot. */
+const MANAGER_SCOPE_FILES = [
+  'src/layouts/ManagerLayout.vue',
+  'src/components/manager/StatCard.vue',
+  'src/views/manager/DashboardView.vue',
+  'src/views/manager/PresencesView.vue',
+  'src/views/manager/AvailabilitiesView.vue',
+  'src/views/manager/EmployeesView.vue',
+  'src/views/manager/TeamsView.vue',
+  'src/views/manager/LocationsView.vue',
+  'src/views/manager/ExportView.vue',
+];
+
+const managerScopeFiles = () =>
+  MANAGER_SCOPE_FILES.map((file) => path.resolve(file)).filter((file) => fs.existsSync(file));
+
+const readLayout = (name) => {
+  const file = path.join(SRC_DIR, 'layouts', name);
+  return fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : null;
+};
+
+const extractAside = (content) => {
+  const match = String(content).match(/<aside[^>]*>([\s\S]*?)<\/aside>/i);
+  return match ? match[1] : '';
+};
+
+const extractAsideTag = (content) => {
+  const match = String(content).match(/<aside[^>]*>/i);
+  return match ? match[0] : '';
+};
+
+/** La balise du bouton le plus proche qui précède le marqueur donné. */
+function buttonTagBefore(text, marker) {
+  const index = text.indexOf(marker);
+  if (index === -1) return null;
+  const open = text.lastIndexOf('<button', index);
+  const close = text.indexOf('>', index);
+  if (open === -1 || close === -1) return null;
+  return text.slice(open, close + 1);
+}
+
+/** Les blocs des entrées de navigation, à l'exclusion des boutons DaisyUI d'action. */
+function navEntryBlocks(aside) {
+  const blocks = [];
+  const regex = /<button\b[^>]*>[\s\S]*?<\/button>/g;
+  let match;
+  while ((match = regex.exec(aside)) !== null) {
+    const tag = match[0].slice(0, match[0].indexOf('>') + 1);
+    if (tag.includes('rounded-m3-md') && !tag.includes('btn-')) blocks.push(match[0]);
+  }
+  return blocks;
+}
+
+const RAMP_ROOT = /class="drawer lg:drawer-open[^"]*bg-base-100/;
+
+/** Le fond de vue gestionnaire et son tiroir respectent la rampe tonale de la règle 07. */
+export function checkManagerRamp() {
+  const drawerOnContainer = (tag) => tag.includes('bg-base-200') && !tag.includes('bg-base-100');
+
+  if (
+    !RAMP_ROOT.test('<div class="drawer lg:drawer-open min-h-screen bg-base-100">') ||
+    RAMP_ROOT.test('<div class="drawer lg:drawer-open min-h-screen bg-base-200">')
+  ) {
+    console.error('FAILURE G32: le détecteur de fond de vue est aveugle, oracle invalide');
+    return false;
+  }
+  if (!drawerOnContainer('<aside class="bg-base-200">') || drawerOnContainer('<aside class="bg-base-100">')) {
+    console.error('FAILURE G32: le détecteur de surface du tiroir est aveugle, oracle invalide');
+    return false;
+  }
+
+  const content = readLayout('ManagerLayout.vue');
+  if (content === null) {
+    console.error('FAILURE G32: ManagerLayout.vue introuvable');
+    return false;
+  }
+
+  let ok = true;
+  if (!RAMP_ROOT.test(content)) {
+    console.error('FAILURE G32: le conteneur gestionnaire ne porte pas le fond de vue base-100');
+    ok = false;
+  }
+  if (!drawerOnContainer(extractAsideTag(content))) {
+    console.error('FAILURE G32: le tiroir gestionnaire ne porte pas la surface base-200');
+    ok = false;
+  }
+
+  if (!ok) return false;
+  console.log('G32 passed: manager page and drawer follow the M3 surface ramp');
+  return true;
+}
+
+/** Métriques partagées par les deux tiroirs. */
+const DRAWER_PARITY_TOKENS = [
+  'w-72 sm:w-80',
+  'p-5',
+  'bg-base-200',
+  'border-base-300/60',
+  'gap-1.5',
+  'py-3 px-3.5',
+  'w-5 h-5',
+];
+
+const drawerParityGaps = (text) => DRAWER_PARITY_TOKENS.filter((token) => !text.includes(token));
+
+/** Le tiroir gestionnaire reprend les métriques du tiroir employé. */
+export function checkDrawerParity() {
+  const drifted =
+    '<aside class="w-64 sm:w-72 bg-base-100 p-4 gap-1" data-ignored="py-2.5 px-3 w-4 h-4 border-base-300">';
+  if (drawerParityGaps(drifted).length !== DRAWER_PARITY_TOKENS.length) {
+    console.error('FAILURE G33: le détecteur de métriques est aveugle, oracle invalide');
+    return false;
+  }
+
+  const employee = readLayout('EmployeeLayout.vue');
+  const manager = readLayout('ManagerLayout.vue');
+  if (employee === null || manager === null) {
+    console.error('FAILURE G33: une des deux mises en page est introuvable');
+    return false;
+  }
+
+  const referenceGaps = drawerParityGaps(employee);
+  if (referenceGaps.length > 0) {
+    console.error(
+      `FAILURE G33: le tiroir employé, référence de comparaison, a perdu ${referenceGaps.join(', ')}`
+    );
+    return false;
+  }
+
+  const managerGaps = drawerParityGaps(manager);
+  if (managerGaps.length > 0) {
+    console.error(`FAILURE G33: le tiroir gestionnaire n'aligne pas ${managerGaps.join(', ')}`);
+    return false;
+  }
+
+  console.log('G33 passed: manager drawer metrics match the employee drawer');
+  return true;
+}
+
+/** Chaque entrée de navigation atteint la cible tactile de 44px. */
+export function checkManagerNavTargets() {
+  const measurements = (block) => {
+    const tag = block.slice(0, block.indexOf('>') + 1);
+    const gaps = [];
+    if (!tag.includes('py-3 px-3.5')) gaps.push('padding vertical et horizontal de 12px et 14px');
+    if (tag.includes('py-2.5') || tag.includes('py-2 ')) gaps.push('hauteur inférieure au seuil de 44px');
+    const svg = block.match(/<svg[^>]*>/);
+    if (svg && !svg[0].includes('w-5 h-5')) gaps.push('icône de 20px');
+    return gaps;
+  };
+
+  const witness =
+    '<button type="button" class="flex items-center gap-3 py-2.5 px-3 rounded-m3-md"><svg class="w-4 h-4 shrink-0"></svg></button>';
+  if (measurements(witness).length !== 3) {
+    console.error('FAILURE G34: le détecteur de cible tactile est aveugle, oracle invalide');
+    return false;
+  }
+
+  const manager = readLayout('ManagerLayout.vue');
+  if (manager === null) {
+    console.error('FAILURE G34: ManagerLayout.vue introuvable');
+    return false;
+  }
+
+  // Sept entrées sont déclarées dans navItems et partagent le gabarit unique du v-for ;
+  // la huitième est la passerelle inter-espace.
+  const declared = (manager.match(/path: '\/manager/g) || []).length;
+  if (declared !== 7) {
+    console.error(`FAILURE G34: sept destinations de gestion attendues dans navItems, ${declared} trouvées`);
+    return false;
+  }
+
+  const entries = navEntryBlocks(extractAside(manager));
+  if (entries.length !== 2) {
+    console.error(`FAILURE G34: gabarit d'entrée et passerelle attendus, ${entries.length} blocs trouvés`);
+    return false;
+  }
+
+  const issues = entries.flatMap((block) => measurements(block));
+  if (issues.length > 0) {
+    console.error(`FAILURE G34: entrées gestionnaire sous-dimensionnées (${issues.join(' | ')})`);
+    return false;
+  }
+
+  console.log('G34 passed: every manager nav entry meets the 44px touch target');
+  return true;
+}
+
+/** Le bloc identité vit en tête du tiroir, le pied ne porte que les réglages. */
+export function checkDrawerIdentity() {
+  const identityHeads = (aside) => {
+    const identity = aside.indexOf('userInitial');
+    const nav = aside.indexOf('<nav');
+    return identity !== -1 && nav !== -1 && identity < nav;
+  };
+
+  if (identityHeads('<nav></nav><span>{{ userInitial }}</span>')) {
+    console.error('FAILURE G35: le détecteur de position du bloc identité est aveugle, oracle invalide');
+    return false;
+  }
+
+  const manager = readLayout('ManagerLayout.vue');
+  const employee = readLayout('EmployeeLayout.vue');
+  if (manager === null || employee === null) {
+    console.error('FAILURE G35: une des deux mises en page est introuvable');
+    return false;
+  }
+
+  const aside = extractAside(manager);
+  const footerAt = aside.indexOf('Statut réseau');
+  const footer = footerAt === -1 ? '' : aside.slice(footerAt);
+  let ok = true;
+
+  if (!identityHeads(aside)) {
+    console.error("FAILURE G35: le bloc identité du gestionnaire n'est pas monté en tête de tiroir");
+    ok = false;
+  }
+  if (!identityHeads(extractAside(employee))) {
+    console.error('FAILURE G35: le tiroir employé de référence a perdu son bloc identité en tête');
+    ok = false;
+  }
+  for (const token of ['w-10 h-10', 'font-bold text-sm']) {
+    if (!aside.includes(token)) {
+      console.error(`FAILURE G35: le bloc identité gestionnaire n'aligne pas ${token} sur l'employé`);
+      ok = false;
+    }
+  }
+  if (footerAt === -1) {
+    console.error("FAILURE G35: le pied de tiroir gestionnaire n'expose plus son statut réseau");
+    ok = false;
+  }
+  if (footer.includes('userInitial')) {
+    console.error('FAILURE G35: le pied de tiroir répète le bloc identité');
+    ok = false;
+  }
+  for (const token of ['<SyncIndicator', '<ThemeToggle', 'handleLogout']) {
+    if (!footer.includes(token)) {
+      console.error(`FAILURE G35: le pied de tiroir gestionnaire n'expose plus ${token}`);
+      ok = false;
+    }
+  }
+
+  if (!ok) return false;
+  console.log('G35 passed: manager identity sits in the drawer header and the footer keeps only settings');
+  return true;
+}
+
+/** La passerelle inter-espace ne concurrence plus l'entrée sélectionnée. */
+export function checkManagerGatewayNeutral() {
+  const isNeutral = (tag) => tag !== null && !tag.includes('text-primary') && !tag.includes('bg-primary');
+
+  if (
+    isNeutral(
+      '<button type="button" class="flex items-center gap-3 py-3 px-3.5 rounded-m3-md text-primary hover:bg-primary/10">'
+    )
+  ) {
+    console.error('FAILURE G36: le détecteur de teinte de passerelle est aveugle, oracle invalide');
+    return false;
+  }
+
+  const manager = readLayout('ManagerLayout.vue');
+  if (manager === null) {
+    console.error('FAILURE G36: ManagerLayout.vue introuvable');
+    return false;
+  }
+
+  const aside = extractAside(manager);
+  const gateway = buttonTagBefore(aside, "handleNav('/employee')");
+  const selected = (aside.match(/bg-primary\/15 text-primary font-bold/g) || []).length;
+  let ok = true;
+
+  if (gateway === null) {
+    console.error("FAILURE G36: la passerelle vers l'espace personnel est introuvable dans le tiroir");
+    ok = false;
+  } else if (!isNeutral(gateway)) {
+    console.error(`FAILURE G36: la passerelle porte encore la teinte primaire (${gateway.trim()})`);
+    ok = false;
+  }
+  if (selected !== 1) {
+    console.error(`FAILURE G36: une seule entrée sélectionnée attendue, ${selected} trouvées`);
+    ok = false;
+  }
+
+  if (!ok) return false;
+  console.log('G36 passed: the gateway no longer mimics a selected entry');
+  return true;
+}
+
+/** Les teintes de surface imbriquées restées au niveau du conteneur. */
+function findStaleNestedTints(text) {
+  const containers = [];
+  const containerRegex = /class="[^"]*\b(card|modal-box)\b/g;
+  let match;
+  while ((match = containerRegex.exec(text)) !== null) {
+    containers.push({ index: match.index, kind: match[0].includes('modal-box') ? 'modal' : 'card' });
+  }
+
+  const issues = [];
+  const tintRegex = /bg-base-200\/(?:5|6)0/g;
+  while ((match = tintRegex.exec(text)) !== null) {
+    const owner = containers.filter((container) => container.index < match.index).pop();
+    if (owner && owner.kind === 'card') issues.push(match[0]);
+  }
+  return issues;
+}
+
+/** Les cartes gestionnaire vivent en base-200, leurs surfaces imbriquées restent lisibles. */
+export function checkManagerTonalRamp() {
+  const FORBIDDEN = [
+    { pattern: /card bg-base-100/, reason: 'carte encore à l\'élévation 0' },
+    { pattern: /stats bg-base-100/, reason: 'tuile de statistique encore à l\'élévation 0' },
+    { pattern: /table-zebra/, reason: 'rayures base-200 invisibles sur une carte base-200' },
+    { pattern: /badge-ghost/, reason: 'puce base-200 invisible sur une carte base-200' },
+    { pattern: /rounded-full bg-base-200(?!\/)/, reason: 'pastille décorative au niveau du conteneur' },
+  ];
+
+  if (!FORBIDDEN[0].pattern.test('class="card bg-base-100 border"')) {
+    console.error('FAILURE G37: le détecteur de surface de carte est aveugle, oracle invalide');
+    return false;
+  }
+  if (findStaleNestedTints('class="card bg-base-200"><div class="bg-base-200/60">').length !== 1) {
+    console.error('FAILURE G37: le détecteur de teinte imbriquée est aveugle, oracle invalide');
+    return false;
+  }
+  if (findStaleNestedTints('class="modal-box bg-base-100"><div class="bg-base-200/60">').length !== 0) {
+    console.error('FAILURE G37: le détecteur de teinte confond modale et carte');
+    return false;
+  }
+
+  const files = managerScopeFiles();
+  if (files.length === 0) {
+    console.error('FAILURE G37: aucun fichier gestionnaire trouvé, périmètre de contrôle vide');
+    return false;
+  }
+
+  const issues = [];
+  for (const file of files) {
+    const content = fs.readFileSync(file, 'utf8');
+    const relative = path.relative(process.cwd(), file);
+
+    for (const { pattern, reason } of FORBIDDEN) {
+      if (pattern.test(content)) issues.push(`${relative} -> ${reason}`);
+    }
+    for (const tint of findStaleNestedTints(content)) {
+      issues.push(`${relative} -> teinte ${tint} confondue avec la surface de sa carte`);
+    }
+    for (const tag of content.match(/<div[^>]*modal-box[^>]*>/g) || []) {
+      if (!tag.includes('bg-base-100')) {
+        issues.push(`${relative} -> modale hors de l'élévation 3 (${tag.trim()})`);
+      }
+    }
+  }
+
+  if (issues.length > 0) {
+    reportIssues(issues, 'G37', 'Manager surfaces still off the tonal ramp', (issue) => issue);
+    return false;
+  }
+
+  console.log('G37 passed: manager cards and nested surfaces follow the tonal ramp');
+  return true;
+}
+
+/**
+ * Révision de référence, antérieure au lot : la comparaison prouve que ce lot n'a pas touché la
+ * navigation employé. Surchargeable pour éprouver que l'oracle sait échouer.
+ */
+const EMPLOYEE_LAYOUT_BASELINE = process.env.EMPLOYEE_LAYOUT_BASELINE || 'cdb558f';
+
+/** La navigation employé reste intacte, octet pour octet. */
+export function checkEmployeeUntouched() {
+  const target = 'src/layouts/EmployeeLayout.vue';
+  const result = spawnSync('git', ['diff', '--quiet', EMPLOYEE_LAYOUT_BASELINE, '--', target], {
+    encoding: 'utf8',
+  });
+
+  if (result.status === 0) {
+    console.log('G38 passed: employee layout is byte-identical to the baseline revision');
+    return true;
+  }
+  if (result.status === 1) {
+    console.error(`FAILURE G38: ${target} a changé depuis ${EMPLOYEE_LAYOUT_BASELINE}`);
+    return false;
+  }
+  console.error(`FAILURE G38: git diff indisponible sur ${EMPLOYEE_LAYOUT_BASELINE} (statut ${result.status})`);
+  if (result.stderr) console.error(result.stderr.trim());
+  return false;
+}
+
 // Exécution CLI
 const arg = process.argv[2] || '--all';
 let success = true;
@@ -1529,6 +1921,22 @@ if (arg === '--emojis') {
   success = checkVoiceConformance();
 } else if (arg === '--tone-rule-registered') {
   success = checkToneRuleRegistered();
+} else if (arg === '--manager-ramp') {
+  success = checkManagerRamp();
+} else if (arg === '--drawer-parity') {
+  success = checkDrawerParity();
+} else if (arg === '--manager-nav-targets') {
+  success = checkManagerNavTargets();
+} else if (arg === '--drawer-identity') {
+  success = checkDrawerIdentity();
+} else if (arg === '--manager-gateway-neutral') {
+  success = checkManagerGatewayNeutral();
+} else if (arg === '--manager-tonal-ramp') {
+  success = checkManagerTonalRamp();
+} else if (arg === '--employee-untouched') {
+  success = checkEmployeeUntouched();
+} else if (arg === '--manager-build') {
+  success = checkBuild('G39', 'production build succeeds with exit code 0');
 } else if (arg === '--all') {
   const r1 = checkEmojis();
   const r2 = checkRadii();
@@ -1558,9 +1966,17 @@ if (arg === '--emojis') {
   const r29 = checkEmployeeFeedbackConformance();
   const r30 = checkVoiceConformance();
   const r31 = checkToneRuleRegistered();
-  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31;
+  const r32 = checkManagerRamp();
+  const r33 = checkDrawerParity();
+  const r34 = checkManagerNavTargets();
+  const r35 = checkDrawerIdentity();
+  const r36 = checkManagerGatewayNeutral();
+  const r37 = checkManagerTonalRamp();
+  const r38 = checkEmployeeUntouched();
+  const r39 = checkBuild('G39', 'production build succeeds with exit code 0');
+  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r38 && r39;
 } else {
-  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--build|--all]`);
+  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-identity|--manager-gateway-neutral|--manager-tonal-ramp|--employee-untouched|--manager-build|--build|--all]`);
   process.exit(1);
 }
 

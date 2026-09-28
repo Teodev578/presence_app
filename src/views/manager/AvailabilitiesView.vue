@@ -105,7 +105,7 @@ const getActualPresence = (userId, dayNumber) => {
       </div>
 
       <!-- Navigation temporelle DaisyUI -->
-      <div class="card bg-base-100 border border-base-300 shadow-xs flex-row items-center gap-2 p-1.5 rounded-m3-md">
+      <div class="card bg-base-200 border border-base-300 shadow-xs flex-row items-center gap-2 p-1.5 rounded-m3-md">
         <button type="button" class="btn btn-circle btn-ghost btn-sm" aria-label="Semaine précédente" @click="prevWeek">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="15 18 9 12 15 6"></polyline>
@@ -121,7 +121,7 @@ const getActualPresence = (userId, dayNumber) => {
     </div>
 
     <!-- Tableau croisé matriciel DaisyUI -->
-    <div class="card bg-base-100 border border-base-300 shadow-xs rounded-m3-lg overflow-hidden">
+    <div class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg overflow-hidden">
       <div v-if="loading" class="p-8 text-center text-sm text-base-content/60 flex items-center justify-center gap-2">
         <span class="loading loading-spinner loading-sm text-primary"></span>
         Chargement de la grille d'équipe...
@@ -130,7 +130,7 @@ const getActualPresence = (userId, dayNumber) => {
         Aucun collaborateur actif répertorié.
       </div>
       <div v-else class="overflow-x-auto">
-        <table class="table table-zebra table-sm w-full">
+        <table class="table table-sm w-full">
           <thead>
             <tr class="text-xs uppercase text-base-content/60">
               <th class="w-48">Collaborateur</th>
@@ -145,7 +145,7 @@ const getActualPresence = (userId, dayNumber) => {
               <td>
                 <div class="flex flex-col">
                   <strong class="text-sm font-bold text-base-content">{{ emp.full_name }}</strong>
-                  <span class="badge badge-ghost badge-xs w-fit mt-0.5 rounded-m3-xs">{{ emp.teams?.name || 'Sans équipe' }}</span>
+                  <span class="badge badge-soft badge-xs w-fit mt-0.5 rounded-m3-xs">{{ emp.teams?.name || 'Sans équipe' }}</span>
                 </div>
               </td>
 

@@ -102,7 +102,7 @@ const generateCSV = async () => {
     </div>
 
     <!-- Carte de configuration de l'export DaisyUI -->
-    <div class="card bg-base-100 border border-base-300 shadow-xs rounded-m3-lg p-5 sm:p-6 flex flex-col gap-5">
+    <div class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg p-5 sm:p-6 flex flex-col gap-5">
       <h3 class="text-base font-bold text-base-content">Paramètres de la période</h3>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -117,7 +117,7 @@ const generateCSV = async () => {
         </div>
       </div>
 
-      <div class="bg-base-200/60 border border-base-200 rounded-m3-md p-4 flex flex-col gap-2 text-xs text-base-content/80">
+      <div class="bg-base-300/60 border border-base-300/60 rounded-m3-md p-4 flex flex-col gap-2 text-xs text-base-content/80">
         <div class="flex justify-between items-center">
           <span class="text-base-content/60">Format de fichier :</span>
           <strong class="text-base-content">CSV (UTF-8 avec BOM, séparateur ;)</strong>

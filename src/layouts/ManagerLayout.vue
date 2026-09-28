@@ -29,7 +29,7 @@ const createIcon = (paths) => () =>
       strokeWidth: '2',
       strokeLinecap: 'round',
       strokeLinejoin: 'round',
-      class: 'w-4 h-4 shrink-0',
+      class: 'w-5 h-5 shrink-0',
     },
     paths.map(([tag, attrs]) => h(tag, attrs))
   )
@@ -120,7 +120,7 @@ const handleLogout = async () => {
 </script>
 
 <template>
-  <div class="drawer lg:drawer-open min-h-screen bg-base-200 text-base-content">
+  <div class="drawer lg:drawer-open min-h-screen bg-base-100 text-base-content">
     <input id="manager-drawer" type="checkbox" class="drawer-toggle" v-model="drawerOpen" />
 
     <!-- Conteneur principal -->
@@ -169,7 +169,7 @@ const handleLogout = async () => {
     <!-- Volet latéral / Sidebar (drawer-side) -->
     <div class="drawer-side z-50">
       <label for="manager-drawer" aria-label="Fermer le menu" class="drawer-overlay"></label>
-      <aside class="w-64 sm:w-72 bg-base-100 border-r border-base-300 min-h-full flex flex-col justify-between p-4 sm:p-5 text-base-content">
+      <aside class="bg-base-200 border-r border-base-300/60 min-h-full w-72 sm:w-80 p-5 flex flex-col justify-between text-base-content">
         <div>
           <!-- En-tête Marque & Logo -->
           <div class="flex items-center justify-between pb-4 border-b border-base-300/60">
@@ -198,13 +198,26 @@ const handleLogout = async () => {
             </label>
           </div>
 
+          <!-- Bloc identité : même grammaire que le tiroir employé -->
+          <div class="flex items-center gap-3 py-4 border-b border-base-300/60">
+            <div class="avatar placeholder shrink-0">
+              <div class="bg-primary/15 text-primary rounded-full w-10 h-10 font-bold text-sm flex items-center justify-center">
+                <span>{{ userInitial }}</span>
+              </div>
+            </div>
+            <div class="flex flex-col min-w-0">
+              <span class="font-bold text-sm text-base-content truncate">{{ profile?.full_name || 'Gestionnaire' }}</span>
+              <span class="text-xs text-base-content/60 truncate">{{ profile?.email || 'Compte gestionnaire' }}</span>
+            </div>
+          </div>
+
           <!-- Navigation principale -->
           <nav class="mt-4 sm:mt-6" aria-label="Navigation latérale">
-            <ul class="menu bg-transparent w-full p-0 gap-1 font-medium">
+            <ul class="menu bg-transparent w-full p-0 gap-1.5 font-medium">
               <li v-for="item in navItems" :key="item.path">
                 <button
                   type="button"
-                  class="flex items-center gap-3 py-2.5 px-3 rounded-m3-md transition-colors"
+                  class="flex items-center gap-3 py-3 px-3.5 rounded-m3-md transition-colors"
                   :class="currentPath === item.path
                     ? 'bg-primary/15 text-primary font-bold'
                     : 'hover:bg-base-300/60 text-base-content/80'"
@@ -215,14 +228,15 @@ const handleLogout = async () => {
                 </button>
               </li>
 
-              <!-- Passerelle vers mon espace de pointage personnel -->
+              <!-- Passerelle vers mon espace de pointage personnel.
+                   Rangée neutre : la teinte primaire est réservée à l'entrée sélectionnée. -->
               <li class="pt-2 border-t border-base-300/40 mt-2">
                 <button
                   type="button"
-                  class="flex items-center gap-3 py-2.5 px-3 rounded-m3-md text-primary hover:bg-primary/10 transition-colors font-semibold"
+                  class="flex items-center gap-3 py-3 px-3.5 rounded-m3-md transition-colors text-base-content/80 hover:bg-base-300/60"
                   @click="handleNav('/employee')"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="10" />
                     <polyline points="12 6 12 12 16 14" />
                   </svg>
@@ -233,7 +247,7 @@ const handleLogout = async () => {
           </nav>
         </div>
 
-        <!-- Pied de volet : Réglages, Profil utilisateur & Déconnexion -->
+        <!-- Pied de volet : Réglages & Déconnexion (le profil vit en tête, comme dans le tiroir employé) -->
         <div class="pt-4 border-t border-base-300/60 flex flex-col gap-3">
           <!-- Deux rangées distinctes : le badge de synchronisation ne peut plus comprimer le contrôle d'apparence -->
           <div class="flex flex-col gap-2 px-1">
@@ -244,21 +258,9 @@ const handleLogout = async () => {
             <ThemeToggle />
           </div>
 
-          <div class="flex items-center gap-3 px-1">
-            <div class="avatar placeholder shrink-0">
-              <div class="bg-primary/15 text-primary rounded-full w-9 h-9 font-bold text-sm flex items-center justify-center">
-                <span>{{ userInitial }}</span>
-              </div>
-            </div>
-            <div class="flex flex-col min-w-0">
-              <span class="text-sm font-semibold text-base-content truncate">{{ profile?.full_name || 'Gestionnaire' }}</span>
-              <span class="text-xs text-base-content/60 truncate">{{ profile?.email || '' }}</span>
-            </div>
-          </div>
-
           <button
             type="button"
-            class="btn btn-outline btn-error btn-sm w-full gap-2 rounded-m3-sm min-h-10 mt-1"
+            class="btn btn-outline btn-error btn-sm w-full gap-2 rounded-m3-sm min-h-10"
             @click="handleLogout"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

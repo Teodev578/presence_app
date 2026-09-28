@@ -169,8 +169,8 @@ const formatTime = (iso) => {
     </div>
 
     <!-- Derniers pointages récents (DaisyUI Card & Table) -->
-    <div class="card bg-base-100 border border-base-300 shadow-xs rounded-m3-lg overflow-hidden">
-      <div class="p-4 sm:p-5 border-b border-base-200 flex items-center justify-between">
+    <div class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg overflow-hidden">
+      <div class="p-4 sm:p-5 border-b border-base-300/60 flex items-center justify-between">
         <h3 class="text-sm font-bold text-base-content">Derniers pointages enregistrés aujourd'hui</h3>
         <span class="badge badge-primary badge-sm font-semibold">{{ presencesToday.length }} pointage(s)</span>
       </div>
@@ -185,7 +185,7 @@ const formatTime = (iso) => {
       </div>
 
       <div v-else class="overflow-x-auto">
-        <table class="table table-zebra table-sm w-full">
+        <table class="table table-sm w-full">
           <thead>
             <tr class="text-xs uppercase text-base-content/60">
               <th>Collaborateur</th>

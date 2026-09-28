@@ -120,7 +120,7 @@ const confirmArchive = async () => {
     </div>
 
     <!-- Tableau DaisyUI -->
-    <div class="card bg-base-100 border border-base-300 shadow-xs rounded-m3-lg overflow-hidden">
+    <div class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg overflow-hidden">
       <div v-if="loading" class="p-8 text-center text-sm text-base-content/60 flex items-center justify-center gap-2">
         <span class="loading loading-spinner loading-sm text-primary"></span>
         Chargement des profils...
@@ -129,7 +129,7 @@ const confirmArchive = async () => {
         Aucun collaborateur actif.
       </div>
       <div v-else class="overflow-x-auto">
-        <table class="table table-zebra table-sm w-full">
+        <table class="table table-sm w-full">
           <thead>
             <tr class="text-xs uppercase text-base-content/60">
               <th>Nom complet</th>
@@ -145,7 +145,7 @@ const confirmArchive = async () => {
               <td class="font-bold text-sm text-base-content">{{ emp.full_name }}</td>
               <td class="text-xs text-base-content/60">{{ emp.email }}</td>
               <td>
-                <span class="badge badge-ghost badge-sm rounded-m3-xs">{{ emp.teams?.name || 'Non assigné' }}</span>
+                <span class="badge badge-soft badge-sm rounded-m3-xs">{{ emp.teams?.name || 'Non assigné' }}</span>
               </td>
               <td>
                 <span
@@ -153,7 +153,7 @@ const confirmArchive = async () => {
                   :class="{
                     'badge-error text-error-content': emp.role === 'admin',
                     'badge-primary text-primary-content': emp.role === 'manager',
-                    'badge-ghost': emp.role === 'employee'
+                    'badge-soft': emp.role === 'employee'
                   }"
                 >
                   {{ emp.role }}

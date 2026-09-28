@@ -40,7 +40,7 @@ const colorConfig = computed(() => {
 </script>
 
 <template>
-  <div class="stats bg-base-100 shadow-xs border border-base-300 w-full rounded-m3-lg" :class="colorConfig.border">
+  <div class="stats bg-base-200 shadow-xs border border-base-300 w-full rounded-m3-lg" :class="colorConfig.border">
     <div class="stat p-4 sm:p-5">
       <div v-if="icon" class="stat-figure">
         <div class="w-10 h-10 rounded-m3-sm flex items-center justify-center" :class="colorConfig.iconBg">

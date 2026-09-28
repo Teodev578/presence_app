@@ -351,11 +351,11 @@ const toggleStatus = async (loc) => {
     </div>
 
     <!-- Filtres et recherche -->
-    <div class="card bg-base-100 border border-base-300 shadow-xs rounded-m3-lg p-4">
+    <div class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg p-4">
       <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
         <!-- Recherche -->
         <div class="w-full sm:w-80">
-          <label class="input input-bordered input-sm flex items-center gap-2 rounded-m3-md bg-base-200/50">
+          <label class="input input-bordered input-sm flex items-center gap-2 rounded-m3-md bg-base-300/50">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-base-content/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -403,8 +403,8 @@ const toggleStatus = async (loc) => {
     </div>
 
     <!-- Liste des sites -->
-    <div v-if="filteredLocations.length === 0" class="card bg-base-100 border border-base-300 rounded-m3-lg p-8 text-center items-center">
-      <div class="w-12 h-12 rounded-full bg-base-200 flex items-center justify-center text-base-content/40 mb-3">
+    <div v-if="filteredLocations.length === 0" class="card bg-base-200 border border-base-300 rounded-m3-lg p-8 text-center items-center">
+      <div class="w-12 h-12 rounded-full bg-base-300 flex items-center justify-center text-base-content/40 mb-3">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
           <circle cx="12" cy="10" r="3"></circle>
@@ -430,7 +430,7 @@ const toggleStatus = async (loc) => {
       <div
         v-for="loc in filteredLocations"
         :key="loc.id"
-        class="card bg-base-100 border border-base-300 shadow-xs hover:border-primary/40 transition-all rounded-m3-lg p-5 flex flex-col justify-between"
+        class="card bg-base-200 border border-base-300 shadow-xs hover:border-primary/40 transition-all rounded-m3-lg p-5 flex flex-col justify-between"
       >
         <div class="flex flex-col gap-3">
           <!-- Titre & Statut -->
@@ -446,7 +446,7 @@ const toggleStatus = async (loc) => {
             </div>
             <span
               class="badge badge-sm shrink-0 font-semibold cursor-pointer rounded-m3-xs"
-              :class="loc.is_active ? 'badge-success text-success-content' : 'badge-ghost text-base-content/50'"
+              :class="loc.is_active ? 'badge-success text-success-content' : 'badge-soft text-base-content/50'"
               @click="toggleStatus(loc)"
               title="Cliquer pour changer le statut"
             >
@@ -455,7 +455,7 @@ const toggleStatus = async (loc) => {
           </div>
 
           <!-- Détails Coordonnées & Rayon -->
-          <div class="bg-base-200/60 rounded-m3-md p-3 flex flex-col gap-1.5 text-xs text-base-content/80 font-mono">
+          <div class="bg-base-300/60 rounded-m3-md p-3 flex flex-col gap-1.5 text-xs text-base-content/80 font-mono">
             <div class="flex items-center justify-between">
               <span class="text-base-content/50">Latitude :</span>
               <span class="font-semibold">{{ Number(loc.latitude).toFixed(5) }}°</span>
@@ -472,7 +472,7 @@ const toggleStatus = async (loc) => {
         </div>
 
         <!-- Actions -->
-        <div class="flex items-center justify-end gap-2 mt-4 pt-3 border-t border-base-200">
+        <div class="flex items-center justify-end gap-2 mt-4 pt-3 border-t border-base-300/60">
           <button
             type="button"
             class="btn btn-ghost btn-sm text-error font-medium rounded-m3-sm min-h-11 px-3"

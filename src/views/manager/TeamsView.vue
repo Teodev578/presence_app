@@ -87,7 +87,7 @@ const confirmArchive = async () => {
     </div>
 
     <!-- Formulaire d'ajout rapide DaisyUI -->
-    <div class="card bg-base-100 border border-base-300 shadow-xs p-4 rounded-m3-lg flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+    <div class="card bg-base-200 border border-base-300 shadow-xs p-4 rounded-m3-lg flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
       <input
         v-model="newTeamName"
         type="text"
@@ -125,9 +125,9 @@ const confirmArchive = async () => {
       <div
         v-for="team in teams"
         :key="team.id"
-        class="card bg-base-100 border border-base-300 shadow-xs rounded-m3-lg p-5 flex flex-col gap-3"
+        class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg p-5 flex flex-col gap-3"
       >
-        <div class="flex items-center justify-between border-b border-base-200 pb-3">
+        <div class="flex items-center justify-between border-b border-base-300/60 pb-3">
           <div class="flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
@@ -160,7 +160,7 @@ const confirmArchive = async () => {
             <span
               v-for="m in team.profiles"
               :key="m.id"
-              class="badge badge-ghost badge-sm text-xs rounded-m3-xs gap-1"
+              class="badge badge-soft badge-sm text-xs rounded-m3-xs gap-1"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 text-base-content/60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>

@@ -188,12 +188,12 @@ const saveEdit = async () => {
 
     <!-- Synthèse KPI rapide de la journée -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-      <div class="card bg-base-100 border border-base-300 shadow-xs p-4 rounded-m3-md flex flex-col gap-1">
+      <div class="card bg-base-200 border border-base-300 shadow-xs p-4 rounded-m3-md flex flex-col gap-1">
         <span class="text-xs font-semibold text-base-content/60">Total pointés</span>
         <span class="text-2xl font-black text-base-content">{{ stats.total }}</span>
         <span class="text-[11px] text-base-content/50">Pointages enregistrés</span>
       </div>
-      <div class="card bg-base-100 border border-base-300 shadow-xs p-4 rounded-m3-md flex flex-col gap-1">
+      <div class="card bg-base-200 border border-base-300 shadow-xs p-4 rounded-m3-md flex flex-col gap-1">
         <span class="text-xs font-semibold text-success flex items-center gap-1.5">
           <span class="w-2 h-2 rounded-full bg-success"></span>
           À l'heure
@@ -201,7 +201,7 @@ const saveEdit = async () => {
         <span class="text-2xl font-black text-success">{{ stats.onTime }}</span>
         <span class="text-[11px] text-base-content/50">Arrivées ponctuelles</span>
       </div>
-      <div class="card bg-base-100 border border-base-300 shadow-xs p-4 rounded-m3-md flex flex-col gap-1">
+      <div class="card bg-base-200 border border-base-300 shadow-xs p-4 rounded-m3-md flex flex-col gap-1">
         <span class="text-xs font-semibold text-warning flex items-center gap-1.5">
           <span class="w-2 h-2 rounded-full bg-warning"></span>
           En retard
@@ -209,7 +209,7 @@ const saveEdit = async () => {
         <span class="text-2xl font-black text-warning">{{ stats.late }}</span>
         <span class="text-[11px] text-base-content/50">Retards constatés</span>
       </div>
-      <div class="card bg-base-100 border border-base-300 shadow-xs p-4 rounded-m3-md flex flex-col gap-1">
+      <div class="card bg-base-200 border border-base-300 shadow-xs p-4 rounded-m3-md flex flex-col gap-1">
         <span class="text-xs font-semibold text-info flex items-center gap-1.5">
           <span class="w-2 h-2 rounded-full bg-info"></span>
           Départs validés
@@ -220,7 +220,7 @@ const saveEdit = async () => {
     </div>
 
     <!-- Barre de filtrage DaisyUI -->
-    <div class="card bg-base-100 border border-base-300 shadow-xs p-4 rounded-m3-lg flex flex-wrap gap-4 items-end">
+    <div class="card bg-base-200 border border-base-300 shadow-xs p-4 rounded-m3-lg flex flex-wrap gap-4 items-end">
       <div class="fieldset">
         <label for="f-date" class="fieldset-legend text-xs font-semibold text-base-content/70">Date :</label>
         <input id="f-date" v-model="filterDate" type="date" class="input input-bordered input-sm rounded-m3-sm" />
@@ -256,7 +256,7 @@ const saveEdit = async () => {
     </div>
 
     <!-- Tableau des données DaisyUI -->
-    <div class="card bg-base-100 border border-base-300 shadow-xs rounded-m3-lg overflow-hidden">
+    <div class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg overflow-hidden">
       <div v-if="loading" class="p-8 text-center text-sm text-base-content/60 flex items-center justify-center gap-2">
         <span class="loading loading-spinner loading-sm text-primary"></span>
         Chargement des pointages...
@@ -265,7 +265,7 @@ const saveEdit = async () => {
         Aucun résultat pour cette sélection.
       </div>
       <div v-else class="overflow-x-auto">
-        <table class="table table-zebra table-sm w-full">
+        <table class="table table-sm w-full">
           <thead>
             <tr class="text-xs uppercase text-base-content/60">
               <th>Date</th>
@@ -319,7 +319,7 @@ const saveEdit = async () => {
                     :class="{
                       'badge-success text-success-content': p.check_in_accuracy && p.check_in_accuracy <= 15,
                       'badge-warning text-warning-content': p.check_in_accuracy && p.check_in_accuracy > 15 && p.check_in_accuracy <= 50,
-                      'badge-ghost text-base-content/60': !p.check_in_accuracy || p.check_in_accuracy > 50
+                      'badge-soft text-base-content/60': !p.check_in_accuracy || p.check_in_accuracy > 50
                     }"
                   >
                     ±{{ Math.round(p.check_in_accuracy || 0) }}m
