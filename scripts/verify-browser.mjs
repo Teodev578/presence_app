@@ -49,6 +49,7 @@ const TOKENS = {
   'sidebar-rail': 'browser-verify: sidebar rail passed',
   'locations-form': 'browser-verify: locations dialog passed',
   'locations-cards': 'browser-verify: locations cards passed',
+  'locations-filters': 'browser-verify: locations filters passed',
   'check-overlay': 'browser-verify: check overlay passed',
   'availability-summary': 'browser-verify: availability summary passed',
 }
@@ -81,6 +82,12 @@ import { db } from '../src/lib/db.js'
 import { getLocalDateString, resolveSessionMinutes } from '../src/lib/dateUtils.js'
 import { useSyncEngine } from '../src/composables/useSyncEngine.js'
 import { useSidebarNav } from '../src/composables/useSidebarNav.js'
+
+// Jeu de sites semé pour les vérifications de l'espace gestionnaire : un actif, un inactif.
+const PROBE_LOCATIONS = [
+  { id: 'probe-site-lyon', name: 'Siège Lyon', latitude: 45.76404, longitude: 4.83566, radius_meters: 120, is_active: true },
+  { id: 'probe-site-sud', name: 'Dépôt Sud', latitude: 43.60465, longitude: 1.44421, radius_meters: 250, is_active: false },
+]
 
 const dayOffset = (offset) => {
   const d = new Date()
@@ -330,6 +337,26 @@ window.__harness = {
     const button = host ? host.querySelector('.modal-box button[aria-label="Fermer la modale"]') : null
     if (button) button.click()
   },
+  clickLocationsFilter: (label) => {
+    const host = document.querySelector('#locations-host')
+    const button = host ? [...host.querySelectorAll('.join button')].find((b) => b.textContent.trim().startsWith(label)) : null
+    if (button) button.click()
+  },
+  setLocationsSearch: (value) => {
+    const host = document.querySelector('#locations-host')
+    const input = host ? host.querySelector('.card label.input input') : null
+    if (input) {
+      input.value = value
+      input.dispatchEvent(new Event('input', { bubbles: true }))
+    }
+  },
+  clickLocationsEmptyAction: () => {
+    const host = document.querySelector('#locations-host')
+    const box = host ? host.querySelector('.card.p-8') : null
+    const button = box ? box.querySelector('button') : null
+    if (button) button.click()
+  },
+  resetLocations: () => db.locations.clear().then(() => db.locations.bulkPut(PROBE_LOCATIONS)),
 }
 
 const app = createApp({
@@ -393,12 +420,7 @@ const app = createApp({
 
 db.locations
   .clear()
-  .then(() =>
-    db.locations.bulkPut([
-      { id: 'probe-site-lyon', name: 'Siège Lyon', latitude: 45.76404, longitude: 4.83566, radius_meters: 120, is_active: true },
-      { id: 'probe-site-sud', name: 'Dépôt Sud', latitude: 43.60465, longitude: 1.44421, radius_meters: 250, is_active: false },
-    ])
-  )
+  .then(() => db.locations.bulkPut(PROBE_LOCATIONS))
   .catch(() => {})
   .finally(() => {
     app.mount('#app')
@@ -645,6 +667,18 @@ const MEASURE_EXPRESSION = `(() => {
           }
         })
       : [],
+    filters: locationsHost
+      ? [...locationsHost.querySelectorAll('.join button')].map((button) => collapse(button.innerText))
+      : [],
+    empty: (() => {
+      const box = locationsHost ? locationsHost.querySelector('.card.p-8') : null
+      return {
+        present: Boolean(box),
+        title: box ? collapse(box.querySelector('h3')?.innerText || '') : null,
+        message: box ? collapse(box.querySelector('p')?.innerText || '') : null,
+        action: box ? collapse(box.querySelector('button')?.innerText || '') : null,
+      }
+    })(),
   }
 
   return {
@@ -1552,6 +1586,7 @@ async function verifyLocationsCards(cdp) {
 
   await cdp.send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false })
   await sleep(LAYOUT_SETTLE_MS)
+  await cdp.evaluate('window.__harness.resetLocations()')
 
   // Les cartes montent au fil de la requête live Dexie : on laisse le rendu se stabiliser.
   const deadline = Date.now() + 5000
@@ -1616,6 +1651,80 @@ async function verifyLocationsCards(cdp) {
   return failures === before
 }
 
+/**
+ * La logique de filtrage actif/inactif : les comptes annoncent le contenu, et chaque état vide
+ * décrit sa cause avec l'action utile, sans inviter à créer quand des sites existent déjà.
+ */
+async function verifyLocationsFilters(cdp) {
+  const before = failures
+  console.log('browser-verify: filtres de sites')
+
+  await cdp.send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false })
+  await sleep(LAYOUT_SETTLE_MS)
+  await cdp.evaluate('window.__harness.resetLocations()')
+
+  const deadline = Date.now() + 5000
+  let snapshot = await cdp.measure()
+  while ((snapshot.locations?.cards?.length || 0) < 2 && Date.now() < deadline) {
+    await sleep(250)
+    snapshot = await cdp.measure()
+  }
+  assertShape(snapshot)
+
+  check('les filtres annoncent leurs comptes', () =>
+    assertEqual(snapshot.locations.filters.join('|'), 'Tous (2)|Actifs (1)|Inactifs (1)', 'libellés des filtres')
+  )
+
+  await cdp.evaluate("document.querySelector('#locations-host')?.scrollIntoView({ block: 'start' })")
+  await sleep(250)
+
+  await cdp.evaluate("window.__harness.clickLocationsFilter('Inactifs')")
+  await sleep(250)
+  let view = await cdp.measure()
+  check('le filtre « Inactifs » ne garde que les sites désactivés', () => {
+    assertEqual(view.locations.cards.map((card) => card.name).join('|'), 'Dépôt Sud', 'cartes filtrées')
+    assertTrue(!view.locations.empty.present, 'état vide affiché à tort')
+  })
+
+  // Le seul inactif redevient actif : la catégorie se vide sous nos yeux.
+  const sudToggle = view.locations.cards.find((card) => card.name.includes('Dépôt Sud'))?.statusCenter
+  await cdp.clickAt(sudToggle)
+  await sleep(450)
+  view = await cdp.measure()
+  check('filtre vide : le message décrit l’absence de sites inactifs, sans inviter à créer', () => {
+    assertTrue(view.locations.empty.present, 'état vide absent')
+    assertEqual(view.locations.empty.title, 'Aucun site inactif', 'titre')
+    assertTrue(!/premier site/i.test(view.locations.empty.message || ''), `message : ${view.locations.empty.message}`)
+    assertEqual(view.locations.empty.action, 'Voir tous les sites', 'action proposée')
+  })
+  await cdp.screenshot('locations-filters.png')
+
+  await cdp.evaluate('window.__harness.clickLocationsEmptyAction()')
+  await sleep(300)
+  view = await cdp.measure()
+  check('l’action de l’état vide ramène tous les sites', () => {
+    assertTrue(view.locations.cards.length >= 2, `${view.locations.cards.length} cartes`)
+    assertTrue(!view.locations.empty.present, 'état vide persistant')
+  })
+
+  await cdp.evaluate("window.__harness.setLocationsSearch('zzz')")
+  await sleep(300)
+  view = await cdp.measure()
+  check('recherche vide : message et action de réinitialisation', () => {
+    assertTrue(view.locations.empty.present, 'état vide absent')
+    assertEqual(view.locations.empty.title, 'Aucun résultat', 'titre')
+    assertEqual(view.locations.empty.action, 'Effacer la recherche', 'action proposée')
+  })
+  await cdp.evaluate('window.__harness.clickLocationsEmptyAction()')
+  await sleep(300)
+  view = await cdp.measure()
+  check('effacer la recherche ramène les sites', () =>
+    assertTrue(view.locations.cards.length >= 2, `${view.locations.cards.length} cartes`)
+  )
+
+  return failures === before
+}
+
 const VERIFIERS = {
   theme: verifyTheme,
   sessions: verifySessions,
@@ -1630,6 +1739,7 @@ const VERIFIERS = {
   'sidebar-rail': verifySidebarRail,
   'locations-form': verifyLocationsForm,
   'locations-cards': verifyLocationsCards,
+  'locations-filters': verifyLocationsFilters,
 }
 
 async function main() {

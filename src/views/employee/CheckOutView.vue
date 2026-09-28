@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from '../../router'
 import { useGeolocation, formatDistance } from '../../composables/useGeolocation'
 import { usePresences } from '../../composables/usePresences'
+import { isLocationActive } from '../../composables/useLocations'
 import { db } from '../../lib/db'
 import GpsRing from '../../components/employee/GpsRing.vue'
 import CheckConfirmationOverlay from '../../components/employee/CheckConfirmationOverlay.vue'
@@ -36,11 +37,7 @@ onMounted(async () => {
 
     // 1. Récupération des sites actifs réels
     const list = await db.locations
-      .filter(
-        (loc) =>
-          !loc.deleted_at &&
-          (loc.is_active === true || loc.is_active === 1 || loc.is_active === 'true')
-      )
+      .filter((loc) => !loc.deleted_at && isLocationActive(loc))
       .toArray()
     allLocations.value = list
 

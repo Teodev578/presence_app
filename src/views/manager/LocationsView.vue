@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useLocations } from '../../composables/useLocations'
+import { useLocations, isLocationActive } from '../../composables/useLocations'
 import { useGeolocation } from '../../composables/useGeolocation'
 import { parseGeoInput, parseAndResolveGeoInput } from '../../lib/geoParser'
 import ConfirmModal from '../../components/shared/ConfirmModal.vue'
@@ -44,16 +44,67 @@ onMounted(async () => {
   await ensureLoaded()
 })
 
-// Liste filtrée
+// Liste filtrée : la recherche tolère un nom manquant, le statut passe par le prédicat partagé.
 const filteredLocations = computed(() => {
+  const query = searchQuery.value.trim().toLowerCase()
   return (locations.value || []).filter((loc) => {
-    const matchesSearch = !searchQuery.value || loc.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+    const matchesSearch = !query || (loc.name || '').toLowerCase().includes(query)
     if (!matchesSearch) return false
-    if (filterStatus.value === 'active') return loc.is_active
-    if (filterStatus.value === 'inactive') return !loc.is_active
+    if (filterStatus.value === 'active') return isLocationActive(loc)
+    if (filterStatus.value === 'inactive') return !isLocationActive(loc)
     return true
   })
 })
+
+// Comptes par statut : les filtres annoncent ce qu'ils contiennent avant qu'on les ouvre.
+const locationCounts = computed(() => {
+  const list = locations.value || []
+  const active = list.filter(isLocationActive).length
+  return { all: list.length, active, inactive: list.length - active }
+})
+
+/**
+ * Message de l'état vide : distinguer « aucun site », « aucun résultat de recherche »,
+ * « aucun site actif » et « aucun site inactif », et proposer l'action réellement utile.
+ */
+const emptyState = computed(() => {
+  if (locationCounts.value.all === 0) {
+    return {
+      title: 'Aucun site enregistré',
+      message: 'Créez votre premier site pour autoriser le pointage géolocalisé.',
+      action: 'create',
+      actionLabel: 'Créer un site',
+    }
+  }
+  if (searchQuery.value.trim()) {
+    return {
+      title: 'Aucun résultat',
+      message: `Aucun site ne correspond à « ${searchQuery.value.trim()} ».`,
+      action: 'clear-search',
+      actionLabel: 'Effacer la recherche',
+    }
+  }
+  if (filterStatus.value === 'active') {
+    return {
+      title: 'Aucun site actif',
+      message: 'Tous vos sites sont désactivés. Activez-en un pour autoriser le pointage.',
+      action: 'show-all',
+      actionLabel: 'Voir tous les sites',
+    }
+  }
+  return {
+    title: 'Aucun site inactif',
+    message: 'Tous vos sites sont actifs et autorisés au pointage.',
+    action: 'show-all',
+    actionLabel: 'Voir tous les sites',
+  }
+})
+
+const runEmptyAction = () => {
+  if (emptyState.value.action === 'create') openCreateModal()
+  else if (emptyState.value.action === 'clear-search') searchQuery.value = ''
+  else filterStatus.value = 'all'
+}
 
 // Coordonnée lisible : « 45.76400° N » plutôt qu'un décimal signé, illisible pour un gestionnaire.
 const formatCoordinate = (value, axis) => {
@@ -95,7 +146,7 @@ const openEditModal = (loc) => {
     latitude: loc.latitude,
     longitude: loc.longitude,
     radius_meters: loc.radius_meters || 50,
-    is_active: loc.is_active ?? true,
+    is_active: isLocationActive(loc),
   }
   addressQuery.value = ''
   addressSuggestions.value = []
@@ -315,12 +366,15 @@ const confirmDelete = async () => {
   }
 }
 
-// Bascule rapide statut actif/inactif
+// Bascule rapide statut actif/inactif, avec retour explicite : sous le filtre courant, la carte
+// peut quitter la liste ; le toast confirme qu'elle a changé d'état et non qu'elle a disparu.
 const toggleStatus = async (loc) => {
+  const next = !isLocationActive(loc)
   try {
-    await updateLocation(loc.id, { is_active: !loc.is_active })
+    await updateLocation(loc.id, { is_active: next })
+    success(`Le site « ${loc.name} » est maintenant ${next ? 'actif' : 'inactif'}.`)
   } catch (err) {
-    console.error('Erreur bascule statut site :', err)
+    toastError(`Impossible de changer l’état de « ${loc.name} » : ${err.message}`)
   }
 }
 
@@ -389,7 +443,7 @@ const toggleStatus = async (loc) => {
             :class="{ 'btn-primary': filterStatus === 'all' }"
             @click="filterStatus = 'all'"
           >
-            Tous ({{ (locations || []).length }})
+            Tous ({{ locationCounts.all }})
           </button>
           <button
             type="button"
@@ -397,7 +451,7 @@ const toggleStatus = async (loc) => {
             :class="{ 'btn-primary': filterStatus === 'active' }"
             @click="filterStatus = 'active'"
           >
-            Actifs
+            Actifs ({{ locationCounts.active }})
           </button>
           <button
             type="button"
@@ -405,7 +459,7 @@ const toggleStatus = async (loc) => {
             :class="{ 'btn-primary': filterStatus === 'inactive' }"
             @click="filterStatus = 'inactive'"
           >
-            Inactifs
+            Inactifs ({{ locationCounts.inactive }})
           </button>
         </div>
       </div>
@@ -419,18 +473,15 @@ const toggleStatus = async (loc) => {
           <circle cx="12" cy="10" r="3"></circle>
         </svg>
       </div>
-      <h3 class="font-bold text-base text-base-content">Aucun site trouvé</h3>
-      <p class="text-xs text-base-content/60 mt-1 max-w-sm mx-auto">
-        {{ searchQuery ? 'Aucun résultat ne correspond à votre recherche.' : 'Créez votre premier site pour autoriser le pointage géolocalisé.' }}
-      </p>
+      <h3 class="font-bold text-base text-base-content">{{ emptyState.title }}</h3>
+      <p class="text-sm text-base-content/60 mt-1 max-w-md mx-auto">{{ emptyState.message }}</p>
       <div class="mt-4">
         <button
-          v-if="!searchQuery"
           type="button"
           class="btn btn-primary min-h-11 rounded-m3-sm"
-          @click="openCreateModal"
+          @click="runEmptyAction"
         >
-          Créer un site
+          {{ emptyState.actionLabel }}
         </button>
       </div>
     </div>
@@ -454,19 +505,19 @@ const toggleStatus = async (loc) => {
           </div>
           <label
             class="flex min-h-11 shrink-0 cursor-pointer select-none items-center gap-2"
-            :title="loc.is_active ? 'Désactiver ce site pour le pointage' : 'Activer ce site pour le pointage'"
+            :title="isLocationActive(loc) ? 'Désactiver ce site pour le pointage' : 'Activer ce site pour le pointage'"
           >
             <span
               class="text-xs font-bold"
-              :class="loc.is_active ? 'text-success' : 'text-base-content/50'"
+              :class="isLocationActive(loc) ? 'text-success' : 'text-base-content/50'"
             >
-              {{ loc.is_active ? 'Actif' : 'Inactif' }}
+              {{ isLocationActive(loc) ? 'Actif' : 'Inactif' }}
             </span>
             <input
               type="checkbox"
               class="toggle toggle-success toggle-sm"
-              :checked="loc.is_active"
-              :aria-label="loc.is_active ? `Désactiver ${loc.name} pour le pointage` : `Activer ${loc.name} pour le pointage`"
+              :checked="isLocationActive(loc)"
+              :aria-label="isLocationActive(loc) ? `Désactiver ${loc.name} pour le pointage` : `Activer ${loc.name} pour le pointage`"
               @change="toggleStatus(loc)"
             />
           </label>

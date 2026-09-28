@@ -2361,6 +2361,73 @@ export function checkLocationsCards() {
   return true;
 }
 
+/**
+ * G60 : La logique d'affichage actif/inactif est cohérente de bout en bout. Côté vue, les
+ * filtres annoncent leurs comptes et chaque état vide décrit sa cause avec l'action utile.
+ * Côté données, un prédicat unique `isLocationActive` remplace les comparaisons dispersées
+ * du gestionnaire et des deux pointages.
+ */
+export function checkLocationsFilters() {
+  const displayGaps = (text) => {
+    const gaps = [];
+    for (const token of ['locationCounts', 'emptyState', 'runEmptyAction']) {
+      if (!text.includes(token)) gaps.push(`vue sans ${token}`);
+    }
+    if (!/locationCounts\.all/.test(text) || !/locationCounts\.active/.test(text) || !/locationCounts\.inactive/.test(text)) {
+      gaps.push('filtres sans comptes');
+    }
+    for (const message of ['Aucun site enregistré', 'Aucun résultat', 'Aucun site actif', 'Aucun site inactif']) {
+      if (!text.includes(message)) gaps.push(`état vide absent : ${message}`);
+    }
+    if (/\bloc\.is_active\b/.test(text)) gaps.push('comparaison is_active locale subsistante');
+    return gaps;
+  };
+
+  // Contrôle négatif : l'ancien état vide unique et l'absence de comptes doivent être refusés.
+  const bogus = '<div v-if="filteredLocations.length === 0">Aucun site trouvé — Créez votre premier site.</div>';
+  if (displayGaps(bogus).length === 0) {
+    console.error('FAILURE G60: le détecteur d’état vide est aveugle, oracle invalide');
+    return false;
+  }
+
+  const viewPath = path.join(SRC_DIR, 'views', 'manager', 'LocationsView.vue');
+  if (!fs.existsSync(viewPath)) {
+    console.error('FAILURE G60: LocationsView.vue introuvable');
+    return false;
+  }
+  const viewContent = fs.readFileSync(viewPath, 'utf8');
+  const gaps = displayGaps(viewContent);
+
+  const composable = readScopeFile('src/composables/useLocations.js');
+  if (composable === null || !/export const isLocationActive/.test(composable)) {
+    console.error('FAILURE G60: le prédicat partagé isLocationActive n’est plus exporté');
+    return false;
+  }
+  if (!viewContent.includes('isLocationActive')) gaps.push('la vue n’utilise pas le prédicat partagé');
+
+  for (const [dir, name] of [
+    ['employee', 'CheckInView.vue'],
+    ['employee', 'CheckOutView.vue'],
+    ['manager', 'DashboardView.vue'],
+  ]) {
+    const file = path.join(SRC_DIR, 'views', dir, name);
+    if (!fs.existsSync(file)) {
+      console.error(`FAILURE G60: ${name} introuvable`);
+      return false;
+    }
+    const content = fs.readFileSync(file, 'utf8');
+    if (!content.includes('isLocationActive')) gaps.push(`${name} ne consomme pas le prédicat partagé`);
+    if (/is_active\s*===\s*(true|1|'true')/.test(content)) gaps.push(`${name} conserve une comparaison locale`);
+  }
+
+  if (gaps.length > 0) {
+    console.error(`FAILURE G60: la logique actif/inactif reste incohérente -> ${[...new Set(gaps)].join(', ')}`);
+    return false;
+  }
+  console.log('G60 passed: active/inactive display and data predicate are consistent end to end');
+  return true;
+}
+
 // Exécution CLI
 const arg = process.argv[2] || '--all';
 let success = true;
@@ -2451,6 +2518,8 @@ if (arg === '--emojis') {
   success = checkLocationsForm();
 } else if (arg === '--locations-cards') {
   success = checkLocationsCards();
+} else if (arg === '--locations-filters') {
+  success = checkLocationsFilters();
 } else if (arg === '--sidebar-build') {
   success = checkBuild('G48', 'production build succeeds with exit code 0');
 } else if (arg === '--manager-build') {
@@ -2497,10 +2566,11 @@ if (arg === '--emojis') {
   const r49 = checkSidebarHandle();
   const r56 = checkLocationsForm();
   const r58 = checkLocationsCards();
+  const r60 = checkLocationsFilters();
   const r48 = r39; // Une seule compilation sert les portes de build G39 et G48
-  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58;
+  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60;
 } else {
-  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--manager-build|--sidebar-build|--build|--all]`);
+  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--manager-build|--sidebar-build|--build|--all]`);
   process.exit(1);
 }
 

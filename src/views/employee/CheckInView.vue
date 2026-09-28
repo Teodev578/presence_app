@@ -4,6 +4,7 @@ import { useRouter } from '../../router'
 import { useGeolocation, formatDistance } from '../../composables/useGeolocation'
 import { usePresences } from '../../composables/usePresences'
 import { useProfile } from '../../composables/useProfile'
+import { isLocationActive } from '../../composables/useLocations'
 import { db } from '../../lib/db'
 import { supabase } from '../../lib/supabase'
 import GpsRing from '../../components/employee/GpsRing.vue'
@@ -38,11 +39,7 @@ onMounted(async () => {
     isLoadingLocations.value = true
     // Récupération stricte des sites actifs réels sans filtres de type IndexedDB restrictifs
     let list = await db.locations
-      .filter(
-        (loc) =>
-          !loc.deleted_at &&
-          (loc.is_active === true || loc.is_active === 1 || loc.is_active === 'true')
-      )
+      .filter((loc) => !loc.deleted_at && isLocationActive(loc))
       .toArray()
 
     // Si le cache local est vide, synchronisation initiale depuis Supabase

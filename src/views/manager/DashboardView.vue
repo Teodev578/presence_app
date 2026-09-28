@@ -2,7 +2,7 @@
 import { ref, onMounted, computed, h } from 'vue'
 import { useRouter } from '../../router'
 import { supabase } from '../../lib/supabase'
-import { useLocations } from '../../composables/useLocations'
+import { useLocations, isLocationActive } from '../../composables/useLocations'
 import StatCard from '../../components/manager/StatCard.vue'
 import StatusBadge from '../../components/shared/StatusBadge.vue'
 
@@ -82,7 +82,7 @@ onMounted(async () => {
 })
 
 const activeLocationsCount = computed(() => {
-  return (locations.value || []).filter((l) => l.is_active).length
+  return (locations.value || []).filter(isLocationActive).length
 })
 
 const onTimeCount = computed(() => {

@@ -4,6 +4,14 @@ import { useAuth } from './useAuth'
 import { useSyncEngine } from './useSyncEngine'
 import { supabase } from '../lib/supabase'
 
+/**
+ * Un site est actif pour le pointage. La valeur peut venir d'écritures locales (booléen) ou
+ * d'un pull Supabase (1, 'true') : la prédication est centralisée pour que le gestionnaire,
+ * le pointage d'arrivée et celui de départ s'accordent sur la même vérité.
+ */
+export const isLocationActive = (location) =>
+  location?.is_active === true || location?.is_active === 1 || location?.is_active === 'true'
+
 export function useLocations() {
   const { user } = useAuth()
   const { refreshPendingCount, syncNow } = useSyncEngine()
@@ -20,15 +28,18 @@ export function useLocations() {
   }, [])
 
   /**
-   * Initialise ou synchronise les sites depuis Supabase si la table locale est vide.
+   * Initialise le cache local depuis Supabase quand aucun site vivant n'y est présent.
+   * Le comptage ignore les tombilles : un cache ne portant que des suppressions ne doit pas
+   * bloquer l'amorçage. La requête distante exclut aussi les sites supprimés.
    */
   const ensureLoaded = async () => {
     try {
-      const count = await db.locations.count()
-      if (count === 0 && navigator.onLine) {
+      const living = await db.locations.filter((loc) => !loc.deleted_at).count()
+      if (living === 0 && navigator.onLine) {
         const { data, error } = await supabase
           .from('locations')
           .select('*')
+          .is('deleted_at', null)
           .order('name')
         if (!error && data?.length) {
           await db.locations.bulkPut(data)

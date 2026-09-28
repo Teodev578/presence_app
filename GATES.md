@@ -312,3 +312,21 @@ Scope: Les cartes de sites n'affichaient qu'une table brute « Latitude / Longit
   CHECK: CHROME_PATH=$(command -v google-chrome-stable) node scripts/verify-browser.mjs --locations-cards
   EXPECT: browser-verify: locations cards passed
   EVIDENCE: browser-verify: locations cards passed, 10 assertions vertes (bascule de l'interrupteur comprise), aucune exception de page (vérifié par le parcours Chrome headless, copie dans .unlazy/evidence/locations-cards.png)
+
+---
+
+# Gates: Cohérence Actif/Inactif des Sites
+
+OWNS: src/views/manager/LocationsView.vue, src/composables/useLocations.js, src/views/employee/CheckInView.vue, src/views/employee/CheckOutView.vue, src/views/manager/DashboardView.vue, scripts/verify-gates.mjs, scripts/verify-browser.mjs, GATES.md
+
+Scope: Audit du module Lieux & Sites. Incohérences relevées et corrigées : (1) l'état vide unique affichait « Créez votre premier site… » sous le filtre « Inactifs » alors que des sites existaient, et ne distinguait ni « aucun site », ni « recherche vide », ni « aucun actif » ; (2) les filtres « Actifs » / « Inactifs » n'annonçaient pas leur compte ; (3) la bascule de statut n'offrait aucun retour quand la carte quittait la liste filtrée et avalait ses erreurs ; (4) la prédication d'activation était dupliquée et divergente entre les deux pointages (comparaison stricte) et le tableau de bord (vérité de `is_active`) ; (5) `filteredLocations` accédait à `loc.name.toLowerCase()` sans garde ; (6) l'amorçage `ensureLoaded` comptait les tombes et remontait les sites supprimés. Le prédicat `isLocationActive` est désormais unique et consommé par le gestionnaire et les deux pointages.
+
+- [x] G60: La logique d'affichage et la prédication de données sont cohérentes : états vides distincts avec action utile, comptes sur les filtres, prédicat `isLocationActive` exporté et consommé par la vue, les deux pointages et le tableau de bord, sans comparaison locale subsistante
+  CHECK: node scripts/verify-gates.mjs --locations-filters
+  EXPECT: G60 passed: active/inactive display and data predicate are consistent end to end
+  EVIDENCE: G60 passed: active/inactive display and data predicate are consistent end to end (vérifié par node scripts/verify-gates.mjs --locations-filters, contrôle négatif de l'oracle compris)
+
+- [x] G61: La logique est éprouvée sur la vue réelle : comptes annoncés, filtre « Inactifs » restreint la liste, catégorie vidée par bascule → message « Aucun site inactif » et action « Voir tous les sites » qui restaure la liste, recherche vide → « Aucun résultat » et « Effacer la recherche »
+  CHECK: CHROME_PATH=$(command -v google-chrome-stable) node scripts/verify-browser.mjs --locations-filters
+  EXPECT: browser-verify: locations filters passed
+  EVIDENCE: browser-verify: locations filters passed, 7 assertions vertes, aucune exception de page (vérifié par le parcours Chrome headless, copie dans .unlazy/evidence/locations-filters.png)
