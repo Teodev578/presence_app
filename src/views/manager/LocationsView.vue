@@ -55,6 +55,17 @@ const filteredLocations = computed(() => {
   })
 })
 
+// Coordonnée lisible : « 45.76400° N » plutôt qu'un décimal signé, illisible pour un gestionnaire.
+const formatCoordinate = (value, axis) => {
+  const numeric = Number(value)
+  if (!Number.isFinite(numeric)) return '—'
+  const hemisphere = axis === 'lat' ? (numeric >= 0 ? 'N' : 'S') : (numeric >= 0 ? 'E' : 'O')
+  return `${Math.abs(numeric).toFixed(5)}° ${hemisphere}`
+}
+
+// Le lien cartographique n'est ouvert qu'au clic : aucun service tiers n'est chargé dans la carte.
+const mapUrl = (loc) => `https://www.google.com/maps?q=${loc.latitude},${loc.longitude}`
+
 // Ouvrir modal pour ajout
 const openCreateModal = () => {
   isEditing.value = false
@@ -428,49 +439,80 @@ const toggleStatus = async (loc) => {
       <div
         v-for="loc in filteredLocations"
         :key="loc.id"
-        class="card bg-base-200 border border-base-300 shadow-xs hover:border-primary/40 transition-all rounded-m3-lg p-5 flex flex-col justify-between"
+        class="card bg-base-200 border border-base-300 shadow-xs hover:border-primary/40 transition-all rounded-m3-lg p-5 flex flex-col gap-4"
       >
-        <div class="flex flex-col gap-3">
-          <!-- Titre & Statut -->
-          <div class="flex items-start justify-between gap-2">
-            <div class="flex items-center gap-2 min-w-0">
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
-                <line x1="9" y1="22" x2="9" y2="2"></line>
-                <line x1="15" y1="22" x2="15" y2="2"></line>
-                <line x1="4" y1="12" x2="20" y2="12"></line>
-              </svg>
-              <h3 class="font-bold text-sm text-base-content truncate">{{ loc.name }}</h3>
-            </div>
+        <!-- Titre & État de pointage -->
+        <div class="flex items-center justify-between gap-3">
+          <div class="flex items-center gap-2 min-w-0">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
+              <line x1="9" y1="22" x2="9" y2="2"></line>
+              <line x1="15" y1="22" x2="15" y2="2"></line>
+              <line x1="4" y1="12" x2="20" y2="12"></line>
+            </svg>
+            <h3 class="font-bold text-base text-base-content truncate">{{ loc.name }}</h3>
+          </div>
+          <label
+            class="flex min-h-11 shrink-0 cursor-pointer select-none items-center gap-2"
+            :title="loc.is_active ? 'Désactiver ce site pour le pointage' : 'Activer ce site pour le pointage'"
+          >
             <span
-              class="badge badge-sm shrink-0 font-semibold cursor-pointer rounded-m3-xs"
-              :class="loc.is_active ? 'badge-success text-success-content' : 'badge-soft text-base-content/50'"
-              @click="toggleStatus(loc)"
-              title="Cliquer pour changer le statut"
+              class="text-xs font-bold"
+              :class="loc.is_active ? 'text-success' : 'text-base-content/50'"
             >
               {{ loc.is_active ? 'Actif' : 'Inactif' }}
             </span>
-          </div>
+            <input
+              type="checkbox"
+              class="toggle toggle-success toggle-sm"
+              :checked="loc.is_active"
+              :aria-label="loc.is_active ? `Désactiver ${loc.name} pour le pointage` : `Activer ${loc.name} pour le pointage`"
+              @change="toggleStatus(loc)"
+            />
+          </label>
+        </div>
 
-          <!-- Détails Coordonnées & Rayon -->
-          <div class="bg-base-300/60 rounded-m3-md p-3 flex flex-col gap-1.5 text-xs text-base-content/80 font-mono">
-            <div class="flex items-center justify-between">
-              <span class="text-base-content/50">Latitude :</span>
-              <span class="font-semibold">{{ Number(loc.latitude).toFixed(5) }}°</span>
-            </div>
-            <div class="flex items-center justify-between">
-              <span class="text-base-content/50">Longitude :</span>
-              <span class="font-semibold">{{ Number(loc.longitude).toFixed(5) }}°</span>
-            </div>
-            <div class="flex items-center justify-between pt-1 border-t border-base-300/50">
-              <span class="text-base-content/50">Rayon toléré :</span>
-              <span class="font-semibold text-primary">± {{ loc.radius_meters || 50 }} m</span>
-            </div>
+        <!-- Périmètre autorisé : la zone de pointage se lit d'un coup d'œil -->
+        <div class="flex items-center gap-3 rounded-m3-md bg-base-300/50 border border-base-300/60 p-3">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-9 h-9 shrink-0 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <circle cx="12" cy="12" r="4.5" class="opacity-60"></circle>
+            <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"></circle>
+            <line x1="12" y1="3" x2="12" y2="21" class="opacity-30"></line>
+            <line x1="3" y1="12" x2="21" y2="12" class="opacity-30"></line>
+          </svg>
+          <div class="min-w-0">
+            <p class="text-[11px] font-medium uppercase tracking-wide text-base-content/50">Périmètre autorisé</p>
+            <p class="text-sm font-bold text-base-content">{{ loc.radius_meters || 50 }} m autour du point</p>
           </div>
         </div>
 
+        <!-- Position : coordonnées lisibles et lien cartographique ouvert à la demande -->
+        <div class="flex flex-col gap-2">
+          <div class="min-w-0">
+            <p class="text-[11px] font-medium uppercase tracking-wide text-base-content/50">Position</p>
+            <p class="text-sm font-mono text-base-content/80 break-words">
+              {{ formatCoordinate(loc.latitude, 'lat') }} · {{ formatCoordinate(loc.longitude, 'lng') }}
+            </p>
+          </div>
+          <a
+            :href="mapUrl(loc)"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="btn btn-ghost min-h-11 w-full justify-start gap-1.5 rounded-m3-sm px-2 text-primary font-semibold"
+            :aria-label="`Voir ${loc.name} sur la carte`"
+            title="Ouvrir la position dans la carte"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+              <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+            <span>Voir sur la carte</span>
+          </a>
+        </div>
+
         <!-- Actions -->
-        <div class="flex items-center justify-end gap-2 mt-4 pt-3 border-t border-base-300/60">
+        <div class="flex items-center justify-end gap-2 mt-auto pt-3 border-t border-base-300/60">
           <button
             type="button"
             class="btn btn-ghost btn-sm text-error font-medium rounded-m3-sm min-h-11 px-3"

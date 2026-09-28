@@ -48,6 +48,7 @@ const TOKENS = {
   'sidebar-handle': 'browser-verify: sidebar handle passed',
   'sidebar-rail': 'browser-verify: sidebar rail passed',
   'locations-form': 'browser-verify: locations dialog passed',
+  'locations-cards': 'browser-verify: locations cards passed',
   'check-overlay': 'browser-verify: check overlay passed',
   'availability-summary': 'browser-verify: availability summary passed',
 }
@@ -76,6 +77,7 @@ import WeekSummaryCard from '../src/components/employee/WeekSummaryCard.vue'
 import CheckConfirmationOverlay from '../src/components/employee/CheckConfirmationOverlay.vue'
 import AvailabilitySummary from '../src/components/employee/AvailabilitySummary.vue'
 import LocationsView from '../src/views/manager/LocationsView.vue'
+import { db } from '../src/lib/db.js'
 import { getLocalDateString, resolveSessionMinutes } from '../src/lib/dateUtils.js'
 import { useSyncEngine } from '../src/composables/useSyncEngine.js'
 import { useSidebarNav } from '../src/composables/useSidebarNav.js'
@@ -389,8 +391,19 @@ const app = createApp({
     ]),
 })
 
-app.mount('#app')
-window.__harnessReady = true
+db.locations
+  .clear()
+  .then(() =>
+    db.locations.bulkPut([
+      { id: 'probe-site-lyon', name: 'Siège Lyon', latitude: 45.76404, longitude: 4.83566, radius_meters: 120, is_active: true },
+      { id: 'probe-site-sud', name: 'Dépôt Sud', latitude: 43.60465, longitude: 1.44421, radius_meters: 250, is_active: false },
+    ])
+  )
+  .catch(() => {})
+  .finally(() => {
+    app.mount('#app')
+    window.__harnessReady = true
+  })
 `
 
 const MEASURE_EXPRESSION = `(() => {
@@ -607,6 +620,30 @@ const MEASURE_EXPRESSION = `(() => {
           label: collapse(button.innerText),
           height: Math.round(button.getBoundingClientRect().height),
         }))
+      : [],
+    cards: locationsHost
+      ? [...locationsHost.querySelectorAll('.grid > .card')].map((card) => {
+          const link = card.querySelector('a[target="_blank"]')
+          const toggle = card.querySelector('input.toggle')
+          return {
+            name: collapse(card.querySelector('h3')?.innerText || ''),
+            statusText: toggle ? collapse(toggle.parentElement.innerText) : '',
+            statusChecked: toggle ? toggle.checked : null,
+            statusAria: toggle ? toggle.getAttribute('aria-label') : null,
+            statusCenter: toggle
+              ? (() => {
+                  const rect = toggle.getBoundingClientRect()
+                  return { x: Math.round(rect.x + rect.width / 2), y: Math.round(rect.y + rect.height / 2) }
+                })()
+              : null,
+            perimeter: collapse(card.querySelector('p.font-bold')?.innerText || ''),
+            position: collapse(card.querySelector('p.font-mono')?.innerText || ''),
+            mapHref: link ? link.getAttribute('href') : null,
+            mapTarget: link ? link.getAttribute('target') : null,
+            mapRel: link ? link.getAttribute('rel') : null,
+            buttonHeights: [...card.querySelectorAll('button')].map((button) => Math.round(button.getBoundingClientRect().height)),
+          }
+        })
       : [],
   }
 
@@ -1505,6 +1542,80 @@ async function verifyLocationsForm(cdp) {
   return failures === before
 }
 
+/**
+ * Les cartes de sites rendues sur la vue réelle : le périmètre et une position lisible
+ * remplacent les coordonnées brutes, et le lien cartographique s'ouvre à la demande.
+ */
+async function verifyLocationsCards(cdp) {
+  const before = failures
+  console.log('browser-verify: cartes de sites')
+
+  await cdp.send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false })
+  await sleep(LAYOUT_SETTLE_MS)
+
+  // Les cartes montent au fil de la requête live Dexie : on laisse le rendu se stabiliser.
+  const deadline = Date.now() + 5000
+  let snapshot = await cdp.measure()
+  while ((snapshot.locations?.cards?.length || 0) < 2 && Date.now() < deadline) {
+    await sleep(250)
+    snapshot = await cdp.measure()
+  }
+  assertShape(snapshot)
+
+  const cards = snapshot.locations.cards
+  const lyon = cards.find((card) => card.name.includes('Siège Lyon'))
+
+  check('les cartes de sites sont rendues', () => assertTrue(cards.length >= 2, `${cards.length} cartes`))
+  check('le nom du site reste lisible', () => assertTrue(Boolean(lyon), JSON.stringify(cards.map((card) => card.name))))
+  const sud = cards.find((card) => card.name.includes('Dépôt Sud'))
+  check('l’état de pointage est un interrupteur, pas un badge', () => {
+    assertTrue(lyon?.statusChecked === true, `Lyon : coché = ${lyon?.statusChecked}`)
+    assertTrue(sud?.statusChecked === false, `Dépôt Sud : coché = ${sud?.statusChecked}`)
+  })
+  check('l’interrupteur est nommé et libellé en clair', () => {
+    assertTrue(/Actif/.test(lyon?.statusText || ''), `libellé Lyon : ${lyon?.statusText}`)
+    assertTrue(/Inactif/.test(sud?.statusText || ''), `libellé Dépôt Sud : ${sud?.statusText}`)
+    assertTrue((lyon?.statusAria || '').includes('Désactiver'), `aria Lyon : ${lyon?.statusAria}`)
+    assertTrue((sud?.statusAria || '').includes('Activer'), `aria Dépôt Sud : ${sud?.statusAria}`)
+  })
+  check('le périmètre autorisé est explicite', () =>
+    assertTrue((lyon?.perimeter || '').includes('120 m'), `périmètre : ${lyon?.perimeter}`)
+  )
+  check('les coordonnées sont lisibles et nommées par hémisphère', () => {
+    assertTrue(/°\s?N/.test(lyon?.position || ''), `position : ${lyon?.position}`)
+    assertTrue(/°\s?E/.test(lyon?.position || ''), `position : ${lyon?.position}`)
+    assertTrue(!/Latitude|Longitude/.test(lyon?.position || ''), 'libellés bruts conservés')
+  })
+  check('le lien cartographique vise le point et s’ouvre de façon sûre', () => {
+    assertTrue((lyon?.mapHref || '').includes('45.76404') && (lyon?.mapHref || '').includes('4.83566'), `href : ${lyon?.mapHref}`)
+    assertEqual(lyon?.mapTarget, '_blank', 'cible du lien')
+    assertTrue((lyon?.mapRel || '').includes('noopener'), `rel : ${lyon?.mapRel}`)
+  })
+  check('les actions de carte gardent 44px', () =>
+    assertTrue(
+      cards.every((card) => card.buttonHeights.every((height) => height >= 44)),
+      JSON.stringify(cards.map((card) => card.buttonHeights))
+    )
+  )
+
+  await cdp.evaluate("document.querySelector('#locations-host')?.scrollIntoView({ block: 'start' })")
+  await sleep(250)
+  const inView = await cdp.measure()
+  await cdp.screenshot('locations-cards.png')
+
+  // L'interrupteur doit réellement basculer l'état, pas seulement l'afficher.
+  const target = inView.locations.cards.find((card) => card.name.includes('Siège Lyon'))
+  await cdp.clickAt(target?.statusCenter)
+  await sleep(400)
+  const flipped = (await cdp.measure()).locations.cards.find((card) => card.name.includes('Siège Lyon'))
+  check('l’interrupteur bascule l’état au clic', () => {
+    assertTrue(flipped?.statusChecked === false, `état après clic : ${flipped?.statusChecked}`)
+    assertTrue(/Inactif/.test(flipped?.statusText || ''), `libellé après clic : ${flipped?.statusText}`)
+  })
+
+  return failures === before
+}
+
 const VERIFIERS = {
   theme: verifyTheme,
   sessions: verifySessions,
@@ -1518,6 +1629,7 @@ const VERIFIERS = {
   'sidebar-handle': verifySidebarHandle,
   'sidebar-rail': verifySidebarRail,
   'locations-form': verifyLocationsForm,
+  'locations-cards': verifyLocationsCards,
 }
 
 async function main() {

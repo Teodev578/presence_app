@@ -294,3 +294,21 @@ Scope: Enseignements des forums et guides UX (Nielsen Norman Group « Website Fo
   CHECK: CHROME_PATH=$(command -v google-chrome-stable) node scripts/verify-browser.mjs --locations-form
   EXPECT: browser-verify: locations dialog passed
   EVIDENCE: browser-verify: locations dialog passed, 8 assertions vertes, aucune exception de page (vérifié par le parcours Chrome headless, copie dans .unlazy/evidence/locations-dialog.png)
+
+---
+
+# Gates: Cartes de Sites Lisibles
+
+OWNS: src/views/manager/LocationsView.vue, scripts/verify-gates.mjs, scripts/verify-browser.mjs, GATES.md
+
+Scope: Les cartes de sites n'affichaient qu'une table brute « Latitude / Longitude » en chiffres signés, peu parlante pour un gestionnaire. La carte montre désormais le périmètre autorisé en clair (« 120 m autour du point »), une position nommée par hémisphère (« 45.76404° N · 4.83566° E ») et un lien « Voir sur la carte » ouvert à la demande (`target="_blank"` + `rel="noopener noreferrer"`), sans charger de service tiers dans l'application. Choix validé par l'utilisateur : rendu hors-ligne, coordonnées lisibles seulement, pas de reverse-géocodage.
+
+- [x] G58: Le contrat de lisibilité est vérifié au niveau source : périmètre explicite, formateur `formatCoordinate` par hémisphère, action `mapUrl`, lien sûr, interrupteur d'état câblé (`toggle` + `@change`), et disparition des étiquettes brutes « Latitude : / Longitude : » comme du badge cliquable
+  CHECK: node scripts/verify-gates.mjs --locations-cards
+  EXPECT: G58 passed: site cards show a readable perimeter, position and map link
+  EVIDENCE: G58 passed: site cards show a readable perimeter, position and map link (vérifié par node scripts/verify-gates.mjs --locations-cards, contrôle négatif de l'oracle compris)
+
+- [x] G59: La géométrie, le contenu et l'interaction sont mesurés sur la vue gestionnaire réelle, alimentée par deux sites semés : nom, état de pointage porté par un interrupteur nommé et libellé (coché pour l'un, décoché pour l'autre) qui bascule au clic, périmètre chiffré, position nommée par hémisphère (longitude non tronquée), lien cartographique ciblé et sécurisé, actions de 44px
+  CHECK: CHROME_PATH=$(command -v google-chrome-stable) node scripts/verify-browser.mjs --locations-cards
+  EXPECT: browser-verify: locations cards passed
+  EVIDENCE: browser-verify: locations cards passed, 10 assertions vertes (bascule de l'interrupteur comprise), aucune exception de page (vérifié par le parcours Chrome headless, copie dans .unlazy/evidence/locations-cards.png)

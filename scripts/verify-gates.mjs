@@ -2312,6 +2312,55 @@ export function checkLocationsForm() {
   return true;
 }
 
+/**
+ * G58 : Les cartes de sites situent le lieu sans jargon : périmètre autorisé explicite,
+ * coordonnées nommées par hémisphère, et lien cartographique ouvert à la demande, sans
+ * coordonnées brutes étiquetées « Latitude / Longitude ».
+ */
+export function checkLocationsCards() {
+  const cardGaps = (text) => {
+    const gaps = [];
+    for (const token of ['Périmètre autorisé', 'Voir sur la carte', 'formatCoordinate', 'mapUrl', 'toggle toggle-success', 'type="checkbox"']) {
+      if (!text.includes(token)) gaps.push(`carte sans « ${token} »`);
+    }
+    if (!text.includes('@change="toggleStatus(loc)"')) gaps.push('interrupteur non câblé');
+    if (!text.includes('target="_blank"') || !text.includes('rel="noopener noreferrer"')) {
+      gaps.push('lien cartographique non sécurisé');
+    }
+    if (/\bLatitude\s*:/.test(text) || /\bLongitude\s*:/.test(text)) {
+      gaps.push('coordonnées brutes conservées');
+    }
+    if (text.includes('title="Cliquer pour changer le statut"')) {
+      gaps.push('ancien badge cliquable conservé');
+    }
+    return gaps;
+  };
+
+  // Contrôle négatif : une carte portant encore le badge cliquable et les coordonnées brutes doit
+  // être refusée, même lorsque tous les autres jetons sont présents.
+  const bogus =
+    'Périmètre autorisé Voir sur la carte formatCoordinate mapUrl toggle toggle-success type="checkbox" '
+    + '@change="toggleStatus(loc)" target="_blank" rel="noopener noreferrer" '
+    + 'title="Cliquer pour changer le statut" <span>Latitude :</span><span>Longitude :</span>';
+  if (cardGaps(bogus).length === 0) {
+    console.error('FAILURE G58: le détecteur de carte de site est aveugle, oracle invalide');
+    return false;
+  }
+
+  const file = path.join(SRC_DIR, 'views', 'manager', 'LocationsView.vue');
+  if (!fs.existsSync(file)) {
+    console.error('FAILURE G58: LocationsView.vue introuvable');
+    return false;
+  }
+  const gaps = cardGaps(fs.readFileSync(file, 'utf8'));
+  if (gaps.length > 0) {
+    console.error(`FAILURE G58: les cartes de sites restent peu lisibles -> ${[...new Set(gaps)].join(', ')}`);
+    return false;
+  }
+  console.log('G58 passed: site cards show a readable perimeter, position and map link');
+  return true;
+}
+
 // Exécution CLI
 const arg = process.argv[2] || '--all';
 let success = true;
@@ -2400,6 +2449,8 @@ if (arg === '--emojis') {
   success = checkSidebarRail();
 } else if (arg === '--locations-form') {
   success = checkLocationsForm();
+} else if (arg === '--locations-cards') {
+  success = checkLocationsCards();
 } else if (arg === '--sidebar-build') {
   success = checkBuild('G48', 'production build succeeds with exit code 0');
 } else if (arg === '--manager-build') {
@@ -2445,10 +2496,11 @@ if (arg === '--emojis') {
   const r45 = checkSidebarRail();
   const r49 = checkSidebarHandle();
   const r56 = checkLocationsForm();
+  const r58 = checkLocationsCards();
   const r48 = r39; // Une seule compilation sert les portes de build G39 et G48
-  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56;
+  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58;
 } else {
-  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--manager-build|--sidebar-build|--build|--all]`);
+  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--manager-build|--sidebar-build|--build|--all]`);
   process.exit(1);
 }
 
