@@ -348,9 +348,10 @@ html, body {
     margin-left: 0;
   }
 
-  /* La poignée occupe le coin haut droit du rail, au dessus de la marque laissée en retrait */
+  /* En-tête du rail : contenu centré, poignée en coin */
   .drawer-rail .rail-header {
-    padding-top: 3.5rem;
+    justify-content: center;
+    padding-top: 2.5rem;
   }
 
   .drawer-rail .rail-handle {

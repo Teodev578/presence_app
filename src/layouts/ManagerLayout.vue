@@ -147,12 +147,6 @@ const handleLogout = async () => {
           </label>
 
           <div class="flex items-center gap-2 lg:hidden">
-            <div class="w-7 h-7 rounded-m3-sm bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5">
-                <circle cx="12" cy="12" r="10" />
-                <polyline points="12 6 12 12 16 14" />
-              </svg>
-            </div>
             <span class="font-bold text-sm tracking-tight text-base-content">PresenceApp</span>
           </div>
 
@@ -184,10 +178,11 @@ const handleLogout = async () => {
           <!-- En-tête Marque & Logo, poignée de repli comprise -->
           <div class="rail-header flex items-center justify-between pb-4 border-b border-base-300/60">
             <div class="flex items-center gap-2.5">
-              <div class="w-8 h-8 rounded-m3-sm bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
-                  <circle cx="12" cy="12" r="10" />
-                  <polyline points="12 6 12 12 16 14" />
+              <div class="w-8 h-8 rounded-m3-sm bg-primary/10 border border-primary/20 flex items-center justify-center text-primary drawer-rail:w-10 drawer-rail:h-10">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 drawer-rail:w-6 drawer-rail:h-6">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M14 11l2 2 4-4" />
                 </svg>
               </div>
               <div class="rail-hide flex flex-col">
@@ -196,21 +191,10 @@ const handleLogout = async () => {
               </div>
             </div>
 
-            <!-- Bouton de fermeture du tiroir superposé (< 840px) -->
-            <label
-              for="manager-drawer"
-              class="btn btn-ghost btn-circle btn-sm text-base-content/60 hover:text-base-content cursor-pointer docked:hidden"
-              aria-label="Fermer le menu"
-            >
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </label>
-
             <!-- Poignée de repli : offerte une fois la barre ancrée, seul moyen de passer en rail -->
             <button
               type="button"
-              class="rail-handle hidden docked:inline-flex btn btn-ghost btn-circle absolute top-5 right-4 min-w-11 min-h-11 text-base-content/60 hover:text-base-content"
+              class="rail-handle hidden docked:inline-flex btn btn-ghost btn-circle absolute top-4 right-4 min-w-11 min-h-11 text-base-content/60 hover:text-base-content"
               aria-controls="manager-sidebar"
               :aria-expanded="!isRail"
               :aria-label="railHandleLabel"

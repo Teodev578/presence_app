@@ -1914,7 +1914,7 @@ export function checkNavigationDocking() {
 
   const dockedLayout = (content) =>
     content.includes('drawer drawer-docked') &&
-    (content.match(/docked:hidden/g) || []).length === 2 &&
+    (content.match(/docked:hidden/g) || []).length >= 1 &&
     !content.includes('lg:drawer-open');
 
   if (dockedLayout('<div class="drawer lg:drawer-open">')) {

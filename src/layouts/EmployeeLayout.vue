@@ -91,7 +91,7 @@ const handleLogout = async () => {
     <div class="drawer-content flex flex-col min-h-screen md:h-screen md:max-h-screen md:overflow-hidden pb-[calc(0.75rem+var(--safe-bottom,0px))] md:pb-2">
       <!-- Barre de navigation supérieure épurée -->
       <header class="navbar bg-base-100/90 backdrop-blur-md sticky top-0 z-30 border-b border-base-300 px-4 sm:px-6 min-h-14 shrink-0">
-        <!-- Bouton hamburger (mobile et tablette < 840px) + Marque & Logo -->
+        <!-- Bouton hamburger (mobile et tablette < 840px) + Marque -->
         <div class="flex items-center gap-2 sm:gap-3">
           <label
             for="employee-drawer"
@@ -103,12 +103,6 @@ const handleLogout = async () => {
             </svg>
           </label>
 
-          <div class="w-8 h-8 rounded-m3-sm bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
-              <circle cx="12" cy="12" r="10" />
-              <polyline points="12 6 12 12 16 14" />
-            </svg>
-          </div>
           <span class="font-bold text-base tracking-tight text-base-content">PresenceApp</span>
         </div>
 
@@ -135,12 +129,13 @@ const handleLogout = async () => {
       >
         <div>
           <!-- En-tête Marque & Logo, poignée de repli comprise -->
-          <div class="rail-header flex items-center justify-between pb-4 border-b border-base-300/60">
+          <div class="rail-header flex items-center justify-center pb-4 border-b border-base-300/60 relative">
             <div class="flex items-center gap-2.5">
-              <div class="w-8 h-8 rounded-m3-sm bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
-                  <circle cx="12" cy="12" r="10" />
-                  <polyline points="12 6 12 12 16 14" />
+              <div class="w-8 h-8 rounded-m3-sm bg-primary/10 border border-primary/20 flex items-center justify-center text-primary drawer-rail:w-10 drawer-rail:h-10">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 drawer-rail:w-6 drawer-rail:h-6">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M14 11l2 2 4-4" />
                 </svg>
               </div>
               <div class="rail-hide flex flex-col">
@@ -149,21 +144,10 @@ const handleLogout = async () => {
               </div>
             </div>
 
-            <!-- Bouton de fermeture du tiroir superposé (< 840px) -->
-            <label
-              for="employee-drawer"
-              class="btn btn-ghost btn-circle btn-sm text-base-content/60 hover:text-base-content cursor-pointer shrink-0 docked:hidden"
-              aria-label="Fermer le menu"
-            >
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </label>
-
             <!-- Poignée de repli : offerte une fois la barre ancrée, seul moyen de passer en rail -->
             <button
               type="button"
-              class="rail-handle hidden docked:inline-flex btn btn-ghost btn-circle absolute top-5 right-4 min-w-11 min-h-11 text-base-content/60 hover:text-base-content"
+              class="rail-handle hidden docked:inline-flex btn btn-ghost btn-circle absolute top-4 right-4 min-w-11 min-h-11 text-base-content/60 hover:text-base-content"
               aria-controls="employee-sidebar"
               :aria-expanded="!isRail"
               :aria-label="railHandleLabel"
