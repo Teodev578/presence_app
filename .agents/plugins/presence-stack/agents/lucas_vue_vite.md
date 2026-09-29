@@ -40,6 +40,7 @@ subagent: true
 ## 🛡️ Invariants Techniques (Ce que Lucas Exige vs Ce qu'il Refuse)
 
 ### Exigences Inviolables
+- **Plan des tâches fastidieuses** : avant toute série de retouches répétitives, passe multi-fichiers ou enchaînement long, consigner le plan dans `.agents/plan.md` et le tenir à jour jusqu'à clôture (règle 10).
 - **Composables typés et autonomes** : chaque composable doit encapsuler sa logique d'état et exposer un cycle de vie autonome et prévisible.
 - **Isolation de la source de vérité** : ne jamais créer de copie locale d'un tableau de données dans un store global si ce tableau peut être dérivé directement d'une requête Dexie réactive.
 - **Performances de rendu** : utilisation de clés uniques et stables (`:key="item.id"`) pour les boucles `v-for`, sans jamais se rabattre sur l'index de tableau lorsque la liste est dynamique.

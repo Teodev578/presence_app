@@ -2442,11 +2442,11 @@ export function checkPresencesUi() {
     // En-tête unifié sur la grammaire de la vue Sites
     if (!/<h1[^>]*>/.test(text) || /<h2[^>]*>/.test(text)) gaps.push('en-tête non unifié en h1');
     if (!text.includes('bg-primary/10') || !text.includes('border-primary/20')) gaps.push('pastille d’en-tête absente');
-    // Recherche intégrée, pleine largeur et nommée
+    // Recherche intégrée, pleine largeur et nommée, placeholder allégé de sa consigne chargée (C6)
     if (!/class="input input-bordered flex w-full/.test(text)) gaps.push('recherche non intégrée');
-    if (!text.includes('placeholder="Rechercher un collaborateur')) gaps.push('recherche collaborateur absente');
-    // Filtres à comptes dans une barre join
-    for (const token of ['statusCounts.all', 'statusCounts.present', 'statusCounts.late', 'statusCounts.completed']) {
+    if (!text.includes('placeholder="Rechercher un nom, un email ou un site"')) gaps.push('placeholder de recherche allégé absent');
+    // Filtres à comptes dans une barre join, le statut absent compris (B4)
+    for (const token of ['statusCounts.all', 'statusCounts.present', 'statusCounts.late', 'statusCounts.completed', 'statusCounts.absent']) {
       if (!text.includes(token)) gaps.push(`filtre sans compte : ${token}`);
     }
     if (!/\bjoin\b/.test(text)) gaps.push('filtres sans barre join');
@@ -2455,6 +2455,27 @@ export function checkPresencesUi() {
       if (!text.includes(message)) gaps.push(`état vide absent : ${message}`);
     }
     if (!text.includes('runEmptyAction')) gaps.push('action d’état vide absente');
+    // L'actualisation vit dans l'en-tête : l'état vide n'en propose plus de doublon ni d'action primaire (C1)
+    if ((text.match(/Actualiser/g) || []).length !== 1) gaps.push('actualisation en double');
+    if (/action: 'refresh'/.test(text)) gaps.push('rafraîchissement proposé par l’état vide');
+    if (!/v-if="emptyState\.action"/.test(text)) gaps.push('action d’état vide non conditionnée');
+    // L'état vide porte une icône de situation, distincte du tracé du titre (C2)
+    if (!text.includes("emptyState.icon === 'calendar'") || !text.includes("emptyState.icon === 'search'")) {
+      gaps.push('icône de situation d’état vide absente');
+    }
+    // La journée close se nomme « Terminé » partout (B1), le total se nomme « Pointages » (B3)
+    if (!text.includes('Journées terminées')) gaps.push('journée close mal dénommée dans le bandeau');
+    if (/Départs validés|Journées clôturées/.test(text)) gaps.push('journée close mal nommée');
+    if (/Total pointés/.test(text)) gaps.push('total mal nommé');
+    // Les KPI décrivent les temps, leurs sous-titres portent la nuance (B2)
+    for (const nuance of ['Arrivées ponctuelles, journées closes comprises', 'Arrivées tardives, journées closes comprises', 'Avec départ enregistré']) {
+      if (!text.includes(nuance)) gaps.push(`sous-titre KPI absent : ${nuance}`);
+    }
+    // Un seul segment actif dominant : la période en primary, le statut atténué (C5)
+    if (!text.includes("'btn-primary': filterPeriod")) gaps.push('segment de période non dominant');
+    if (!text.includes("'btn-active font-semibold': filterStatus")) gaps.push('segment de statut non atténué');
+    // Rigueur typographique : aucune taille arbitraire (C4)
+    if (/text-\[11px\]/.test(text)) gaps.push('taille de police arbitraire');
     // Cartes/tableau : identité, temps et précision GPS portés par la vue
     for (const token of ['initials(', 'accuracyBadge(', 'StatusBadge']) {
       if (!text.includes(token)) gaps.push(`ligne sans ${token}`);
@@ -2467,11 +2488,21 @@ export function checkPresencesUi() {
     return gaps;
   };
 
-  // Contrôle négatif : l'ancien écran (tableau + select natif + h2) doit être refusé.
-  const bogus = '<h2>Contrôle des Présences</h2><select id="f-status"></select><table></table>';
-  if (uiGaps(bogus).length === 0) {
+  // Contrôle négatif : l'ancien écran (tableau + select natif + h2) et son vocabulaire divergent doivent être refusés.
+  const bogus =
+    '<h2>Contrôle des Présences</h2><select id="f-status"></select><table></table>'
+    + '<span>Départs validés</span><span>Journées clôturées</span><span>Total pointés</span>'
+    + '<span class="text-[11px]">x</span><span>Actualiser</span><span>Actualiser</span>';
+  const bogusGaps = uiGaps(bogus);
+  if (bogusGaps.length === 0) {
     console.error('FAILURE G63: le détecteur d’interface présences est aveugle, oracle invalide');
     return false;
+  }
+  for (const expected of ['journée close mal nommée', 'total mal nommé', 'actualisation en double', 'taille de police arbitraire']) {
+    if (!bogusGaps.includes(expected)) {
+      console.error(`FAILURE G63: contrôle négatif incomplet, ${expected} non détecté`);
+      return false;
+    }
   }
 
   const file = path.join(SRC_DIR, 'views', 'manager', 'PresencesView.vue');
@@ -2510,14 +2541,43 @@ export function checkPresencesPeriod() {
     if (!/p\.work_date >= start/.test(text) || !/p\.work_date <= end/.test(text)) {
       gaps.push('plage non appliquée au filtre local');
     }
+    // A1 : chaque mode expose son ancre, la semaine et le mois se parcourent par flèches
+    if (!text.includes('shiftAnchor')) gaps.push('ancre non navigable');
+    for (const label of ['Semaine précédente', 'Semaine suivante', 'Mois précédent', 'Mois suivant']) {
+      if (!text.includes(`aria-label="${label}"`)) gaps.push(`flèche absente : ${label}`);
+    }
+    // A2 et A4 : libellé au-dessus du champ, sans deux-points
+    for (const colon of ['Période :', 'Statut :', 'Date :', 'Du :', 'Au :']) {
+      if (text.includes(colon)) gaps.push(`deux-points conservé : ${colon}`);
+    }
+    for (const legend of ['>Période<', '>Statut<', '>Date<', '>Semaine<', '>Mois<', '>Du<', '>Au<']) {
+      if (!text.includes(legend)) gaps.push(`libellé manquant : ${legend}`);
+    }
+    // A3 : le groupe Statut ne flotte plus au bas de la colonne période
+    if (text.includes('sm:self-end')) gaps.push('statut encore flottant');
+    // C3 : libellé de période et colonne Date passés au format long
+    if (!text.includes('formatWorkDate(start, { long: true })')) gaps.push('libellé de période non allongé');
+    if (!text.includes('formatWorkDate(p.work_date, { long: true })')) gaps.push('colonne date non allongée');
+    // A5 : les champs Du et Au occupent la largeur de la rangée, comme la date du mode jour
+    if ((text.match(/fieldset sm:flex-1 min-w-0/g) || []).length !== 2) {
+      gaps.push('champs Du/Au non étendus sur la largeur');
+    }
     return gaps;
   };
 
-  // Contrôle négatif : l'ancien filtre à date unique (eq + watch(filterDate)) doit être refusé.
-  const bogus = "const filterDate = ref(getLocalDateString()); watch(filterDate, loadPresences); query.eq('work_date', filterDate.value)";
-  if (periodGaps(bogus).length === 0) {
+  // Contrôle négatif : l'ancien filtre à date unique (eq + watch(filterDate)) et son gabarit
+  // à deux-points doivent être refusés.
+  const bogus = "const filterDate = ref(getLocalDateString()); watch(filterDate, loadPresences); query.eq('work_date', filterDate.value); Période : Statut :";
+  const bogusGaps = periodGaps(bogus);
+  if (bogusGaps.length === 0) {
     console.error('FAILURE G64: le détecteur de période est aveugle, oracle invalide');
     return false;
+  }
+  for (const expected of ['ancre non navigable', 'deux-points conservé : Période :', 'champs Du/Au non étendus sur la largeur']) {
+    if (!bogusGaps.includes(expected)) {
+      console.error(`FAILURE G64: contrôle négatif incomplet, ${expected} non détecté`);
+      return false;
+    }
   }
 
   const file = path.join(SRC_DIR, 'views', 'manager', 'PresencesView.vue');
@@ -2553,16 +2613,30 @@ export function checkPresencesTable() {
     }
     if (/grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3/.test(text)) gaps.push('grille de cartes conservée');
     if (/\bbtn-sm\b/.test(text)) gaps.push('action rétrécie (btn-sm) désaccordée de l’icône');
+    // D1 : fiches synthétiques sous 640px, tableau d'audit à partir de 640px
+    if (!text.includes('sm:hidden divide-y divide-base-300')) gaps.push('fiches mobiles absentes');
+    if (!text.includes('hidden sm:block overflow-x-auto')) gaps.push('tableau non réservé au-delà de 640px');
+    // D2 : les segments de filtre défilent horizontalement sur mobile, chaque cible restant fixe
+    if (!text.includes('join w-full overflow-x-auto')) gaps.push('segments non défilables sur mobile');
+    if (!/shrink-0/.test(text)) gaps.push('segments sans cible fixe');
     return gaps;
   };
 
-  // Contrôle négatif : l'ancienne présentation en cartes, sans tableau balisé, doit être refusée.
+  // Contrôle négatif : l'ancienne présentation en cartes, sans tableau balisé ni fiches mobiles,
+  // doit être refusée.
   const bogus =
     '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">'
     + '<div class="card">Collaborateur Arrivée Départ Durée Statut</div></div>';
-  if (tableGaps(bogus).length === 0) {
+  const bogusGaps = tableGaps(bogus);
+  if (bogusGaps.length === 0) {
     console.error('FAILURE G65: le détecteur de tableau présences est aveugle, oracle invalide');
     return false;
+  }
+  for (const expected of ['grille de cartes conservée', 'fiches mobiles absentes']) {
+    if (!bogusGaps.includes(expected)) {
+      console.error(`FAILURE G65: contrôle négatif incomplet, ${expected} non détecté`);
+      return false;
+    }
   }
 
   const file = path.join(SRC_DIR, 'views', 'manager', 'PresencesView.vue');

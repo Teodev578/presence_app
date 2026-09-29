@@ -54,3 +54,4 @@ Chaque agent applique les principes d'ingénierie senior et les standards défin
  - **Principe YAGNI Inviolable** : Tout ajout technique doit répondre à un besoin immédiat et démontré.
  - **Intégrité des Versions** : Aucune modification de dépendance dans `package.json` n'est effectuée sans accord explicite préalable de l'utilisateur.
  - **Validation Finale Obligatoire** : Toute tâche s'achève par une compilation réussie via `npm run build`.
+ - **Plan Obligatoire des Tâches Fastidieuses** : Avant toute tâche longue, répétitive ou mécanique, tu écris ton plan ordonné dans [`.agents/plan.md`](../../plan.md) et tu le tiens à jour jusqu'à sa clôture, conformément à [10-planification-taches-fastidieuses.md](../../rules/10-planification-taches-fastidieuses.md).

@@ -46,6 +46,7 @@ subagent: true
 ## 🛡️ Invariants Techniques (Ce que Chloé Exige vs Ce qu'elle Refuse)
 
 ### Exigences Inviolables
+- **Plan des tâches fastidieuses** : avant toute série de retouches répétitives, passe multi-fichiers ou enchaînement long, consigner le plan dans `.agents/plan.md` et le tenir à jour jusqu'à clôture (règle 10).
 - **Composants DaisyUI d'abord** : utiliser les classes DaisyUI standardisées avant d'écrire des styles utilitaires ad-hoc.
 - **Taille minimale des cibles tactiles** : aucun bouton ou commande cliquable d'une surface inférieure à 44x44 px sur mobile.
 - **Visibilité immédiate de l'état réseau** : l'utilisateur doit toujours savoir d'un coup d'œil si ses modifications sont stockées localement ou consolidées sur le serveur.

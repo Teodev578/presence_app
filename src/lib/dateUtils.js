@@ -103,22 +103,23 @@ export function formatHoursMinutes(totalMinutes) {
 }
 
 /**
- * Formate une date ISO ou string 'YYYY-MM-DD' en libellé court français (ex: "Lun. 21 sept.").
+ * Formate une date ISO ou string 'YYYY-MM-DD' en libellé français.
+ * Par défaut le libellé est court (ex: "Lun. 21 sept.") ; le variant long
+ * écrit le mois en toutes lettres et ajoute l'année (ex: "21 septembre 2026").
  *
  * @param {string|Date} dateVal
+ * @param {{ long?: boolean }} [options]
  * @returns {string}
  */
-export function formatWorkDate(dateVal) {
+export function formatWorkDate(dateVal, { long = false } = {}) {
   if (!dateVal) return ''
   const d = typeof dateVal === 'string' && dateVal.length === 10
     ? new Date(`${dateVal}T12:00:00`)
     : new Date(dateVal)
   if (isNaN(d.getTime())) return ''
-  const formatted = d.toLocaleDateString('fr-FR', {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-  })
+  const formatted = d.toLocaleDateString('fr-FR', long
+    ? { day: 'numeric', month: 'long', year: 'numeric' }
+    : { weekday: 'short', day: 'numeric', month: 'short' })
   return formatted.charAt(0).toUpperCase() + formatted.slice(1)
 }
 

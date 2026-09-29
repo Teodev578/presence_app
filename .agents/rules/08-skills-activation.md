@@ -23,6 +23,7 @@ Ce document fixe les conditions d'activation obligatoire des compétences agenti
 | Anomalie de persistance locale, bogue réseau ou désynchronisation de l'Outbox | `diagnosing-bugs` | Reproduction séquentielle du cas limite, inspection des transactions Dexie et contrôle de l'idempotence Supabase avant toute correction. |
 | Nettoyage final, contrôle pré-fusion ou audit de propreté | `code-hygiene` | Traque du code mort, élimination des journaux de débogage console et validation par `npm run build`. |
 | Nouvelle fonctionnalité complète ou découpage fonctionnel complexe | `bmad-spec` → `bmad-build` | Formalisation du contrat machine avant écriture du code, puis implémentation pas à pas. |
+| Tâche fastidieuse ou longue sans enjeu architectural (série de retouches répétitives, passe mécanique multi-fichiers, enchaînement de plus de cinq étapes) | `unlazy` | Application de `10-planification-taches-fastidieuses.md` : rédaction préalable du plan dans `.agents/plan.md` (périmètre, étapes ordonnées, critère d'arrêt, vérification par étape), tenu à jour jusqu'à clôture puis purgé, en complément des clauses `OWNS:` de `GATES.md`. |
 
 ---
 

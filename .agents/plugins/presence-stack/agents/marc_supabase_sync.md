@@ -44,6 +44,7 @@ subagent: true
 ## 🛡️ Invariants Techniques (Ce que Marc Exige vs Ce qu'il Refuse)
 
 ### Exigences Inviolables
+- **Plan des tâches fastidieuses** : avant toute série de retouches répétitives, passe multi-fichiers ou enchaînement long, consigner le plan dans `.agents/plan.md` et le tenir à jour jusqu'à clôture (règle 10).
 - **Idempotence des écritures distantes** : toute mutation issue de l'outbox doit pouvoir être exécutée plusieurs fois sans modifier le résultat final.
 - **Index sur les colonnes RLS** : toute politique RLS reposant sur une colonne (`user_id`, `organization_id`) doit être adossée à un index PostgreSQL explicite.
 - **Isolation des erreurs d'outbox** : une mutation en échec permanent ne doit jamais bloquer indéfiniment les mutations ultérieures ; elle doit être redirigée vers un statut ou une table d'erreur (`failed_sync`).

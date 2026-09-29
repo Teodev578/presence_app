@@ -395,3 +395,38 @@ Scope: Les en-têtes du tableau deviennent triables. Un clic trie par ordre croi
   CHECK: node scripts/verify-gates.mjs --presences-sort
   EXPECT: G66 passed: presence table headers sort both ways
   EVIDENCE: G66 passed: presence table headers sort both ways (vérifié par node scripts/verify-gates.mjs --presences-sort, contrôle négatif de l'oracle compris) et build de production en sortie 0
+
+---
+
+# Gates: Reprise UI/UX du Contrôle des Présences
+
+OWNS: src/views/manager/PresencesView.vue, src/components/shared/StatusBadge.vue, src/lib/dateUtils.js, scripts/verify-gates.mjs, GATES.md
+
+Scope: Reprise de l'écran « Contrôle des Présences » validée à l'écran le 29/09/2026 et consignée dans `plan.md`, exécutée en quatre lots. Lot 1 (A1-A4) : chaque mode du filtre de période expose son ancre dans un gabarit unique (libellé au-dessus, sans deux-points), la semaine et le mois se parcourent par flèches précédent/suivant avec plage lisible, et le groupe Statut siège en pleine largeur sous la période. Lot 2 (B1-B4) : la journée close se nomme « Terminé » partout, les KPI décrivent les temps (ponctualité, clôture) quand le filtre décrit la session, le total se nomme « Pointages », et « Absents » rejoint le filtre. Lot 3 (C1-C6) : l'actualisation reste unique dans l'en-tête, l'état vide porte une icône de situation et n'héberge plus l'action la plus voyante, les dates lisibles passent au format long, `text-[11px]` rentre dans l'échelle, le segment actif dominant est unique (Période) et le placeholder de recherche s'allège. Lot 4 (D1-D2) : fiches synthétiques sous 640px et segments scrollables horizontalement sur mobile. Arbitrages utilisateur : B2 option 1 (KPI = temps, filtre = session), B4 ajout du segment « Absents », A3 Statut en pleine largeur, C5 Période dominante. Hors périmètre : `loadPresences`, `saveEdit`, l'outbox et les ADR 0001 à 0004.
+
+- [x] G67: Le filtre de période expose une ancre par mode dans un gabarit unique (libellé au-dessus, sans deux-points), la semaine et le mois se parcourent par flèches précédent/suivant avec plage lisible, le groupe Statut siège en pleine largeur sous la période, les champs Du et Au occupent la largeur de la rangée comme la date du mode jour, et les libellés lisibles passent au format long
+  CHECK: node scripts/verify-gates.mjs --presences-period
+  EXPECT: G64 passed: presence period filter offers presets and a custom range
+  EVIDENCE: G64 passed: presence period filter offers presets and a custom range (vérifié par node scripts/verify-gates.mjs --presences-period, contrôle négatif de l'oracle compris : ancre non navigable, deux-points conservés et champs Du/Au non étendus détectés)
+
+- [x] G68: La journée close se nomme « Terminé » partout, les KPI nomment leur source de temps et portent la nuance en sous-titre, le total se nomme « Pointages », et « Absents » rejoint le filtre comme segment compté
+  CHECK: node scripts/verify-gates.mjs --presences-ui
+  EXPECT: G63 passed: presences screen shares the locations grammar
+  EVIDENCE: G63 passed: presences screen shares the locations grammar (vérifié par node scripts/verify-gates.mjs --presences-ui, contrôle négatif de l'oracle compris : journée close mal nommée, total mal nommé, actualisation en double et taille de police arbitraire détectés). Arbitrage B2 option 1 et B4 ajout du segment acté ici.
+
+- [x] G69: L'actualisation reste unique dans l'en-tête (l'état vide n'héberge plus d'action primaire), l'état vide porte une icône de situation distincte, `text-[11px]` disparaît au profit de l'échelle, le segment actif dominant est unique (Période en `btn-primary`, Statut atténué) et le placeholder de recherche s'allège
+  CHECK: node scripts/verify-gates.mjs --presences-ui
+  EXPECT: G63 passed: presences screen shares the locations grammar
+  EVIDENCE: G63 passed: presences screen shares the locations grammar (vérifié par node scripts/verify-gates.mjs --presences-ui, contrôle négatif de l'oracle compris). C3 porté par G67 (format long) ; arbitrage C5 (Période dominante) acté ici.
+
+- [x] G70: Sous 640px les pointages s'affichent en fiches synthétiques (identité, site, temps, statut) quand le tableau balisé reste réservé à partir de 640px, et les segments de filtre défilent horizontalement sur mobile sans cible sous 44px
+  CHECK: node scripts/verify-gates.mjs --presences-table
+  EXPECT: G65 passed: presences render as an audit table
+  EVIDENCE: G65 passed: presences render as an audit table (vérifié par node scripts/verify-gates.mjs --presences-table, contrôle négatif de l'oracle compris : grille de cartes conservée et fiches mobiles absentes détectées)
+
+- [x] G71: Compilation de production Vite sans erreur validée par le code retour du sous-processus
+  CHECK: node scripts/verify-gates.mjs --build
+  EXPECT: G6 passed: build succeeded with exit code 0
+  EVIDENCE: G6 passed: build succeeded with exit code 0 (vérifié par node scripts/verify-gates.mjs --build)
+
+Contrôle de clôture : `node scripts/verify-gates.mjs --all` ne laisse échouer que G1, G3, G4 (ToastContainer.vue, SyncIndicator.vue) et G8 (HomeView.vue), hors périmètre de ce lot et déjà constatés avant lui. Aucune porte touchant `PresencesView.vue`, `StatusBadge.vue` ou `dateUtils.js` n'échoue ; `--presences-ui`, `--presences-period`, `--presences-table` et `--presences-sort` sont vertes.

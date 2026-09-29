@@ -37,6 +37,20 @@ const addDays = (dateStr, days) => {
   return getLocalDateString(d)
 }
 
+// Navigation de l'ancre par les flèches : la semaine avance de 7 jours, le mois d'un mois.
+// Seule la saisie de l'ancre change, la logique `dateRange` reste intacte.
+const shiftAnchor = (unit, direction) => {
+  const anchor = filterDate.value || getLocalDateString()
+  if (unit === 'month') {
+    const d = new Date(`${anchor}T12:00:00`)
+    d.setDate(1)
+    d.setMonth(d.getMonth() + direction)
+    filterDate.value = getLocalDateString(d)
+    return
+  }
+  filterDate.value = addDays(anchor, 7 * direction)
+}
+
 // Plage effective [start, end] selon le preset, toujours en 'YYYY-MM-DD' comparables en chaîne.
 const dateRange = computed(() => {
   const anchor = filterDate.value || getLocalDateString()
@@ -60,10 +74,11 @@ const dateRange = computed(() => {
   return { start: anchor, end: anchor }
 })
 
-// Libellé de la plage, pour situer la période sans ambiguïté.
+// Libellé de la plage, pour situer la période sans ambiguïté : le jour se lit en toutes lettres,
+// la semaine annonce sa plage, le mois son nom et son année.
 const periodLabel = computed(() => {
   const { start, end } = dateRange.value
-  if (filterPeriod.value === 'day') return formatWorkDate(start) || start
+  if (filterPeriod.value === 'day') return formatWorkDate(start, { long: true }) || start
   if (filterPeriod.value === 'month') {
     const d = new Date(`${start}T12:00:00`)
     const label = d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
@@ -157,7 +172,8 @@ const statusCounts = computed(() => {
   const present = list.filter((p) => p.status === 'present').length
   const late = list.filter((p) => p.status === 'late').length
   const completed = list.filter((p) => p.status === 'completed' || p.status === 'completed_late').length
-  return { all: list.length, present, late, completed }
+  const absent = list.filter((p) => p.status === 'absent').length
+  return { all: list.length, present, late, completed, absent }
 })
 
 // Propriété réactive calculée pour le filtrage fluide sans lag
@@ -262,17 +278,20 @@ const sortIconPath = (key) => {
  */
 const emptyState = computed(() => {
   if (!(presencesList.value || []).length) {
+    // L'actualisation vit dans l'en-tête : l'état vide n'en propose pas de doublon.
     return {
       title: 'Aucun pointage',
       message: `Aucun pointage n'a été enregistré sur cette période (${periodLabel.value}).`,
-      action: 'refresh',
-      actionLabel: 'Actualiser',
+      icon: 'calendar',
+      action: null,
+      actionLabel: '',
     }
   }
   if (filterSearch.value.trim()) {
     return {
       title: 'Aucun résultat',
       message: `Aucun pointage ne correspond à « ${filterSearch.value.trim()} ».`,
+      icon: 'search',
       action: 'clear-search',
       actionLabel: 'Effacer la recherche',
     }
@@ -280,15 +299,15 @@ const emptyState = computed(() => {
   return {
     title: 'Aucun pointage pour ce filtre',
     message: 'Aucun pointage ne correspond au statut sélectionné pour cette période.',
+    icon: 'filter',
     action: 'show-all',
     actionLabel: 'Voir tous les pointages',
   }
 })
 
 const runEmptyAction = () => {
-  if (emptyState.value.action === 'refresh') loadPresences()
-  else if (emptyState.value.action === 'clear-search') filterSearch.value = ''
-  else filterStatus.value = ''
+  if (emptyState.value.action === 'clear-search') filterSearch.value = ''
+  else if (emptyState.value.action === 'show-all') filterStatus.value = ''
 }
 
 // Initiales pour l'avatar de la carte
@@ -402,12 +421,12 @@ const saveEdit = async () => {
       </div>
     </div>
 
-    <!-- Synthèse KPI rapide de la journée -->
+    <!-- Synthèse : le bandeau décrit les temps (ponctualité, clôture), le filtre décrit la session -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
       <div class="card bg-base-200 border border-base-300 shadow-xs p-4 rounded-m3-md flex flex-col gap-1">
-        <span class="text-xs font-semibold text-base-content/60">Total pointés</span>
+        <span class="text-xs font-semibold text-base-content/60">Pointages</span>
         <span class="text-2xl font-black text-base-content">{{ stats.total }}</span>
-        <span class="text-[11px] text-base-content/50">Pointages enregistrés</span>
+        <span class="text-xs text-base-content/50">Sur la période</span>
       </div>
       <div class="card bg-base-200 border border-base-300 shadow-xs p-4 rounded-m3-md flex flex-col gap-1">
         <span class="text-xs font-semibold text-success flex items-center gap-1.5">
@@ -415,7 +434,7 @@ const saveEdit = async () => {
           À l'heure
         </span>
         <span class="text-2xl font-black text-success">{{ stats.onTime }}</span>
-        <span class="text-[11px] text-base-content/50">Arrivées ponctuelles</span>
+        <span class="text-xs text-base-content/50">Arrivées ponctuelles, journées closes comprises</span>
       </div>
       <div class="card bg-base-200 border border-base-300 shadow-xs p-4 rounded-m3-md flex flex-col gap-1">
         <span class="text-xs font-semibold text-warning flex items-center gap-1.5">
@@ -423,140 +442,193 @@ const saveEdit = async () => {
           En retard
         </span>
         <span class="text-2xl font-black text-warning">{{ stats.late }}</span>
-        <span class="text-[11px] text-base-content/50">Retards constatés</span>
+        <span class="text-xs text-base-content/50">Arrivées tardives, journées closes comprises</span>
       </div>
       <div class="card bg-base-200 border border-base-300 shadow-xs p-4 rounded-m3-md flex flex-col gap-1">
         <span class="text-xs font-semibold text-info flex items-center gap-1.5">
           <span class="w-2 h-2 rounded-full bg-info"></span>
-          Départs validés
+          Journées terminées
         </span>
         <span class="text-2xl font-black text-info">{{ stats.completed }}</span>
-        <span class="text-[11px] text-base-content/50">Journées clôturées</span>
+        <span class="text-xs text-base-content/50">Avec départ enregistré</span>
       </div>
     </div>
 
     <!-- Filtres et recherche -->
     <div class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg p-4 flex flex-col gap-3">
       <!-- Recherche : pleine largeur du conteneur, cible confortable -->
-      <div class="w-full">
-        <label class="input input-bordered flex w-full items-center gap-2 rounded-m3-md bg-base-300/50 min-h-11">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0 text-base-content/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="11" cy="11" r="8"></circle>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-          </svg>
-          <input
-            v-model="filterSearch"
-            type="text"
-            class="grow text-sm"
-            placeholder="Rechercher un collaborateur (nom, email ou site)..."
-          />
-        </label>
+      <label class="input input-bordered flex w-full items-center gap-2 rounded-m3-md bg-base-300/50 min-h-11">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0 text-base-content/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input
+          v-model="filterSearch"
+          type="text"
+          class="grow text-sm"
+          placeholder="Rechercher un nom, un email ou un site"
+        />
+      </label>
+
+      <!-- Presets de période, puis ancre du mode courant dans un gabarit unique -->
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend text-xs font-semibold text-base-content/70">Période</legend>
+        <div class="join w-full overflow-x-auto sm:w-auto">
+          <button
+            type="button"
+            class="btn join-item min-h-11 px-3 shrink-0"
+            :class="{ 'btn-primary': filterPeriod === 'day' }"
+            @click="filterPeriod = 'day'"
+          >
+            Jour
+          </button>
+          <button
+            type="button"
+            class="btn join-item min-h-11 px-3 shrink-0"
+            :class="{ 'btn-primary': filterPeriod === 'week' }"
+            @click="filterPeriod = 'week'"
+          >
+            Semaine
+          </button>
+          <button
+            type="button"
+            class="btn join-item min-h-11 px-3 shrink-0"
+            :class="{ 'btn-primary': filterPeriod === 'month' }"
+            @click="filterPeriod = 'month'"
+          >
+            Mois
+          </button>
+          <button
+            type="button"
+            class="btn join-item min-h-11 px-3 shrink-0"
+            :class="{ 'btn-primary': filterPeriod === 'custom' }"
+            @click="filterPeriod = 'custom'"
+          >
+            Personnalisé
+          </button>
+        </div>
+      </fieldset>
+
+      <!-- Jour : date d'ancrage -->
+      <fieldset v-if="filterPeriod === 'day'" class="fieldset sm:w-auto">
+        <legend class="fieldset-legend text-xs font-semibold text-base-content/70">Date</legend>
+        <input id="f-date" v-model="filterDate" type="date" class="input input-bordered min-h-11 rounded-m3-sm w-full sm:w-auto" />
+      </fieldset>
+
+      <!-- Semaine : ancre parcourue par flèches, plage lisible -->
+      <fieldset v-else-if="filterPeriod === 'week'" class="fieldset">
+        <legend class="fieldset-legend text-xs font-semibold text-base-content/70">Semaine</legend>
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            class="btn btn-ghost min-h-11 min-w-11 p-0 rounded-m3-sm"
+            aria-label="Semaine précédente"
+            @click="shiftAnchor('week', -1)"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M15 18l-6-6 6-6"></path>
+            </svg>
+          </button>
+          <span class="text-sm font-semibold text-base-content tabular-nums">{{ periodLabel }}</span>
+          <button
+            type="button"
+            class="btn btn-ghost min-h-11 min-w-11 p-0 rounded-m3-sm"
+            aria-label="Semaine suivante"
+            @click="shiftAnchor('week', 1)"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 18l6-6-6-6"></path>
+            </svg>
+          </button>
+        </div>
+      </fieldset>
+
+      <!-- Mois : ancre parcourue par flèches, mois lisible -->
+      <fieldset v-else-if="filterPeriod === 'month'" class="fieldset">
+        <legend class="fieldset-legend text-xs font-semibold text-base-content/70">Mois</legend>
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            class="btn btn-ghost min-h-11 min-w-11 p-0 rounded-m3-sm"
+            aria-label="Mois précédent"
+            @click="shiftAnchor('month', -1)"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M15 18l-6-6 6-6"></path>
+            </svg>
+          </button>
+          <span class="text-sm font-semibold text-base-content">{{ periodLabel }}</span>
+          <button
+            type="button"
+            class="btn btn-ghost min-h-11 min-w-11 p-0 rounded-m3-sm"
+            aria-label="Mois suivant"
+            @click="shiftAnchor('month', 1)"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 18l6-6-6-6"></path>
+            </svg>
+          </button>
+        </div>
+      </fieldset>
+
+      <!-- Personnalisé : plage choisie par l'utilisateur -->
+      <div v-else class="flex flex-col sm:flex-row gap-3">
+        <div class="fieldset sm:flex-1 min-w-0">
+          <label for="f-start" class="fieldset-legend text-xs font-semibold text-base-content/70">Du</label>
+          <input id="f-start" v-model="customStart" type="date" :max="customEnd" class="input input-bordered min-h-11 rounded-m3-sm w-full" />
+        </div>
+        <div class="fieldset sm:flex-1 min-w-0">
+          <label for="f-end" class="fieldset-legend text-xs font-semibold text-base-content/70">Au</label>
+          <input id="f-end" v-model="customEnd" type="date" :min="customStart" class="input input-bordered min-h-11 rounded-m3-sm w-full" />
+        </div>
       </div>
 
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <!-- Période : presets puis plage personnalisée -->
-        <div class="flex flex-col gap-2">
-          <div class="flex flex-col sm:flex-row sm:items-center gap-2">
-            <span class="text-sm font-semibold text-base-content/60">Période :</span>
-            <div class="join join-vertical w-full sm:join-horizontal sm:w-auto">
-              <button
-                type="button"
-                class="btn join-item w-full sm:w-auto min-h-11 px-3 rounded-t-m3-sm sm:rounded-l-m3-sm sm:rounded-tr-none"
-                :class="{ 'btn-primary': filterPeriod === 'day' }"
-                @click="filterPeriod = 'day'"
-              >
-                Jour
-              </button>
-              <button
-                type="button"
-                class="btn join-item w-full sm:w-auto min-h-11 px-3"
-                :class="{ 'btn-primary': filterPeriod === 'week' }"
-                @click="filterPeriod = 'week'"
-              >
-                Semaine
-              </button>
-              <button
-                type="button"
-                class="btn join-item w-full sm:w-auto min-h-11 px-3"
-                :class="{ 'btn-primary': filterPeriod === 'month' }"
-                @click="filterPeriod = 'month'"
-              >
-                Mois
-              </button>
-              <button
-                type="button"
-                class="btn join-item w-full sm:w-auto min-h-11 px-3 rounded-b-m3-sm sm:rounded-r-m3-sm sm:rounded-bl-none"
-                :class="{ 'btn-primary': filterPeriod === 'custom' }"
-                @click="filterPeriod = 'custom'"
-              >
-                Personnalisé
-              </button>
-            </div>
-          </div>
-
-          <!-- Jour : date d'ancrage -->
-          <div v-if="filterPeriod === 'day'" class="fieldset">
-            <label for="f-date" class="fieldset-legend text-xs font-semibold text-base-content/70">Date :</label>
-            <input id="f-date" v-model="filterDate" type="date" class="input input-bordered min-h-11 rounded-m3-sm w-full sm:w-auto" />
-          </div>
-
-          <!-- Personnalisé : plage choisie par l'utilisateur -->
-          <div v-else-if="filterPeriod === 'custom'" class="flex flex-col sm:flex-row sm:items-end gap-3">
-            <div class="fieldset">
-              <label for="f-start" class="fieldset-legend text-xs font-semibold text-base-content/70">Du :</label>
-              <input id="f-start" v-model="customStart" type="date" :max="customEnd" class="input input-bordered min-h-11 rounded-m3-sm w-full sm:w-auto" />
-            </div>
-            <div class="fieldset">
-              <label for="f-end" class="fieldset-legend text-xs font-semibold text-base-content/70">Au :</label>
-              <input id="f-end" v-model="customEnd" type="date" :min="customStart" class="input input-bordered min-h-11 rounded-m3-sm w-full sm:w-auto" />
-            </div>
-          </div>
-
-          <!-- Semaine / Mois : la plage calculée est annoncée en clair -->
-          <p v-else class="text-xs text-base-content/60">
-            {{ periodLabel }}
-          </p>
+      <!-- Filtre de statut en pleine largeur sous la période, segment actif atténué, défilement sur mobile -->
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend text-xs font-semibold text-base-content/70">Statut</legend>
+        <div class="join w-full overflow-x-auto sm:w-auto">
+          <button
+            type="button"
+            class="btn join-item min-h-11 px-3 shrink-0"
+            :class="{ 'btn-active font-semibold': filterStatus === '' }"
+            @click="filterStatus = ''"
+          >
+            Tous ({{ statusCounts.all }})
+          </button>
+          <button
+            type="button"
+            class="btn join-item min-h-11 px-3 shrink-0"
+            :class="{ 'btn-active font-semibold': filterStatus === 'present' }"
+            @click="filterStatus = 'present'"
+          >
+            Présents ({{ statusCounts.present }})
+          </button>
+          <button
+            type="button"
+            class="btn join-item min-h-11 px-3 shrink-0"
+            :class="{ 'btn-active font-semibold': filterStatus === 'late' }"
+            @click="filterStatus = 'late'"
+          >
+            En retard ({{ statusCounts.late }})
+          </button>
+          <button
+            type="button"
+            class="btn join-item min-h-11 px-3 shrink-0"
+            :class="{ 'btn-active font-semibold': filterStatus === 'completed' }"
+            @click="filterStatus = 'completed'"
+          >
+            Terminés ({{ statusCounts.completed }})
+          </button>
+          <button
+            type="button"
+            class="btn join-item min-h-11 px-3 shrink-0"
+            :class="{ 'btn-active font-semibold': filterStatus === 'absent' }"
+            @click="filterStatus = 'absent'"
+          >
+            Absents ({{ statusCounts.absent }})
+          </button>
         </div>
-
-        <!-- Filtre Statut -->
-        <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:self-end">
-          <span class="text-sm font-semibold text-base-content/60">Statut :</span>
-          <div class="join join-vertical w-full sm:join-horizontal sm:w-auto">
-            <button
-              type="button"
-              class="btn join-item w-full sm:w-auto min-h-11 px-3 rounded-t-m3-sm sm:rounded-l-m3-sm sm:rounded-tr-none"
-              :class="{ 'btn-primary': filterStatus === '' }"
-              @click="filterStatus = ''"
-            >
-              Tous ({{ statusCounts.all }})
-            </button>
-            <button
-              type="button"
-              class="btn join-item w-full sm:w-auto min-h-11 px-3"
-              :class="{ 'btn-primary': filterStatus === 'present' }"
-              @click="filterStatus = 'present'"
-            >
-              Présents ({{ statusCounts.present }})
-            </button>
-            <button
-              type="button"
-              class="btn join-item w-full sm:w-auto min-h-11 px-3"
-              :class="{ 'btn-primary': filterStatus === 'late' }"
-              @click="filterStatus = 'late'"
-            >
-              En retard ({{ statusCounts.late }})
-            </button>
-            <button
-              type="button"
-              class="btn join-item w-full sm:w-auto min-h-11 px-3 rounded-b-m3-sm sm:rounded-r-m3-sm sm:rounded-bl-none"
-              :class="{ 'btn-primary': filterStatus === 'completed' }"
-              @click="filterStatus = 'completed'"
-            >
-              Terminés ({{ statusCounts.completed }})
-            </button>
-          </div>
-        </div>
-      </div>
+      </fieldset>
     </div>
 
     <!-- État de chargement -->
@@ -565,20 +637,30 @@ const saveEdit = async () => {
       Chargement des pointages...
     </div>
 
-    <!-- État vide -->
+    <!-- État vide : icône de situation, aucune action concurrente de l'actualisation d'en-tête -->
     <div v-else-if="!filteredPresences.length" class="card bg-base-200 border border-base-300 rounded-m3-lg p-8 text-center items-center">
       <div class="w-12 h-12 rounded-full bg-base-300 flex items-center justify-center text-base-content/40 mb-3">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M9 11l3 3L22 4"></path>
-          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+        <svg v-if="emptyState.icon === 'calendar'" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+          <line x1="16" y1="2" x2="16" y2="6"></line>
+          <line x1="8" y1="2" x2="8" y2="6"></line>
+          <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+        <svg v-else-if="emptyState.icon === 'search'" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          <line x1="8" y1="8" x2="14" y2="14"></line>
+        </svg>
+        <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"></path>
         </svg>
       </div>
       <h3 class="font-bold text-base text-base-content">{{ emptyState.title }}</h3>
       <p class="text-sm text-base-content/60 mt-1 max-w-md mx-auto">{{ emptyState.message }}</p>
-      <div class="mt-4">
+      <div v-if="emptyState.action" class="mt-4">
         <button
           type="button"
-          class="btn btn-primary min-h-11 rounded-m3-sm"
+          class="btn btn-outline min-h-11 rounded-m3-sm"
           @click="runEmptyAction"
         >
           {{ emptyState.actionLabel }}
@@ -586,9 +668,90 @@ const saveEdit = async () => {
       </div>
     </div>
 
-    <!-- Tableau des pointages -->
+    <!-- Pointages : fiches synthétiques sous 640px, tableau d'audit au-delà -->
     <div v-else class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg overflow-hidden">
-      <div class="overflow-x-auto">
+      <!-- Fiches synthétiques : identité, site, temps, statut -->
+      <ul class="sm:hidden divide-y divide-base-300">
+        <li v-for="p in sortedPresences" :key="p.id" class="p-4 flex flex-col gap-3">
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+              <div
+                class="w-9 h-9 rounded-full bg-primary/10 border border-primary/20 text-primary font-bold text-xs flex items-center justify-center shrink-0"
+                aria-hidden="true"
+              >
+                {{ initials(p.profiles?.full_name) }}
+              </div>
+              <div class="min-w-0">
+                <strong class="block text-sm font-bold text-base-content truncate">{{ p.profiles?.full_name || 'Utilisateur inconnu' }}</strong>
+                <span class="block text-xs text-base-content/60 truncate">{{ p.profiles?.email || 'Email inconnu' }}</span>
+              </div>
+            </div>
+            <StatusBadge :status="p.status" />
+          </div>
+
+          <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-base-content/80">
+            <span class="inline-flex items-center gap-1.5">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+              </svg>
+              {{ p.locations?.name || 'Site central' }}
+            </span>
+            <span class="inline-flex items-center gap-1.5">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              {{ formatWorkDate(p.work_date, { long: true }) || p.work_date }}
+            </span>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+            <span class="font-mono font-semibold text-base-content">Arrivée {{ formatTime(p.check_in_time) }}</span>
+            <span class="font-mono font-semibold text-base-content">Départ {{ formatTime(p.check_out_time) }}</span>
+            <span v-if="resolveSessionState(p) === 'closed'" class="font-semibold text-base-content">Durée {{ formatSessionDuration(p) }}</span>
+            <span v-else-if="resolveSessionState(p) === 'in_progress'" class="inline-flex items-center gap-1 font-semibold text-warning">
+              <span class="w-1.5 h-1.5 rounded-full bg-warning animate-pulse"></span>
+              En cours
+            </span>
+            <span v-else-if="resolveSessionState(p) === 'missing_checkout'" class="inline-flex items-center gap-1 font-semibold text-warning">
+              <span class="w-1.5 h-1.5 rounded-full bg-warning"></span>
+              Départ manquant
+            </span>
+          </div>
+
+          <div class="flex items-center justify-between gap-3">
+            <span class="badge badge-sm font-semibold gap-1 py-2.5 px-2" :class="accuracyBadge(p.check_in_accuracy).class">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="22" y1="12" x2="18" y2="12"></line>
+                <line x1="6" y1="12" x2="2" y2="12"></line>
+                <line x1="12" y1="6" x2="12" y2="2"></line>
+                <line x1="12" y1="22" x2="12" y2="18"></line>
+              </svg>
+              {{ accuracyBadge(p.check_in_accuracy).label }}
+            </span>
+            <button
+              v-if="profile?.role === 'admin'"
+              type="button"
+              class="btn btn-secondary btn-outline font-semibold rounded-m3-sm gap-1.5 min-h-11 px-3"
+              title="Modifier le statut"
+              @click="openEditModal(p)"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              </svg>
+              <span>Modifier</span>
+            </button>
+          </div>
+        </li>
+      </ul>
+
+      <!-- Tableau d'audit : à partir de 640px -->
+      <div class="hidden sm:block overflow-x-auto">
         <table class="table table-sm w-full">
           <thead>
             <tr class="text-xs uppercase text-base-content/60">
@@ -636,7 +799,7 @@ const saveEdit = async () => {
                 </div>
               </td>
               <td class="text-xs text-base-content/80">{{ p.locations?.name || 'Site central' }}</td>
-              <td class="text-xs text-base-content/80">{{ formatWorkDate(p.work_date) || p.work_date }}</td>
+              <td class="text-xs text-base-content/80">{{ formatWorkDate(p.work_date, { long: true }) || p.work_date }}</td>
               <td class="font-mono text-xs font-semibold text-base-content">{{ formatTime(p.check_in_time) }}</td>
               <td class="font-mono text-xs font-semibold text-base-content">{{ formatTime(p.check_out_time) }}</td>
               <td>

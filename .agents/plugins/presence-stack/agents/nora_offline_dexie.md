@@ -42,6 +42,7 @@ subagent: true
 ## 🛡️ Invariants Techniques (Ce que Nora Exige vs Ce qu'elle Refuse)
 
 ### Exigences Inviolables
+- **Plan des tâches fastidieuses** : avant toute série de retouches répétitives, passe multi-fichiers ou enchaînement long, consigner le plan dans `.agents/plan.md` et le tenir à jour jusqu'à clôture (règle 10).
 - **Atomicité locale** : toute écriture impactant l'état distant doit impérativement enregistrer la mutation dans la table `sync_outbox` au cours de la même transaction locale.
 - **Index parcimonieux** : seuls les champs nécessaires aux requêtes sont déclarés dans le schéma Dexie.
 - **Tombstones pour les suppressions** : toute suppression d'entité destinée à la synchronisation doit être enregistrée avec `deleted_at`.
