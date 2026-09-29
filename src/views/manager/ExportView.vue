@@ -1,14 +1,15 @@
 <script setup>
 import { ref } from 'vue'
-import { supabase } from '../../lib/supabase'
+import { db } from '../../lib/db'
+import { getLocalDateString } from '../../lib/dateUtils'
 import { useToast } from '../../composables/useToast'
 
 const { success, error: toastError, warning } = useToast()
 
-const todayStr = new Date().toISOString().slice(0, 10)
+const todayStr = getLocalDateString()
 const firstDayOfMonth = new Date()
 firstDayOfMonth.setDate(1)
-const startOfMonthStr = firstDayOfMonth.toISOString().slice(0, 10)
+const startOfMonthStr = getLocalDateString(firstDayOfMonth)
 
 const startDate = ref(startOfMonthStr)
 const endDate = ref(todayStr)
@@ -20,20 +21,33 @@ const generateCSV = async () => {
   exportCount.value = null
 
   try {
-    const { data, error } = await supabase
-      .from('presences')
-      .select('*, profiles(full_name, email, role, teams(name)), locations(name)')
-      .gte('work_date', startDate.value)
-      .lte('work_date', endDate.value)
-      .is('deleted_at', null)
-      .order('work_date', { ascending: true })
+    // L'export lit le cache local, donc exactement ce que l'écran peut voir. L'engine rapatrie,
+    // Dexie expose : aucune requête serveur n'est montée depuis l'interface.
+    const presenceRows = await db.presences
+      .where('work_date')
+      .between(startDate.value, endDate.value, true, true)
+      .filter((p) => !p.deleted_at)
+      .toArray()
 
-    if (error) throw error
-
-    if (!data || !data.length) {
+    if (!presenceRows.length) {
       warning('Aucun enregistrement trouvé pour la période sélectionnée.')
       return
     }
+
+    const profilesMap = new Map((await db.profiles.toArray()).map((p) => [p.id, p]))
+    const teamsMap = new Map((await db.teams.toArray()).map((t) => [t.id, t]))
+    const locationsMap = new Map((await db.locations.toArray()).map((l) => [l.id, l]))
+
+    const data = presenceRows.map((p) => {
+      const profile = profilesMap.get(p.user_id) || null
+      return {
+        ...p,
+        profiles: profile
+          ? { ...profile, teams: teamsMap.get(profile.team_id) || null }
+          : null,
+        locations: locationsMap.get(p.location_id) || null,
+      }
+    })
 
     exportCount.value = data.length
 

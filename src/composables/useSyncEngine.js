@@ -88,6 +88,10 @@ export function useSyncEngine() {
   /**
    * Cycle de synchronisation descendante (Pull incrémental) :
    * Rapatrie les modifications distantes depuis lastSyncTime.
+   *
+   * Le périmètre suit le rôle lu dans le profil local : un employé ne rapatrie que ses propres
+   * lignes, un gestionnaire ou un admin s'en remet à la RLS pour son équipe ou son organisation.
+   * Un profil local absent est traité comme un employé, donc en repli restrictif.
    */
   const pullChanges = async (userId) => {
     if (!navigator.onLine || !userId) return
@@ -95,24 +99,28 @@ export function useSyncEngine() {
     const cursor = lastSyncTime.value || '1970-01-01T00:00:00Z'
     const newCursor = new Date().toISOString()
 
+    let isSupervisor = false
+    try {
+      const localProfile = await db.profiles.get(userId)
+      isSupervisor = localProfile?.role === 'manager' || localProfile?.role === 'admin'
+    } catch (err) {
+      console.warn('Erreur lecture du rôle local :', err)
+    }
+
     try {
       // 1. Pull des présences
-      const { data: presences, error: presErr } = await supabase
-        .from('presences')
-        .select('*')
-        .eq('user_id', userId)
-        .gt('updated_at', cursor)
+      let presenceQuery = supabase.from('presences').select('*').gt('updated_at', cursor)
+      if (!isSupervisor) presenceQuery = presenceQuery.eq('user_id', userId)
+      const { data: presences, error: presErr } = await presenceQuery
 
       if (!presErr && presences?.length) {
         await db.presences.bulkPut(presences)
       }
 
       // 2. Pull des disponibilités
-      const { data: avails, error: avErr } = await supabase
-        .from('availabilities')
-        .select('*')
-        .eq('user_id', userId)
-        .gt('updated_at', cursor)
+      let availabilityQuery = supabase.from('availabilities').select('*').gt('updated_at', cursor)
+      if (!isSupervisor) availabilityQuery = availabilityQuery.eq('user_id', userId)
+      const { data: avails, error: avErr } = await availabilityQuery
 
       if (!avErr && avails?.length) {
         await db.availabilities.bulkPut(avails)
@@ -126,6 +134,25 @@ export function useSyncEngine() {
 
       if (!locErr && locs?.length) {
         await db.locations.bulkPut(locs)
+      }
+
+      // 4. Pull des profils et des équipes : sans eux, toute jointure locale rend un nom vide
+      const { data: profs, error: profErr } = await supabase
+        .from('profiles')
+        .select('*')
+        .gt('updated_at', cursor)
+
+      if (!profErr && profs?.length) {
+        await db.profiles.bulkPut(profs)
+      }
+
+      const { data: teams, error: teamErr } = await supabase
+        .from('teams')
+        .select('*')
+        .gt('updated_at', cursor)
+
+      if (!teamErr && teams?.length) {
+        await db.teams.bulkPut(teams)
       }
 
       lastSyncTime.value = newCursor

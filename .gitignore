@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Mémoire personnelle des agents (couche non partagée de la boucle KI)
+.agents/knowledge.local/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

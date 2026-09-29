@@ -1,13 +1,11 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
-import { supabase } from '../../lib/supabase'
+import { ref, computed } from 'vue'
+import { db, useLiveQuery } from '../../lib/db'
+import { getLocalDateString } from '../../lib/dateUtils'
 import { getMonday, formatWeekLabel } from '../../composables/useAvailabilities'
 
 const selectedWeekStart = ref(getMonday())
-const employees = ref([])
-const availabilities = ref([])
-const presences = ref([])
-const loading = ref(true)
+const todayStr = getLocalDateString()
 
 const daysHeader = [
   { id: 1, label: 'Lundi' },
@@ -18,68 +16,71 @@ const daysHeader = [
 ]
 
 const nextWeek = () => {
-  const d = new Date(selectedWeekStart.value)
+  const d = new Date(`${selectedWeekStart.value}T12:00:00`)
   d.setDate(d.getDate() + 7)
-  selectedWeekStart.value = d.toISOString().slice(0, 10)
+  selectedWeekStart.value = getLocalDateString(d)
 }
 
 const prevWeek = () => {
-  const d = new Date(selectedWeekStart.value)
+  const d = new Date(`${selectedWeekStart.value}T12:00:00`)
   d.setDate(d.getDate() - 7)
-  selectedWeekStart.value = d.toISOString().slice(0, 10)
+  selectedWeekStart.value = getLocalDateString(d)
 }
 
-const loadData = async () => {
-  loading.value = true
-  try {
-    const { data: profs } = await supabase
-      .from('profiles')
-      .select('*, teams(name)')
-      .eq('is_active', true)
-      .is('deleted_at', null)
-      .order('full_name')
-
-    employees.value = profs || []
-
-    const { data: avails } = await supabase
-      .from('availabilities')
-      .select('*')
-      .eq('week_start', selectedWeekStart.value)
-      .is('deleted_at', null)
-
-    availabilities.value = avails || []
-
-    const baseDate = new Date(selectedWeekStart.value)
-    const endDate = new Date(baseDate)
-    endDate.setDate(baseDate.getDate() + 5)
-
-    const { data: pres } = await supabase
-      .from('presences')
-      .select('*')
-      .gte('work_date', selectedWeekStart.value)
-      .lt('work_date', endDate.toISOString().slice(0, 10))
-      .is('deleted_at', null)
-
-    presences.value = pres || []
-  } catch (err) {
-    console.error('Erreur chargement planning équipe :', err)
-  } finally {
-    loading.value = false
-  }
-}
-
-watch(selectedWeekStart, () => {
-  loadData()
+// Bornes de la semaine affichée, du lundi au vendredi, en 'YYYY-MM-DD' comparables en chaîne.
+const weekEnd = computed(() => {
+  const d = new Date(`${selectedWeekStart.value}T12:00:00`)
+  d.setDate(d.getDate() + 5)
+  return getLocalDateString(d)
 })
 
-onMounted(() => {
-  loadData()
+// Lecture réactive depuis Dexie : profils, disponibilités et pointages de la semaine.
+// Un changement de semaine réabonne les deux requêtes bornées.
+const employeeRows = useLiveQuery(async () => {
+  const list = await db.profiles.toArray()
+  return list
+    .filter((p) => p.is_active !== false && !p.deleted_at)
+    .sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''))
+}, null)
+
+const availabilityRows = useLiveQuery(async () =>
+  db.availabilities
+    .where('week_start')
+    .equals(selectedWeekStart.value)
+    .filter((a) => !a.deleted_at)
+    .toArray(),
+null, () => selectedWeekStart.value)
+
+const presenceRows = useLiveQuery(async () =>
+  db.presences
+    .where('work_date')
+    .between(selectedWeekStart.value, weekEnd.value, true, false)
+    .filter((p) => !p.deleted_at)
+    .toArray(),
+null, () => `${selectedWeekStart.value}|${weekEnd.value}`)
+
+const teamRows = useLiveQuery(async () => db.teams.toArray(), [])
+
+const loading = computed(() =>
+  employeeRows.value === null || availabilityRows.value === null || presenceRows.value === null
+)
+
+// Les équipes sont jointes localement, le gabarit continue de lire `emp.teams?.name`.
+const employees = computed(() => {
+  const teamsMap = new Map((teamRows.value || []).map((t) => [t.id, t]))
+  return (employeeRows.value || []).map((emp) => ({
+    ...emp,
+    teams: teamsMap.get(emp.team_id) || null,
+  }))
 })
+
+const availabilities = computed(() => availabilityRows.value || [])
+const presences = computed(() => presenceRows.value || [])
 
 const getDateForDay = (dayNumber) => {
-  const d = new Date(selectedWeekStart.value)
+  const d = new Date(`${selectedWeekStart.value}T12:00:00`)
   d.setDate(d.getDate() + (dayNumber - 1))
-  return d.toISOString().slice(0, 10)
+  return getLocalDateString(d)
 }
 
 const getAvailability = (userId, dayNumber) => {
@@ -156,7 +157,7 @@ const getActualPresence = (userId, dayNumber) => {
                     :class="[
                       getActualPresence(emp.id, d.id)
                         ? 'badge-success text-success-content'
-                        : getDateForDay(d.id) <= new Date().toISOString().slice(0, 10)
+                        : getDateForDay(d.id) <= todayStr
                           ? 'badge-warning text-warning-content'
                           : 'badge-info badge-outline'
                     ]"
@@ -173,7 +174,7 @@ const getActualPresence = (userId, dayNumber) => {
                     Pointé ({{ getActualPresence(emp.id, d.id)?.status }})
                   </span>
                   <span
-                    v-else-if="getDateForDay(d.id) <= new Date().toISOString().slice(0, 10)"
+                    v-else-if="getDateForDay(d.id) <= todayStr"
                     class="text-[10px] font-medium text-warning"
                   >
                     Non pointé

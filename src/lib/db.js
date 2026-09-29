@@ -1,5 +1,5 @@
 import Dexie from 'dexie'
-import { shallowRef, onScopeDispose, isRef, watchEffect } from 'vue'
+import { shallowRef, watch, onScopeDispose } from 'vue'
 
 /**
  * Base de données locale Dexie.js (IndexedDB)
@@ -27,11 +27,18 @@ export const db = new PresenceDatabase()
  * Composable réactif useLiveQuery natif pour Vue 3 fondé sur shallowRef
  * et onScopeDispose pour éviter toute dépendance tierce à RxJS.
  *
+ * Dexie relance `liveQuery` sur écriture de table, pas sur changement de référence. Une plage de
+ * dates ou un identifiant qui borne la requête doit donc être déclaré via `dependsOn` pour que la
+ * souscription soit refaite quand la borne change.
+ *
  * @param {Function} querier - Fonction asynchrone retournant une promesse Dexie
- * @param {any} initialValue - Valeur initiale réactive
+ * @param {any} initialValue - Valeur initiale réactive ; `null` convient pour distinguer
+ *   l'absence de première émission d'un résultat vide
+ * @param {Function|null} dependsOn - Getter réactif (chaîne ou valeur stable) dont le changement
+ *   réabonne la requête
  * @returns {import('vue').ShallowRef}
  */
-export function useLiveQuery(querier, initialValue = undefined) {
+export function useLiveQuery(querier, initialValue = undefined, dependsOn = null) {
   const result = shallowRef(initialValue)
   let observableSub = null
 
@@ -42,16 +49,24 @@ export function useLiveQuery(querier, initialValue = undefined) {
     }
   }
 
-  // Souscription Dexie liveQuery
-  const observable = Dexie.liveQuery(querier)
-  observableSub = observable.subscribe({
-    next: value => {
-      result.value = value
-    },
-    error: err => {
-      console.error('Erreur useLiveQuery Dexie :', err)
-    },
-  })
+  const subscribe = () => {
+    cleanup()
+    observableSub = Dexie.liveQuery(querier).subscribe({
+      next: value => {
+        result.value = value
+      },
+      error: err => {
+        console.error('Erreur useLiveQuery Dexie :', err)
+      },
+    })
+  }
+
+  subscribe()
+
+  if (typeof dependsOn === 'function') {
+    const stop = watch(dependsOn, () => subscribe())
+    onScopeDispose(stop)
+  }
 
   // Nettoyage automatique au démontage du composant
   onScopeDispose(cleanup)

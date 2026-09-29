@@ -430,3 +430,79 @@ Scope: Reprise de l'écran « Contrôle des Présences » validée à l'écran l
   EVIDENCE: G6 passed: build succeeded with exit code 0 (vérifié par node scripts/verify-gates.mjs --build)
 
 Contrôle de clôture : `node scripts/verify-gates.mjs --all` ne laisse échouer que G1, G3, G4 (ToastContainer.vue, SyncIndicator.vue) et G8 (HomeView.vue), hors périmètre de ce lot et déjà constatés avant lui. Aucune porte touchant `PresencesView.vue`, `StatusBadge.vue` ou `dateUtils.js` n'échoue ; `--presences-ui`, `--presences-period`, `--presences-table` et `--presences-sort` sont vertes.
+
+---
+
+# Gates: Espace Gestionnaire Local-First
+
+OWNS: src/lib/db.js, src/composables/useSyncEngine.js, src/views/manager/PresencesView.vue, src/views/manager/DashboardView.vue, src/views/manager/AvailabilitiesView.vue, src/views/manager/ExportView.vue, scripts/verify-gates.mjs, GATES.md
+
+Scope: Constat avant ce lot : l'espace gestionnaire lisait Supabase en direct. Quatre vues montaient leur propre requête (`PresencesView`, `DashboardView`, `AvailabilitiesView`, `ExportView`), `PresencesView` recouvrait sa liste locale par la réponse réseau, et aucune des quatre n'observait Dexie. L'ADR 0001 §2 exige pourtant `useLiveQuery`, et CONTEXT.md fait d'IndexedDB la source unique de vérité. Le lot rétablit la boucle : l'engine rapatrie (`presences`, `availabilities` selon le rôle du profil local, plus `profiles` et `teams` qui n'étaient jamais rapatriés), Dexie expose, les vues se rafraîchissent seules. `useLiveQuery` accepte une dépendance réactive, sans quoi un changement de plage n'aurait pas réabonné `Dexie.liveQuery`. La plage de dates s'appuie désormais sur l'index B-Tree `work_date` au lieu d'un `.filter()` sur table entière. La correction manuelle ne monte plus d'écriture réseau : elle vit dans Dexie et l'outbox, l'engine la pousse. Les dates `new Date().toISOString().slice(0, 10)` des vues touchées passent à `getLocalDateString()`, la journée locale ne basculant plus à minuit UTC. Deux imports morts (`isRef`, `watchEffect`) sont retirés de `db.js`.
+
+Limite assumée, arbitrée par l'utilisateur : la policy SELECT de `presences` reste restreinte au propriétaire. L'architecture est désormais correcte, mais un gestionnaire ne verra que ses propres pointages jusqu'à ce qu'une migration RLS lui ouvre son périmètre. La migration n'a pas été écrite faute de connaître le rattachement gestionnaire (table de jointure ou `profiles.team_id`), une policy écrite sur une supposition étant un trou de sécurité. `EmployeesView.vue` et `TeamsView.vue` conservent leur lecture réseau directe, hors périmètre de ce lot.
+
+- [x] G72: Le Contrôle des Présences lit Dexie et rien d'autre : plage bornée sur l'index `work_date`, lecture réactive, jointures profils et sites locales, actualisation portée par l'engine, correction locale sans écriture réseau
+  CHECK: node scripts/verify-gates.mjs --presences-localfirst
+  EXPECT: G72 passed: presences screen reads Dexie and only Dexie
+  EVIDENCE: G72 passed: presences screen reads Dexie and only Dexie (vérifié par node scripts/verify-gates.mjs --presences-localfirst, contrôle négatif de l'oracle compris)
+
+- [x] G73: Le pull rapatrie `profiles` et `teams`, et son périmètre suit le rôle lu dans le profil local : employé borné à lui-même, gestionnaire ou admin laissé à la RLS
+  CHECK: node scripts/verify-gates.mjs --sync-scope
+  EXPECT: G73 passed: the pull scope follows the role and brings profiles and teams
+  EVIDENCE: G73 passed: the pull scope follows the role and brings profiles and teams (vérifié par node scripts/verify-gates.mjs --sync-scope, contrôle négatif de l'oracle compris)
+
+- [x] G74: `useLiveQuery` réabonne la requête sur une dépendance réactive explicite et ne conserve aucun import mort
+  CHECK: node scripts/verify-gates.mjs --livequery-deps
+  EXPECT: G74 passed: useLiveQuery resubscribes on an explicit reactive dependency
+  EVIDENCE: G74 passed: useLiveQuery resubscribes on an explicit reactive dependency (vérifié par node scripts/verify-gates.mjs --livequery-deps, contrôle négatif de l'oracle compris)
+
+- [x] G75: Tableau de bord, Disponibilités d'équipe et Export CSV lisent Dexie et ne montent plus de requête réseau pour les données affichées
+  CHECK: node scripts/verify-gates.mjs --manager-dexie
+  EXPECT: G75 passed: the remaining manager views read Dexie only
+  EVIDENCE: G75 passed: the remaining manager views read Dexie only (vérifié par node scripts/verify-gates.mjs --manager-dexie, contrôle négatif de l'oracle compris)
+
+- [x] G76: Compilation de production Vite sans erreur validée par le code retour du sous-processus
+  CHECK: node scripts/verify-gates.mjs --build
+  EXPECT: G6 passed: build succeeded with exit code 0
+  EVIDENCE: G6 passed: build succeeded with exit code 0 (vérifié par node scripts/verify-gates.mjs --build)
+
+# Gates: Boucle d'Apprentissage KI
+
+OWNS: scripts/knowledge-check.mjs, .agents/knowledge/, .agents/rules/11-apprentissage-et-memoire.md, .agents/rules/08-skills-activation.md, AGENTS.md, .gitignore, GATES.md
+
+Scope: Implémenter la boucle d'apprentissage validée dans `docs/audits/setup-agentique-2026-09.md` section 10. La mémoire des agents quitte `<appDataDir>/knowledge/` (hors dépôt, invisible à la revue, non versionnée) pour `.agents/knowledge/` (couche équipe commitée) avec `.agents/knowledge.local/` (couche personnelle ignorée par git). Chaque fiche KI porte un frontmatter daté et un statut de cycle de vie ; `INDEX.md` (200 lignes maximum) sert d'entrée de session ; le protocole de capture impose l'acte unique « corriger + enregistrer » ; l'échelle d'escalade fait monter une règle violée de la fiche KI vers `.agents/rules/` puis vers un oracle exécutable. L'oracle `scripts/knowledge-check.mjs` rend tout cela déterministe et accepte `--root` pour les contrôles négatifs sur fixtures.
+
+- [x] G77: La base de connaissance existe avec ses trois fichiers de protocole (README, TEMPLATE, INDEX) et au moins une fiche KI
+  CHECK: node scripts/knowledge-check.mjs --structure
+  EXPECT: G77 passed: knowledge base structure complete
+  EVIDENCE: G77 passed: knowledge base structure complete (2 entries) (vérifié par node scripts/knowledge-check.mjs --structure, contrôle négatif compris : fixture sans TEMPLATE.md → G77 failed, sortie 1)
+
+- [x] G78: Toute fiche KI porte un frontmatter valide (id, date ISO, auteur, statut du cycle de vie, domaine, triggers, source, échéance de revalidation cohérente avec la date)
+  CHECK: node scripts/knowledge-check.mjs --frontmatter
+  EXPECT: G78 passed: all knowledge entries carry valid frontmatter
+  EVIDENCE: G78 passed: all knowledge entries carry valid frontmatter (2) (vérifié par node scripts/knowledge-check.mjs --frontmatter, contrôle négatif compris : fiche sans statut → G78 failed, sortie 1)
+
+- [x] G79: INDEX.md reste dans le budget de 200 lignes et référence chaque fiche candidate ou active
+  CHECK: node scripts/knowledge-check.mjs --index
+  EXPECT: G79 passed: index within budget and listing all live entries
+  EVIDENCE: G79 passed: index within budget and listing all live entries (26 lines) (vérifié par node scripts/knowledge-check.mjs --index, contrôle négatif compris : KI-0002 retiré de l'index → G79 failed, sortie 1)
+
+- [x] G80: Aucune fiche active n'est périmée : toute fiche dépassant son échéance de revalidation porte le statut a-verifier, superseded ou retired
+  CHECK: node scripts/knowledge-check.mjs --staleness
+  EXPECT: G80 passed: no live entry is past its revalidation date
+  EVIDENCE: G80 passed: no live entry is past its revalidation date (vérifié par node scripts/knowledge-check.mjs --staleness, contrôle négatif compris : fiche active avec revalider-avant 2020-01-01 → G80 failed, sortie 1)
+
+- [x] G81: La boucle est câblée : AGENTS.md pointe vers .agents/knowledge/ sans référence résiduelle à appDataDir, la règle 11 documente le protocole, la matrice 08 route les erreurs répétées vers le protocole KI
+  CHECK: node scripts/knowledge-check.mjs --wiring
+  EXPECT: G81 passed: learning loop wired into AGENTS.md and rules
+  EVIDENCE: G81 passed: learning loop wired into AGENTS.md and rules (vérifié par node scripts/knowledge-check.mjs --wiring, contrôle négatif compris : AGENTS.md pointant appDataDir → G81 failed, sortie 1)
+
+- [x] G82: La couche de mémoire personnelle .agents/knowledge.local/ est ignorée par git
+  CHECK: node scripts/knowledge-check.mjs --gitignore
+  EXPECT: G82 passed: local knowledge layer ignored by git
+  EVIDENCE: G82 passed: local knowledge layer ignored by git (vérifié par node scripts/knowledge-check.mjs --gitignore, contrôle négatif compris : entrée retirée du .gitignore → G82 failed, sortie 1)
+
+- [x] G83: Compilation de production Vite sans erreur validée par le code retour du sous-processus
+  CHECK: node scripts/verify-gates.mjs --build
+  EXPECT: G6 passed: build succeeded with exit code 0
+  EVIDENCE: G6 passed: build succeeded with exit code 0 (vérifié par node scripts/verify-gates.mjs --build, sortie 0 le 2026-09-29)

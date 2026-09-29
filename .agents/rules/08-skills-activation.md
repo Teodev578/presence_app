@@ -24,6 +24,7 @@ Ce document fixe les conditions d'activation obligatoire des compétences agenti
 | Nettoyage final, contrôle pré-fusion ou audit de propreté | `code-hygiene` | Traque du code mort, élimination des journaux de débogage console et validation par `npm run build`. |
 | Nouvelle fonctionnalité complète ou découpage fonctionnel complexe | `bmad-spec` → `bmad-build` | Formalisation du contrat machine avant écriture du code, puis implémentation pas à pas. |
 | Tâche fastidieuse ou longue sans enjeu architectural (série de retouches répétitives, passe mécanique multi-fichiers, enchaînement de plus de cinq étapes) | `unlazy` | Application de `10-planification-taches-fastidieuses.md` : rédaction préalable du plan dans `.agents/plan.md` (périmètre, étapes ordonnées, critère d'arrêt, vérification par étape), tenu à jour jusqu'à clôture puis purgé, en complément des clauses `OWNS:` de `GATES.md`. |
+| Même erreur une deuxième fois, même commentaire de revue une deuxième fois, correction utilisateur répétée, clôture de lot ou rétrospective d'epic | Protocole KI (`11-apprentissage-et-memoire.md`), avec `bmad-retrospective` pour les rétrospectives d'epic | Acte unique « corriger + enregistrer » : fiche datée dans `.agents/knowledge/` au moment où la correction atterrit, ligne de récurrence dans `INDEX.md`, escalade vers une règle ou un oracle si la récurrence persiste. |
 
 ---
 

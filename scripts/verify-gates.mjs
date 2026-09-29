@@ -2534,13 +2534,14 @@ export function checkPresencesPeriod() {
     for (const token of ['dateRange', 'customStart', 'customEnd', 'periodLabel']) {
       if (!text.includes(token)) gaps.push(`période sans ${token}`);
     }
-    if (!/watch\(dateRange,/.test(text)) gaps.push('rechargement non piloté par la plage');
-    if (!/\.gte\('work_date'/.test(text) || !/\.lte\('work_date'/.test(text)) {
-      gaps.push('plage non appliquée à la requête distante');
+    // La plage borne une lecture locale réactive : plus de requête distante, plus de rechargement manuel
+    if (!text.includes('useLiveQuery')) gaps.push('période sans lecture réactive Dexie');
+    if (!text.includes(".where('work_date')")) gaps.push('plage sans index work_date');
+    if (!/\.between\(start, end, true, true\)/.test(text)) gaps.push('plage non appliquée au filtre local');
+    if (!text.includes('`${dateRange.value.start}|${dateRange.value.end}`')) {
+      gaps.push('plage non déclarée comme dépendance réactive');
     }
-    if (!/p\.work_date >= start/.test(text) || !/p\.work_date <= end/.test(text)) {
-      gaps.push('plage non appliquée au filtre local');
-    }
+    if (/from\('presences'\)/.test(text)) gaps.push('lecture réseau conservée dans la vue');
     // A1 : chaque mode expose son ancre, la semaine et le mois se parcourent par flèches
     if (!text.includes('shiftAnchor')) gaps.push('ancre non navigable');
     for (const label of ['Semaine précédente', 'Semaine suivante', 'Mois précédent', 'Mois suivant']) {
@@ -2567,13 +2568,13 @@ export function checkPresencesPeriod() {
 
   // Contrôle négatif : l'ancien filtre à date unique (eq + watch(filterDate)) et son gabarit
   // à deux-points doivent être refusés.
-  const bogus = "const filterDate = ref(getLocalDateString()); watch(filterDate, loadPresences); query.eq('work_date', filterDate.value); Période : Statut :";
+  const bogus = "const filterDate = ref(getLocalDateString()); watch(filterDate, loadPresences); supabase.from('presences').select('*').eq('work_date', filterDate.value); Période : Statut :";
   const bogusGaps = periodGaps(bogus);
   if (bogusGaps.length === 0) {
     console.error('FAILURE G64: le détecteur de période est aveugle, oracle invalide');
     return false;
   }
-  for (const expected of ['ancre non navigable', 'deux-points conservé : Période :', 'champs Du/Au non étendus sur la largeur']) {
+  for (const expected of ['ancre non navigable', 'deux-points conservé : Période :', 'champs Du/Au non étendus sur la largeur', 'lecture réseau conservée dans la vue']) {
     if (!bogusGaps.includes(expected)) {
       console.error(`FAILURE G64: contrôle négatif incomplet, ${expected} non détecté`);
       return false;
@@ -2693,6 +2694,172 @@ export function checkPresencesSort() {
   return true;
 }
 
+/**
+ * G72 : Le Contrôle des Présences lit Dexie et rien d'autre. La plage borne une lecture réactive
+ * indexée, les profils et les sites sont joints localement, et la correction passe par l'outbox.
+ */
+export function checkPresencesLocalFirst() {
+  const localGaps = (text) => {
+    const gaps = [];
+    if (/from\('presences'\)/.test(text)) gaps.push('lecture réseau conservée');
+    if (!text.includes('useLiveQuery')) gaps.push('aucune lecture réactive Dexie');
+    if (!text.includes(".where('work_date')")) gaps.push('plage sans index work_date');
+    if (!/\.between\(start, end, true, true\)/.test(text)) gaps.push('plage non bornée');
+    if (!text.includes('db.profiles.toArray()')) gaps.push('jointure des profils absente');
+    if (!text.includes('db.locations.toArray()')) gaps.push('jointure des sites absente');
+    if (!text.includes('syncNow(user?.id)')) gaps.push('actualisation non pilotée par l’engine');
+    if (!text.includes('db.presences.update(presenceId, { status: newStatus')) {
+      gaps.push('correction locale absente');
+    }
+    return gaps;
+  };
+
+  // Contrôle négatif : une vue qui interroge Supabase et garde un chargement impératif doit être refusée.
+  const bogus =
+    "const presencesList = ref([])\nasync function loadPresences() {\n  const { data } = await supabase.from('presences').select('*')\n  presencesList.value = data\n}";
+  if (localGaps(bogus).length === 0) {
+    console.error('FAILURE G72: le détecteur local-first présences est aveugle, oracle invalide');
+    return false;
+  }
+
+  const file = path.join(SRC_DIR, 'views', 'manager', 'PresencesView.vue');
+  if (!fs.existsSync(file)) {
+    console.error('FAILURE G72: PresencesView.vue introuvable');
+    return false;
+  }
+  const gaps = localGaps(fs.readFileSync(file, 'utf8'));
+  if (gaps.length > 0) {
+    console.error(`FAILURE G72: l’écran présences n’est pas local-first -> ${[...new Set(gaps)].join(', ')}`);
+    return false;
+  }
+  console.log('G72 passed: presences screen reads Dexie and only Dexie');
+  return true;
+}
+
+/**
+ * G73 : Le périmètre du pull suit le rôle lu dans le profil local, et profils comme équipes sont
+ * rapatriés : sans eux, toute jointure locale rend un nom vide.
+ */
+export function checkSyncScope() {
+  const scopeGaps = (text) => {
+    const gaps = [];
+    if (!text.includes("from('profiles')")) gaps.push('profils absents du pull');
+    if (!text.includes("from('teams')")) gaps.push('équipes absentes du pull');
+    if (!text.includes('isSupervisor')) gaps.push('périmètre indifférent au rôle');
+    if (!text.includes('db.profiles.get(userId)')) gaps.push('rôle non lu dans le profil local');
+    if (!/===\s*'manager'/.test(text)) gaps.push('rôle gestionnaire non reconnu');
+    if (!/===\s*'admin'/.test(text)) gaps.push('rôle administrateur non reconnu');
+    if (!/presenceQuery = presenceQuery\.eq\('user_id', userId\)/.test(text)) {
+      gaps.push('repli employé absent sur les présences');
+    }
+    if (!/availabilityQuery = availabilityQuery\.eq\('user_id', userId\)/.test(text)) {
+      gaps.push('repli employé absent sur les disponibilités');
+    }
+    return gaps;
+  };
+
+  // Contrôle négatif : l'ancien pull, cadenassé sur l'utilisateur et sans profils ni équipes.
+  const bogus =
+    "const { data } = await supabase.from('presences').select('*').eq('user_id', userId).gt('updated_at', cursor)";
+  if (scopeGaps(bogus).length === 0) {
+    console.error('FAILURE G73: le détecteur de périmètre de pull est aveugle, oracle invalide');
+    return false;
+  }
+
+  const file = path.join(SRC_DIR, 'composables', 'useSyncEngine.js');
+  if (!fs.existsSync(file)) {
+    console.error('FAILURE G73: useSyncEngine.js introuvable');
+    return false;
+  }
+  const gaps = scopeGaps(fs.readFileSync(file, 'utf8'));
+  if (gaps.length > 0) {
+    console.error(`FAILURE G73: le pull reste incomplet -> ${[...new Set(gaps)].join(', ')}`);
+    return false;
+  }
+  console.log('G73 passed: the pull scope follows the role and brings profiles and teams');
+  return true;
+}
+
+/**
+ * G74 : `useLiveQuery` accepte une dépendance réactive et réabonne la requête quand elle change,
+ * sans import mort ni souscription unique figée.
+ */
+export function checkLiveQueryDeps() {
+  const depsGaps = (text) => {
+    const gaps = [];
+    if (!text.includes('dependsOn')) gaps.push('dépendance réactive non supportée');
+    if (!/watch\(dependsOn,/.test(text)) gaps.push('dépendance non observée');
+    if (!text.includes('const subscribe = ()')) gaps.push('réabonnement non factorisé');
+    if (!/cleanup\(\)\s*\n\s*observableSub = Dexie\.liveQuery/.test(text)) {
+      gaps.push('ancienne souscription non libérée avant réabonnement');
+    }
+    if (/\bisRef\b|\bwatchEffect\b/.test(text)) gaps.push('import mort conservé');
+    return gaps;
+  };
+
+  // Contrôle négatif : l'ancien helper, à souscription unique et imports morts.
+  const bogus =
+    "import { shallowRef, onScopeDispose, isRef, watchEffect } from 'vue'\n"
+    + 'export function useLiveQuery(querier, initialValue) { const o = Dexie.liveQuery(querier); o.subscribe({ next: v => {} }) }';
+  if (depsGaps(bogus).length === 0) {
+    console.error('FAILURE G74: le détecteur de dépendance liveQuery est aveugle, oracle invalide');
+    return false;
+  }
+
+  const file = path.join(SRC_DIR, 'lib', 'db.js');
+  if (!fs.existsSync(file)) {
+    console.error('FAILURE G74: db.js introuvable');
+    return false;
+  }
+  const gaps = depsGaps(fs.readFileSync(file, 'utf8'));
+  if (gaps.length > 0) {
+    console.error(`FAILURE G74: le helper liveQuery reste incomplet -> ${[...new Set(gaps)].join(', ')}`);
+    return false;
+  }
+  console.log('G74 passed: useLiveQuery resubscribes on an explicit reactive dependency');
+  return true;
+}
+
+/**
+ * G75 : Les trois autres vues gestionnaire lisent Dexie et ne montent plus de requête réseau pour
+ * les données qu'elles affichent.
+ */
+export function checkManagerDexie() {
+  const dexieGaps = (text) => {
+    const gaps = [];
+    for (const table of ['presences', 'availabilities', 'profiles', 'teams']) {
+      if (text.includes(`from('${table}')`)) gaps.push(`${table} lu au réseau`);
+    }
+    if (!text.includes("from '../../lib/db'")) gaps.push('db non importé');
+    return gaps;
+  };
+
+  // Contrôle négatif : une vue gestionnaire branchée sur Supabase doit être refusée.
+  const bogus =
+    "import { supabase } from '../../lib/supabase'\nconst { data } = await supabase.from('presences').select('*')";
+  if (dexieGaps(bogus).length === 0) {
+    console.error('FAILURE G75: le détecteur Dexie des vues gestionnaire est aveugle, oracle invalide');
+    return false;
+  }
+
+  const gaps = [];
+  for (const name of ['DashboardView.vue', 'AvailabilitiesView.vue', 'ExportView.vue']) {
+    const file = path.join(SRC_DIR, 'views', 'manager', name);
+    if (!fs.existsSync(file)) {
+      console.error(`FAILURE G75: ${name} introuvable`);
+      return false;
+    }
+    for (const gap of dexieGaps(fs.readFileSync(file, 'utf8'))) gaps.push(`${name} : ${gap}`);
+  }
+
+  if (gaps.length > 0) {
+    console.error(`FAILURE G75: des vues gestionnaire restent branchées au réseau -> ${[...new Set(gaps)].join(', ')}`);
+    return false;
+  }
+  console.log('G75 passed: the remaining manager views read Dexie only');
+  return true;
+}
+
 // Exécution CLI
 const arg = process.argv[2] || '--all';let success = true;
 
@@ -2792,6 +2959,14 @@ if (arg === '--emojis') {
   success = checkPresencesTable();
 } else if (arg === '--presences-sort') {
   success = checkPresencesSort();
+} else if (arg === '--presences-localfirst') {
+  success = checkPresencesLocalFirst();
+} else if (arg === '--sync-scope') {
+  success = checkSyncScope();
+} else if (arg === '--livequery-deps') {
+  success = checkLiveQueryDeps();
+} else if (arg === '--manager-dexie') {
+  success = checkManagerDexie();
 } else if (arg === '--sidebar-build') {
   success = checkBuild('G48', 'production build succeeds with exit code 0');
 } else if (arg === '--manager-build') {
@@ -2843,10 +3018,14 @@ if (arg === '--emojis') {
   const r64 = checkPresencesPeriod();
   const r65 = checkPresencesTable();
   const r66 = checkPresencesSort();
+  const r72 = checkPresencesLocalFirst();
+  const r73 = checkSyncScope();
+  const r74 = checkLiveQueryDeps();
+  const r75 = checkManagerDexie();
   const r48 = r39; // Une seule compilation sert les portes de build G39 et G48
-  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60 && r63 && r64 && r65 && r66;
+  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60 && r63 && r64 && r65 && r66 && r72 && r73 && r74 && r75;
 } else {
-  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--presences-ui|--presences-period|--presences-table|--presences-sort|--manager-build|--sidebar-build|--build|--all]`);
+  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--presences-ui|--presences-period|--presences-table|--presences-sort|--presences-localfirst|--sync-scope|--livequery-deps|--manager-dexie|--manager-build|--sidebar-build|--build|--all]`);
   process.exit(1);
 }
 

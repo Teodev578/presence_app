@@ -60,8 +60,11 @@ Deux ensembles d'agents cohabitent sur le dépôt avec une répartition stricte 
 ## Mémoire d'apprentissage & Knowledge Items (KI)
 
 Pour éviter la perte de contexte entre sessions de travail :
-- À l'issue de toute tâche ayant permis de stabiliser un pattern réutilisable (ex : conventions DaisyUI/M3, gestion de conflit offline, indexation Dexie), l'agent documente ou met à jour le Knowledge Item (KI) correspondant sous `<appDataDir>/knowledge/`.
-- Chaque agent débutant une tâche complexe doit d'abord vérifier les résumés de KI injectés dans son contexte avant de concevoir de nouvelles abstractions.
+- La mémoire des agents vit dans le dépôt : `.agents/knowledge/` pour l'équipe (commitée, revue en diff) et `.agents/knowledge.local/` pour le personnel (ignorée par git). Le protocole fait foi dans `.agents/knowledge/README.md`, les règles permanentes dans `.agents/rules/11-apprentissage-et-memoire.md`.
+- **Acte unique** : le moment où une correction atterrit, l'agent écrit la fiche KI datée et signée. Déclencheurs obligatoires : même erreur deux fois, même commentaire de revue deux fois, correction utilisateur répétée, bug ayant coûté plus d'une heure.
+- Toute fiche candidate ou active figure dans `.agents/knowledge/INDEX.md`, lu en tête de session avant toute conception. Rien de dérivable du code ne s'y consigne.
+- **Échelle d'escalade** : une règle violée malgré sa fiche monte de la fiche KI vers une règle `.agents/rules/`, puis vers un oracle exécutable (`scripts/verify-gates.mjs` ou `scripts/knowledge-check.mjs`). La mémoire conseille, l'oracle applique.
+- Santé de la mémoire : `node scripts/knowledge-check.mjs --all`. Les sous-agents lisent `INDEX.md`, travaillent en lecture seule sur la mémoire et n'écrivent ni dans `.agents/knowledge/` ni dans `.agents/rules/`.
 
 ## Garde-fous inviolables
 

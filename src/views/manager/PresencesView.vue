@@ -1,9 +1,10 @@
 <script setup>
-import { ref, onMounted, watch, computed } from 'vue'
-import { supabase } from '../../lib/supabase'
-import { db } from '../../lib/db'
+import { ref, computed } from 'vue'
+import { db, useLiveQuery } from '../../lib/db'
 import { generateUUIDv7 } from '../../lib/uuidv7'
+import { useAuth } from '../../composables/useAuth'
 import { useProfile } from '../../composables/useProfile'
+import { useSyncEngine } from '../../composables/useSyncEngine'
 import { useToast } from '../../composables/useToast'
 import {
   getLocalDateString,
@@ -16,7 +17,9 @@ import {
 } from '../../lib/dateUtils'
 import StatusBadge from '../../components/shared/StatusBadge.vue'
 
+const { user } = useAuth()
 const { profile } = useProfile()
+const { syncNow, isSyncing } = useSyncEngine()
 const { success: toastSuccess, error: toastError } = useToast()
 
 // Filtre de période : presets journalier / semaine / mois, puis plage personnalisée.
@@ -27,8 +30,6 @@ const customStart = ref(getLocalDateString())
 const customEnd = ref(getLocalDateString())
 const filterStatus = ref('')
 const filterSearch = ref('')
-const presencesList = ref([])
-const loading = ref(false)
 
 // Décalage calendaire en jours, sans dérive de fuseau (midi local).
 const addDays = (dateStr, days) => {
@@ -93,68 +94,36 @@ const editStatus = ref('present')
 const isSavingEdit = ref(false)
 const editError = ref('')
 
-const loadPresences = async () => {
-  loading.value = true
-  try {
-    // 1. Consultation locale-first (Dexie) pour réactivité et usage hors-ligne
+// Lecture réactive depuis Dexie : la base locale est la source de vérité de l'écran, jamais le
+// réseau. Un changement de plage réabonne la requête, une écriture locale ou un pull rafraîchit la
+// vue sans intervention. La plage s'appuie sur l'index B-Tree `work_date` plutôt qu'un scan complet.
+const presenceRows = useLiveQuery(async () => {
     const { start, end } = dateRange.value
-    const localPresences = await db.presences
-      .filter((p) => !p.deleted_at && (!start || p.work_date >= start) && (!end || p.work_date <= end))
+    if (!start || !end) return []
+    return db.presences
+      .where('work_date')
+      .between(start, end, true, true)
+      .filter((p) => !p.deleted_at)
       .toArray()
+  }, null, () => `${dateRange.value.start}|${dateRange.value.end}`)
 
-    const profiles = await db.profiles.toArray()
-    const locations = await db.locations.toArray()
-    const profilesMap = new Map(profiles.map((pr) => [pr.id, pr]))
-    const locationsMap = new Map(locations.map((loc) => [loc.id, loc]))
+// Profils et sites sont joints localement : un libellé renommé se répercute sans rechargement.
+const localProfiles = useLiveQuery(async () => db.profiles.toArray(), [])
+const localLocations = useLiveQuery(async () => db.locations.toArray(), [])
 
-    const enrichedLocal = localPresences.map((p) => ({
-      ...p,
-      profiles: profilesMap.get(p.user_id) || null,
-      locations: locationsMap.get(p.location_id) || null,
-    }))
-
-    // La liste locale fait foi immédiatement : une date sans pointage vide bien la vue
-    presencesList.value = enrichedLocal
-
-    // 2. Synchronisation distante si connecté
-    if (navigator.onLine) {
-      let query = supabase
-        .from('presences')
-        .select('*, profiles(full_name, email, role), locations(name)')
-        .is('deleted_at', null)
-        .order('check_in_time', { ascending: false })
-
-      if (start) {
-        query = query.gte('work_date', start)
-      }
-      if (end) {
-        query = query.lte('work_date', end)
-      }
-
-      const { data, error } = await query
-      if (!error && data) {
-        presencesList.value = data
-        // Mise en cache locale des pointages distants
-        const rawPresences = data.map(({ profiles: _p, locations: _l, ...p }) => p)
-        if (rawPresences.length) {
-          await db.presences.bulkPut(rawPresences)
-        }
-      }
-    }
-  } catch (err) {
-    console.error('Erreur chargement présences :', err)
-  } finally {
-    loading.value = false
-  }
-}
-
-watch(dateRange, () => {
-  loadPresences()
+const presencesList = computed(() => {
+  if (!presenceRows.value) return []
+  const profilesMap = new Map((localProfiles.value || []).map((pr) => [pr.id, pr]))
+  const locationsMap = new Map((localLocations.value || []).map((loc) => [loc.id, loc]))
+  return presenceRows.value.map((p) => ({
+    ...p,
+    profiles: profilesMap.get(p.user_id) || null,
+    locations: locationsMap.get(p.location_id) || null,
+  }))
 })
 
-onMounted(() => {
-  loadPresences()
-})
+// Tant que Dexie n'a rien émis, l'écran affiche le chargement plutôt qu'un faux vide.
+const loading = computed(() => presenceRows.value === null)
 
 // Synthèse chiffrée de la journée
 const stats = computed(() => {
@@ -366,19 +335,13 @@ const saveEdit = async () => {
       })
     }
 
-    // Propagation Supabase si en ligne
-    if (navigator.onLine) {
-      const { error } = await supabase
-        .from('presences')
-        .update({ status: newStatus, updated_at: updatedTime })
-        .eq('id', presenceId)
-
-      if (error) throw error
-    }
-
     editingPresence.value = null
     toastSuccess('Le statut du pointage a été corrigé.')
-    await loadPresences()
+
+    // La correction vit dans Dexie et l'outbox : l'engine la pousse, la vue se rafraîchit seule.
+    if (navigator.onLine) {
+      syncNow(user.value?.id)
+    }
   } catch (err) {
     editError.value = `Erreur de modification : ${err.message}`
     toastError(`Erreur de modification : ${err.message}`)
@@ -411,7 +374,8 @@ const saveEdit = async () => {
         <button
           type="button"
           class="btn btn-outline rounded-m3-sm font-bold min-h-11 flex items-center gap-2 px-3"
-          @click="loadPresences"
+          :disabled="isSyncing"
+          @click="syncNow(user?.id)"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>

@@ -1,7 +1,8 @@
 <script setup>
-import { ref, onMounted, computed, h } from 'vue'
+import { onMounted, computed, h } from 'vue'
 import { useRouter } from '../../router'
-import { supabase } from '../../lib/supabase'
+import { db, useLiveQuery } from '../../lib/db'
+import { getLocalDateString } from '../../lib/dateUtils'
 import { useLocations, isLocationActive } from '../../composables/useLocations'
 import StatCard from '../../components/manager/StatCard.vue'
 import StatusBadge from '../../components/shared/StatusBadge.vue'
@@ -48,37 +49,43 @@ const iconAlertTriangle = createIcon([
   ['line', { x1: '12', y1: '17', x2: '12.01', y2: '17' }],
 ])
 
-const todayStr = new Date().toISOString().slice(0, 10)
-const loading = ref(true)
+// Date locale, sans dérive UTC : un pointage du soir ne doit pas basculer sur la veille.
+const todayStr = getLocalDateString()
 
-const totalEmployees = ref(0)
-const presencesToday = ref([])
+// Lecture réactive depuis Dexie. L'écran ne tire plus rien du réseau : l'engine rapatrie,
+// Dexie expose, la vue se rafraîchit seule.
+const profileRows = useLiveQuery(async () => db.profiles.toArray(), null)
+const presenceRows = useLiveQuery(async () =>
+  db.presences
+    .where('work_date')
+    .equals(todayStr)
+    .filter((p) => !p.deleted_at)
+    .toArray(),
+null)
+const localLocations = useLiveQuery(async () => db.locations.toArray(), [])
 
-onMounted(async () => {
-  loading.value = true
-  try {
-    const { count: empCount } = await supabase
-      .from('profiles')
-      .select('*', { count: 'exact', head: true })
-      .eq('is_active', true)
-      .is('deleted_at', null)
+const loading = computed(() => profileRows.value === null || presenceRows.value === null)
 
-    totalEmployees.value = empCount || 0
+const totalEmployees = computed(() =>
+  (profileRows.value || []).filter((p) => p.is_active !== false && !p.deleted_at).length
+)
 
-    const { data: presences } = await supabase
-      .from('presences')
-      .select('*, profiles(full_name, email, role), locations(name)')
-      .eq('work_date', todayStr)
-      .is('deleted_at', null)
-      .order('check_in_time', { ascending: false })
+const presencesToday = computed(() => {
+  if (!presenceRows.value) return []
+  const profilesMap = new Map((profileRows.value || []).map((pr) => [pr.id, pr]))
+  const locationsMap = new Map((localLocations.value || []).map((loc) => [loc.id, loc]))
+  return presenceRows.value
+    .map((p) => ({
+      ...p,
+      profiles: profilesMap.get(p.user_id) || null,
+      locations: locationsMap.get(p.location_id) || null,
+    }))
+    .sort((a, b) => String(b.check_in_time || '').localeCompare(String(a.check_in_time || '')))
+})
 
-    presencesToday.value = presences || []
-    await loadLocations()
-  } catch (err) {
-    console.error('Erreur chargement dashboard manager :', err)
-  } finally {
-    loading.value = false
-  }
+onMounted(() => {
+  // Amorçage du cache local des sites quand il est vide : l'écriture va dans Dexie, pas dans la vue.
+  loadLocations()
 })
 
 const activeLocationsCount = computed(() => {
