@@ -343,3 +343,16 @@ Scope: Constat sur la carte de site : le bouton « Modifier » portait `btn-sm`,
   CHECK: CHROME_PATH=$(command -v google-chrome-stable) node scripts/verify-browser.mjs --locations-cards
   EXPECT: browser-verify: locations cards passed
   EVIDENCE: browser-verify: locations cards passed, 11 assertions vertes (dont « les actions accordent texte et icône (≥ 14px) » et la cible de 44px), aucune exception de page (vérifié par le parcours Chrome headless)
+
+---
+
+# Gates: Refonte UI/UX du Contrôle des Présences
+
+OWNS: src/views/manager/PresencesView.vue, scripts/verify-gates.mjs, GATES.md
+
+Scope: L'écran « Contrôle des Présences » divergeait de la grammaire de l'écran « Gestion des Sites & Lieux ». Il est réaligné sur quatre axes : (1) en-tête doté de la même pastille d'icône `bg-primary/10 border border-primary/20` et du titre en `h1 text-2xl font-black` ; (2) filtre de recherche intégré dans un `label.input` pleine largeur avec loupe de 20px, au lieu d'un champ séparé ; (3) filtres de statut en barre `join` annonçant leur compte (`Tous`, `Présents`, `En retard`, `Terminés`), le sélecteur natif étant retiré ; (4) le tableau brut est remplacé par une grille de cartes responsives (1 / 2 / 3 colonnes) portant l'identité du collaborateur (initiales), les temps (arrivée, départ, durée avec états « En cours » et « Départ manquant »), le site, la date lisible et la précision GPS en badge sémantique. Les états vides sont désormais distincts (« Aucun pointage », « Aucun résultat », « Aucun pointage pour ce filtre ») et proposent l'action utile. Le modal de correction adopte la coque et les boutons `min-h-11` de la modale de site, et une notification confirme la correction. Les filtres annonçant leurs comptes, la journée complète est chargée une fois par date et le statut comme la recherche s'appliquent côté client : le rechargement n'obéit plus qu'à la date, contre un filtrage serveur qui écrasait la liste par statut et faussait les compteurs. La liste locale fait désormais foi dès qu'une date est chargée, y compris vide. La logique d'écriture locale/outbox et de propagation distante reste intacte.
+
+- [x] G63: L'écran présences partage la grammaire de l'écran sites : en-tête à pastille, recherche intégrée, filtres `join` à comptes, cartes responsives à identité/temps/GPS, états vides distincts et action utile ; le tableau brut, le sélecteur natif et les actions `btn-sm` ont disparu, et le statut n'est plus filtré côté serveur
+  CHECK: node scripts/verify-gates.mjs --presences-ui
+  EXPECT: G63 passed: presences screen shares the locations grammar
+  EVIDENCE: G63 passed: presences screen shares the locations grammar (vérifié par node scripts/verify-gates.mjs --presences-ui, contrôle négatif de l'oracle compris), build de production en sortie 0 et suite complète `--all` verte (G63 inclus)

@@ -2431,6 +2431,66 @@ export function checkLocationsFilters() {
   return true;
 }
 
+/**
+ * G63 : L'écran Contrôle des Présences partage la grammaire de l'écran Lieux & Sites : en-tête à
+ * pastille d'icône, recherche intégrée, filtres à comptes, cartes responsives et états vides
+ * distincts. Le tableau brut et le sélecteur natif qui désaccordaient l'écran disparaissent.
+ */
+export function checkPresencesUi() {
+  const uiGaps = (text) => {
+    const gaps = [];
+    // En-tête unifié sur la grammaire de la vue Sites
+    if (!/<h1[^>]*>/.test(text) || /<h2[^>]*>/.test(text)) gaps.push('en-tête non unifié en h1');
+    if (!text.includes('bg-primary/10') || !text.includes('border-primary/20')) gaps.push('pastille d’en-tête absente');
+    // Recherche intégrée, pleine largeur et nommée
+    if (!/class="input input-bordered flex w-full/.test(text)) gaps.push('recherche non intégrée');
+    if (!text.includes('placeholder="Rechercher un collaborateur')) gaps.push('recherche collaborateur absente');
+    // Filtres à comptes dans une barre join
+    for (const token of ['statusCounts.all', 'statusCounts.present', 'statusCounts.late', 'statusCounts.completed']) {
+      if (!text.includes(token)) gaps.push(`filtre sans compte : ${token}`);
+    }
+    if (!/\bjoin\b/.test(text)) gaps.push('filtres sans barre join');
+    // États vides distincts et action utile
+    for (const message of ['Aucun pointage', 'Aucun résultat', 'Aucun pointage pour ce filtre']) {
+      if (!text.includes(message)) gaps.push(`état vide absent : ${message}`);
+    }
+    if (!text.includes('runEmptyAction')) gaps.push('action d’état vide absente');
+    // Cartes responsives porteuses d'identité, de temps et de précision GPS
+    if (!text.includes('grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3')) gaps.push('grille de cartes absente');
+    for (const token of ['initials(', 'accuracyBadge(', 'StatusBadge']) {
+      if (!text.includes(token)) gaps.push(`carte sans ${token}`);
+    }
+    // Retrait de l'ancien tableau brut, du sélecteur natif et des actions rétrécies
+    if (/<table\b/.test(text)) gaps.push('tableau brut conservé');
+    if (/id="f-status"/.test(text)) gaps.push('sélecteur natif conservé');
+    if (/\bbtn-sm\b/.test(text)) gaps.push('action rétrécie (btn-sm) désaccordée de l’icône');
+    // Les compteurs des filtres exigent la journée complète : le statut se filtre côté client
+    if (/\.eq\('status'/.test(text) || /\.in\('status'/.test(text)) gaps.push('filtrage de statut appliqué au serveur, compteurs faussés');
+    if (!/watch\(filterDate,/.test(text)) gaps.push('rechargement non limité à la date');
+    return gaps;
+  };
+
+  // Contrôle négatif : l'ancien écran (tableau + select natif + h2) doit être refusé.
+  const bogus = '<h2>Contrôle des Présences</h2><select id="f-status"></select><table></table>';
+  if (uiGaps(bogus).length === 0) {
+    console.error('FAILURE G63: le détecteur d’interface présences est aveugle, oracle invalide');
+    return false;
+  }
+
+  const file = path.join(SRC_DIR, 'views', 'manager', 'PresencesView.vue');
+  if (!fs.existsSync(file)) {
+    console.error('FAILURE G63: PresencesView.vue introuvable');
+    return false;
+  }
+  const gaps = uiGaps(fs.readFileSync(file, 'utf8'));
+  if (gaps.length > 0) {
+    console.error(`FAILURE G63: l’écran présences reste incohérent -> ${[...new Set(gaps)].join(', ')}`);
+    return false;
+  }
+  console.log('G63 passed: presences screen shares the locations grammar');
+  return true;
+}
+
 // Exécution CLI
 const arg = process.argv[2] || '--all';
 let success = true;
@@ -2523,6 +2583,8 @@ if (arg === '--emojis') {
   success = checkLocationsCards();
 } else if (arg === '--locations-filters') {
   success = checkLocationsFilters();
+} else if (arg === '--presences-ui') {
+  success = checkPresencesUi();
 } else if (arg === '--sidebar-build') {
   success = checkBuild('G48', 'production build succeeds with exit code 0');
 } else if (arg === '--manager-build') {
@@ -2570,10 +2632,11 @@ if (arg === '--emojis') {
   const r56 = checkLocationsForm();
   const r58 = checkLocationsCards();
   const r60 = checkLocationsFilters();
+  const r63 = checkPresencesUi();
   const r48 = r39; // Une seule compilation sert les portes de build G39 et G48
-  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60;
+  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60 && r63;
 } else {
-  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--manager-build|--sidebar-build|--build|--all]`);
+  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--presences-ui|--manager-build|--sidebar-build|--build|--all]`);
   process.exit(1);
 }
 
