@@ -2455,18 +2455,15 @@ export function checkPresencesUi() {
       if (!text.includes(message)) gaps.push(`état vide absent : ${message}`);
     }
     if (!text.includes('runEmptyAction')) gaps.push('action d’état vide absente');
-    // Cartes responsives porteuses d'identité, de temps et de précision GPS
-    if (!text.includes('grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3')) gaps.push('grille de cartes absente');
+    // Cartes/tableau : identité, temps et précision GPS portés par la vue
     for (const token of ['initials(', 'accuracyBadge(', 'StatusBadge']) {
-      if (!text.includes(token)) gaps.push(`carte sans ${token}`);
+      if (!text.includes(token)) gaps.push(`ligne sans ${token}`);
     }
-    // Retrait de l'ancien tableau brut, du sélecteur natif et des actions rétrécies
-    if (/<table\b/.test(text)) gaps.push('tableau brut conservé');
+    // Retrait du sélecteur natif, des actions rétrécies et du filtrage serveur par statut
     if (/id="f-status"/.test(text)) gaps.push('sélecteur natif conservé');
     if (/\bbtn-sm\b/.test(text)) gaps.push('action rétrécie (btn-sm) désaccordée de l’icône');
-    // Les compteurs des filtres exigent la journée complète : le statut se filtre côté client
+    // Les compteurs des filtres exigent la période complète : le statut se filtre côté client
     if (/\.eq\('status'/.test(text) || /\.in\('status'/.test(text)) gaps.push('filtrage de statut appliqué au serveur, compteurs faussés');
-    if (!/watch\(filterDate,/.test(text)) gaps.push('rechargement non limité à la date');
     return gaps;
   };
 
@@ -2491,9 +2488,139 @@ export function checkPresencesUi() {
   return true;
 }
 
+/**
+ * G64 : Le filtre de date propose d'abord des presets (jour, semaine, mois) puis une plage
+ * personnalisée. La plage effective est calculée une fois et appliquée à l'identique au cache
+ * local (comparaison de chaînes 'YYYY-MM-DD') et à la requête distante (gte/lte), avec un
+ * rechargement piloté par la seule plage.
+ */
+export function checkPresencesPeriod() {
+  const periodGaps = (text) => {
+    const gaps = [];
+    for (const preset of ["'day'", "'week'", "'month'", "'custom'"]) {
+      if (!text.includes(preset)) gaps.push(`preset de période absent : ${preset}`);
+    }
+    for (const token of ['dateRange', 'customStart', 'customEnd', 'periodLabel']) {
+      if (!text.includes(token)) gaps.push(`période sans ${token}`);
+    }
+    if (!/watch\(dateRange,/.test(text)) gaps.push('rechargement non piloté par la plage');
+    if (!/\.gte\('work_date'/.test(text) || !/\.lte\('work_date'/.test(text)) {
+      gaps.push('plage non appliquée à la requête distante');
+    }
+    if (!/p\.work_date >= start/.test(text) || !/p\.work_date <= end/.test(text)) {
+      gaps.push('plage non appliquée au filtre local');
+    }
+    return gaps;
+  };
+
+  // Contrôle négatif : l'ancien filtre à date unique (eq + watch(filterDate)) doit être refusé.
+  const bogus = "const filterDate = ref(getLocalDateString()); watch(filterDate, loadPresences); query.eq('work_date', filterDate.value)";
+  if (periodGaps(bogus).length === 0) {
+    console.error('FAILURE G64: le détecteur de période est aveugle, oracle invalide');
+    return false;
+  }
+
+  const file = path.join(SRC_DIR, 'views', 'manager', 'PresencesView.vue');
+  if (!fs.existsSync(file)) {
+    console.error('FAILURE G64: PresencesView.vue introuvable');
+    return false;
+  }
+  const gaps = periodGaps(fs.readFileSync(file, 'utf8'));
+  if (gaps.length > 0) {
+    console.error(`FAILURE G64: le filtre de période reste incomplet -> ${[...new Set(gaps)].join(', ')}`);
+    return false;
+  }
+  console.log('G64 passed: presence period filter offers presets and a custom range');
+  return true;
+}
+
+/**
+ * G65 : Les pointages sont présentés dans un vrai tableau balisé (`table`/`thead`/`tbody`),
+ * défilable horizontalement, avec les colonnes d'audit — collaborateur, site, date, arrivée,
+ * départ, durée, statut, précision GPS, actions — au lieu d'une grille de cartes.
+ */
+export function checkPresencesTable() {
+  const tableGaps = (text) => {
+    const gaps = [];
+    for (const token of ['<table', '<thead', '<tbody', 'overflow-x-auto', 'table table-sm']) {
+      if (!text.includes(token)) gaps.push(`tableau sans ${token}`);
+    }
+    for (const column of ['Collaborateur', 'Site', 'Date', 'Arrivée', 'Départ', 'Durée', 'Statut', 'Précision GPS']) {
+      if (!text.includes(column)) gaps.push(`colonne absente : ${column}`);
+    }
+    for (const token of ['initials(', 'formatWorkDate(', 'accuracyBadge(', 'StatusBadge', 'formatSessionDuration(']) {
+      if (!text.includes(token)) gaps.push(`cellule sans ${token}`);
+    }
+    if (/grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3/.test(text)) gaps.push('grille de cartes conservée');
+    if (/\bbtn-sm\b/.test(text)) gaps.push('action rétrécie (btn-sm) désaccordée de l’icône');
+    return gaps;
+  };
+
+  // Contrôle négatif : l'ancienne présentation en cartes, sans tableau balisé, doit être refusée.
+  const bogus =
+    '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">'
+    + '<div class="card">Collaborateur Arrivée Départ Durée Statut</div></div>';
+  if (tableGaps(bogus).length === 0) {
+    console.error('FAILURE G65: le détecteur de tableau présences est aveugle, oracle invalide');
+    return false;
+  }
+
+  const file = path.join(SRC_DIR, 'views', 'manager', 'PresencesView.vue');
+  if (!fs.existsSync(file)) {
+    console.error('FAILURE G65: PresencesView.vue introuvable');
+    return false;
+  }
+  const gaps = tableGaps(fs.readFileSync(file, 'utf8'));
+  if (gaps.length > 0) {
+    console.error(`FAILURE G65: la présentation tabulaire reste incomplète -> ${[...new Set(gaps)].join(', ')}`);
+    return false;
+  }
+  console.log('G65 passed: presences render as an audit table');
+  return true;
+}
+
+/**
+ * G66 : Chaque colonne d'audit du tableau se trie par un clic d'en-tête, en alternant croissant
+ * et décroissant, avec une icône orientée et `aria-sort` pour les lecteurs d'écran. Les colonnes
+ * Arrivée, Départ, Durée et Précision GPS sont triables ; les valeurs absentes finissent en bas.
+ */
+export function checkPresencesSort() {
+  const sortGaps = (text) => {
+    const gaps = [];
+    for (const token of ['SORTABLE_COLUMNS', 'sortKey', 'sortDir', 'sortedPresences', 'toggleSort', 'aria-sort', 'sortIconPath']) {
+      if (!text.includes(token)) gaps.push(`tri sans ${token}`);
+    }
+    if (!/v-for="col in SORTABLE_COLUMNS"/.test(text)) gaps.push('en-têtes non itérés sur les colonnes triables');
+    if (!/v-for="p in sortedPresences"/.test(text)) gaps.push('corps non itéré sur la liste triée');
+    for (const column of ["'check_in'", "'check_out'", "'duration'", "'gps'"]) {
+      if (!text.includes(column)) gaps.push(`colonne triable absente : ${column}`);
+    }
+    return gaps;
+  };
+
+  // Contrôle négatif : un tableau figé, sans tri ni en-têtes cliquables, doit être refusé.
+  const bogus = '<table><thead><tr><th>Arrivée</th></tr></thead><tbody><tr v-for="p in filteredPresences"><td>x</td></tr></tbody></table>';
+  if (sortGaps(bogus).length === 0) {
+    console.error('FAILURE G66: le détecteur de tri présences est aveugle, oracle invalide');
+    return false;
+  }
+
+  const file = path.join(SRC_DIR, 'views', 'manager', 'PresencesView.vue');
+  if (!fs.existsSync(file)) {
+    console.error('FAILURE G66: PresencesView.vue introuvable');
+    return false;
+  }
+  const gaps = sortGaps(fs.readFileSync(file, 'utf8'));
+  if (gaps.length > 0) {
+    console.error(`FAILURE G66: le tri du tableau reste incomplet -> ${[...new Set(gaps)].join(', ')}`);
+    return false;
+  }
+  console.log('G66 passed: presence table headers sort both ways');
+  return true;
+}
+
 // Exécution CLI
-const arg = process.argv[2] || '--all';
-let success = true;
+const arg = process.argv[2] || '--all';let success = true;
 
 if (arg === '--emojis') {
   success = checkEmojis();
@@ -2585,6 +2712,12 @@ if (arg === '--emojis') {
   success = checkLocationsFilters();
 } else if (arg === '--presences-ui') {
   success = checkPresencesUi();
+} else if (arg === '--presences-period') {
+  success = checkPresencesPeriod();
+} else if (arg === '--presences-table') {
+  success = checkPresencesTable();
+} else if (arg === '--presences-sort') {
+  success = checkPresencesSort();
 } else if (arg === '--sidebar-build') {
   success = checkBuild('G48', 'production build succeeds with exit code 0');
 } else if (arg === '--manager-build') {
@@ -2633,10 +2766,13 @@ if (arg === '--emojis') {
   const r58 = checkLocationsCards();
   const r60 = checkLocationsFilters();
   const r63 = checkPresencesUi();
+  const r64 = checkPresencesPeriod();
+  const r65 = checkPresencesTable();
+  const r66 = checkPresencesSort();
   const r48 = r39; // Une seule compilation sert les portes de build G39 et G48
-  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60 && r63;
+  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60 && r63 && r64 && r65 && r66;
 } else {
-  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--presences-ui|--manager-build|--sidebar-build|--build|--all]`);
+  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--presences-ui|--presences-period|--presences-table|--presences-sort|--manager-build|--sidebar-build|--build|--all]`);
   process.exit(1);
 }
 

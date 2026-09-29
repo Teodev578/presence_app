@@ -350,9 +350,48 @@ Scope: Constat sur la carte de site : le bouton « Modifier » portait `btn-sm`,
 
 OWNS: src/views/manager/PresencesView.vue, scripts/verify-gates.mjs, GATES.md
 
-Scope: L'écran « Contrôle des Présences » divergeait de la grammaire de l'écran « Gestion des Sites & Lieux ». Il est réaligné sur quatre axes : (1) en-tête doté de la même pastille d'icône `bg-primary/10 border border-primary/20` et du titre en `h1 text-2xl font-black` ; (2) filtre de recherche intégré dans un `label.input` pleine largeur avec loupe de 20px, au lieu d'un champ séparé ; (3) filtres de statut en barre `join` annonçant leur compte (`Tous`, `Présents`, `En retard`, `Terminés`), le sélecteur natif étant retiré ; (4) le tableau brut est remplacé par une grille de cartes responsives (1 / 2 / 3 colonnes) portant l'identité du collaborateur (initiales), les temps (arrivée, départ, durée avec états « En cours » et « Départ manquant »), le site, la date lisible et la précision GPS en badge sémantique. Les états vides sont désormais distincts (« Aucun pointage », « Aucun résultat », « Aucun pointage pour ce filtre ») et proposent l'action utile. Le modal de correction adopte la coque et les boutons `min-h-11` de la modale de site, et une notification confirme la correction. Les filtres annonçant leurs comptes, la journée complète est chargée une fois par date et le statut comme la recherche s'appliquent côté client : le rechargement n'obéit plus qu'à la date, contre un filtrage serveur qui écrasait la liste par statut et faussait les compteurs. La liste locale fait désormais foi dès qu'une date est chargée, y compris vide. La logique d'écriture locale/outbox et de propagation distante reste intacte.
+Scope: L'écran « Contrôle des Présences » divergeait de la grammaire de l'écran « Gestion des Sites & Lieux ». Il est réaligné sur quatre axes : (1) en-tête doté de la même pastille d'icône `bg-primary/10 border border-primary/20` et du titre en `h1 text-2xl font-black` ; (2) filtre de recherche intégré dans un `label.input` pleine largeur avec loupe de 20px, au lieu d'un champ séparé ; (3) filtres de statut en barre `join` annonçant leur compte (`Tous`, `Présents`, `En retard`, `Terminés`), le sélecteur natif étant retiré ; (4) la présentation adopte un tableau d'audit balisé (voir G65) dont chaque ligne porte l'identité du collaborateur (initiales), les temps (arrivée, départ, durée avec états « En cours » et « Départ manquant »), le site, la date lisible et la précision GPS en badge sémantique. Les états vides sont désormais distincts (« Aucun pointage », « Aucun résultat », « Aucun pointage pour ce filtre ») et proposent l'action utile. Le modal de correction adopte la coque et les boutons `min-h-11` de la modale de site, et une notification confirme la correction. Les filtres annonçant leurs comptes, la période complète est chargée une fois et le statut comme la recherche s'appliquent côté client : le rechargement n'obéit plus qu'à la plage de dates, contre un filtrage serveur qui écrasait la liste par statut et faussait les compteurs. La liste locale fait désormais foi dès qu'une période est chargée, y compris vide. La logique d'écriture locale/outbox et de propagation distante reste intacte.
 
-- [x] G63: L'écran présences partage la grammaire de l'écran sites : en-tête à pastille, recherche intégrée, filtres `join` à comptes, cartes responsives à identité/temps/GPS, états vides distincts et action utile ; le tableau brut, le sélecteur natif et les actions `btn-sm` ont disparu, et le statut n'est plus filtré côté serveur
+- [x] G63: L'écran présences partage la grammaire de l'écran sites : en-tête à pastille, recherche intégrée, filtres `join` à comptes, lignes à identité/temps/GPS, états vides distincts et action utile ; le sélecteur natif et les actions `btn-sm` ont disparu, et le statut n'est plus filtré côté serveur
   CHECK: node scripts/verify-gates.mjs --presences-ui
   EXPECT: G63 passed: presences screen shares the locations grammar
   EVIDENCE: G63 passed: presences screen shares the locations grammar (vérifié par node scripts/verify-gates.mjs --presences-ui, contrôle négatif de l'oracle compris), build de production en sortie 0 et suite complète `--all` verte (G63 inclus)
+
+---
+
+# Gates: Filtre de Période du Contrôle des Présences
+
+OWNS: src/views/manager/PresencesView.vue, scripts/verify-gates.mjs, GATES.md
+
+Scope: Le filtre de date ne proposait qu'une journée unique. Il offre désormais quatre presets dans une barre `join` : Jour (par défaut), Semaine, Mois et Personnalisé. Jour s'appuie sur une date d'ancrage, Semaine sur le lundi de la semaine de l'ancre et Mois sur le premier au dernier jour du mois ; ces deux derniers annoncent leur plage calculée en clair. Personnalisé révèle deux champs « Du / Au » bornés l'un par l'autre, la plage étant normalisée si l'utilisateur inverse les bornes. La plage effective, en `YYYY-MM-DD` comparables en chaîne, alimente à la fois le filtre Dexie local et la requête distante (`work_date` entre bornes), et le rechargement n'écoute plus que la plage, ce qui sert les compteurs par statut calculés sur la période complète. Le message d'état vide mentionne la période sélectionnée. Le reste de la logique (recherche, statut, correction, outbox) reste inchangé.
+
+- [x] G64: Le filtre de date propose jour (par défaut), semaine, mois puis personnalisé ; la plage effective est calculée une fois et appliquée à l'identique au cache local (`p.work_date >= start` / `<= end`) et à la requête distante (`gte`/`lte`), le rechargement étant piloté par la seule `dateRange`, avec libellé de période en clair
+  CHECK: node scripts/verify-gates.mjs --presences-period
+  EXPECT: G64 passed: presence period filter offers presets and a custom range
+  EVIDENCE: G64 passed: presence period filter offers presets and a custom range (vérifié par node scripts/verify-gates.mjs --presences-period, contrôle négatif de l'oracle compris) et build de production en sortie 0
+
+---
+
+# Gates: Tableau d'Audit du Contrôle des Présences
+
+OWNS: src/views/manager/PresencesView.vue, scripts/verify-gates.mjs, GATES.md
+
+Scope: La grille de cartes ne convenait pas à la lecture comparative des pointages. La présentation revient à un vrai tableau balisé (`table table-sm` dans un conteneur `overflow-x-auto`), en conservant l'en-tête à pastille, la recherche, le filtre de période et les états vides obtenus précédemment. Les colonnes couvrent l'audit : Collaborateur (avatar à initiales, nom, email), Site, Date lisible, Arrivée, Départ, Durée (avec « En cours » et « Départ manquant »), Statut, Précision GPS en badge sémantique et, pour l'admin, Actions. Les actions de ligne gardent `min-h-11 px-3` sans `btn-sm`, donc un couple icône/texte accordé. Sur écran étroit, le tableau défile horizontalement plutôt que de comprimer les colonnes.
+
+- [x] G65: Les pointages sont présentés dans un tableau balisé défilable (`table`/`thead`/`tbody` + `overflow-x-auto`) portant les colonnes Collaborateur, Site, Date, Arrivée, Départ, Durée, Statut et Précision GPS, chaque ligne exposant initiales, date lisible, durée résolue et précision GPS ; la grille de cartes a disparu
+  CHECK: node scripts/verify-gates.mjs --presences-table
+  EXPECT: G65 passed: presences render as an audit table
+  EVIDENCE: G65 passed: presences render as an audit table (vérifié par node scripts/verify-gates.mjs --presences-table, contrôle négatif de l'oracle compris) et build de production en sortie 0
+
+---
+
+# Gates: Tri des Colonnes du Tableau des Présences
+
+OWNS: src/views/manager/PresencesView.vue, scripts/verify-gates.mjs, GATES.md
+
+Scope: Les en-têtes du tableau deviennent triables. Un clic trie par ordre croissant, un second clic inverse l'ordre, chaque colonne affichant une icône orientée (double chevron au repos, flèche vers le haut en croissant, vers le bas en décroissant) et exposant `aria-sort` aux lecteurs d'écran. Les colonnes triables sont Collaborateur, Site, Date, Arrivée, Départ, Durée, Statut et Précision GPS. Le tri est stable : à clé égale, l'heure d'arrivée suit le sens courant, et les valeurs absentes (départ ou durée manquants, GPS non mesuré) se rangent en fin de liste quel que soit le sens. Le tri par défaut reste la date la plus récente puis l'arrivée la plus tardive, afin qu'une période multi-jours s'ouvre sur les pointages les plus récents. Le filtrage (statut, recherche, période) et le comptage restent inchangés.
+
+- [x] G66: Chaque colonne d'audit se trie via son en-tête avec icône orientée et `aria-sort`, en alternant croissant/décroissant ; le corps du tableau consomme la liste triée et les valeurs absentes finissent en bas
+  CHECK: node scripts/verify-gates.mjs --presences-sort
+  EXPECT: G66 passed: presence table headers sort both ways
+  EVIDENCE: G66 passed: presence table headers sort both ways (vérifié par node scripts/verify-gates.mjs --presences-sort, contrôle négatif de l'oracle compris) et build de production en sortie 0
