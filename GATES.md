@@ -330,3 +330,16 @@ Scope: Audit du module Lieux & Sites. Incohérences relevées et corrigées : (1
   CHECK: CHROME_PATH=$(command -v google-chrome-stable) node scripts/verify-browser.mjs --locations-filters
   EXPECT: browser-verify: locations filters passed
   EVIDENCE: browser-verify: locations filters passed, 7 assertions vertes, aucune exception de page (vérifié par le parcours Chrome headless, copie dans .unlazy/evidence/locations-filters.png)
+
+---
+
+# Gates: Alignement Icône/Texte des Actions de Carte
+
+OWNS: src/views/manager/LocationsView.vue, scripts/verify-gates.mjs, scripts/verify-browser.mjs, GATES.md
+
+Scope: Constat sur la carte de site : le bouton « Modifier » portait `btn-sm`, qui abaisse la taille de police à 12px alors que son icône reste à 16px. Le couple icône/texte paraissait désaccordé, contrairement aux boutons « Nouveau Site » et « Voir sur la carte » (14px/16px). Les deux actions de carte abandonnent `btn-sm` et conservent `min-h-11 px-3` : le texte passe à 14px, la cible tactile reste à 44px.
+
+- [x] G62: Aucune action de carte n'est rétrécie : le fichier ne porte plus `btn-sm`, et chaque bouton de carte est mesuré à ≥ 14px de police pour un couple icône/texte accordé, la cible restant à 44px
+  CHECK: CHROME_PATH=$(command -v google-chrome-stable) node scripts/verify-browser.mjs --locations-cards
+  EXPECT: browser-verify: locations cards passed
+  EVIDENCE: browser-verify: locations cards passed, 11 assertions vertes (dont « les actions accordent texte et icône (≥ 14px) » et la cible de 44px), aucune exception de page (vérifié par le parcours Chrome headless)

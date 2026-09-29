@@ -2333,6 +2333,9 @@ export function checkLocationsCards() {
     if (text.includes('title="Cliquer pour changer le statut"')) {
       gaps.push('ancien badge cliquable conservé');
     }
+    if (/\bbtn-sm\b/.test(text)) {
+      gaps.push('bouton au texte réduit (btn-sm) désaccordé de l’icône');
+    }
     return gaps;
   };
 

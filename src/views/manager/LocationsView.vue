@@ -566,7 +566,7 @@ const toggleStatus = async (loc) => {
         <div class="flex items-center justify-end gap-2 mt-auto pt-3 border-t border-base-300/60">
           <button
             type="button"
-            class="btn btn-ghost btn-sm text-error font-medium rounded-m3-sm min-h-11 px-3"
+            class="btn btn-ghost text-error font-medium rounded-m3-sm min-h-11 px-3"
             @click="requestDelete(loc)"
             title="Supprimer ce site"
           >
@@ -574,7 +574,7 @@ const toggleStatus = async (loc) => {
           </button>
           <button
             type="button"
-            class="btn btn-secondary btn-outline btn-sm font-semibold rounded-m3-sm gap-1.5 min-h-11 px-3"
+            class="btn btn-secondary btn-outline font-semibold rounded-m3-sm gap-1.5 min-h-11 px-3"
             @click="openEditModal(loc)"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

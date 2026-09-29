@@ -664,6 +664,7 @@ const MEASURE_EXPRESSION = `(() => {
             mapTarget: link ? link.getAttribute('target') : null,
             mapRel: link ? link.getAttribute('rel') : null,
             buttonHeights: [...card.querySelectorAll('button')].map((button) => Math.round(button.getBoundingClientRect().height)),
+            buttonFontSizes: [...card.querySelectorAll('button')].map((button) => getComputedStyle(button).fontSize),
           }
         })
       : [],
@@ -1630,6 +1631,12 @@ async function verifyLocationsCards(cdp) {
     assertTrue(
       cards.every((card) => card.buttonHeights.every((height) => height >= 44)),
       JSON.stringify(cards.map((card) => card.buttonHeights))
+    )
+  )
+  check('les actions accordent texte et icône (≥ 14px)', () =>
+    assertTrue(
+      cards.every((card) => card.buttonFontSizes.every((size) => parseFloat(size) >= 14)),
+      JSON.stringify(cards.map((card) => card.buttonFontSizes))
     )
   )
 
