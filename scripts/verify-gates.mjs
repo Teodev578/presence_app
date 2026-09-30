@@ -1211,7 +1211,7 @@ export function checkMotionConformance() {
     return false;
   }
 
-  for (const file of ['src/components/employee/CheckConfirmationOverlay.vue', 'src/components/employee/AvailabilitySummary.vue']) {
+  for (const file of ['src/App.vue', 'src/components/employee/CheckConfirmationOverlay.vue', 'src/components/employee/AvailabilitySummary.vue']) {
     const content = readScopeFile(file);
     if (content === null) {
       console.error(`FAILURE G28: ${file} introuvable`);
@@ -1851,6 +1851,11 @@ export function checkDrawerSharedGrammar() {
     }
     if (nav.indexOf('Navigation') > nav.indexOf('Mon espace')) {
       console.error(`FAILURE G40: ${layout} n'ordonne pas ses sections Navigation puis Mon espace`);
+      ok = false;
+    }
+    const beforeSpace = nav.slice(0, nav.indexOf('Mon espace'));
+    if (!/<div class="mt-5 border-t border-base-content\/20"/.test(beforeSpace)) {
+      console.error(`FAILURE G40: ${layout} ne sépare pas la section Mon espace d'un filet visible en rail`);
       ok = false;
     }
     if (/navigation-rail|NavigationRail/.test(content)) {

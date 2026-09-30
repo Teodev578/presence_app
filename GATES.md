@@ -666,3 +666,42 @@ Scope: Correctif du 2026-09-30. Le nettoyage du pied de tiroir avait retiré l'i
   CHECK: node scripts/verify-gates.mjs --cross-space-gateways
   EXPECT: G96 passed: cross-space gateways stay wired with their role composable
   EVIDENCE: G96 passed: cross-space gateways stay wired with their role composable (vérifié par node scripts/verify-gates.mjs --cross-space-gateways, contrôle négatif compris : passerelle lisant `profile` sans import détectée le 2026-09-30). Rendu headless sombre à 1440 : « Espace Gestionnaire » visible dans la section « Mon espace » pour un rôle administrateur. `--all` sans nouvelle régression, `npm run build` en sortie 0.
+
+---
+
+# Gates: Filet de Séparation de « Mon espace »
+
+OWNS: src/layouts/ManagerLayout.vue, src/layouts/EmployeeLayout.vue, scripts/verify-gates.mjs, GATES.md
+
+Scope: Le 2026-09-30, un filet de séparation `border-t border-base-content/20` précède la section « Mon espace » dans les deux tiroirs, pour démarquer la navigation de la passerelle inter-espace. Le filet reste visible quand la barre est repliée en rail, où il sépare l'icône de la dernière entrée de celle de la passerelle. L'ordre Navigation puis Mon espace est conservé.
+
+- [x] G40 (revalidée): Le filet de séparation précède « Mon espace » dans les deux tiroirs et reste visible en rail
+  CHECK: node scripts/verify-gates.mjs --drawer-shared-grammar
+  EXPECT: G40 passed: both drawers share one navigation grammar
+  EVIDENCE: G40 passed: both drawers share one navigation grammar (vérifié par node scripts/verify-gates.mjs --drawer-shared-grammar, la porte exige un `mt-5 border-t border-base-content/20` sans `rail-hide` avant « Mon espace », contrôle négatif compris le 2026-09-30). Rendu headless sombre : filet visible entre « Export CSV » et « MON ESPACE » à 1280 déployé, et entre l'icône d'export et celle du pointage à 900 en rail. `--all` sans nouvelle régression, `npm run build` en sortie 0.
+
+---
+
+# Gates: Passerelles Inter-Espace (rappel des portes réécrites)
+
+OWNS: scripts/verify-gates.mjs, GATES.md
+
+Scope: Ce lot n'ajoute aucune règle. Il rappelle que les portes G11, G20, G22, G35 (pied de tiroir vidé, thème en Paramètres) et G94, G95, G96 (finitions employé, page Paramètres, passerelles) restent les garde-fous des décisions du 2026-09-30.
+
+- [x] Contrôle de non-régression: `node scripts/verify-gates.mjs --all` ne laisse que les échecs préexistants hors périmètre
+  CHECK: node scripts/verify-gates.mjs --all
+  EXPECT: G6 passed: build succeeded with exit code 0
+  EVIDENCE: `--all` ne laisse que G1, G3, G4 (ToastContainer, SyncIndicator) et G8 (HomeView), hors périmètre ; `npm run build` en sortie 0 (vérifiés le 2026-09-30).
+
+---
+
+# Gates: Transition entre les Espaces
+
+OWNS: src/App.vue, scripts/verify-gates.mjs, GATES.md
+
+Scope: Le passage d'un espace à l'autre (collaborateur, gestionnaire) et les états d'authentification sont enveloppés dans une transition native `<Transition name="space" mode="out-in">`. Le fondu dure 250 ms sur la courbe Emphasized de Material 3, n'anime que `opacity` et `transform`, et se neutralise sous `prefers-reduced-motion` par la règle globale de `src/style.css`. La transition interne des routes dans chaque espace est conservée ; le conteneur de notifications reste hors transition.
+
+- [x] G28 (étendue): La transition entre espaces n'anime que des propriétés composées, sous le plafond de 400 ms, et `App.vue` entre dans le périmètre de conformité du mouvement
+  CHECK: node scripts/verify-gates.mjs --motion-conformance
+  EXPECT: G28 passed: batch animations use GPU properties within timing budget
+  EVIDENCE: G28 passed: batch animations use GPU properties within timing budget (vérifié par node scripts/verify-gates.mjs --motion-conformance, `App.vue` ajouté au périmètre : transition 250 ms sur `opacity` et `transform`, `mode="out-in"` présent le 2026-09-30). `npm run build` en sortie 0, `--all` sans nouvelle régression.

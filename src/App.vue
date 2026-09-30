@@ -71,6 +71,8 @@ watch([() => route.value.path, isManager, () => profile.value, profileLoading], 
 </script>
 
 <template>
+  <!-- Transition entre espaces et états d'authentification (GPU : opacity + transform) -->
+  <Transition name="space" mode="out-in">
   <!-- Écran de chargement pendant l'authentification initiale et la résolution du profil -->
   <div
     v-if="authLoading || (isAuthenticated && !profile && profileLoading)"
@@ -109,6 +111,7 @@ watch([() => route.value.path, isManager, () => profile.value, profileLoading], 
       <HomeView v-else />
     </Transition>
   </EmployeeLayout>
+  </Transition>
 
   <!-- Conteneur global de notifications Toast -->
   <ToastContainer />
@@ -129,5 +132,24 @@ watch([() => route.value.path, isManager, () => profile.value, profileLoading], 
 .fade-slide-leave-to {
   opacity: 0;
   transform: translateY(-4px);
+}
+
+/* Transition entre les espaces : fondu court et glissement vertical léger, sur la courbe
+   Emphasized de Material 3. Seules opacity et transform sont animées, la réduction de
+   mouvement du système neutralise la durée. */
+.space-enter-active,
+.space-leave-active {
+  transition: opacity 250ms cubic-bezier(0.2, 0, 0, 1), transform 250ms cubic-bezier(0.2, 0, 0, 1);
+  will-change: opacity, transform;
+}
+
+.space-enter-from {
+  opacity: 0;
+  transform: translateY(10px) scale(0.995);
+}
+
+.space-leave-to {
+  opacity: 0;
+  transform: translateY(-10px) scale(0.995);
 }
 </style>

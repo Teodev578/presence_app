@@ -203,7 +203,8 @@ const handleNav = (path) => {
             <!-- Passerelle vers l'espace de gestion. Rangée neutre : la teinte primaire
                  est réservée à l'entrée sélectionnée. -->
             <template v-if="canReachManagerSpace">
-              <p class="rail-hide mt-5 px-3.5 text-xs font-medium uppercase tracking-wide text-base-content/60">Mon espace</p>
+              <div class="mt-5 border-t border-base-content/20" aria-hidden="true"></div>
+              <p class="rail-hide mt-3 px-3.5 text-xs font-medium uppercase tracking-wide text-base-content/60">Mon espace</p>
               <ul class="menu bg-transparent w-full p-0 gap-1.5 font-medium mt-2">
                 <li>
                   <button
