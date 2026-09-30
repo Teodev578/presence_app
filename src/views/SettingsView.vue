@@ -61,7 +61,7 @@ const handleLogout = async () => {
 </script>
 
 <template>
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 items-start w-full">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 w-full">
     <!-- Compte -->
     <section class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg p-4 sm:p-5 flex flex-col gap-4">
       <h2 class="text-base font-semibold text-base-content">Compte</h2>

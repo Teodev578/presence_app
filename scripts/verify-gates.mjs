@@ -3184,6 +3184,7 @@ export function checkSettingsPage() {
   );
   if (settings.includes('Connecté')) pageGaps.push('état réseau ambigu « Connecté »');
   if (settings.includes('>Déconnexion</h2>')) pageGaps.push('titre de section Déconnexion conservé');
+  if (settings.includes('items-start')) pageGaps.push('tuiles de la grille non égalisées (items-start conservé)');
 
   const sectionOrder = ['>Compte<', '>Synchronisation<', '>Apparence<'].map((token) => settings.indexOf(token));
   if (sectionOrder.some((index) => index === -1) || !(sectionOrder[0] < sectionOrder[1] && sectionOrder[1] < sectionOrder[2])) {
