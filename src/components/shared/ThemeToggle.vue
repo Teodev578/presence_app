@@ -1,9 +1,9 @@
 <script setup>
-import { ref, computed, watch, h } from 'vue'
+import { ref, computed, watch, onMounted, h } from 'vue'
 import { useTheme } from '../../composables/useTheme'
 import { useSidebarNav } from '../../composables/useSidebarNav'
 
-// `inline` force le groupe segmenté hors tiroir (page Paramètres), même quand la barre est en rail.
+// `inline` active le mode vignettes de prévisualisation (page Paramètres).
 const props = defineProps({
   inline: {
     type: Boolean,
@@ -15,6 +15,25 @@ const { mode, setMode } = useTheme()
 const { isRail } = useSidebarNav()
 
 const showSegmented = computed(() => props.inline || !isRail.value)
+
+/** Détection réactive de la préférence système */
+const systemIsDark = ref(false)
+
+const updateSystemDark = () => {
+  if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+    systemIsDark.value = window.matchMedia('(prefers-color-scheme: dark)').matches
+  }
+}
+
+onMounted(() => {
+  updateSystemDark()
+  if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+    const mq = window.matchMedia('(prefers-color-scheme: dark)')
+    if (typeof mq.addEventListener === 'function') {
+      mq.addEventListener('change', updateSystemDark)
+    }
+  }
+})
 
 /** Menu du rail : ouvert sur demande, refermé dès qu'un choix est retenu ou que la barre se déploie. */
 const menuOpen = ref(false)
@@ -31,13 +50,13 @@ const createIcon = (paths) => () =>
       strokeLinecap: 'round',
       strokeLinejoin: 'round',
       class: 'w-4 h-4 shrink-0',
+      'aria-hidden': 'true',
     },
     paths.map(([tag, attrs]) => h(tag, attrs))
   )
 
 /**
- * Trois états possibles. Le libellé visible porte le nom du mode, ce qui satisfait
- * le critère Label in Name, et l'état sélectionné se signale par aria-pressed.
+ * Trois états d'apparence avec métadonnées et icônes vectorielles.
  */
 const MODES = [
   {
@@ -76,6 +95,17 @@ const MODES = [
 
 const activeMode = computed(() => MODES.find((option) => option.value === mode.value) ?? MODES[0])
 
+const currentDescription = computed(() => {
+  switch (mode.value) {
+    case 'light':
+      return 'Contraste élevé recommandé pour les environnements lumineux.'
+    case 'dark':
+      return 'Confort visuel en faible éclairage et préservation de la batterie.'
+    default:
+      return `Suit votre appareil (actuellement résolu en mode ${systemIsDark.value ? 'Sombre' : 'Clair'}).`
+  }
+})
+
 const chooseMode = (value) => {
   setMode(value)
   menuOpen.value = false
@@ -87,34 +117,171 @@ watch(isRail, (railed) => {
 </script>
 
 <template>
-  <!-- Barre déployée : un seul contrôle, trois segments joints. L'état retenu porte la teinte
-       primaire, les autres restent en retrait et se signalent au survol. -->
-  <div
-    v-if="showSegmented"
-    class="join w-full rounded-m3-sm border border-base-300 overflow-hidden"
-    role="group"
-    aria-label="Apparence de l'interface"
-  >
-    <button
-      v-for="option in MODES"
-      :key="option.value"
-      type="button"
-      class="join-item btn btn-ghost flex-1 min-w-0 min-h-11 gap-1 px-1.5 font-medium"
-      :class="mode === option.value ? 'bg-primary/15 text-primary font-bold' : 'text-base-content/70'"
-      :aria-pressed="mode === option.value"
-      :aria-label="`Thème ${option.label}`"
-      :title="option.hint"
-      @click="setMode(option.value)"
+  <div v-if="showSegmented" class="w-full">
+    <!-- Barre déployée standard (hors page Paramètres) -->
+    <div
+      v-if="!props.inline"
+      class="join w-full rounded-m3-sm border border-base-300 overflow-hidden"
+      role="group"
+      aria-label="Apparence de l'interface"
     >
-      <span class="hidden sm:inline-flex" aria-hidden="true">
-        <component :is="option.icon" />
-      </span>
-      <span class="text-xs truncate">{{ option.label }}</span>
-    </button>
+      <button
+        v-for="option in MODES"
+        :key="option.value"
+        type="button"
+        class="join-item btn btn-ghost flex-1 min-w-0 min-h-11 gap-1 px-1.5 font-medium"
+        :class="mode === option.value ? 'bg-primary/15 text-primary font-bold' : 'text-base-content/70'"
+        :aria-pressed="mode === option.value"
+        :aria-label="`Thème ${option.label}`"
+        :title="option.hint"
+        @click="setMode(option.value)"
+      >
+        <span class="hidden sm:inline-flex" aria-hidden="true">
+          <component :is="option.icon" />
+        </span>
+        <span class="text-xs truncate">{{ option.label }}</span>
+      </button>
+    </div>
+
+    <!-- Mode vignettes de prévisualisation interactives Material 3 (Option 1 - Page Paramètres) -->
+    <div v-else class="flex flex-col gap-3 w-full">
+      <div
+        class="grid grid-cols-3 gap-2.5 sm:gap-3 w-full"
+        role="radiogroup"
+        aria-label="Apparence de l'interface"
+      >
+        <button
+          v-for="option in MODES"
+          :key="option.value"
+          type="button"
+          role="radio"
+          :aria-checked="mode === option.value"
+          :aria-label="`Thème ${option.label}`"
+          :title="option.hint"
+          class="flex flex-col gap-2 p-2 sm:p-2.5 rounded-m3-md border text-left transition-all duration-200 min-h-11 focus-visible:outline-2 focus-visible:outline-primary cursor-pointer select-none"
+          :class="mode === option.value
+            ? 'border-primary ring-2 ring-primary/25 bg-primary/5 text-base-content font-semibold'
+            : 'border-base-300/80 bg-base-100 hover:border-base-content/30 text-base-content/70'"
+          @click="chooseMode(option.value)"
+        >
+          <!-- Vignette 1 : Système (Automatique) -->
+          <div
+            v-if="option.value === 'system'"
+            class="w-full h-12 rounded-m3-xs border border-base-300/80 overflow-hidden shrink-0 flex shadow-none pointer-events-none"
+            aria-hidden="true"
+          >
+            <div class="w-1/2 h-full bg-[#fdfcff] p-1 flex flex-col justify-between border-r border-base-300/80">
+              <div class="flex items-center gap-0.5">
+                <div class="w-1.5 h-1.5 rounded-full bg-primary shrink-0"></div>
+                <div class="h-1 bg-slate-300/80 rounded-full w-3"></div>
+              </div>
+              <div class="h-2 bg-slate-200/90 rounded-m3-xs w-full"></div>
+            </div>
+            <div class="w-1/2 h-full bg-[#111318] p-1 flex flex-col justify-between">
+              <div class="flex items-center gap-0.5">
+                <div class="w-1.5 h-1.5 rounded-full bg-primary shrink-0"></div>
+                <div class="h-1 bg-zinc-700 rounded-full w-3"></div>
+              </div>
+              <div class="h-2 bg-zinc-800 rounded-m3-xs w-full"></div>
+            </div>
+          </div>
+
+          <!-- Vignette 2 : Clair -->
+          <div
+            v-else-if="option.value === 'light'"
+            class="w-full h-12 rounded-m3-xs border border-slate-200 bg-[#fdfcff] p-1 flex flex-col justify-between overflow-hidden shrink-0 shadow-none pointer-events-none"
+            aria-hidden="true"
+          >
+            <div class="flex items-center gap-1">
+              <div class="w-1.5 h-1.5 rounded-full bg-primary shrink-0"></div>
+              <div class="h-1 bg-slate-300/80 rounded-full w-8"></div>
+            </div>
+            <div class="flex gap-1 items-center">
+              <div class="w-2 h-4 rounded-m3-xs bg-slate-200/90 shrink-0"></div>
+              <div class="flex-1 flex flex-col gap-0.5">
+                <div class="h-1.5 bg-slate-200/80 rounded-full w-full border border-slate-300/40"></div>
+                <div class="h-1.5 bg-slate-200/80 rounded-full w-2/3 border border-slate-300/40"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Vignette 3 : Sombre -->
+          <div
+            v-else
+            class="w-full h-12 rounded-m3-xs border border-zinc-800 bg-[#111318] p-1 flex flex-col justify-between overflow-hidden shrink-0 shadow-none pointer-events-none"
+            aria-hidden="true"
+          >
+            <div class="flex items-center gap-1">
+              <div class="w-1.5 h-1.5 rounded-full bg-primary shrink-0"></div>
+              <div class="h-1 bg-zinc-700 rounded-full w-8"></div>
+            </div>
+            <div class="flex gap-1 items-center">
+              <div class="w-2 h-4 rounded-m3-xs bg-zinc-800 shrink-0"></div>
+              <div class="flex-1 flex flex-col gap-0.5">
+                <div class="h-1.5 bg-zinc-800 rounded-full w-full border border-zinc-700/50"></div>
+                <div class="h-1.5 bg-zinc-800 rounded-full w-2/3 border border-zinc-700/50"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Libellé et indicateur de sélection radio -->
+          <div class="flex items-center justify-between gap-1 w-full pt-0.5">
+            <div class="flex items-center gap-1.5 min-w-0">
+              <component
+                :is="option.icon"
+                class="w-3.5 h-3.5 shrink-0"
+                :class="mode === option.value ? 'text-primary' : 'text-base-content/60'"
+              />
+              <span class="text-xs font-semibold truncate">{{ option.label }}</span>
+            </div>
+            <div
+              class="w-3.5 h-3.5 rounded-full shrink-0 flex items-center justify-center border transition-colors"
+              :class="mode === option.value ? 'border-primary bg-primary text-primary-content' : 'border-base-300/90 bg-base-200'"
+              aria-hidden="true"
+            >
+              <svg
+                v-if="mode === option.value"
+                xmlns="http://www.w3.org/2000/svg"
+                class="w-2.5 h-2.5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="3"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+          </div>
+        </button>
+      </div>
+
+      <!-- Encart contextuel informatif -->
+      <div class="flex items-start gap-2 p-2.5 rounded-m3-md bg-base-100 border border-base-300/60 text-xs text-base-content/70">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="w-4 h-4 text-primary shrink-0 mt-0.5"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+        <p class="leading-relaxed">
+          {{ currentDescription }}
+        </p>
+      </div>
+    </div>
   </div>
 
-  <!-- Barre repliée en rail : les trois segments n'y tiennent plus. L'icône de l'état retenu
-       ouvre un menu latéral portant les mêmes choix nommés, hors du rail pour rester lisible. -->
+  <!-- Barre repliée en rail : menu déroulant accessible -->
   <div v-else class="relative flex w-full justify-center" @keydown.escape="menuOpen = false">
     <button
       type="button"

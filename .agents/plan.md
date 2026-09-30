@@ -1,61 +1,45 @@
-# Plan de Travail Agentique : Modernisation du Moteur de Synchronisation (Options 1 & 2)
+# Plan de Travail Agentique : Refonte de la Tuile Apparence (Vignettes de Prévisualisation M3)
 
-Ce fichier porte le plan de la tâche architecturale en cours, conformément à la règle `.agents/rules/10-planification-taches-fastidieuses.md` et au garde-fou n°3 de `AGENTS.md`.
+Ce fichier porte le plan de la tâche en cours, conformément à la règle `.agents/rules/10-planification-taches-fastidieuses.md` et au garde-fou n°3 de `AGENTS.md`.
 
 ---
 
 ## Tâche en cours
 
-- **Tâche** : Modernisation réactive du moteur de synchronisation (Supabase Realtime, Hooks Dexie, Web Locks & Résilience d'arrière-plan).
+- **Tâche** : Conception et intégration des cartes de prévisualisation graphique thématique M3 dans la tuile Apparence.
 - **Date** : 2026-09-30
 - **Périmètre** :
-  - *Fichiers modifiés* : `src/composables/useSyncEngine.js`, `src/lib/db.js`.
-  - *Fichiers créés/configurés* : `public/sw.js`.
-  - *Hors périmètre* : Schémas SQL Supabase distants, composants de vue UI (HomeView, SettingsView, etc.), layouts de navigation.
+  - *Fichiers modifiés* : `src/components/shared/ThemeToggle.vue`, `src/views/SettingsView.vue`.
+  - *Hors périmètre* : Schémas Dexie/Supabase, logique de synchronisation, autres vues.
 - **Critère d'arrêt** :
-  1. Toute mutation dans `sync_outbox` déclenche immédiatement et de façon découplée un cycle `pushOutbox` (via hook Dexie).
-  2. Les modifications distantes de Supabase sont notifiées en temps réel via WebSocket (`postgres_changes`) et déclenchent une réconciliation Dexie en < 200 ms.
-  3. L'exécution concurrente multi-onglets est protégée par `navigator.locks`.
-  4. L'intervalle de polling aveugle de 30s est remplacé par une veille événementielle (WebSocket + `visibilitychange` + `online` + battement de secours basse fréquence).
-  5. La fermeture impromptue est couverte par la résilience en arrière-plan (Service Worker Background Sync).
-  6. `npm run build` réussit sans avertissement ni régression (exit code 0).
-  7. `node scripts/verify-gates.mjs` valide l'intégrité de l'architecture (notamment G73 et G95).
-  8. L'ensemble des 8 scripts `scripts/test-*.mjs` passent au vert.
-- **État** : Réalisé et validé le 2026-09-30.
+  1. Les trois choix (Automatique, Clair, Sombre) sont présentés sous forme de cartes de prévisualisation interactives avec micro-maquettes visuelles.
+  2. L'état actif est mis en exergue par un anneau et une bordure primaire (`ring-2 ring-primary/30 border-primary bg-primary/5`).
+  3. En mode Automatique, la résolution système en cours (*Clair* ou *Sombre*) est explicitée de façon dynamique.
+  4. Strict respect des tokens de rayon Material 3 (`rounded-m3-*`), absence d'ombres prohibées, cibles tactiles supérieures ou égales à 44 px.
+  5. `npm run build` réussit avec code 0.
+  6. `node scripts/verify-gates.mjs` passe avec succès (G11, G12, G13, G14, G15, G16, G95).
+  7. `node scripts/test-theme-toggle.mjs` passe toutes ses assertions au vert.
 
 ---
 
 ### Étapes d'exécution
 
-- [x] **Étape 1 : Crochets réactifs Dexie (Vidange automatique de l'Outbox)**
-  - Câblé via `db.sync_outbox.hook('creating')` dans `src/lib/db.js` attaché à l'événement `transaction.on('complete')`.
-  - Notification automatique à `useSyncEngine.js` avec anti-rebond (*debounce* de 50 ms) pour déclencher `syncNow()` dès la validation locale.
-  - Vérification : code intégré, zéro régression de transaction IndexedDB.
+- [x] **Étape 1 : Logique de détection de résolution système**
+  - Câbler dans `ThemeToggle.vue` une référence réactive `systemIsDark` écoutant `prefers-color-scheme: dark`.
+  - Exposer le libellé descriptif dynamique pour le mode actif.
+  - Vérification : le composant sait si le système est sombre ou clair en mode automatique. *(Validé)*
 
-- [x] **Étape 2 : Exclusion mutuelle multi-onglets (Web Locks API)**
-  - Encadrement des fonctions critiques `pushOutbox` et `pullChanges` dans `withSyncLock` utilisant `navigator.locks.request('presence_push_lock', ...)` et `presence_pull_lock`.
-  - Repli direct prévu en cas d'absence d'API Web Locks.
-  - Vérification : exécution thread-safe sans double dépilement de l'outbox.
+- [x] **Étape 2 : Création des vignettes de prévisualisation M3**
+  - Remplacer le simple conteneur segmenté par une grille de trois cartes interactives (`role="radio"`, `aria-checked`, `min-h-11`).
+  - Intégrer les micro-maquettes CSS : miniature claire avec en-tête bleu, miniature sombre avec contrastes profonds, miniature automatique bicolore/scindée.
+  - Vérification : conformité stricte des tokens M3 (`rounded-m3-md`, `rounded-m3-xs`, `border-base-300`, etc.). *(Validé)*
 
-- [x] **Étape 3 : Canal réactif Supabase Realtime (CDC WebSocket)**
-  - Initialisation de `supabase.channel('presence-cdc-sync')` écoutant `postgres_changes` sur les 5 tables métier (`presences`, `availabilities`, `locations`, `profiles`, `teams`).
-  - Implémentation du pattern « Realtime as Invalidation Signal » : déclenchement immédiat de `scheduleRealtimePull()` avec anti-rebond (100 ms).
-  - Rattrapage temporel automatique lors de la transition d'état vers `SUBSCRIBED`.
-  - Vérification : abonnement WebSocket propre et réactif.
+- [x] **Étape 3 : Zone d'information contextuelle et affinage SettingsView**
+  - Insérer sous les cartes le bandeau d'information contextuelle (résolution actuelle et guide d'usage).
+  - Maintenir l'ancrage et la cohérence de grille dans `SettingsView.vue` (préservation de `max-w-md` requis par G95).
+  - Vérification : équilibre visuel parfait en vis-à-vis de la tuile Autorisations. *(Validé)*
 
-- [x] **Étape 4 : Allègement de l'horloge de fond et réveil contextuel**
-  - Remplacement du polling aveugle de 30s par un filet de sécurité espacé à 120s (2 minutes).
-  - Ajout de l'écouteur `visibilitychange` : resynchronisation immédiate dès que l'utilisateur revient sur l'onglet ou déverrouille l'appareil.
-  - Écouteur `online` conservé pour le réveil au retour réseau.
-  - Vérification : réactivité immédiate sans saturation réseau.
-
-- [x] **Étape 5 : Résilience d'arrière-plan (Option 2 - PWA Background Sync)**
-  - Création de `public/sw.js` avec gestionnaire de l'événement `sync` (`presence-outbox-sync`).
-  - Fonction `requestBackgroundSync()` enregistrant le tag auprès du Service Worker dès qu'une mutation est créée ou suspendue hors-ligne.
-  - Écouteur de message inter-processus `TRIGGER_SYNC` réveillant le moteur.
-  - Vérification : Service Worker valide, enregistrement tolérant aux pannes.
-
-- [x] **Étape 6 : Validation globale et conformité des oracles**
-  - Compilation de production : `npm run build` réussit avec code 0.
-  - Conformité des oracles : `node scripts/verify-gates.mjs` confirme le passage de G73 (périmètre strict du pull) et G95 (page Paramètres).
-  - Tests unitaires : `ALL TESTS PASSED` sur l'ensemble de la suite `scripts/test-*.mjs`.
+- [x] **Étape 4 : Validation des oracles et du build**
+  - Exécuter `npm run build`. *(Code 0)*
+  - Exécuter `node scripts/verify-gates.mjs`. *(G11-G16, G45, G95 validés)*
+  - Exécuter `node scripts/test-theme-toggle.mjs`. *(28 assertions comportementales et cohérence storage key validées)*
