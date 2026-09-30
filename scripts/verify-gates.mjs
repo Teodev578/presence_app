@@ -3185,7 +3185,11 @@ export function checkSettingsPage() {
     }
   }
 
-  const gear = (text) => text.includes('Ouvrir les paramètres') && /navigate\('\/\w+\/settings'\)/.test(text);
+  const gear = (text) =>
+    text.includes('Ouvrir les paramètres') &&
+    /navigate\('\/\w+\/settings'\)/.test(text) &&
+    text.includes("v-if=\"!onSettings\"") &&
+    text.includes('onSettings = computed');
   for (const layout of ['layouts/ManagerLayout.vue', 'layouts/EmployeeLayout.vue']) {
     const text = read(layout);
     if (text === null) {
@@ -3193,7 +3197,7 @@ export function checkSettingsPage() {
       return false;
     }
     if (!gear(text)) {
-      console.error(`FAILURE G95: ${layout} sans icône d\u2019engrenage vers les paramètres`);
+      console.error(`FAILURE G95: ${layout} sans icône d\u2019engrenage vers les paramètres, ou engrenage non masqué sur l\u2019écran Paramètres`);
       return false;
     }
   }

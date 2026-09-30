@@ -619,12 +619,12 @@ Scope: Traitement des constats de `docs/audits/audit-espace-employe-2026-09-30.m
 
 OWNS: src/views/SettingsView.vue, src/App.vue, src/layouts/ManagerLayout.vue, src/layouts/EmployeeLayout.vue, scripts/verify-gates.mjs, .agents/plans/2026-09-30-plan-action-finitions-espace-employe.md, GATES.md
 
-Scope: Une page Paramètres unique, partagée par les deux espaces, accessible par une icône d'engrenage à droite du bandeau, sur les routes `/manager/settings` et `/employee/settings`. La page porte l'apparence (contrôle segmenté à trois états), la synchronisation (état réseau, compteur en attente, dernière synchronisation, bouton « Synchroniser maintenant »), le compte (nom, email, rôle, espace) et la déconnexion. Le pied de tiroir ne conserve que le statut réseau : apparence, identité et déconnexion ont quitté le tiroir pour la page. Révision du 2026-09-30 : l'apparence rejoint la page et le pied est vidé de ses réglages.
+Scope: Une page Paramètres unique, partagée par les deux espaces, accessible par une icône d'engrenage à droite du bandeau, sur les routes `/manager/settings` et `/employee/settings`. La page porte l'apparence (contrôle segmenté à trois états), la synchronisation (état réseau, compteur en attente, dernière synchronisation, bouton « Synchroniser maintenant »), le compte (nom, email, rôle, espace) et la déconnexion. Le pied de tiroir ne conserve que le statut réseau : apparence, identité et déconnexion ont quitté le tiroir pour la page. Révision du 2026-09-30 : l'apparence rejoint la page, le pied est vidé de ses réglages, et l'engrenage disparaît dès que l'écran courant est un écran Paramètres (y compris ses sous-écrans), puisqu'il n'y mène plus.
 
-- [x] G95: La page Paramètres existe avec apparence, synchronisation, compte et déconnexion ; les deux routes sont déclarées et les deux bandeaux exposent l'icône d'engrenage
+- [x] G95: La page Paramètres existe avec apparence, synchronisation, compte et déconnexion ; les deux routes sont déclarées et les deux bandeaux exposent l'icône d'engrenage, masquée sur les écrans Paramètres
   CHECK: node scripts/verify-gates.mjs --settings-page
   EXPECT: G95 passed: settings page wired in both spaces
-  EVIDENCE: G95 passed: settings page wired in both spaces (vérifié par node scripts/verify-gates.mjs --settings-page, contrôle négatif compris). Rendu headless sombre : page complète à 390 et 1440, section Apparence avec les trois états, bandeau « Espace Collaborateur » et « Espace Manager », engrenage à droite. `--all` sans nouvelle régression, `npm run build` en sortie 0 (vérifiés le 2026-09-30).
+  EVIDENCE: G95 passed: settings page wired in both spaces (vérifié par node scripts/verify-gates.mjs --settings-page, contrôle négatif compris ; la porte exige que l'engrenage porte `v-if="!onSettings"` et que `onSettings` soit défini dans les deux mises en page). Rendu headless sombre : page complète à 390 et 1440 avec la section Apparence, engrenage absent sur l'écran Paramètres et présent sur le tableau de bord. `--all` sans nouvelle régression, `npm run build` en sortie 0 (vérifiés le 2026-09-30).
 
 ---
 

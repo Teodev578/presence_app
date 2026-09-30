@@ -115,6 +115,7 @@ const barEntry = computed(
 const barTitle = computed(() => barEntry.value.title)
 const backTarget = computed(() => barEntry.value.back)
 const showBack = computed(() => Boolean(backTarget.value) && (barEntry.value.sub || !isDocked.value))
+const onSettings = computed(() => currentPath.value.includes('/settings'))
 
 const handleNav = (path) => {
   drawerOpen.value = false
@@ -168,6 +169,7 @@ const handleNav = (path) => {
         <div class="flex items-center gap-2 sm:gap-3">
           <SyncAlert />
           <button
+            v-if="!onSettings"
             type="button"
             class="btn btn-ghost btn-circle min-w-11 min-h-11 text-base-content/70 hover:text-base-content"
             aria-label="Ouvrir les paramètres"
