@@ -473,10 +473,10 @@ const saveEdit = async () => {
       <!-- Semaine : ancre parcourue par flèches, plage lisible -->
       <fieldset v-else-if="filterPeriod === 'week'" class="fieldset">
         <legend class="fieldset-legend text-xs font-semibold text-base-content/70">Semaine</legend>
-        <div class="flex items-center gap-2">
+        <div class="inline-flex items-center rounded-m3-md border border-base-300 bg-base-300/50">
           <button
             type="button"
-            class="btn btn-ghost min-h-11 min-w-11 p-0 rounded-m3-sm"
+            class="btn btn-ghost min-h-11 min-w-11 p-0 rounded-l-m3-md"
             aria-label="Semaine précédente"
             @click="shiftAnchor('week', -1)"
           >
@@ -484,10 +484,10 @@ const saveEdit = async () => {
               <path d="M15 18l-6-6 6-6"></path>
             </svg>
           </button>
-          <span class="text-sm font-semibold text-base-content tabular-nums">{{ periodLabel }}</span>
+          <span class="px-3 min-h-11 flex items-center text-sm font-semibold text-base-content tabular-nums">{{ periodLabel }}</span>
           <button
             type="button"
-            class="btn btn-ghost min-h-11 min-w-11 p-0 rounded-m3-sm"
+            class="btn btn-ghost min-h-11 min-w-11 p-0 rounded-r-m3-md"
             aria-label="Semaine suivante"
             @click="shiftAnchor('week', 1)"
           >
@@ -501,10 +501,10 @@ const saveEdit = async () => {
       <!-- Mois : ancre parcourue par flèches, mois lisible -->
       <fieldset v-else-if="filterPeriod === 'month'" class="fieldset">
         <legend class="fieldset-legend text-xs font-semibold text-base-content/70">Mois</legend>
-        <div class="flex items-center gap-2">
+        <div class="inline-flex items-center rounded-m3-md border border-base-300 bg-base-300/50">
           <button
             type="button"
-            class="btn btn-ghost min-h-11 min-w-11 p-0 rounded-m3-sm"
+            class="btn btn-ghost min-h-11 min-w-11 p-0 rounded-l-m3-md"
             aria-label="Mois précédent"
             @click="shiftAnchor('month', -1)"
           >
@@ -512,10 +512,10 @@ const saveEdit = async () => {
               <path d="M15 18l-6-6 6-6"></path>
             </svg>
           </button>
-          <span class="text-sm font-semibold text-base-content">{{ periodLabel }}</span>
+          <span class="px-3 min-h-11 flex items-center text-sm font-semibold text-base-content">{{ periodLabel }}</span>
           <button
             type="button"
-            class="btn btn-ghost min-h-11 min-w-11 p-0 rounded-m3-sm"
+            class="btn btn-ghost min-h-11 min-w-11 p-0 rounded-r-m3-md"
             aria-label="Mois suivant"
             @click="shiftAnchor('month', 1)"
           >

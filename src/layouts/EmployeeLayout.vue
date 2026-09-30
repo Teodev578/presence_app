@@ -177,7 +177,7 @@ const handleLogout = async () => {
               <li v-for="item in navItems" :key="item.path">
                 <button
                   type="button"
-                  class="rail-entry relative flex items-center gap-3 py-3 px-3.5 rounded-m3-md transition-colors"
+                  class="rail-entry relative flex items-center gap-3 py-3 px-3.5 rounded-m3-md transition-colors focus-visible:outline-2 focus-visible:outline-primary"
                   :class="[
                     item.isActive(currentPath)
                       ? 'bg-primary/15 text-primary font-bold'
@@ -207,7 +207,7 @@ const handleLogout = async () => {
                 <li>
                   <button
                     type="button"
-                    class="rail-entry flex items-center gap-3 py-3 px-3.5 rounded-m3-md transition-colors text-base-content/80 hover:bg-base-300/60"
+                    class="rail-entry flex items-center gap-3 py-3 px-3.5 rounded-m3-md transition-colors text-base-content/80 hover:bg-base-300/60 focus-visible:outline-2 focus-visible:outline-primary"
                     :class="isRail ? 'tooltip tooltip-right' : ''"
                     :aria-label="gatewayLabel"
                     :data-tip="isRail ? gatewayLabel : null"

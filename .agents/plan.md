@@ -6,29 +6,26 @@ Ce fichier porte le plan de la tâche fastidieuse en cours, conformément à la 
 
 ## Tâche en cours
 
-- **Tâche** : Refonte UI/UX de l'espace gestionnaire, uniformisation des modules sur la grammaire de `LocationsView.vue` et `PresencesView.vue`.
+- **Tâche** : Finitions de l'espace gestionnaire, issues de l'audit `docs/audits/audit-espace-manager-2026-09-30.md`.
 - **Date** : 2026-09-30
-- **Plan détaillé** : `.agents/plans/2026-09-30-refonte-ui-ux-espace-gestionnaire.md`.
-- **Critère d'arrêt** : les cinq écrans partagent en-tête, carte de filtres à comptes, états chargement/vide/erreur explicites, présentation responsive (fiches sous 640px, tableau ou matrice au-delà) et modales à cibles 44px ; KPI unifiés entre tableau de bord et présences ; `npm run build` en sortie 0 ; `verify-gates.mjs --all` vert hors échecs préexistants.
-- **État** : livré le 2026-09-30, porté par les clauses G88 à G91. Arbitrages retenus : option B (trois composants partagés), remplacement de `StatCard` par `ManagerKpiCard`, UI seule sans bascule local-first pour Collaborateurs et Équipes, bascule fiches/tableau à 640px, export pleine largeur, tableau de bord sans filtre, renommage d'équipe exposé.
+- **Plan détaillé** : `.agents/plans/2026-09-30-plan-action-finitions-espace-manager.md`.
+- **Critère d'arrêt** : les huit propositions de l'audit sont traitées, livrées ou actées ; oracles existants verts, chaque nouvelle règle dotée d'un contrôle négatif ; `npm run build` en sortie 0 ; `verify-gates.mjs --all` vert hors échecs préexistants.
+- **État** : livré le 2026-09-30, porté par la clause G93. Arbitrages actés : option A (H1 de page, bandeau à la marque), matrice triable par nom, « Sites » seul. Icônes de rail à 22px, focus visible des entrées, KPI « Taux de tenue » sans tiret, grille KPI responsive, états vides distincts.
 
 ### Étapes
 
-- [x] 0. Arbitrages retenus (option B, remplacement de `StatCard`, UI seule, bascule 640px, export pleine largeur, dashboard sans filtre, renommage d'équipe) puis grammaire figée dans la règle 07 et ledger `GATES.md` (G88-G91).
-- [x] 1. Tableau de bord (`DashboardView.vue`).
-- [x] 2. Collaborateurs (`EmployeesView.vue`).
-- [x] 3. Équipes (`TeamsView.vue`).
-- [x] 4. Disponibilités (`AvailabilitiesView.vue`).
-- [x] 5. Export (`ExportView.vue`).
-- [x] 6. Audit, suppression de `StatCard`, `--manager-grammar`/`--manager-responsive`, build et suite complète.
+- [x] 1. Finitions visuelles sûres : icônes du rail à 22px, KPI « Taux de tenue » sans tiret isolé, grille KPI responsive, focus clavier des entrées de navigation.
+- [x] 2. Vocabulaire et titres : retrait de « & Lieux », bandeau gestionnaire réduit à la marque (option A).
+- [x] 3. États et cohérence : états vides distincts de la matrice de disponibilités, colonne Collaborateur triable par nom avec `aria-sort`.
+- [x] 4. Clôture : build sortie 0, suite complète sans nouvelle régression, suite navigateur verte.
 
 ### Clôture
 
-Critère d'arrêt atteint le 2026-09-30. `node scripts/verify-gates.mjs --all` ne laisse que les quatre échecs préexistants hors périmètre (G1, G3, G4 sur `ToastContainer.vue` et `SyncIndicator.vue`, G8 sur `HomeView.vue`). G88, G89, G90, G91 vertes ; `npm run build` en sortie 0 ; suite navigateur verte.
+Critère d'arrêt atteint le 2026-09-30. `node scripts/verify-gates.mjs --all` ne laisse que les quatre échecs préexistants hors périmètre (G1, G3, G4, G8). G93 verte, contrôle négatif compris. Suite navigateur complète verte. `npm run build` en sortie 0.
 
 ### Tâche close précédente
 
-Boucle d'apprentissage KI (2026-09-29), critère d'arrêt atteint, portée par les clauses G77 à G83.
+Refonte UI/UX de l'espace gestionnaire (2026-09-30), livrée sous les clauses G88 à G92 : composants partagés, cinq écrans réalignés, passe de finition, garde-fou d'icônes de navigation. Audit dans `docs/audits/audit-espace-manager-2026-09-30.md`.
 
 ### Suites à donner (hors périmètre de ce lot)
 

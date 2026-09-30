@@ -90,6 +90,42 @@ const filteredEmployees = computed(() => {
   })
 })
 
+// La matrice se trie par nom, croissant puis décroissant, sur la colonne Collaborateur.
+const sortDir = ref('asc')
+
+const sortedEmployees = computed(() => {
+  const dir = sortDir.value === 'asc' ? 1 : -1
+  return [...filteredEmployees.value].sort((a, b) =>
+    (a.full_name || '').localeCompare(b.full_name || '', 'fr', { numeric: true, sensitivity: 'base' }) * dir
+  )
+})
+
+const toggleSort = () => {
+  sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
+}
+
+const ariaSort = () => (sortDir.value === 'asc' ? 'ascending' : 'descending')
+const sortIconPath = () => (sortDir.value === 'asc' ? 'M12 19V5M5 12l7-7 7 7' : 'M12 5v14M19 12l-7 7-7-7')
+
+/**
+ * Message de l'état vide : distinguer « aucune équipe », « recherche sans résultat » et « filtre
+ * d'équipe sans résultat », et proposer l'action qui débloque.
+ */
+const emptyState = computed(() => {
+  if (!employees.value.length) {
+    return { title: 'Aucun collaborateur', message: 'Aucun collaborateur actif répertorié.', icon: 'users', action: null, actionLabel: '' }
+  }
+  if (searchQuery.value.trim()) {
+    return { title: 'Aucun résultat', message: `Aucun collaborateur ne correspond à « ${searchQuery.value.trim()} ».`, icon: 'search', action: 'clear-search', actionLabel: 'Effacer la recherche' }
+  }
+  return { title: 'Aucun collaborateur pour cette équipe', message: 'Aucun collaborateur n\u2019est rattaché à l\u2019équipe sélectionnée.', icon: 'filter', action: 'show-all', actionLabel: 'Voir toutes les équipes' }
+})
+
+const runEmptyAction = () => {
+  if (emptyState.value.action === 'clear-search') searchQuery.value = ''
+  else if (emptyState.value.action === 'show-all') filterTeam.value = ''
+}
+
 const availabilities = computed(() => availabilityRows.value || [])
 const presences = computed(() => presenceRows.value || [])
 
@@ -134,11 +170,6 @@ const stats = computed(() => {
   const rate = declaredSlots.length ? Math.round((pointedSlots.length / declaredSlots.length) * 100) : null
   return { declared: declaredSlots.length, pointed: pointedSlots.length, rate }
 })
-
-const clearFilters = () => {
-  searchQuery.value = ''
-  filterTeam.value = ''
-}
 </script>
 
 <template>
@@ -158,10 +189,15 @@ const clearFilters = () => {
     </ManagerPageHeader>
 
     <!-- Synthèse de la semaine -->
-    <div class="grid grid-cols-3 gap-3 sm:gap-4">
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
       <ManagerKpiCard label="Créneaux déclarés" :value="stats.declared" caption="Jours révolus de la semaine" />
       <ManagerKpiCard label="Pointés" :value="stats.pointed" caption="Disponibilités tenues" tone="success" />
-      <ManagerKpiCard label="Taux de tenue" :value="stats.rate === null ? '—' : stats.rate + '%'" caption="Sur les jours révolus" tone="info" />
+      <ManagerKpiCard
+        label="Taux de tenue"
+        :value="stats.rate === null ? 'Aucun' : stats.rate + '%'"
+        :caption="stats.rate === null ? 'Aucun jour révolu' : 'Sur les jours révolus'"
+        tone="info"
+      />
     </div>
 
     <!-- Filtres -->
@@ -169,14 +205,14 @@ const clearFilters = () => {
       <div class="flex flex-col sm:flex-row sm:items-end gap-3">
         <fieldset class="fieldset sm:w-auto">
           <legend class="fieldset-legend text-xs font-semibold text-base-content/70">Semaine</legend>
-          <div class="join">
-            <button type="button" class="btn join-item min-h-11 min-w-11 p-0 rounded-l-m3-sm" aria-label="Semaine précédente" @click="prevWeek">
+          <div class="inline-flex items-center rounded-m3-md border border-base-300 bg-base-300/50">
+            <button type="button" class="btn btn-ghost min-h-11 min-w-11 p-0 rounded-l-m3-md" aria-label="Semaine précédente" @click="prevWeek">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M15 18l-6-6 6-6"></path>
               </svg>
             </button>
-            <span class="join-item flex items-center px-3 min-h-11 text-sm font-semibold text-base-content whitespace-nowrap">{{ formatWeekLabel(selectedWeekStart) }}</span>
-            <button type="button" class="btn join-item min-h-11 min-w-11 p-0 rounded-r-m3-sm" aria-label="Semaine suivante" @click="nextWeek">
+            <span class="px-3 min-h-11 flex items-center text-sm font-semibold text-base-content whitespace-nowrap">{{ formatWeekLabel(selectedWeekStart) }}</span>
+            <button type="button" class="btn btn-ghost min-h-11 min-w-11 p-0 rounded-r-m3-md" aria-label="Semaine suivante" @click="nextWeek">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M9 18l6-6-6-6"></path>
               </svg>
@@ -219,17 +255,17 @@ const clearFilters = () => {
 
     <ManagerEmptyState
       v-else-if="!filteredEmployees.length"
-      :icon="employees.length ? 'search' : 'users'"
-      :title="employees.length ? 'Aucun résultat' : 'Aucun collaborateur'"
-      :message="employees.length ? 'Aucun collaborateur ne correspond à la recherche ou au filtre d\u2019équipe.' : 'Aucun collaborateur actif répertorié.'"
-      :action-label="employees.length ? 'Effacer les filtres' : ''"
-      @action="clearFilters"
+      :icon="emptyState.icon"
+      :title="emptyState.title"
+      :message="emptyState.message"
+      :action-label="emptyState.actionLabel"
+      @action="runEmptyAction"
     />
 
     <template v-else>
       <!-- Fiches par collaborateur sous 640px : plus de défilement horizontal -->
       <div class="sm:hidden flex flex-col gap-4">
-        <div v-for="emp in filteredEmployees" :key="emp.id" class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg p-4 flex flex-col gap-3">
+        <div v-for="emp in sortedEmployees" :key="emp.id" class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg p-4 flex flex-col gap-3">
           <div class="min-w-0">
             <strong class="block text-sm font-bold text-base-content truncate">{{ emp.full_name }}</strong>
             <span class="badge badge-soft badge-xs w-fit mt-0.5 rounded-m3-xs">{{ emp.teams?.name || 'Sans équipe' }}</span>
@@ -252,7 +288,19 @@ const clearFilters = () => {
           <table class="table table-sm w-full">
             <thead>
               <tr class="text-xs uppercase text-base-content/60">
-                <th class="w-48">Collaborateur</th>
+                <th class="w-48" :aria-sort="ariaSort()">
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-1 font-semibold uppercase tracking-wide rounded-m3-xs transition-colors hover:text-base-content focus-visible:outline-2 focus-visible:outline-primary"
+                    title="Trier par nom"
+                    @click="toggleSort"
+                  >
+                    <span>Collaborateur</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 shrink-0 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path :d="sortIconPath()"></path>
+                    </svg>
+                  </button>
+                </th>
                 <th v-for="d in daysHeader" :key="d.id" class="text-center">
                   <div class="font-bold">{{ d.label }}</div>
                   <div class="text-xs text-base-content/50 font-normal">{{ getDateForDay(d.id).slice(5) }}</div>
@@ -260,7 +308,7 @@ const clearFilters = () => {
               </tr>
             </thead>
             <tbody>
-              <tr v-for="emp in filteredEmployees" :key="emp.id" class="hover">
+              <tr v-for="emp in sortedEmployees" :key="emp.id" class="hover">
                 <td>
                   <div class="flex flex-col">
                     <strong class="text-sm font-bold text-base-content">{{ emp.full_name }}</strong>

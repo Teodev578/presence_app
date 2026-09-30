@@ -560,3 +560,29 @@ Scope: Uniformiser l'interface, l'expérience et la responsivité des modules ge
   CHECK: node scripts/verify-gates.mjs --build
   EXPECT: G6 passed: build succeeded with exit code 0
   EVIDENCE: G6 passed: build succeeded with exit code 0 (vérifié par node scripts/verify-gates.mjs --build, sortie 0 le 2026-09-30)
+
+---
+
+# Gates: Passe de Finition de l'Espace Gestionnaire
+
+OWNS: src/layouts/ManagerLayout.vue, src/components/shared/ThemeToggle.vue, src/views/manager/AvailabilitiesView.vue, src/views/manager/PresencesView.vue, src/views/manager/ExportView.vue, scripts/verify-gates.mjs, docs/audits/audit-espace-manager-2026-09-30.md, GATES.md
+
+Scope: Passe de finition issue de l'audit `docs/audits/audit-espace-manager-2026-09-30.md`. Trois correctifs et un garde-fou. (1) Le sélecteur de semaine, dupliqué sans surface propre dans Disponibilités, Présences et Export, reçoit un conteneur bordé `rounded-m3-md border border-base-300 bg-base-300/50`, lisible en thème sombre. (2) Le contrôle d'apparence masque ses icônes sous 640px pour que « Système », « Clair » et « Sombre » s'affichent entiers dans le tiroir mobile, au lieu de « Syst… » et « Som… ». (3) Les libellés de navigation s'alignent sur les titres de page et sur la terminologie RH : « Sites & Lieux », « Collaborateurs », « Disponibilités ». (4) Un garde-fou de source verrouille le défaut signalé « icône de navigation absente », non reproduit aux trois largeurs et en thème sombre.
+
+- [x] G92: Chaque entrée de navigation gestionnaire déclare une icône non vide et la passerelle porte son tracé, contrôlés par un oracle à contrôle négatif
+  CHECK: node scripts/verify-gates.mjs --manager-nav-icons
+  EXPECT: G92 passed: every manager nav entry declares an icon
+  EVIDENCE: G92 passed: every manager nav entry declares an icon (vérifié par node scripts/verify-gates.mjs --manager-nav-icons, contrôle négatif compris : entrée sans createIcon détectée). Rendu headless sombre à 1440, 900 et 390 : sept entrées et passerelle visibles. Après correctifs, `--all` ne laisse que les échecs préexistants hors périmètre, `--appearance-control`, `--sidebar-rail` et `--nav-docking` vertes, `npm run build` en sortie 0 (vérifiés le 2026-09-30).
+
+---
+
+# Gates: Passe de Finition Gestionnaire (Lot 1)
+
+OWNS: src/style.css, src/layouts/ManagerLayout.vue, src/layouts/EmployeeLayout.vue, src/components/manager/ManagerKpiCard.vue, src/views/manager/AvailabilitiesView.vue, src/views/manager/LocationsView.vue, scripts/verify-gates.mjs, .agents/plans/2026-09-30-plan-action-finitions-espace-manager.md, GATES.md
+
+Scope: Traitement des huit propositions validées de `docs/audits/audit-espace-manager-2026-09-30.md`. Arbitrages actés : option A (H1 de page conservé, bandeau réduit à la marque), matrice de disponibilités triable par nom, « Sites » seul. (1) Icônes du rail portées à 22px. (2) Focus visible sur les entrées de navigation des deux espaces. (3) Bandeau gestionnaire réduit à la marque, le computed `activeTitle` disparaît. (4) « & Lieux » retiré de la navigation et du titre de page. (5) KPI « Taux de tenue » affiche « Aucun » au lieu d'un tiret isolé. (6) Grille KPI des disponibilités en `grid-cols-2 sm:grid-cols-3`. (7) États vides distincts dans la matrice de disponibilités. (8) Colonne Collaborateur triable par nom, avec `aria-sort` et icône orientée.
+
+- [x] G93: Icônes de rail à 22px, focus des entrées de navigation des deux espaces, bandeau gestionnaire sans titre dupliqué, titre « Sites » seul, matrice de disponibilités triable par nom avec états vides distincts et grille KPI responsive, aucun tiret isolé
+  CHECK: node scripts/verify-gates.mjs --manager-finish
+  EXPECT: G93 passed: manager finishing pass applied
+  EVIDENCE: G93 passed: manager finishing pass applied (vérifié par node scripts/verify-gates.mjs --manager-finish, contrôle négatif compris). Rendu headless sombre à 1440 et 900 : bandeau « PresenceApp » seul, nav « Sites / Collaborateurs / Disponibilités », KPI « Aucun · Aucun jour révolu », icônes de rail agrandies. `--all` sans nouvelle régression, suite navigateur complète verte, `npm run build` en sortie 0 (vérifiés le 2026-09-30).

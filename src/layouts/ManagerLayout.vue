@@ -51,7 +51,7 @@ const navItems = [
   },
   {
     path: '/manager/locations',
-    label: 'Lieux & Sites',
+    label: 'Sites',
     icon: createIcon([
       ['path', { d: 'M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z' }],
       ['circle', { cx: '12', cy: '10', r: '3' }],
@@ -67,7 +67,7 @@ const navItems = [
   },
   {
     path: '/manager/availabilities',
-    label: 'Disponibilités équipe',
+    label: 'Disponibilités',
     icon: createIcon([
       ['rect', { x: '3', y: '4', width: '18', height: '18', rx: '2', ry: '2' }],
       ['line', { x1: '16', y1: '2', x2: '16', y2: '6' }],
@@ -77,7 +77,7 @@ const navItems = [
   },
   {
     path: '/manager/employees',
-    label: 'Employés',
+    label: 'Collaborateurs',
     icon: createIcon([
       ['path', { d: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2' }],
       ['circle', { cx: '9', cy: '7', r: '4' }],
@@ -105,11 +105,6 @@ const navItems = [
     ]),
   },
 ]
-
-const activeTitle = computed(() => {
-  const current = navItems.find((item) => item.path === currentPath.value)
-  return current ? current.label : 'Administration & Suivi'
-})
 
 const handleNav = (path) => {
   drawerOpen.value = false
@@ -146,13 +141,9 @@ const handleLogout = async () => {
             </svg>
           </label>
 
-          <div class="flex items-center gap-2 lg:hidden">
+          <div class="flex items-center gap-2">
             <span class="font-bold text-sm tracking-tight text-base-content">PresenceApp</span>
           </div>
-
-          <h1 class="text-base sm:text-lg font-bold text-base-content hidden sm:inline-block lg:block">
-            {{ activeTitle }}
-          </h1>
         </div>
 
         <!-- Alerte réseau uniquement : silencieuse tant que tout est synchronisé, la consultation permanente vit dans le tiroir -->
@@ -224,7 +215,7 @@ const handleLogout = async () => {
               <li v-for="item in navItems" :key="item.path">
                 <button
                   type="button"
-                  class="rail-entry relative flex items-center gap-3 py-3 px-3.5 rounded-m3-md transition-colors"
+                  class="rail-entry relative flex items-center gap-3 py-3 px-3.5 rounded-m3-md transition-colors focus-visible:outline-2 focus-visible:outline-primary"
                   :class="[
                     currentPath === item.path
                       ? 'bg-primary/15 text-primary font-bold'
@@ -253,7 +244,7 @@ const handleLogout = async () => {
               <li>
                 <button
                   type="button"
-                  class="rail-entry flex items-center gap-3 py-3 px-3.5 rounded-m3-md transition-colors text-base-content/80 hover:bg-base-300/60"
+                  class="rail-entry flex items-center gap-3 py-3 px-3.5 rounded-m3-md transition-colors text-base-content/80 hover:bg-base-300/60 focus-visible:outline-2 focus-visible:outline-primary"
                   :class="isRail ? 'tooltip tooltip-right' : ''"
                   aria-label="Mon pointage personnel"
                   :data-tip="isRail ? 'Mon pointage personnel' : null"

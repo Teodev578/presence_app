@@ -89,14 +89,16 @@ watch(isRail, (railed) => {
       v-for="option in MODES"
       :key="option.value"
       type="button"
-      class="join-item btn btn-ghost flex-1 min-w-0 min-h-11 gap-1.5 px-2 font-medium"
+      class="join-item btn btn-ghost flex-1 min-w-0 min-h-11 gap-1 px-1.5 font-medium"
       :class="mode === option.value ? 'bg-primary/15 text-primary font-bold' : 'text-base-content/70'"
       :aria-pressed="mode === option.value"
       :aria-label="`Thème ${option.label}`"
       :title="option.hint"
       @click="setMode(option.value)"
     >
-      <component :is="option.icon" />
+      <span class="hidden sm:inline-flex" aria-hidden="true">
+        <component :is="option.icon" />
+      </span>
       <span class="text-xs truncate">{{ option.label }}</span>
     </button>
   </div>

@@ -227,12 +227,12 @@ const generateCSV = async () => {
 
       <fieldset v-else-if="filterPeriod === 'week'" class="fieldset">
         <legend class="fieldset-legend text-xs font-semibold text-base-content/70">Semaine</legend>
-        <div class="flex items-center gap-2">
-          <button type="button" class="btn btn-ghost min-h-11 min-w-11 p-0 rounded-m3-sm" aria-label="Semaine précédente" @click="shiftAnchor('week', -1)">
+        <div class="inline-flex items-center rounded-m3-md border border-base-300 bg-base-300/50">
+          <button type="button" class="btn btn-ghost min-h-11 min-w-11 p-0 rounded-l-m3-md" aria-label="Semaine précédente" @click="shiftAnchor('week', -1)">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg>
           </button>
-          <span class="text-sm font-semibold text-base-content tabular-nums">{{ periodLabel }}</span>
-          <button type="button" class="btn btn-ghost min-h-11 min-w-11 p-0 rounded-m3-sm" aria-label="Semaine suivante" @click="shiftAnchor('week', 1)">
+          <span class="px-3 min-h-11 flex items-center text-sm font-semibold text-base-content tabular-nums">{{ periodLabel }}</span>
+          <button type="button" class="btn btn-ghost min-h-11 min-w-11 p-0 rounded-r-m3-md" aria-label="Semaine suivante" @click="shiftAnchor('week', 1)">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg>
           </button>
         </div>
@@ -240,12 +240,12 @@ const generateCSV = async () => {
 
       <fieldset v-else-if="filterPeriod === 'month'" class="fieldset">
         <legend class="fieldset-legend text-xs font-semibold text-base-content/70">Mois</legend>
-        <div class="flex items-center gap-2">
-          <button type="button" class="btn btn-ghost min-h-11 min-w-11 p-0 rounded-m3-sm" aria-label="Mois précédent" @click="shiftAnchor('month', -1)">
+        <div class="inline-flex items-center rounded-m3-md border border-base-300 bg-base-300/50">
+          <button type="button" class="btn btn-ghost min-h-11 min-w-11 p-0 rounded-l-m3-md" aria-label="Mois précédent" @click="shiftAnchor('month', -1)">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg>
           </button>
-          <span class="text-sm font-semibold text-base-content">{{ periodLabel }}</span>
-          <button type="button" class="btn btn-ghost min-h-11 min-w-11 p-0 rounded-m3-sm" aria-label="Mois suivant" @click="shiftAnchor('month', 1)">
+          <span class="px-3 min-h-11 flex items-center text-sm font-semibold text-base-content">{{ periodLabel }}</span>
+          <button type="button" class="btn btn-ghost min-h-11 min-w-11 p-0 rounded-r-m3-md" aria-label="Mois suivant" @click="shiftAnchor('month', 1)">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg>
           </button>
         </div>

@@ -386,7 +386,7 @@ const toggleStatus = async (loc) => {
   <div class="flex flex-col gap-6">
     <!-- En-tête -->
     <ManagerPageHeader
-      title="Gestion des Sites & Lieux"
+      title="Gestion des Sites"
       subtitle="Définissez les périmètres autorisés pour le pointage des collaborateurs"
     >
       <template #icon>

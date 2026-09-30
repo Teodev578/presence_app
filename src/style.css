@@ -331,6 +331,12 @@ html, body {
     padding-inline: 0;
   }
 
+  /* Le rail offre plus d'air à ses icônes : 22px, recommandation des guides de navigation */
+  .drawer-rail .rail-entry > svg {
+    width: 1.375rem;
+    height: 1.375rem;
+  }
+
   .drawer-rail .rail-center {
     justify-content: center;
     padding-inline: 0;

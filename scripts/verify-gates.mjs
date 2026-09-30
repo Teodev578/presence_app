@@ -2997,6 +2997,110 @@ export function checkManagerResponsive() {
   return true;
 }
 
+/**
+ * G92 : Chaque entrée de navigation gestionnaire déclare une icône non vide, et la passerelle
+ * vers l'espace personnel porte son propre tracé. Verrouille le défaut « icône absente ».
+ */
+export function checkManagerNavIcons() {
+  const navGaps = (text) => {
+    const gaps = [];
+    const entries = [...text.matchAll(/path: '\/manager[^']*',[\s\S]*?icon: createIcon\(\[([\s\S]*?)\]\),/g)];
+    if (entries.length < 6) gaps.push(`entrées de navigation incomplètes (${entries.length})`);
+    entries.forEach((entry, index) => {
+      const body = entry[1].trim();
+      if (!body.includes('[')) gaps.push(`entrée ${index + 1} sans tracé`);
+    });
+    if (!/handleNav\('\/employee'\)[\s\S]*?<svg/.test(text)) gaps.push('passerelle sans icône');
+    return gaps;
+  };
+
+  // Contrôle négatif : une entrée sans createIcon doit être refusée.
+  const bogus = "path: '/manager/x', label: 'X', icon: null,";
+  if (navGaps(bogus).length === 0) {
+    console.error('FAILURE G92: le détecteur d\u2019icônes de navigation est aveugle, oracle invalide');
+    return false;
+  }
+
+  const file = path.join(SRC_DIR, 'layouts', 'ManagerLayout.vue');
+  if (!fs.existsSync(file)) {
+    console.error('FAILURE G92: ManagerLayout.vue introuvable');
+    return false;
+  }
+  const gaps = navGaps(fs.readFileSync(file, 'utf8'));
+  if (gaps.length > 0) {
+    console.error(`FAILURE G92: des entrées de navigation sont sans icône -> ${gaps.join(', ')}`);
+    return false;
+  }
+  console.log('G92 passed: every manager nav entry declares an icon');
+  return true;
+}
+
+/**
+ * G93 : Passe de finition gestionnaire. Icônes de rail à 22px, focus visible sur les entrées de
+ * navigation des deux espaces, bandeau gestionnaire réduit à la marque, titre « Sites » seul,
+ * matrice de disponibilités triable par nom avec états vides distincts et grille KPI responsive.
+ */
+export function checkManagerFinish() {
+  const read = (relative) => {
+    const file = path.join(SRC_DIR, relative);
+    return fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : null;
+  };
+  const missing = (text, tokens) => tokens.filter((token) => !text.includes(token));
+
+  // Contrôle négatif : le détecteur de jetons doit refuser un texte vide.
+  if (missing('', ['grid-cols-2 sm:grid-cols-3']).length === 0) {
+    console.error('FAILURE G93: le détecteur de finition est aveugle, oracle invalide');
+    return false;
+  }
+
+  const gaps = [];
+
+  const css = read('style.css');
+  if (css === null) {
+    console.error('FAILURE G93: style.css introuvable');
+    return false;
+  }
+  if (!/\.drawer-rail \.rail-entry > svg[\s\S]*?width:\s*1\.375rem/.test(css)) {
+    gaps.push('icônes de rail non portées à 22px');
+  }
+
+  for (const layout of ['layouts/ManagerLayout.vue', 'layouts/EmployeeLayout.vue']) {
+    const text = read(layout);
+    if (text === null) {
+      console.error(`FAILURE G93: ${layout} introuvable`);
+      return false;
+    }
+    const focused = (text.match(/rail-entry[^"]*focus-visible:outline-2 focus-visible:outline-primary/g) || []).length;
+    if (focused < 2) gaps.push(`${layout} : focus des entrées de navigation incomplet`);
+  }
+
+  const manager = read('layouts/ManagerLayout.vue');
+  if (/activeTitle|Administration & Suivi/.test(manager)) gaps.push('titre de bandeau gestionnaire conservé');
+
+  const locations = read('views/manager/LocationsView.vue');
+  if (locations.includes('& Lieux')) gaps.push('« & Lieux » conservé');
+  if (!locations.includes('title="Gestion des Sites"')) gaps.push('titre de page « Gestion des Sites » absent');
+
+  const availabilities = read('views/manager/AvailabilitiesView.vue');
+  gaps.push(...missing(availabilities, [
+    'grid-cols-2 sm:grid-cols-3',
+    'sortedEmployees',
+    'aria-sort',
+    'toggleSort',
+    'emptyState',
+    'Aucun collaborateur pour cette équipe',
+    'Aucun résultat',
+  ]).map((token) => `disponibilités sans ${token}`));
+  if (availabilities.includes("'—'")) gaps.push('taux de tenue rendu par un tiret isolé');
+
+  if (gaps.length > 0) {
+    console.error(`FAILURE G93: la passe de finition est incomplète -> ${[...new Set(gaps)].join(', ')}`);
+    return false;
+  }
+  console.log('G93 passed: manager finishing pass applied');
+  return true;
+}
+
 // Exécution CLI
 const arg = process.argv[2] || '--all';let success = true;
 
@@ -3108,6 +3212,10 @@ if (arg === '--emojis') {
   success = checkManagerGrammar();
 } else if (arg === '--manager-responsive') {
   success = checkManagerResponsive();
+} else if (arg === '--manager-nav-icons') {
+  success = checkManagerNavIcons();
+} else if (arg === '--manager-finish') {
+  success = checkManagerFinish();
 } else if (arg === '--sidebar-build') {
   success = checkBuild('G48', 'production build succeeds with exit code 0');
 } else if (arg === '--manager-build') {
@@ -3165,10 +3273,12 @@ if (arg === '--emojis') {
   const r75 = checkManagerDexie();
   const r88 = checkManagerGrammar();
   const r89 = checkManagerResponsive();
+  const r92 = checkManagerNavIcons();
+  const r93 = checkManagerFinish();
   const r48 = r39; // Une seule compilation sert les portes de build G39 et G48
-  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60 && r63 && r64 && r65 && r66 && r72 && r73 && r74 && r75 && r88 && r89;
+  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60 && r63 && r64 && r65 && r66 && r72 && r73 && r74 && r75 && r88 && r89 && r92 && r93;
 } else {
-  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--presences-ui|--presences-period|--presences-table|--presences-sort|--presences-localfirst|--sync-scope|--livequery-deps|--manager-dexie|--manager-grammar|--manager-responsive|--manager-build|--sidebar-build|--build|--all]`);
+  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--presences-ui|--presences-period|--presences-table|--presences-sort|--presences-localfirst|--sync-scope|--livequery-deps|--manager-dexie|--manager-grammar|--manager-responsive|--manager-nav-icons|--manager-finish|--manager-build|--sidebar-build|--build|--all]`);
   process.exit(1);
 }
 
