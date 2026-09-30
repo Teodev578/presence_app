@@ -506,3 +506,29 @@ Scope: Implémenter la boucle d'apprentissage validée dans `docs/audits/setup-a
   CHECK: node scripts/verify-gates.mjs --build
   EXPECT: G6 passed: build succeeded with exit code 0
   EVIDENCE: G6 passed: build succeeded with exit code 0 (vérifié par node scripts/verify-gates.mjs --build, sortie 0 le 2026-09-29)
+
+# Gates: Configuration MCP Supabase
+
+OWNS: opencode.json, .mcp.json, scripts/mcp-check.mjs, docs/agents/mcp-supabase.md, .agents/rules/05-supabase-rls-and-schema.md, GATES.md
+
+Scope: Brancher le MCP Supabase de façon scopée et versionnée, selon l'audit `docs/audits/setup-agentique-2026-09.md` (moindre privilège appliqué par la configuration, pas par la mémoire). Deux serveurs : `supabase-readonly` (défaut, `read_only=true`, groupes database,debugging,docs) et `supabase` (écriture, groupes database,debugging,development,docs, désactivé par défaut). Scoping `project_ref=pvquzkpfdjrequbwnhur` : les outils de compte disparaissent, les groupes branching et storage sont exclus, donc `delete_branch`, `reset_branch`, `pause_project` et `create_project` n'existent plus dans le menu d'outils, la règle 05 n'ayant plus rien à proscrire. Parité stricte entre `opencode.json` (OpenCode) et `.mcp.json` (Claude Code), vérifiée par oracle. Aucun secret versionné : l'authentification passe par OAuth.
+
+- [x] G84: opencode.json et .mcp.json déclarent les deux mêmes serveurs supabase, sans dérive d'URL entre les deux fichiers
+  CHECK: node scripts/mcp-check.mjs --config
+  EXPECT: G84 passed: both configs declare the same scoped servers
+  EVIDENCE: G84 passed: both configs declare the same scoped servers (vérifié par node scripts/mcp-check.mjs --config, contrôle négatif compris : fixture avec project_ref altéré dans .mcp.json → G84 failed, sortie 1)
+
+- [x] G85: Le moindre privilège est porté par la configuration : scoping project_ref du projet, serveur de lecture read-only activé, serveur d'écriture désactivé par défaut, groupes branching et storage exclus
+  CHECK: node scripts/mcp-check.mjs --scoping
+  EXPECT: G85 passed: least privilege enforced by configuration
+  EVIDENCE: G85 passed: least privilege enforced by configuration (vérifié par node scripts/mcp-check.mjs --scoping, trois contrôles négatifs compris : project_ref absent → failed, read_only retiré + serveur d'écriture activé → failed, groupe branching ajouté → failed, sorties 1)
+
+- [x] G86: Aucun credential en clair dans les fichiers versionnés de la configuration MCP (opencode.json, .mcp.json, doc associée)
+  CHECK: node scripts/mcp-check.mjs --secrets
+  EXPECT: G86 passed: no credential in the versioned MCP configuration
+  EVIDENCE: G86 passed: no credential in the versioned MCP configuration (vérifié par node scripts/mcp-check.mjs --secrets, contrôle négatif compris : Bearer sbp_ inséré dans opencode.json → G86 failed, sortie 1)
+
+- [x] G87: Compilation de production Vite sans erreur validée par le code retour du sous-processus
+  CHECK: node scripts/verify-gates.mjs --build
+  EXPECT: G6 passed: build succeeded with exit code 0
+  EVIDENCE: G6 passed: build succeeded with exit code 0 (vérifié par node scripts/verify-gates.mjs --build, sortie 0 le 2026-09-29)

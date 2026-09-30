@@ -66,11 +66,11 @@ Chaque table métier persistée sur Supabase doit comporter les colonnes d'audit
 
 ## 5. Garde-fous MCP Supabase (Sécurité Infrastructure)
 
-Lors de l'utilisation de l'outillage Model Context Protocol (serveur `supabase`), les règles suivantes s'appliquent strictement :
+La configuration du serveur `supabase` (et de sa jumelle `supabase-readonly`) est versionnée dans `opencode.json` et `.mcp.json`, documentée dans `docs/agents/mcp-supabase.md` et contrôlée par `node scripts/mcp-check.mjs --all`. Le moindre privilège y est appliqué par la configuration elle-même : scoping `project_ref`, groupes `features` réduits, serveur d'écriture désactivé par défaut. Les règles suivantes s'appliquent strictement en complément :
 - **Outils d'administration destructifs prohibés sans accord préalable** :
   L'agent a l'interdiction d'invoquer les commandes `delete_branch`, `reset_branch`, `pause_project` ou `create_project`. Toute action de cette nature exige une demande explicite à l'utilisateur avec justification détaillée.
 - **Principe de moindre privilège** :
-  Privilégier la lecture de schémas (`list_tables`, `list_migrations`), l'inspection des logs (`query_logs`) et l'audit de performance (`get_advisors`).
+  Privilégier la lecture de schémas (`list_tables`, `list_migrations`), l'inspection des logs (`query_logs`) et l'audit de performance (`get_advisors`), sur le serveur `supabase-readonly`.
 - **Application prudente des migrations** :
-  Les migrations DDL distantes via `apply_migration` ou `execute_sql` doivent être préalablement formulées sous forme de script réversible et validées par l'utilisateur.
+  Les migrations DDL distantes via `apply_migration` ou `execute_sql` doivent être préalablement formulées sous forme de script réversible et validées par l'utilisateur. Elles passent par le serveur `supabase`, activé pour la session puis désactivé.
 
