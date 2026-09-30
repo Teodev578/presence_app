@@ -144,7 +144,7 @@ watch(isRail, (railed) => {
     </div>
 
     <!-- Mode vignettes de prévisualisation interactives Material 3 (Option 1 - Page Paramètres) -->
-    <div v-else class="flex flex-col gap-3 w-full">
+    <div v-else class="flex flex-col gap-3.5 w-full h-full justify-between">
       <div
         class="grid grid-cols-3 gap-2.5 sm:gap-3 w-full"
         role="radiogroup"
@@ -158,7 +158,7 @@ watch(isRail, (railed) => {
           :aria-checked="mode === option.value"
           :aria-label="`Thème ${option.label}`"
           :title="option.hint"
-          class="flex flex-col gap-2 p-2 sm:p-2.5 rounded-m3-md border text-left transition-all duration-200 min-h-11 focus-visible:outline-2 focus-visible:outline-primary cursor-pointer select-none"
+          class="relative flex flex-col justify-between gap-2.5 p-2 sm:p-2.5 md:p-3 rounded-m3-md border text-left transition-all duration-200 min-h-11 focus-visible:outline-2 focus-visible:outline-primary cursor-pointer select-none"
           :class="mode === option.value
             ? 'border-primary ring-2 ring-primary/25 bg-primary/5 text-base-content font-semibold'
             : 'border-base-300/80 bg-base-100 hover:border-base-content/30 text-base-content/70'"
@@ -167,40 +167,40 @@ watch(isRail, (railed) => {
           <!-- Vignette 1 : Système (Automatique) -->
           <div
             v-if="option.value === 'system'"
-            class="w-full h-12 rounded-m3-xs border border-base-300/80 overflow-hidden shrink-0 flex shadow-none pointer-events-none"
+            class="w-full h-12 sm:h-14 md:h-16 rounded-m3-xs border border-base-300/80 overflow-hidden shrink-0 flex shadow-none pointer-events-none"
             aria-hidden="true"
           >
-            <div class="w-1/2 h-full bg-[#fdfcff] p-1 flex flex-col justify-between border-r border-base-300/80">
-              <div class="flex items-center gap-0.5">
+            <div class="w-1/2 h-full bg-[#fdfcff] p-1.5 flex flex-col justify-between border-r border-base-300/80">
+              <div class="flex items-center gap-1">
                 <div class="w-1.5 h-1.5 rounded-full bg-primary shrink-0"></div>
-                <div class="h-1 bg-slate-300/80 rounded-full w-3"></div>
+                <div class="h-1 bg-slate-300/80 rounded-full w-4 sm:w-8"></div>
               </div>
-              <div class="h-2 bg-slate-200/90 rounded-m3-xs w-full"></div>
+              <div class="h-2 sm:h-2.5 bg-slate-200/90 rounded-m3-xs w-full"></div>
             </div>
-            <div class="w-1/2 h-full bg-[#111318] p-1 flex flex-col justify-between">
-              <div class="flex items-center gap-0.5">
+            <div class="w-1/2 h-full bg-[#111318] p-1.5 flex flex-col justify-between">
+              <div class="flex items-center gap-1">
                 <div class="w-1.5 h-1.5 rounded-full bg-primary shrink-0"></div>
-                <div class="h-1 bg-zinc-700 rounded-full w-3"></div>
+                <div class="h-1 bg-zinc-700 rounded-full w-4 sm:w-8"></div>
               </div>
-              <div class="h-2 bg-zinc-800 rounded-m3-xs w-full"></div>
+              <div class="h-2 sm:h-2.5 bg-zinc-800 rounded-m3-xs w-full"></div>
             </div>
           </div>
 
           <!-- Vignette 2 : Clair -->
           <div
             v-else-if="option.value === 'light'"
-            class="w-full h-12 rounded-m3-xs border border-slate-200 bg-[#fdfcff] p-1 flex flex-col justify-between overflow-hidden shrink-0 shadow-none pointer-events-none"
+            class="w-full h-12 sm:h-14 md:h-16 rounded-m3-xs border border-slate-200 bg-[#fdfcff] p-1.5 flex flex-col justify-between overflow-hidden shrink-0 shadow-none pointer-events-none"
             aria-hidden="true"
           >
             <div class="flex items-center gap-1">
               <div class="w-1.5 h-1.5 rounded-full bg-primary shrink-0"></div>
-              <div class="h-1 bg-slate-300/80 rounded-full w-8"></div>
+              <div class="h-1 bg-slate-300/80 rounded-full w-8 sm:w-12"></div>
             </div>
-            <div class="flex gap-1 items-center">
-              <div class="w-2 h-4 rounded-m3-xs bg-slate-200/90 shrink-0"></div>
-              <div class="flex-1 flex flex-col gap-0.5">
-                <div class="h-1.5 bg-slate-200/80 rounded-full w-full border border-slate-300/40"></div>
-                <div class="h-1.5 bg-slate-200/80 rounded-full w-2/3 border border-slate-300/40"></div>
+            <div class="flex gap-1.5 items-center">
+              <div class="w-2.5 h-5 sm:h-6 rounded-m3-xs bg-slate-200/90 shrink-0"></div>
+              <div class="flex-1 flex flex-col gap-0.5 sm:gap-1">
+                <div class="h-1.5 sm:h-2 bg-slate-200/80 rounded-full w-full border border-slate-300/40"></div>
+                <div class="h-1.5 sm:h-2 bg-slate-200/80 rounded-full w-2/3 border border-slate-300/40"></div>
               </div>
             </div>
           </div>
@@ -208,57 +208,57 @@ watch(isRail, (railed) => {
           <!-- Vignette 3 : Sombre -->
           <div
             v-else
-            class="w-full h-12 rounded-m3-xs border border-zinc-800 bg-[#111318] p-1 flex flex-col justify-between overflow-hidden shrink-0 shadow-none pointer-events-none"
+            class="w-full h-12 sm:h-14 md:h-16 rounded-m3-xs border border-zinc-800 bg-[#111318] p-1.5 flex flex-col justify-between overflow-hidden shrink-0 shadow-none pointer-events-none"
             aria-hidden="true"
           >
             <div class="flex items-center gap-1">
               <div class="w-1.5 h-1.5 rounded-full bg-primary shrink-0"></div>
-              <div class="h-1 bg-zinc-700 rounded-full w-8"></div>
+              <div class="h-1 bg-zinc-700 rounded-full w-8 sm:w-12"></div>
             </div>
-            <div class="flex gap-1 items-center">
-              <div class="w-2 h-4 rounded-m3-xs bg-zinc-800 shrink-0"></div>
-              <div class="flex-1 flex flex-col gap-0.5">
-                <div class="h-1.5 bg-zinc-800 rounded-full w-full border border-zinc-700/50"></div>
-                <div class="h-1.5 bg-zinc-800 rounded-full w-2/3 border border-zinc-700/50"></div>
+            <div class="flex gap-1.5 items-center">
+              <div class="w-2.5 h-5 sm:h-6 rounded-m3-xs bg-zinc-800 shrink-0"></div>
+              <div class="flex-1 flex flex-col gap-0.5 sm:gap-1">
+                <div class="h-1.5 sm:h-2 bg-zinc-800 rounded-full w-full border border-zinc-700/50"></div>
+                <div class="h-1.5 sm:h-2 bg-zinc-800 rounded-full w-2/3 border border-zinc-700/50"></div>
               </div>
             </div>
           </div>
 
-          <!-- Libellé et indicateur de sélection radio -->
-          <div class="flex items-center justify-between gap-1 w-full pt-0.5">
-            <div class="flex items-center gap-1.5 min-w-0">
-              <component
-                :is="option.icon"
-                class="w-3.5 h-3.5 shrink-0"
-                :class="mode === option.value ? 'text-primary' : 'text-base-content/60'"
-              />
-              <span class="text-xs font-semibold truncate">{{ option.label }}</span>
-            </div>
-            <div
-              class="w-3.5 h-3.5 rounded-full shrink-0 flex items-center justify-center border transition-colors"
-              :class="mode === option.value ? 'border-primary bg-primary text-primary-content' : 'border-base-300/90 bg-base-200'"
-              aria-hidden="true"
+          <!-- Indicateur radio Material 3 en coin supérieur -->
+          <div
+            class="absolute top-2 right-2 sm:top-2.5 sm:right-2.5 w-4 h-4 rounded-full flex items-center justify-center border transition-colors z-10"
+            :class="mode === option.value ? 'border-primary bg-primary text-primary-content' : 'border-base-300/90 bg-base-200/80'"
+            aria-hidden="true"
+          >
+            <svg
+              v-if="mode === option.value"
+              xmlns="http://www.w3.org/2000/svg"
+              class="w-2.5 h-2.5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="3"
+              stroke-linecap="round"
+              stroke-linejoin="round"
             >
-              <svg
-                v-if="mode === option.value"
-                xmlns="http://www.w3.org/2000/svg"
-                class="w-2.5 h-2.5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="3"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-            </div>
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+
+          <!-- Libellé du mode -->
+          <div class="flex items-center gap-1 min-w-0 w-full pt-1">
+            <component
+              :is="option.icon"
+              class="w-3.5 h-3.5 shrink-0"
+              :class="mode === option.value ? 'text-primary' : 'text-base-content/60'"
+            />
+            <span class="text-xs font-semibold tracking-tight truncate">{{ option.label }}</span>
           </div>
         </button>
       </div>
 
       <!-- Encart contextuel informatif -->
-      <div class="flex items-start gap-2 p-2.5 rounded-m3-md bg-base-100 border border-base-300/60 text-xs text-base-content/70">
+      <div class="flex items-start gap-2.5 p-3 rounded-m3-md bg-base-100 border border-base-300/60 text-xs text-base-content/70 mt-auto">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           class="w-4 h-4 text-primary shrink-0 mt-0.5"

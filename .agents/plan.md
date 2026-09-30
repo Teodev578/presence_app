@@ -43,3 +43,10 @@ Ce fichier porte le plan de la tâche en cours, conformément à la règle `.age
   - Exécuter `npm run build`. *(Code 0)*
   - Exécuter `node scripts/verify-gates.mjs`. *(G11-G16, G45, G95 validés)*
   - Exécuter `node scripts/test-theme-toggle.mjs`. *(28 assertions comportementales et cohérence storage key validées)*
+
+- [x] **Étape 5 : Harmonisation responsive desktop des tuiles Synchronisation & Apparence**
+  - Structurer l'état de synchronisation dans une surface M3 (`bg-base-100 border border-base-300/60 rounded-m3-md p-3.5`) avec badge d'état DaisyUI dédié.
+  - Étendre le bouton « Synchroniser maintenant » en pleine largeur (`w-full`) avec ancrage bas (`mt-auto`) pour équilibrer la tuile en vis-à-vis du bloc rôle de la section Compte.
+  - Supprimer la contrainte rigide `max-w-md` sur desktop pour le conteneur du thème (`w-full max-w-md md:max-w-none flex-1 flex flex-col`), permettant aux trois cartes de choix d'occuper harmonieusement 100 % de la tuile.
+  - Ajuster les micro-maquettes de prévisualisation M3 avec une hauteur fluide (`h-12 sm:h-14 md:h-16`) et positionner la pastille de sélection radio en coin supérieur absolu pour libérer l'espace du libellé visible sans troncature.
+  - Vérification visuelle sur Chrome DevTools en vue desktop (1280px) et mobile (390px), validation du build et non-régression des gates. *(Validé)*

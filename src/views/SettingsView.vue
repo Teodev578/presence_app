@@ -116,23 +116,31 @@ const handleLogout = async () => {
     <section class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg p-4 sm:p-5 flex flex-col gap-4">
       <h2 class="text-base font-semibold text-base-content">Synchronisation</h2>
 
-      <div class="flex gap-3">
-        <span class="w-2.5 h-2.5 rounded-full shrink-0 mt-1.5" :class="isOnline ? 'bg-success' : 'bg-warning'"></span>
-        <div class="min-w-0">
-          <p class="text-sm font-semibold text-base-content">{{ isOnline ? 'En ligne' : 'Hors ligne' }}</p>
-          <p class="text-xs text-base-content/60 mt-0.5">{{ syncLabel }}</p>
-          <p class="text-xs text-base-content/60 mt-1">Dernière synchronisation : {{ lastSyncLabel }}</p>
+      <div class="rounded-m3-md bg-base-100 border border-base-300/60 p-3.5 flex flex-col gap-2">
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full shrink-0" :class="isOnline ? 'bg-success' : 'bg-warning'"></span>
+            <span class="text-sm font-semibold text-base-content">{{ isOnline ? 'En ligne' : 'Hors ligne' }}</span>
+          </div>
+          <span
+            class="badge badge-sm font-semibold"
+            :class="isOnline ? (pendingCount > 0 ? 'badge-warning' : 'badge-success') : 'badge-neutral'"
+          >
+            {{ isOnline ? (pendingCount > 0 ? `${pendingCount} en attente` : 'À jour') : 'Hors ligne' }}
+          </span>
         </div>
+        <p class="text-xs text-base-content/60">{{ syncLabel }}</p>
+        <p class="text-xs text-base-content/60">Dernière synchronisation : {{ lastSyncLabel }}</p>
       </div>
 
       <button
         type="button"
-        class="btn btn-primary rounded-m3-sm font-bold shadow-xs min-h-11 gap-2 self-start focus-visible:outline-2 focus-visible:outline-primary"
+        class="btn btn-primary rounded-m3-sm font-bold shadow-xs min-h-11 w-full gap-2 mt-auto focus-visible:outline-2 focus-visible:outline-primary"
         :disabled="isSyncing || !isOnline"
         @click="runSync"
       >
         <span v-if="isSyncing" class="loading loading-spinner loading-xs"></span>
-        <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
         </svg>
         <span>Synchroniser maintenant</span>
@@ -229,7 +237,7 @@ const handleLogout = async () => {
         <h2 class="text-base font-semibold text-base-content">Apparence</h2>
         <p class="text-xs text-base-content/60 mt-0.5">Suivez le réglage du système ou forcez un thème clair ou sombre.</p>
       </div>
-      <div class="max-w-md w-full">
+      <div class="w-full max-w-md md:max-w-none flex-1 flex flex-col">
         <ThemeToggle inline />
       </div>
     </section>
