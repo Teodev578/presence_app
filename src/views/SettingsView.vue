@@ -6,7 +6,7 @@ import { useProfile } from '../composables/useProfile'
 import { useSyncEngine } from '../composables/useSyncEngine'
 import ThemeToggle from '../components/shared/ThemeToggle.vue'
 
-const { currentPath, navigate } = useRouter()
+const { navigate } = useRouter()
 const { user, signOut } = useAuth()
 const { profile } = useProfile()
 const { isSyncing, pendingCount, lastSyncTime, refreshPendingCount, syncNow } = useSyncEngine()
@@ -24,8 +24,6 @@ onUnmounted(() => {
   window.removeEventListener('online', setOnline)
   window.removeEventListener('offline', setOnline)
 })
-
-const isManagerSpace = computed(() => currentPath.value.startsWith('/manager'))
 
 const ROLE_LABELS = { employee: 'Employé', manager: 'Manager', admin: 'Administrateur' }
 const roleLabel = computed(() => ROLE_LABELS[profile.value?.role] || 'Employé')
@@ -78,14 +76,10 @@ const handleLogout = async () => {
         </div>
       </div>
 
-      <dl class="grid grid-cols-2 gap-2 border-t border-base-300/60 pt-4">
-        <div class="flex flex-col gap-0.5 rounded-m3-md bg-base-100 border border-base-300/60 p-3">
+      <dl class="border-t border-base-300/60 pt-4">
+        <div class="flex items-center justify-between rounded-m3-md bg-base-100 border border-base-300/60 px-3.5 py-2.5 min-h-11">
           <dt class="text-xs font-medium uppercase tracking-wide text-base-content/60">Rôle</dt>
           <dd class="text-sm font-semibold text-base-content">{{ roleLabel }}</dd>
-        </div>
-        <div class="flex flex-col gap-0.5 rounded-m3-md bg-base-100 border border-base-300/60 p-3">
-          <dt class="text-xs font-medium uppercase tracking-wide text-base-content/60">Espace</dt>
-          <dd class="text-sm font-semibold text-base-content">{{ isManagerSpace ? 'Gestionnaire' : 'Collaborateur' }}</dd>
         </div>
       </dl>
     </section>

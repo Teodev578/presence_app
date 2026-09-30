@@ -9,6 +9,10 @@ if (!supabaseUrl || !supabaseAnonKey) {
   )
 }
 
+/**
+ * Client Supabase typé avec le schéma PostgreSQL distant
+ * @type {import('@supabase/supabase-js').SupabaseClient<import('../types/database.types').Database>}
+ */
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
