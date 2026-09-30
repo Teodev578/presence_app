@@ -61,16 +61,33 @@ const handleLogout = async () => {
 </script>
 
 <template>
-  <div class="flex flex-col gap-6 w-full max-w-3xl mx-auto">
-    <!-- Apparence -->
+  <div class="flex flex-col gap-6 w-full max-w-5xl mx-auto">
+    <!-- Compte -->
     <section class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg p-4 sm:p-5 flex flex-col gap-4">
-      <div>
-        <h2 class="text-base font-semibold text-base-content">Apparence</h2>
-        <p class="text-xs text-base-content/60 mt-0.5">Suivez le réglage du système ou forcez un thème clair ou sombre.</p>
+      <h2 class="text-base font-semibold text-base-content">Compte</h2>
+
+      <div class="flex items-center gap-3">
+        <div class="avatar placeholder shrink-0" aria-hidden="true">
+          <div class="bg-primary/15 text-primary rounded-full w-12 h-12 font-bold text-base flex items-center justify-center">
+            <span>{{ (profile?.full_name || 'U').trim()[0].toUpperCase() }}</span>
+          </div>
+        </div>
+        <div class="min-w-0">
+          <p class="font-bold text-sm text-base-content truncate">{{ profile?.full_name || 'Mon compte' }}</p>
+          <p class="text-xs text-base-content/60 truncate">{{ profile?.email || user?.email || 'Adresse inconnue' }}</p>
+        </div>
       </div>
-      <div class="max-w-md w-full">
-        <ThemeToggle inline />
-      </div>
+
+      <dl class="flex flex-col gap-2 text-sm border-t border-base-300/60 pt-4">
+        <div class="flex items-center justify-between gap-3">
+          <dt class="text-base-content/60">Rôle</dt>
+          <dd class="font-semibold text-base-content">{{ roleLabel }}</dd>
+        </div>
+        <div class="flex items-center justify-between gap-3">
+          <dt class="text-base-content/60">Espace</dt>
+          <dd class="font-semibold text-base-content">{{ isManagerSpace ? 'Gestionnaire' : 'Collaborateur' }}</dd>
+        </div>
+      </dl>
     </section>
 
     <!-- Synchronisation -->
@@ -100,32 +117,15 @@ const handleLogout = async () => {
       </button>
     </section>
 
-    <!-- Compte -->
+    <!-- Apparence -->
     <section class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg p-4 sm:p-5 flex flex-col gap-4">
-      <h2 class="text-base font-semibold text-base-content">Compte</h2>
-
-      <div class="flex items-center gap-3">
-        <div class="avatar placeholder shrink-0" aria-hidden="true">
-          <div class="bg-primary/15 text-primary rounded-full w-12 h-12 font-bold text-base flex items-center justify-center">
-            <span>{{ (profile?.full_name || 'U').trim()[0].toUpperCase() }}</span>
-          </div>
-        </div>
-        <div class="min-w-0">
-          <p class="font-bold text-sm text-base-content truncate">{{ profile?.full_name || 'Mon compte' }}</p>
-          <p class="text-xs text-base-content/60 truncate">{{ profile?.email || user?.email || 'Adresse inconnue' }}</p>
-        </div>
+      <div>
+        <h2 class="text-base font-semibold text-base-content">Apparence</h2>
+        <p class="text-xs text-base-content/60 mt-0.5">Suivez le réglage du système ou forcez un thème clair ou sombre.</p>
       </div>
-
-      <dl class="flex flex-col gap-2 text-sm border-t border-base-300/60 pt-4">
-        <div class="flex items-center justify-between gap-3">
-          <dt class="text-base-content/60">Rôle</dt>
-          <dd class="font-semibold text-base-content">{{ roleLabel }}</dd>
-        </div>
-        <div class="flex items-center justify-between gap-3">
-          <dt class="text-base-content/60">Espace</dt>
-          <dd class="font-semibold text-base-content">{{ isManagerSpace ? 'Gestionnaire' : 'Collaborateur' }}</dd>
-        </div>
-      </dl>
+      <div class="max-w-md w-full">
+        <ThemeToggle inline />
+      </div>
     </section>
 
     <!-- Déconnexion -->

@@ -3175,6 +3175,7 @@ export function checkSettingsPage() {
   pageGaps.push(
     ...[
       'text-base font-semibold',
+      'max-w-5xl',
       'max-w-md',
       'En ligne',
       'aria-hidden="true"',
@@ -3183,6 +3184,13 @@ export function checkSettingsPage() {
   );
   if (settings.includes('Connecté')) pageGaps.push('état réseau ambigu « Connecté »');
   if (settings.includes('>Déconnexion</h2>')) pageGaps.push('titre de section Déconnexion conservé');
+
+  const sectionOrder = ['>Compte<', '>Synchronisation<', '>Apparence<'].map((token) => settings.indexOf(token));
+  if (sectionOrder.some((index) => index === -1) || !(sectionOrder[0] < sectionOrder[1] && sectionOrder[1] < sectionOrder[2])) {
+    pageGaps.push('ordre des sections non conforme (Compte, Synchronisation, Apparence attendu)');
+  } else if (settings.indexOf('Se déconnecter') < sectionOrder[2]) {
+    pageGaps.push('déconnexion non placée après l\u2019apparence');
+  }
   if (pageGaps.length > 0) {
     console.error(`FAILURE G95: page Paramètres incomplète -> ${pageGaps.join(', ')}`);
     return false;

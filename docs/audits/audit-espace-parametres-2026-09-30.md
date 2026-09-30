@@ -31,7 +31,11 @@ Contexte : page créée le 2026-09-30, centrée et élargie, apparence ramenée 
 | C2 | Les boutons « Synchroniser maintenant » et « Se déconnecter » n'exposent pas d'anneau de focus explicite, alors que d'autres écrans le posent. | Basse | Proposé |
 | D1 | La déconnexion s'exécute immédiatement, sans confirmation. Le débat est ouvert : friction utile sur mobile, geste banal ailleurs. | Moyenne | Proposé, décision requise |
 | E1 | La section « Déconnexion » porte un titre pour une seule action. Le titre peut disparaître au profit du seul bouton, placé en fin de page. | Basse | Proposé |
-| F1 | Ordre des sections : Apparence, Synchronisation, Compte, Déconnexion. Conforme. | — | Constat |
+| F1 | Ordre des sections : révisé le 2026-09-30. Identité en tête, préférence et état applicatif ensuite, destructeur en fin. Nouvel ordre Compte, Synchronisation, Apparence, Déconnexion. | — | Acté |
+
+### Ordre des sections
+
+La recherche confirme l'intuition sur deux points structurants. L'identité vient en tête : Apple place le compte au sommet des réglages, Google ouvre sur « Gérer votre compte Google », Plane liste le profil avant les préférences, Finzen ouvre l'onglet Général sur les informations de compte. L'action destructrice ferme la page : c'est un point constant des guides (Android, Microsoft, UX Collective). Le couple Synchronisation puis Apparence est plus libre : certains guides placent les préférences avant l'état applicatif, d'autres l'inverse. L'ordre retenu range l'état de l'application avant la préférence d'affichage.
 
 ## 4. Propositions
 

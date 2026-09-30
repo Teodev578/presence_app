@@ -78,6 +78,7 @@ Oracles : oracle source dédié, oracle navigateur.
 2. **Contrôle d'apparence** : groupe segmenté borné `max-w-md`.
 3. **État réseau** : « En ligne » / « Hors ligne ».
 4. **Titre de la section Déconnexion** : retiré, seul le bouton reste.
+5. **Ordre des sections** : Compte, Synchronisation, Apparence, Déconnexion. Identité en tête, état applicatif puis préférence, destructeur en fin de page. Confirmé par la recherche (Apple, Google, Plane, Finzen) et par la constante « destructeur en dernier ».
 
 ### État des lots
 
