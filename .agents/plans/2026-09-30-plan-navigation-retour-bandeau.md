@@ -89,7 +89,7 @@ Oracles : `--ux-conformance`, `--motion-conformance` (la transition de route res
 1. **Portée du retour** : les écrans hors tiroir (validation d'arrivée, validation de départ, paramètres) à toute largeur ; les destinations du tiroir une fois le tiroir masqué (mobile).
 2. **En-tête de contenu** : l'en-tête de la page Paramètres est retiré, le bandeau porte le titre. Les autres pages conservent leur titre de contexte, sans bouton Retour.
 3. **Mobile descendant** : la flèche remplace le hamburger.
-4. **Ma disponibilité (employé)** : retour dans le bandeau sur mobile, rien en tablette et desktop où la barre latérale affiche déjà l'entrée.
+4. **Ma disponibilité (employé)** : traitée comme un écran descendant du pointage, retour dans le bandeau à toutes les largeurs, y compris en tablette et desktop.
 5. **Forme du bouton** : flèche seule avec nom accessible `Retour`.
 
 ### État des lots

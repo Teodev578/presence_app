@@ -717,7 +717,7 @@ Scope: La navigation de retour remonte dans le bandeau, traité comme une barre 
 - [x] G97: Chaque espace porte une table de routes, le bandeau offre un bouton de retour nommé de 44px, le hamburger lui cède la place, et aucune vue de contenu ne conserve de bouton Retour ni l'en-tête de la page Paramètres
   CHECK: node scripts/verify-gates.mjs --back-navigation
   EXPECT: G97 passed: the back command lives in the app bar and no content duplicates it
-  EVIDENCE: G97 passed: the back command lives in the app bar and no content duplicates it (vérifié par node scripts/verify-gates.mjs --back-navigation, contrôle négatif compris : bouton Retour de contenu détecté le 2026-09-30). Rendu headless sombre : validation d'arrivée à 390 avec flèche et sans hamburger, accueil à 390 avec hamburger et sans flèche, paramètres gestionnaire à 1280 avec flèche et sans en-tête de page, disponibilité employé avec flèche à 390 et sans flèche à 1280. `--all` sans nouvelle régression, `npm run build` en sortie 0.
+  EVIDENCE: G97 passed: the back command lives in the app bar and no content duplicates it (vérifié par node scripts/verify-gates.mjs --back-navigation, contrôle négatif compris : bouton Retour de contenu détecté le 2026-09-30). Rendu headless sombre : validation d'arrivée à 390 avec flèche et sans hamburger, accueil à 390 avec hamburger et sans flèche, paramètres gestionnaire à 1280 avec flèche et sans en-tête de page. Révision du 2026-09-30 : « Ma disponibilité » est traitée comme écran descendant, retour présent à 390 et à 1280 (arbitrage B). `--all` sans nouvelle régression, `npm run build` en sortie 0.
 
 ---
 

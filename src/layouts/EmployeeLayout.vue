@@ -58,7 +58,7 @@ const navItems = [
 const EMPLOYEE_ROUTES = {
   '/': { title: 'Pointage', back: null, sub: false },
   '/employee': { title: 'Pointage', back: null, sub: false },
-  '/employee/availabilities': { title: 'Ma disponibilité', back: '/employee', sub: false },
+  '/employee/availabilities': { title: 'Ma disponibilité', back: '/employee', sub: true },
   '/employee/check-in': { title: "Pointage d'arrivée", back: '/employee', sub: true },
   '/employee/check-out': { title: 'Pointage de départ', back: '/employee', sub: true },
   '/employee/settings': { title: 'Paramètres', back: '/employee', sub: true },
