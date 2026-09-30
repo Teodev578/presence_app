@@ -4,6 +4,7 @@ import { useRouter } from '../router'
 import { useAuth } from '../composables/useAuth'
 import { useProfile } from '../composables/useProfile'
 import { useSyncEngine } from '../composables/useSyncEngine'
+import ThemeToggle from '../components/shared/ThemeToggle.vue'
 
 const { currentPath, navigate } = useRouter()
 const { user, signOut } = useAuth()
@@ -89,6 +90,15 @@ const handleLogout = async () => {
         <span>Retour</span>
       </button>
     </div>
+
+    <!-- Apparence -->
+    <section class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg p-4 sm:p-5 flex flex-col gap-4">
+      <div>
+        <h2 class="text-sm font-bold text-base-content">Apparence</h2>
+        <p class="text-xs text-base-content/60 mt-0.5">Suivez le réglage du système ou forcez un thème clair ou sombre.</p>
+      </div>
+      <ThemeToggle inline />
+    </section>
 
     <!-- Synchronisation -->
     <section class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg p-4 sm:p-5 flex flex-col gap-4">

@@ -1,26 +1,16 @@
 <script setup>
 import { ref, computed, h } from 'vue'
 import { useRouter } from '../router'
-import { useAuth } from '../composables/useAuth'
 import { useProfile } from '../composables/useProfile'
 import { useSidebarNav } from '../composables/useSidebarNav'
 import SyncIndicator from '../components/shared/SyncIndicator.vue'
 import SyncAlert from '../components/shared/SyncAlert.vue'
-import ThemeToggle from '../components/shared/ThemeToggle.vue'
 
 const { currentPath, navigate } = useRouter()
-const { signOut } = useAuth()
 const { profile } = useProfile()
 const { isRail, toggleRail } = useSidebarNav()
 
 const drawerOpen = ref(false)
-
-const userInitial = computed(() => {
-  const name = profile.value?.full_name || 'U'
-  return name.trim()[0].toUpperCase()
-})
-
-const expectedArrival = computed(() => (profile.value?.expected_arrival_time || '09:00:00').slice(0, 5))
 
 const railHandleLabel = computed(() => (isRail.value ? 'Déplier la navigation' : 'Replier la navigation'))
 
@@ -75,12 +65,6 @@ const canReachManagerSpace = computed(() => profile.value?.role === 'admin' || p
 const handleNav = (path) => {
   drawerOpen.value = false
   navigate(path)
-}
-
-const handleLogout = async () => {
-  drawerOpen.value = false
-  await signOut()
-  navigate('/login')
 }
 </script>
 
@@ -244,40 +228,11 @@ const handleLogout = async () => {
           </nav>
         </div>
 
-        <!-- Pied de volet : réglages, identité et sortie -->
-        <div class="pt-4 border-t border-base-300/60 flex flex-col gap-3">
-          <!-- Deux rangées distinctes : le badge de synchronisation ne peut plus comprimer le contrôle d'apparence -->
-          <div class="rail-center flex flex-col gap-2 px-1">
-            <div class="rail-center flex items-center justify-between gap-2 min-w-0">
-              <span class="rail-hide text-xs text-base-content/60 font-medium shrink-0">Statut réseau</span>
-              <SyncIndicator class="rail-network" />
-            </div>
-            <ThemeToggle />
-          </div>
-
-          <div class="rail-stack flex items-center gap-3 px-1">
-            <div class="avatar placeholder shrink-0">
-              <div class="bg-primary/15 text-primary rounded-full w-10 h-10 font-bold text-sm flex items-center justify-center">
-                <span>{{ userInitial }}</span>
-              </div>
-            </div>
-            <div class="rail-hide flex flex-col min-w-0">
-              <span class="font-bold text-sm text-base-content truncate">{{ profile?.full_name || 'Mon compte' }}</span>
-              <span class="text-xs text-base-content/60 truncate">Prévu à {{ expectedArrival }}</span>
-            </div>
-            <button
-              type="button"
-              class="btn btn-ghost btn-circle text-error min-w-11 min-h-11 ml-auto shrink-0"
-              aria-label="Se déconnecter"
-              title="Se déconnecter"
-              @click="handleLogout"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                <polyline points="16 17 21 12 16 7"></polyline>
-                <line x1="21" y1="12" x2="9" y2="12"></line>
-              </svg>
-            </button>
+        <!-- Pied de volet : statut réseau seul. Les réglages (apparence, compte, sortie) vivent sur la page Paramètres. -->
+        <div class="pt-4 border-t border-base-300/60">
+          <div class="rail-center flex items-center justify-between gap-2 min-w-0 px-1">
+            <span class="rail-hide text-xs text-base-content/60 font-medium shrink-0">Statut réseau</span>
+            <SyncIndicator class="rail-network" />
           </div>
         </div>
       </aside>

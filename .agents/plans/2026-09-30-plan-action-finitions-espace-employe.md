@@ -87,7 +87,7 @@ Oracle : `--nav-docking`, oracle navigateur de hauteur.
 ## 6. Arbitrages actés le 2026-09-30
 
 1. **Vocabulaire** : « Arrivée / Départ » sur les pages, « Pointage » en navigation, « En cours » partout, « Ma disponibilité » (et non « Mes disponibilités »).
-2. **Bandeau** : afficher l'espace et le module courant dans les deux espaces, comme avant, la marque restant dans la barre latérale. Une icône de paramètres à droite reste à préciser.
+2. **Bandeau et pied** : le bandeau nomme l'espace et le module courant dans les deux espaces ; le pied de tiroir est vidé de ses réglages et ne garde que le statut réseau ; l'apparence, le compte et la déconnexion migrent sur la page Paramètres, accessible par l'engrenage du bandeau.
 3. **Onepage** : verrou maintenu quand la hauteur suffit, défilement de secours sous 760 px de haut.
 4. **Densité desktop** : les cartes s'étirent par ligne, le contenu interne est borné.
 
@@ -96,7 +96,7 @@ Oracle : `--nav-docking`, oracle navigateur de hauteur.
 - Lot 1 : livré (typographie, contraste).
 - Lot 2 : livré (semaine équilibrée, tuile « Tous », panneau borné, sélecteur à 44 px).
 - Lot 3 : livré (vocabulaire).
-- Lot 4 : livré (bandeau nommant l'espace et le module, page Paramètres dédiée).
+- Lot 4 : livré (bandeau nommant l'espace et le module, page Paramètres dédiée, pied de tiroir vidé au profit de la page, apparence comprise).
 - Lot 5 : livré (repli onepage hybride).
 - Lot 6 : clôture effectuée, portes G94 et G95 vertes.
 

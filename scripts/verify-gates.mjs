@@ -315,22 +315,10 @@ export function checkThemePlacement() {
     }
 
     const content = fs.readFileSync(layoutPath, 'utf8');
-    const headerMatch = content.match(/<header[^>]*>([\s\S]*?)<\/header>/i);
-    const asideMatch = content.match(/<aside[^>]*>([\s\S]*?)<\/aside>/i);
-    const header = headerMatch ? headerMatch[1] : '';
-    const aside = asideMatch ? asideMatch[1] : '';
     const occurrences = (content.match(new RegExp(togglePattern.source, 'gi')) || []).length;
 
-    if (occurrences !== 1) {
-      console.error(`FAILURE G11: ${layoutName} doit monter le commutateur de thème une seule fois (${occurrences} occurrences)`);
-      ok = false;
-    }
-    if (!togglePattern.test(aside)) {
-      console.error(`FAILURE G11: ${layoutName} is missing the theme toggle in its drawer`);
-      ok = false;
-    }
-    if (togglePattern.test(header)) {
-      console.error(`FAILURE G11: ${layoutName} garde un commutateur de thème dans son en-tête`);
+    if (occurrences !== 0) {
+      console.error(`FAILURE G11: ${layoutName} garde encore le commutateur de thème dans son tiroir (${occurrences})`);
       ok = false;
     }
     if (layoutName === 'EmployeeLayout.vue' && (content.includes('navigation-rail') || content.includes('NavigationRail'))) {
@@ -339,8 +327,23 @@ export function checkThemePlacement() {
     }
   }
 
+  const settings = readScopeFile('src/views/SettingsView.vue');
+  if (settings === null) {
+    console.error('FAILURE G11: src/views/SettingsView.vue introuvable');
+    return false;
+  }
+  const settingsToggles = (settings.match(new RegExp(togglePattern.source, 'gi')) || []).length;
+  if (settingsToggles !== 1) {
+    console.error(`FAILURE G11: la page Paramètres doit porter un seul commutateur de thème (${settingsToggles})`);
+    ok = false;
+  }
+  if (!settings.includes('Apparence')) {
+    console.error('FAILURE G11: la page Paramètres n\'expose pas de section Apparence');
+    ok = false;
+  }
+
   if (!ok) return false;
-  console.log('G11 passed: single theme toggle per space in the drawer');
+  console.log('G11 passed: the theme toggle lives on the settings page, not in the drawer');
   return true;
 }
 
@@ -710,8 +713,8 @@ export function checkHeaderDeduplication() {
     }
 
     const toggles = countOccurrences(content, '<ThemeToggle');
-    if (toggles !== 1) {
-      console.error(`FAILURE G20: ${name} doit exposer un seul commutateur de thème (${toggles})`);
+    if (toggles !== 0) {
+      console.error(`FAILURE G20: ${name} garde un commutateur de thème dans son tiroir (${toggles}), il vit sur la page Paramètres`);
       ok = false;
     }
 
@@ -802,8 +805,8 @@ function enclosingDiv(text, marker) {
 }
 
 /**
- * Le statut réseau et le contrôle d'apparence vivent sur deux rangées distinctes : le badge
- * de synchronisation n'est plus le frère compressible du commutateur de thème.
+ * Le pied de tiroir ne porte plus que le statut réseau. Le contrôle d'apparence a quitté le
+ * tiroir pour la page Paramètres : le badge de synchronisation n'a plus de frère réglage.
  */
 export function checkDrawerSettingsLayout() {
   let ok = true;
@@ -820,9 +823,8 @@ export function checkDrawerSettingsLayout() {
     const asideMatch = content.match(/<aside[^>]*>([\s\S]*?)<\/aside>/i);
     const aside = asideMatch ? asideMatch[1] : '';
 
-    const toggles = (aside.match(/<ThemeToggle\b/g) || []).length;
-    if (toggles !== 1) {
-      console.error(`FAILURE G22: ${layoutName} doit exposer un seul contrôle d'apparence dans son tiroir (${toggles})`);
+    if (/<ThemeToggle\b/.test(aside)) {
+      console.error(`FAILURE G22: ${layoutName} garde le contrôle d'apparence dans son tiroir`);
       ok = false;
     }
 
@@ -838,37 +840,12 @@ export function checkDrawerSettingsLayout() {
       console.error(`FAILURE G22: ${layoutName} ne place pas le badge de synchronisation dans sa rangée de statut`);
       ok = false;
     }
-    if (/<ThemeToggle\b/.test(row)) {
-      console.error(`FAILURE G22: ${layoutName} garde le contrôle d'apparence dans la rangée du badge`);
-      ok = false;
-    }
     if (!/min-w-0/.test(row)) {
       console.error(`FAILURE G22: ${layoutName} n'autorise pas sa rangée de statut à se comprimer (min-w-0 absent)`);
       ok = false;
     }
     if (!/shrink-0/.test(row)) {
       console.error(`FAILURE G22: ${layoutName} laisse son libellé de statut se comprimer (shrink-0 absent)`);
-      ok = false;
-    }
-
-    const block = enclosingDivAt(aside, statusRow.start);
-    if (!block) {
-      console.error(`FAILURE G22: ${layoutName} n'englobe pas sa rangée de statut dans un bloc de réglages`);
-      ok = false;
-    } else {
-      const blockTag = block.markup.slice(0, block.markup.indexOf('>') + 1);
-      if (!/flex-col/.test(blockTag)) {
-        console.error(`FAILURE G22: ${layoutName} empile pas ses réglages verticalement (flex-col absent du bloc)`);
-        ok = false;
-      }
-      if (!/<ThemeToggle\b/.test(block.markup)) {
-        console.error(`FAILURE G22: ${layoutName} ne place pas le contrôle d'apparence dans le bloc de réglages`);
-        ok = false;
-      }
-    }
-
-    if (!/<ThemeToggle\s*\/>/.test(aside)) {
-      console.error(`FAILURE G22: ${layoutName} passe encore des attributs au contrôle d'apparence`);
       ok = false;
     }
   }
@@ -909,12 +886,8 @@ export function checkAppearanceControlMarkup() {
   const buttons = content.match(/<button\b/g) || [];
   let ok = true;
 
-  if (buttons.length !== 1) {
-    console.error(`FAILURE G23: un seul gabarit de segment attendu, ${buttons.length} trouvés`);
-    ok = false;
-  }
-  if (/defineProps/.test(content)) {
-    console.error("FAILURE G23: la variante à propriété subsiste alors que plus rien ne l'utilise");
+  if (buttons.length < 1) {
+    console.error('FAILURE G23: aucun gabarit de segment trouvé');
     ok = false;
   }
 
@@ -1635,19 +1608,22 @@ export function checkManagerNavTargets() {
 }
 
 /**
- * Le pied des deux tiroirs suit la même séquence : statut réseau, apparence, identité, sortie.
- * L'identité vit au pied, à côté d'une déconnexion en icône, et la marque reste en tête.
+ * Le pied des deux tiroirs ne porte plus que le statut réseau. L'apparence, l'identité et la
+ * déconnexion ont quitté le tiroir pour la page Paramètres.
  */
 export function checkDrawerFooter() {
-  const footerOrdered = (aside) => {
+  const footerOnlyStatus = (aside) => {
     const status = aside.indexOf('Statut réseau');
-    const identity = aside.indexOf('userInitial');
-    const logout = aside.indexOf('aria-label="Se déconnecter"');
-    return status !== -1 && identity !== -1 && logout !== -1 && status < identity && identity < logout;
+    if (status === -1) return false;
+    if (aside.includes('userInitial')) return false;
+    if (aside.includes('aria-label="Se déconnecter"')) return false;
+    if (aside.includes('handleLogout')) return false;
+    if (aside.includes('<ThemeToggle')) return false;
+    return aside.slice(status).includes('<SyncIndicator');
   };
 
-  if (footerOrdered('<span>{{ userInitial }}</span>Statut réseau aria-label="Se déconnecter"')) {
-    console.error('FAILURE G35: le détecteur d\'ordre du pied est aveugle, oracle invalide');
+  if (footerOnlyStatus('<span>Statut réseau</span><SyncIndicator/>{{ userInitial }}<ThemeToggle/>aria-label="Se déconnecter"')) {
+    console.error('FAILURE G35: le détecteur de pied vidé est aveugle, oracle invalide');
     return false;
   }
 
@@ -1661,26 +1637,11 @@ export function checkDrawerFooter() {
     }
 
     const aside = extractAside(content);
-    const footerAt = aside.indexOf('Statut réseau');
-    const footer = footerAt === -1 ? '' : aside.slice(footerAt);
     const header = aside.slice(0, aside.indexOf('<nav'));
 
-    if (!footerOrdered(aside)) {
-      console.error(`FAILURE G35: ${layoutName} n'ordonne pas son pied statut, identité puis sortie`);
+    if (!footerOnlyStatus(aside)) {
+      console.error(`FAILURE G35: le pied de ${layoutName} ne se réduit pas au statut réseau`);
       ok = false;
-      continue;
-    }
-    for (const token of ['w-10 h-10', 'font-bold text-sm']) {
-      if (!footer.includes(token)) {
-        console.error(`FAILURE G35: ${layoutName} n'aligne pas le bloc identité sur ${token}`);
-        ok = false;
-      }
-    }
-    for (const token of ['<SyncIndicator', '<ThemeToggle', 'handleLogout']) {
-      if (!footer.includes(token)) {
-        console.error(`FAILURE G35: le pied de ${layoutName} n'expose plus ${token}`);
-        ok = false;
-      }
     }
     if (!header.includes('PresenceApp')) {
       console.error(`FAILURE G35: l'en-tête de ${layoutName} ne porte plus la marque`);
@@ -1690,14 +1651,22 @@ export function checkDrawerFooter() {
       console.error(`FAILURE G35: l'en-tête de ${layoutName} ne porte plus de badge d'espace`);
       ok = false;
     }
-    if (/btn-outline btn-error btn-sm w-full/.test(aside)) {
-      console.error(`FAILURE G35: ${layoutName} garde une déconnexion pleine largeur en plus de l'icône`);
+  }
+
+  const settings = readScopeFile('src/views/SettingsView.vue');
+  if (settings === null) {
+    console.error('FAILURE G35: src/views/SettingsView.vue introuvable');
+    return false;
+  }
+  for (const token of ['Compte', 'Se déconnecter', '<ThemeToggle']) {
+    if (!settings.includes(token)) {
+      console.error(`FAILURE G35: la page Paramètres n'expose plus ${token}`);
       ok = false;
     }
   }
 
   if (!ok) return false;
-  console.log('G35 passed: both drawers end with settings, identity and an icon logout');
+  console.log('G35 passed: the drawer footer keeps only the network status, settings live on the page');
   return true;
 }
 
@@ -2139,7 +2108,7 @@ export function checkSidebarRail() {
   }
   for (const [label, present] of [
     ['consommation du composable de repli', toggle.includes('useSidebarNav')],
-    ['variante déployée du contrôle', toggle.includes('v-if="!isRail"')],
+    ['variante déployée du contrôle', toggle.includes('v-if="showSegmented"')],
     ['variante rail du contrôle', toggle.includes('v-else')],
     ['menu du rail', toggle.includes('role="menu"')],
     ['choix nommés du menu', toggle.includes('role="menuitemradio"')],
@@ -3193,10 +3162,9 @@ export function checkSettingsPage() {
     return false;
   }
 
-  const pageGaps = ['Synchronisation', 'Compte', 'Déconnexion', 'syncNow', 'signOut'].filter(
+  const pageGaps = ['Apparence', '<ThemeToggle', 'Synchronisation', 'Compte', 'Déconnexion', 'syncNow', 'signOut'].filter(
     (token) => !settings.includes(token)
   );
-  if (settings.includes('<ThemeToggle')) pageGaps.push('contrôle d\u2019apparence dupliqué sur la page');
   if (pageGaps.length > 0) {
     console.error(`FAILURE G95: page Paramètres incomplète -> ${pageGaps.join(', ')}`);
     return false;
@@ -3231,6 +3199,52 @@ export function checkSettingsPage() {
   }
 
   console.log('G95 passed: settings page wired in both spaces');
+  return true;
+}
+
+/**
+ * G96 : Les passerelles inter-espace restent câblées et leurs dépendances importées. Chaque
+ * barre latérale conserve le moyen de rejoindre l'autre espace pour les rôles autorisés, et le
+ * composable qui porte le rôle est bien importé.
+ */
+export function checkCrossSpaceGateways() {
+  const readLayoutFile = (name) => {
+    const file = path.join(SRC_DIR, 'layouts', name);
+    return fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : null;
+  };
+
+  const employeeGaps = (text) => {
+    const gaps = [];
+    if (!text.includes("handleNav('/manager')")) gaps.push('passerelle employé vers gestion absente');
+    if (!text.includes('canReachManagerSpace')) gaps.push('condition de rôle de la passerelle absente');
+    if (!text.includes('useProfile')) gaps.push('composable de profil non importé');
+    if (!/const\s*\{\s*profile\s*\}\s*=\s*useProfile\(\)/.test(text)) gaps.push('profil non extrait du composable');
+    return gaps;
+  };
+
+  // Contrôle négatif : une passerelle qui lit `profile` sans importer le composable doit être refusée.
+  const bogus = "const canReachManagerSpace = computed(() => profile.value?.role === 'admin')\nhandleNav('/manager')";
+  const bogusGaps = employeeGaps(bogus);
+  if (bogusGaps.length === 0 || !bogusGaps.includes('composable de profil non importé')) {
+    console.error('FAILURE G96: le détecteur de passerelle est aveugle, oracle invalide');
+    return false;
+  }
+
+  const employee = readLayoutFile('EmployeeLayout.vue');
+  const manager = readLayoutFile('ManagerLayout.vue');
+  if (employee === null || manager === null) {
+    console.error('FAILURE G96: une des mises en page est introuvable');
+    return false;
+  }
+
+  const gaps = employeeGaps(employee);
+  if (!manager.includes("handleNav('/employee')")) gaps.push('passerelle gestion vers pointage absente');
+
+  if (gaps.length > 0) {
+    console.error(`FAILURE G96: passerelles inter-espace incomplètes -> ${gaps.join(', ')}`);
+    return false;
+  }
+  console.log('G96 passed: cross-space gateways stay wired with their role composable');
   return true;
 }
 
@@ -3353,6 +3367,8 @@ if (arg === '--emojis') {
   success = checkEmployeeFinish();
 } else if (arg === '--settings-page') {
   success = checkSettingsPage();
+} else if (arg === '--cross-space-gateways') {
+  success = checkCrossSpaceGateways();
 } else if (arg === '--sidebar-build') {
   success = checkBuild('G48', 'production build succeeds with exit code 0');
 } else if (arg === '--manager-build') {
@@ -3414,10 +3430,11 @@ if (arg === '--emojis') {
   const r93 = checkManagerFinish();
   const r94 = checkEmployeeFinish();
   const r95 = checkSettingsPage();
+  const r96 = checkCrossSpaceGateways();
   const r48 = r39; // Une seule compilation sert les portes de build G39 et G48
-  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60 && r63 && r64 && r65 && r66 && r72 && r73 && r74 && r75 && r88 && r89 && r92 && r93 && r94 && r95;
+  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60 && r63 && r64 && r65 && r66 && r72 && r73 && r74 && r75 && r88 && r89 && r92 && r93 && r94 && r95 && r96;
 } else {
-  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--presences-ui|--presences-period|--presences-table|--presences-sort|--presences-localfirst|--sync-scope|--livequery-deps|--manager-dexie|--manager-grammar|--manager-responsive|--manager-nav-icons|--manager-finish|--employee-finish|--settings-page|--manager-build|--sidebar-build|--build|--all]`);
+  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--presences-ui|--presences-period|--presences-table|--presences-sort|--presences-localfirst|--sync-scope|--livequery-deps|--manager-dexie|--manager-grammar|--manager-responsive|--manager-nav-icons|--manager-finish|--employee-finish|--settings-page|--cross-space-gateways|--manager-build|--sidebar-build|--build|--all]`);
   process.exit(1);
 }
 

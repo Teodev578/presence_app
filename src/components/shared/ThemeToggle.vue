@@ -3,8 +3,18 @@ import { ref, computed, watch, h } from 'vue'
 import { useTheme } from '../../composables/useTheme'
 import { useSidebarNav } from '../../composables/useSidebarNav'
 
+// `inline` force le groupe segmenté hors tiroir (page Paramètres), même quand la barre est en rail.
+const props = defineProps({
+  inline: {
+    type: Boolean,
+    default: false,
+  },
+})
+
 const { mode, setMode } = useTheme()
 const { isRail } = useSidebarNav()
+
+const showSegmented = computed(() => props.inline || !isRail.value)
 
 /** Menu du rail : ouvert sur demande, refermé dès qu'un choix est retenu ou que la barre se déploie. */
 const menuOpen = ref(false)
@@ -80,7 +90,7 @@ watch(isRail, (railed) => {
   <!-- Barre déployée : un seul contrôle, trois segments joints. L'état retenu porte la teinte
        primaire, les autres restent en retrait et se signalent au survol. -->
   <div
-    v-if="!isRail"
+    v-if="showSegmented"
     class="join w-full rounded-m3-sm border border-base-300 overflow-hidden"
     role="group"
     aria-label="Apparence de l'interface"

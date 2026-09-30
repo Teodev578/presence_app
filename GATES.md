@@ -619,9 +619,50 @@ Scope: Traitement des constats de `docs/audits/audit-espace-employe-2026-09-30.m
 
 OWNS: src/views/SettingsView.vue, src/App.vue, src/layouts/ManagerLayout.vue, src/layouts/EmployeeLayout.vue, scripts/verify-gates.mjs, .agents/plans/2026-09-30-plan-action-finitions-espace-employe.md, GATES.md
 
-Scope: Une page Paramètres unique, partagée par les deux espaces, accessible par une icône d'engrenage à droite du bandeau, sur les routes `/manager/settings` et `/employee/settings`. La page porte la synchronisation (état réseau, compteur en attente, dernière synchronisation, bouton « Synchroniser maintenant »), le compte (nom, email, rôle, espace) et la déconnexion. Le pied de tiroir reste inchangé : l'apparence, l'identité et la déconnexion y demeurent, aucune duplication n'est introduite sur la page.
+Scope: Une page Paramètres unique, partagée par les deux espaces, accessible par une icône d'engrenage à droite du bandeau, sur les routes `/manager/settings` et `/employee/settings`. La page porte l'apparence (contrôle segmenté à trois états), la synchronisation (état réseau, compteur en attente, dernière synchronisation, bouton « Synchroniser maintenant »), le compte (nom, email, rôle, espace) et la déconnexion. Le pied de tiroir ne conserve que le statut réseau : apparence, identité et déconnexion ont quitté le tiroir pour la page. Révision du 2026-09-30 : l'apparence rejoint la page et le pied est vidé de ses réglages.
 
-- [x] G95: La page Paramètres existe avec synchronisation, compte et déconnexion, sans contrôle d'apparence dupliqué ; les deux routes sont déclarées et les deux bandeaux exposent l'icône d'engrenage
+- [x] G95: La page Paramètres existe avec apparence, synchronisation, compte et déconnexion ; les deux routes sont déclarées et les deux bandeaux exposent l'icône d'engrenage
   CHECK: node scripts/verify-gates.mjs --settings-page
   EXPECT: G95 passed: settings page wired in both spaces
-  EVIDENCE: G95 passed: settings page wired in both spaces (vérifié par node scripts/verify-gates.mjs --settings-page, contrôle négatif compris). Rendu headless sombre : page complète à 390 et 1440, bandeau « Espace Collaborateur » et « Espace Manager », engrenage à droite. `--all` sans nouvelle régression, `npm run build` en sortie 0 (vérifiés le 2026-09-30).
+  EVIDENCE: G95 passed: settings page wired in both spaces (vérifié par node scripts/verify-gates.mjs --settings-page, contrôle négatif compris). Rendu headless sombre : page complète à 390 et 1440, section Apparence avec les trois états, bandeau « Espace Collaborateur » et « Espace Manager », engrenage à droite. `--all` sans nouvelle régression, `npm run build` en sortie 0 (vérifiés le 2026-09-30).
+
+---
+
+# Gates: Pied de Tiroir Vidé et Thème en Paramètres
+
+OWNS: src/layouts/ManagerLayout.vue, src/layouts/EmployeeLayout.vue, src/components/shared/ThemeToggle.vue, src/views/SettingsView.vue, scripts/verify-gates.mjs, docs/audits/audit-espace-employe-2026-09-30.md, .agents/plans/2026-09-30-plan-action-finitions-espace-employe.md, GATES.md
+
+Scope: Le pied de tiroir des deux espaces est vidé de ses réglages : il ne conserve que le statut réseau (badge de synchronisation). L'apparence (contrôle segmenté), l'identité et la déconnexion migrent sur la page Paramètres. Le contrôle d'apparence reçoit une variante `inline` qui force le groupe segmenté hors tiroir, même quand la barre est repliée en rail. Les portes G11 (placement du thème), G20 (unicité des contrôles), G22 (réglages du tiroir) et G35 (pied de tiroir) sont réécrites en conséquence.
+
+- [x] G11 (réécrite): Le contrôle d'apparence vit sur la page Paramètres, plus dans le tiroir
+  CHECK: node scripts/verify-gates.mjs --theme-placement
+  EXPECT: G11 passed: the theme toggle lives on the settings page, not in the drawer
+  EVIDENCE: G11 passed: the theme toggle lives on the settings page, not in the drawer (vérifié par node scripts/verify-gates.mjs --theme-placement, le tiroir doit exposer zéro commutateur et la page exactement un, contrôle négatif compris le 2026-09-30).
+
+- [x] G20 (réécrite): Chaque espace garde un seul indicateur de synchronisation hors en-tête, zéro commutateur de thème dans le tiroir, une passerelle et l'alerte réseau
+  CHECK: node scripts/verify-gates.mjs --header-deduplication
+  EXPECT: G20 passed: each space keeps a single instance of each control
+  EVIDENCE: G20 passed: each space keeps a single instance of each control (vérifié par node scripts/verify-gates.mjs --header-deduplication le 2026-09-30).
+
+- [x] G22 (réécrite): Le pied de tiroir ne porte plus que la rangée « Statut réseau » avec son badge, sans contrôle d'apparence
+  CHECK: node scripts/verify-gates.mjs --drawer-settings-layout
+  EXPECT: G22 passed: drawer settings split network status and appearance control
+  EVIDENCE: G22 passed: drawer settings split network status and appearance control (vérifié par node scripts/verify-gates.mjs --drawer-settings-layout le 2026-09-30).
+
+- [x] G35 (réécrite): Le pied des deux tiroirs se réduit au statut réseau ; apparence, compte et déconnexion vivent sur la page Paramètres
+  CHECK: node scripts/verify-gates.mjs --drawer-footer
+  EXPECT: G35 passed: the drawer footer keeps only the network status, settings live on the page
+  EVIDENCE: G35 passed: the drawer footer keeps only the network status, settings live on the page (vérifié par node scripts/verify-gates.mjs --drawer-footer, contrôle négatif compris le 2026-09-30). Rendu headless sombre à 1440 : pied réduit à « Statut réseau / À jour », page Paramètres portant Apparence, Synchronisation, Compte et Déconnexion. Suite navigateur complète verte, `--all` sans nouvelle régression, `npm run build` en sortie 0.
+
+---
+
+# Gates: Passerelles Inter-Espace
+
+OWNS: src/layouts/EmployeeLayout.vue, src/layouts/ManagerLayout.vue, scripts/verify-gates.mjs, GATES.md
+
+Scope: Correctif du 2026-09-30. Le nettoyage du pied de tiroir avait retiré l'import `useProfile` d'`EmployeeLayout` alors que `canReachManagerSpace` lit toujours `profile` : la passerelle « Espace Gestionnaire » disparaissait pour les rôles autorisés, et un `ReferenceError` menaçait le rendu. L'import revient, et une porte vérifie que chaque passerelle inter-espace reste câblée avec le composable qui porte le rôle.
+
+- [x] G96: La passerelle « Espace Gestionnaire » et la passerelle « Mon pointage personnel » restent câblées, et le composable `useProfile` est importé par `EmployeeLayout`
+  CHECK: node scripts/verify-gates.mjs --cross-space-gateways
+  EXPECT: G96 passed: cross-space gateways stay wired with their role composable
+  EVIDENCE: G96 passed: cross-space gateways stay wired with their role composable (vérifié par node scripts/verify-gates.mjs --cross-space-gateways, contrôle négatif compris : passerelle lisant `profile` sans import détectée le 2026-09-30). Rendu headless sombre à 1440 : « Espace Gestionnaire » visible dans la section « Mon espace » pour un rôle administrateur. `--all` sans nouvelle régression, `npm run build` en sortie 0.
