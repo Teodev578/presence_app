@@ -4,6 +4,7 @@ import { useLocations, isLocationActive } from '../../composables/useLocations'
 import { useGeolocation } from '../../composables/useGeolocation'
 import { parseGeoInput, parseAndResolveGeoInput } from '../../lib/geoParser'
 import ConfirmModal from '../../components/shared/ConfirmModal.vue'
+import ManagerPageHeader from '../../components/manager/ManagerPageHeader.vue'
 import { useToast } from '../../composables/useToast'
 
 const { locations, ensureLoaded, createLocation, updateLocation, deleteLocation } = useLocations()
@@ -384,23 +385,18 @@ const toggleStatus = async (loc) => {
 <template>
   <div class="flex flex-col gap-6">
     <!-- En-tête -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-      <div>
-        <h1 class="text-2xl font-black tracking-tight text-base-content flex items-center gap-2.5">
-          <div class="w-8 h-8 rounded-m3-sm bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-              <circle cx="12" cy="10" r="3"></circle>
-            </svg>
-          </div>
-          <span>Gestion des Sites & Lieux</span>
-        </h1>
-        <p class="text-xs text-base-content/60 mt-0.5">
-          Définissez les périmètres autorisés pour le pointage des collaborateurs
-        </p>
-      </div>
+    <ManagerPageHeader
+      title="Gestion des Sites & Lieux"
+      subtitle="Définissez les périmètres autorisés pour le pointage des collaborateurs"
+    >
+      <template #icon>
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+          <circle cx="12" cy="10" r="3"></circle>
+        </svg>
+      </template>
 
-      <div>
+      <template #actions>
         <button
           type="button"
           class="btn btn-primary rounded-m3-sm font-bold shadow-xs min-h-11 flex items-center gap-2"
@@ -411,8 +407,8 @@ const toggleStatus = async (loc) => {
           </svg>
           <span>Nouveau Site</span>
         </button>
-      </div>
-    </div>
+      </template>
+    </ManagerPageHeader>
 
     <!-- Filtres et recherche -->
     <div class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg p-4 flex flex-col gap-3">
@@ -532,7 +528,7 @@ const toggleStatus = async (loc) => {
             <line x1="3" y1="12" x2="21" y2="12" class="opacity-30"></line>
           </svg>
           <div class="min-w-0">
-            <p class="text-[11px] font-medium uppercase tracking-wide text-base-content/50">Périmètre autorisé</p>
+            <p class="text-xs font-medium uppercase tracking-wide text-base-content/50">Périmètre autorisé</p>
             <p class="text-sm font-bold text-base-content">{{ loc.radius_meters || 50 }} m autour du point</p>
           </div>
         </div>
@@ -540,7 +536,7 @@ const toggleStatus = async (loc) => {
         <!-- Position : coordonnées lisibles et lien cartographique ouvert à la demande -->
         <div class="flex flex-col gap-2">
           <div class="min-w-0">
-            <p class="text-[11px] font-medium uppercase tracking-wide text-base-content/50">Position</p>
+            <p class="text-xs font-medium uppercase tracking-wide text-base-content/50">Position</p>
             <p class="text-sm font-mono text-base-content/80 break-words">
               {{ formatCoordinate(loc.latitude, 'lat') }} · {{ formatCoordinate(loc.longitude, 'lng') }}
             </p>
@@ -690,14 +686,14 @@ const toggleStatus = async (loc) => {
               <!-- Retours contextuels -->
               <div
                 v-if="mapUrlFeedback.status === 'info'"
-                class="text-[11px] text-primary font-medium flex items-center gap-1.5 px-1 mt-0.5"
+                class="text-xs text-primary font-medium flex items-center gap-1.5 px-1 mt-0.5"
               >
                 <span class="loading loading-spinner loading-xs text-primary"></span>
                 <span>{{ mapUrlFeedback.message }}</span>
               </div>
               <div
                 v-if="mapUrlFeedback.status === 'success'"
-                class="text-[11px] text-success font-medium flex items-center gap-1.5 px-1 mt-0.5"
+                class="text-xs text-success font-medium flex items-center gap-1.5 px-1 mt-0.5"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <polyline points="20 6 9 17 4 12" />
@@ -706,7 +702,7 @@ const toggleStatus = async (loc) => {
               </div>
               <div
                 v-else-if="mapUrlFeedback.status === 'warning'"
-                class="text-[11px] text-warning font-medium flex items-start gap-1.5 px-1 mt-0.5"
+                class="text-xs text-warning font-medium flex items-start gap-1.5 px-1 mt-0.5"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <circle cx="12" cy="12" r="10" />
@@ -717,7 +713,7 @@ const toggleStatus = async (loc) => {
               </div>
               <div
                 v-else-if="mapUrlFeedback.status === 'error'"
-                class="text-[11px] text-error font-medium flex items-center gap-1.5 px-1 mt-0.5"
+                class="text-xs text-error font-medium flex items-center gap-1.5 px-1 mt-0.5"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <circle cx="12" cy="12" r="10" />
@@ -752,7 +748,7 @@ const toggleStatus = async (loc) => {
                     @click="selectAddress(sug)"
                   >
                     <span class="font-bold text-base-content">{{ sug.label }}</span>
-                    <span class="text-base-content/50 text-[10px]">{{ sug.city }}</span>
+                    <span class="text-base-content/50 text-xs">{{ sug.city }}</span>
                   </button>
                 </li>
               </ul>

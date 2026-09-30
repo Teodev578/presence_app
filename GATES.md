@@ -532,3 +532,31 @@ Scope: Brancher le MCP Supabase de façon scopée et versionnée, selon l'audit 
   CHECK: node scripts/verify-gates.mjs --build
   EXPECT: G6 passed: build succeeded with exit code 0
   EVIDENCE: G6 passed: build succeeded with exit code 0 (vérifié par node scripts/verify-gates.mjs --build, sortie 0 le 2026-09-29)
+
+---
+
+# Gates: Refonte UI/UX de l'Espace Gestionnaire
+
+OWNS: src/components/manager/ManagerPageHeader.vue, src/components/manager/ManagerKpiCard.vue, src/components/manager/ManagerEmptyState.vue, src/views/manager/DashboardView.vue, src/views/manager/EmployeesView.vue, src/views/manager/TeamsView.vue, src/views/manager/AvailabilitiesView.vue, src/views/manager/ExportView.vue, src/views/manager/PresencesView.vue, src/views/manager/LocationsView.vue, scripts/verify-gates.mjs, .agents/rules/07-design-system.md, .agents/plans/2026-09-30-refonte-ui-ux-espace-gestionnaire.md, GATES.md
+
+Scope: Uniformiser l'interface, l'expérience et la responsivité des modules gestionnaire sur la grammaire des écrans validés « Gestion des Sites & Lieux » et « Contrôle des Présences ». Trois composants partagés portent les motifs répétés : `ManagerPageHeader` (en-tête à pastille), `ManagerKpiCard` (bandeau de synthèse), `ManagerEmptyState` (états vides actionnables). Le tableau de bord corrige la sémantique de ses KPI (le statut `absent` n'est plus fondu dans une soustraction), présente l'activité récente en fiches sous 640px et en tableau triable au delà, et garde une précision GPS sans `NaN`. La gestion des collaborateurs gagne recherche, filtre de rôle compté, filtre d'équipe, tri, fiches mobiles, modale conforme 44px et remontée d'erreur avec réessai. La gestion des équipes déplace la création en modale, ajoute le renommage, la recherche, le tri par effectif, un menu d'actions et un état vide actionnable. Les disponibilités adoptent un filtre de semaine unifié, une légende d'état, une synthèse de tenue et une fiche par collaborateur sous 640px. L'export reprend les presets de période du contrôle des présences, un aperçu du volume et des cibles 44px. Le composant `StatCard` disparaît au profit de `ManagerKpiCard`, adopté aussi par le contrôle des présences. Arbitrages retenus : option B (composants partagés), remplacement de `StatCard`, UI seule sans bascule local-first pour Collaborateurs et Équipes, bascule fiches/tableau à 640px, export pleine largeur, tableau de bord sans filtre, renommage d'équipe exposé. Hors périmètre : la couche de données (Dexie, Supabase, outbox), les composables, la navigation et l'espace employé.
+
+- [x] G88: Tous les écrans gestionnaire portent l'en-tête partagé `ManagerPageHeader`, aucun titre `h2`, aucune `btn-sm`/`input-sm`/`select-sm`, aucune taille de police arbitraire ; les trois composants partagés existent et l'en-tête porte h1 et pastille
+  CHECK: node scripts/verify-gates.mjs --manager-grammar
+  EXPECT: G88 passed: every manager screen shares one grammar
+  EVIDENCE: G88 passed: every manager screen shares one grammar (vérifié par node scripts/verify-gates.mjs --manager-grammar, contrôle négatif compris : titre h2, action btn-sm, champ input-sm et police arbitraire détectés)
+
+- [x] G89: Tableau de bord, Collaborateurs et Disponibilités basculent en fiches sous 640px et en tableau au delà, leurs filtres ou tableaux défilent horizontalement, et la grille d'équipes adopte 2 puis 3 colonnes
+  CHECK: node scripts/verify-gates.mjs --manager-responsive
+  EXPECT: G89 passed: manager screens present cards below 640px and tables above
+  EVIDENCE: G89 passed: manager screens present cards below 640px and tables above (vérifié par node scripts/verify-gates.mjs --manager-responsive, contrôle négatif compris : écran sans bascule détecté)
+
+- [x] G90: La suite navigateur reste verte après passage des écrans validés au composant d'en-tête partagé, et la suite complète ne laisse que les quatre échecs préexistants hors périmètre
+  CHECK: CHROME_PATH=$(command -v google-chrome-stable) node scripts/verify-browser.mjs
+  EXPECT: browser-verify: locations filters passed
+  EVIDENCE: browser-verify: locations dialog passed, locations cards passed, locations filters passed, sidebar rail/nav-docking/theme/appearance/overlay/summary compris, aucune exception de page ; `node scripts/verify-gates.mjs --all` ne laisse échouer que G1, G3, G4 (ToastContainer.vue, SyncIndicator.vue) et G8 (HomeView.vue), hors périmètre (vérifiés le 2026-09-30)
+
+- [x] G91: Compilation de production Vite sans erreur validée par le code retour du sous-processus
+  CHECK: node scripts/verify-gates.mjs --build
+  EXPECT: G6 passed: build succeeded with exit code 0
+  EVIDENCE: G6 passed: build succeeded with exit code 0 (vérifié par node scripts/verify-gates.mjs --build, sortie 0 le 2026-09-30)

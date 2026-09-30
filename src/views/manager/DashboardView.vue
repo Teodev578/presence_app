@@ -1,58 +1,27 @@
 <script setup>
-import { onMounted, computed, h } from 'vue'
+import { onMounted, computed } from 'vue'
 import { useRouter } from '../../router'
 import { db, useLiveQuery } from '../../lib/db'
-import { getLocalDateString } from '../../lib/dateUtils'
+import { getLocalDateString, formatTime, formatWorkDate, formatSessionDuration, resolveSessionState } from '../../lib/dateUtils'
 import { useLocations, isLocationActive } from '../../composables/useLocations'
-import StatCard from '../../components/manager/StatCard.vue'
+import ManagerPageHeader from '../../components/manager/ManagerPageHeader.vue'
+import ManagerKpiCard from '../../components/manager/ManagerKpiCard.vue'
+import ManagerEmptyState from '../../components/manager/ManagerEmptyState.vue'
 import StatusBadge from '../../components/shared/StatusBadge.vue'
 
 const { navigate } = useRouter()
 const { locations, ensureLoaded: loadLocations } = useLocations()
 
-const createIcon = (paths) => () =>
-  h(
-    'svg',
-    {
-      xmlns: 'http://www.w3.org/2000/svg',
-      viewBox: '0 0 24 24',
-      fill: 'none',
-      stroke: 'currentColor',
-      strokeWidth: '2',
-      strokeLinecap: 'round',
-      strokeLinejoin: 'round',
-      class: 'w-5 h-5 shrink-0',
-    },
-    paths.map(([tag, attrs]) => h(tag, attrs))
-  )
-
-const iconUsers = createIcon([
-  ['path', { d: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2' }],
-  ['circle', { cx: '9', cy: '7', r: '4' }],
-  ['path', { d: 'M23 21v-2a4 4 0 0 0-3-3.87' }],
-  ['path', { d: 'M16 3.13a4 4 0 0 1 0 7.75' }],
-])
-
-const iconCheck = createIcon([
-  ['path', { d: 'M22 11.08V12a10 10 0 1 1-5.93-9.14' }],
-  ['polyline', { points: '22 4 12 14.01 9 11.01' }],
-])
-
-const iconClockAlert = createIcon([
-  ['circle', { cx: '12', cy: '12', r: '10' }],
-  ['polyline', { points: '12 6 12 12 16 14' }],
-])
-
-const iconAlertTriangle = createIcon([
-  ['path', { d: 'M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z' }],
-  ['line', { x1: '12', y1: '9', x2: '12', y2: '13' }],
-  ['line', { x1: '12', y1: '17', x2: '12.01', y2: '17' }],
-])
-
 // Date locale, sans dérive UTC : un pointage du soir ne doit pas basculer sur la veille.
 const todayStr = getLocalDateString()
 
-// Lecture réactive depuis Dexie. L'écran ne tire plus rien du réseau : l'engine rapatrie,
+// Date du jour en clair : le gestionnaire situe la journée sans décoder un ISO.
+const todayLabel = computed(() => {
+  const label = formatWorkDate(todayStr, { long: true }) || todayStr
+  return label.charAt(0).toUpperCase() + label.slice(1)
+})
+
+// Lecture réactive depuis Dexie. L'écran ne tire rien du réseau : l'engine rapatrie,
 // Dexie expose, la vue se rafraîchit seule.
 const profileRows = useLiveQuery(async () => db.profiles.toArray(), null)
 const presenceRows = useLiveQuery(async () =>
@@ -92,42 +61,64 @@ const activeLocationsCount = computed(() => {
   return (locations.value || []).filter(isLocationActive).length
 })
 
-const onTimeCount = computed(() => {
-  return presencesToday.value.filter((p) => p.status === 'present' || p.status === 'completed')
-    .length
+// Sémantique alignée sur le Contrôle des Présences : les pointages effectifs portent une arrivée,
+// l'absence déclarée est un statut à part, et le reste de l'effectif n'a simplement pas pointé.
+const presenceStats = computed(() => {
+  const list = presencesToday.value || []
+  const pointed = list.filter((p) => p.status !== 'absent').length
+  const onTime = list.filter((p) => p.status === 'present' || p.status === 'completed').length
+  const late = list.filter((p) => p.status === 'late' || p.status === 'completed_late').length
+  const declaredAbsent = list.filter((p) => p.status === 'absent').length
+  const notPointed = Math.max(0, totalEmployees.value - pointed - declaredAbsent)
+  return { pointed, onTime, late, declaredAbsent, notPointed }
 })
 
-const lateCount = computed(() => {
-  return presencesToday.value.filter((p) => p.status === 'late').length
-})
+const formatTimeSafe = (iso) => (iso ? formatTime(iso) : '--:--')
 
-const absentCount = computed(() => {
-  const total = totalEmployees.value
-  const presentOrLate = presencesToday.value.length
-  return Math.max(0, total - presentOrLate)
-})
-
-const formatTime = (iso) => {
-  if (!iso) return '--:--'
-  return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+// Initiales pour l'avatar de fiche, partagées avec le tableau d'audit.
+const initials = (name) => {
+  const parts = (name || '').trim().split(/\s+/).filter(Boolean)
+  if (!parts.length) return '?'
+  const first = parts[0][0]
+  const last = parts.length > 1 ? parts[parts.length - 1][0] : ''
+  return `${first}${last}`.toUpperCase()
 }
+
+// Précision GPS : garde anti NaN, couple libellé/couleur selon la tolérance de pointage.
+const accuracyBadge = (accuracy) => {
+  const value = Number(accuracy)
+  if (!Number.isFinite(value)) return { label: 'GPS —', class: 'badge-soft text-base-content/60' }
+  const rounded = Math.round(value)
+  if (rounded <= 15) return { label: `±${rounded} m`, class: 'badge-success text-success-content' }
+  if (rounded <= 50) return { label: `±${rounded} m`, class: 'badge-warning text-warning-content' }
+  return { label: `±${rounded} m`, class: 'badge-soft text-base-content/60' }
+}
+
+const goToPresences = () => navigate('/manager/presences')
 </script>
 
 <template>
   <div class="flex flex-col gap-6">
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-      <div>
-        <h2 class="text-2xl font-black tracking-tight text-base-content">Tableau de bord de l'activité</h2>
-        <p class="text-xs text-base-content/60 mt-0.5">Statut des effectifs pour la journée du {{ todayStr }}</p>
-      </div>
+    <ManagerPageHeader
+      title="Tableau de bord de l'activité"
+      :subtitle="`Statut des effectifs pour la journée du ${todayLabel}`"
+    >
+      <template #icon>
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7"></rect>
+          <rect x="14" y="3" width="7" height="7"></rect>
+          <rect x="14" y="14" width="7" height="7"></rect>
+          <rect x="3" y="14" width="7" height="7"></rect>
+        </svg>
+      </template>
 
-      <div class="flex items-center gap-2">
+      <template #actions>
         <button
           type="button"
-          class="btn btn-outline btn-sm rounded-m3-sm font-bold gap-1.5"
+          class="btn btn-outline rounded-m3-sm font-bold min-h-11 gap-2 px-3"
           @click="navigate('/manager/locations')"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
             <circle cx="12" cy="10" r="3"></circle>
           </svg>
@@ -135,93 +126,167 @@ const formatTime = (iso) => {
         </button>
         <button
           type="button"
-          class="btn btn-primary btn-sm rounded-m3-sm font-bold shadow-xs"
-          @click="navigate('/manager/presences')"
+          class="btn btn-primary rounded-m3-sm font-bold shadow-xs min-h-11"
+          @click="goToPresences"
         >
-          Voir tous les pointages →
+          Voir tous les pointages
         </button>
-      </div>
-    </div>
+      </template>
+    </ManagerPageHeader>
 
-    <!-- Grille des statistiques clés (DaisyUI Stats) -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <StatCard
-        title="Effectif Actif"
+    <!-- Bandeau KPI : chaque carte mène au détail des pointages -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <ManagerKpiCard
+        label="Effectif actif"
         :value="totalEmployees"
-        :icon="iconUsers"
-        subtitle="Employés enregistrés"
-        color="blue"
+        caption="Collaborateurs enregistrés"
+        tone="primary"
       />
-      <StatCard
-        title="Présents à l'heure"
-        :value="onTimeCount"
-        :icon="iconCheck"
-        subtitle="Pointages conformes"
-        color="green"
+      <ManagerKpiCard
+        label="Pointés"
+        :value="presenceStats.pointed"
+        caption="Présents et journées terminées"
+        tone="success"
+        clickable
+        @select="goToPresences"
       />
-      <StatCard
-        title="Retards signalés"
-        :value="lateCount"
-        :icon="iconClockAlert"
-        subtitle="Arrivée après horaire"
-        color="amber"
+      <ManagerKpiCard
+        label="En retard"
+        :value="presenceStats.late"
+        caption="Arrivées tardives"
+        tone="warning"
+        clickable
+        @select="goToPresences"
       />
-      <StatCard
-        title="Non pointés / Absents"
-        :value="absentCount"
-        :icon="iconAlertTriangle"
-        subtitle="En attente de pointage"
-        color="red"
+      <ManagerKpiCard
+        label="Non pointés"
+        :value="presenceStats.notPointed"
+        :caption="presenceStats.declaredAbsent ? `${presenceStats.declaredAbsent} absence(s) déclarée(s) comprise(s)` : 'Sans pointage ni absence déclarée'"
+        tone="error"
+        clickable
+        @select="goToPresences"
       />
     </div>
 
-    <!-- Derniers pointages récents (DaisyUI Card & Table) -->
+    <!-- Activité récente : fiches sous 640px, tableau d'audit au-delà -->
     <div class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg overflow-hidden">
-      <div class="p-4 sm:p-5 border-b border-base-300/60 flex items-center justify-between">
+      <div class="p-4 sm:p-5 border-b border-base-300/60 flex items-center justify-between gap-3">
         <h3 class="text-sm font-bold text-base-content">Derniers pointages enregistrés aujourd'hui</h3>
-        <span class="badge badge-primary badge-sm font-semibold">{{ presencesToday.length }} pointage(s)</span>
+        <span class="badge badge-primary badge-sm font-semibold shrink-0">{{ presencesToday.length }} pointage(s)</span>
       </div>
 
-      <div v-if="loading" class="p-8 text-center text-sm text-base-content/60 flex items-center justify-center gap-2">
-        <span class="loading loading-spinner loading-sm text-primary"></span>
-        Chargement des données en cours...
+      <!-- Chargement : ossature à la forme du contenu attendu -->
+      <div v-if="loading" class="p-4 flex flex-col gap-3">
+        <div v-for="n in 3" :key="n" class="h-14 rounded-m3-md bg-base-300/60 animate-pulse"></div>
       </div>
 
-      <div v-else-if="!presencesToday.length" class="p-8 text-center text-sm text-base-content/60">
-        Aucun pointage enregistré pour le moment aujourd'hui.
-      </div>
+      <ManagerEmptyState
+        v-else-if="!presencesToday.length"
+        bare
+        icon="calendar"
+        title="Aucun pointage aujourd'hui"
+        message="Aucun collaborateur n'a pointé pour le moment. Vérifiez les sites autorisés ou consultez l'historique."
+        action-label="Voir tous les pointages"
+        @action="goToPresences"
+      />
 
-      <div v-else class="overflow-x-auto">
-        <table class="table table-sm w-full">
-          <thead>
-            <tr class="text-xs uppercase text-base-content/60">
-              <th>Collaborateur</th>
-              <th>Site</th>
-              <th>Arrivée</th>
-              <th>Départ</th>
-              <th>Statut</th>
-              <th>Précision GPS</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="p in presencesToday.slice(0, 8)" :key="p.id" class="hover">
-              <td>
-                <div class="flex flex-col">
-                  <strong class="text-sm font-bold text-base-content">{{ p.profiles?.full_name || 'Utilisateur inconnu' }}</strong>
-                  <span class="text-xs text-base-content/60">{{ p.profiles?.email }}</span>
+      <template v-else>
+        <!-- Fiches synthétiques sous 640px -->
+        <ul class="sm:hidden divide-y divide-base-300">
+          <li v-for="p in presencesToday.slice(0, 8)" :key="p.id" class="p-4 flex flex-col gap-3">
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-9 h-9 rounded-full bg-primary/10 border border-primary/20 text-primary font-bold text-xs flex items-center justify-center shrink-0" aria-hidden="true">
+                  {{ initials(p.profiles?.full_name) }}
                 </div>
-              </td>
-              <td class="text-xs text-base-content/80">{{ p.locations?.name || 'Site principal' }}</td>
-              <td class="font-mono text-xs font-semibold">{{ formatTime(p.check_in_time) }}</td>
-              <td class="font-mono text-xs font-semibold">{{ formatTime(p.check_out_time) }}</td>
-              <td>
-                <StatusBadge :status="p.status" />
-              </td>
-              <td class="text-xs text-base-content/60">±{{ Math.round(p.check_in_accuracy) }} m</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+                <div class="min-w-0">
+                  <strong class="block text-sm font-bold text-base-content truncate">{{ p.profiles?.full_name || 'Utilisateur inconnu' }}</strong>
+                  <span class="block text-xs text-base-content/60 truncate">{{ p.locations?.name || 'Site principal' }}</span>
+                </div>
+              </div>
+              <StatusBadge :status="p.status" />
+            </div>
+
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+              <span class="font-mono font-semibold text-base-content">Arrivée {{ formatTimeSafe(p.check_in_time) }}</span>
+              <span class="font-mono font-semibold text-base-content">Départ {{ formatTimeSafe(p.check_out_time) }}</span>
+              <span v-if="resolveSessionState(p) === 'closed'" class="font-semibold text-base-content">Durée {{ formatSessionDuration(p) }}</span>
+              <span v-else-if="resolveSessionState(p) === 'in_progress'" class="inline-flex items-center gap-1 font-semibold text-warning">
+                <span class="w-1.5 h-1.5 rounded-full bg-warning animate-pulse"></span>
+                En cours
+              </span>
+            </div>
+
+            <span class="badge badge-sm font-semibold gap-1 py-2.5 px-2 self-start" :class="accuracyBadge(p.check_in_accuracy).class">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="22" y1="12" x2="18" y2="12"></line>
+                <line x1="6" y1="12" x2="2" y2="12"></line>
+                <line x1="12" y1="6" x2="12" y2="2"></line>
+                <line x1="12" y1="22" x2="12" y2="18"></line>
+              </svg>
+              {{ accuracyBadge(p.check_in_accuracy).label }}
+            </span>
+          </li>
+        </ul>
+
+        <!-- Tableau d'audit à partir de 640px -->
+        <div class="hidden sm:block overflow-x-auto">
+          <table class="table table-sm w-full">
+            <thead>
+              <tr class="text-xs uppercase text-base-content/60">
+                <th>Collaborateur</th>
+                <th>Site</th>
+                <th>Arrivée</th>
+                <th>Départ</th>
+                <th>Durée</th>
+                <th>Statut</th>
+                <th>Précision GPS</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="p in presencesToday.slice(0, 8)" :key="p.id" class="hover">
+                <td>
+                  <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-9 h-9 rounded-full bg-primary/10 border border-primary/20 text-primary font-bold text-xs flex items-center justify-center shrink-0" aria-hidden="true">
+                      {{ initials(p.profiles?.full_name) }}
+                    </div>
+                    <div class="min-w-0">
+                      <strong class="block text-sm font-bold text-base-content truncate">{{ p.profiles?.full_name || 'Utilisateur inconnu' }}</strong>
+                      <span class="block text-xs text-base-content/60 truncate">{{ p.profiles?.email || 'Email inconnu' }}</span>
+                    </div>
+                  </div>
+                </td>
+                <td class="text-xs text-base-content/80">{{ p.locations?.name || 'Site principal' }}</td>
+                <td class="font-mono text-xs font-semibold">{{ formatTimeSafe(p.check_in_time) }}</td>
+                <td class="font-mono text-xs font-semibold">{{ formatTimeSafe(p.check_out_time) }}</td>
+                <td>
+                  <span v-if="resolveSessionState(p) === 'closed'" class="text-xs font-semibold text-base-content">{{ formatSessionDuration(p) }}</span>
+                  <span v-else-if="resolveSessionState(p) === 'in_progress'" class="text-xs font-semibold text-warning inline-flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-warning animate-pulse"></span>
+                    En cours
+                  </span>
+                  <span v-else-if="resolveSessionState(p) === 'missing_checkout'" class="text-xs font-semibold text-warning">Départ manquant</span>
+                  <span v-else class="text-xs font-semibold text-base-content/50">—</span>
+                </td>
+                <td><StatusBadge :status="p.status" /></td>
+                <td>
+                  <span class="badge badge-sm font-semibold gap-1 py-2.5 px-2" :class="accuracyBadge(p.check_in_accuracy).class">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="22" y1="12" x2="18" y2="12"></line>
+                      <line x1="6" y1="12" x2="2" y2="12"></line>
+                      <line x1="12" y1="6" x2="12" y2="2"></line>
+                      <line x1="12" y1="22" x2="12" y2="18"></line>
+                    </svg>
+                    {{ accuracyBadge(p.check_in_accuracy).label }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </template>
     </div>
   </div>
 </template>

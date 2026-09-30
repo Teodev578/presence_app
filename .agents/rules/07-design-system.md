@@ -115,3 +115,27 @@ Tout agent doit refuser et corriger les pratiques suivantes lors de ses interven
 2. **Les couleurs brutes non sémantiques** : Éviter les classes de couleurs figées comme `bg-blue-600`, `text-red-500` ou `border-gray-200`. Utiliser impérativement les tokens thématiques réactifs (`bg-primary`, `text-error`, `border-base-300`).
 3. **Le décalage de safe-area mobile** : Oublier les paddings réservés aux encoches sur smartphones (`var(--safe-top)`, `var(--safe-bottom)`).
 4. **Les boutons sans affordance tactile** : Omettre les états actifs réactifs (`active:scale-95 transition-transform duration-150`).
+
+---
+
+## 9. Grammaire et Responsivité de l'Espace Gestionnaire
+
+Les écrans de l'espace gestionnaire partagent une grammaire unique, extraite des écrans validés `Gestion des Sites & Lieux` et `Contrôle des Présences`. Trois composants portent les motifs répétés, sous `src/components/manager/` :
+
+- `ManagerPageHeader.vue` : en-tête d'écran. Titre `h1 text-2xl font-black tracking-tight`, pastille `w-8 h-8 rounded-m3-sm bg-primary/10 border border-primary/20 text-primary`, sous-titre `text-xs text-base-content/60 mt-0.5`, slot `actions`. Aucun écran ne réintroduit un `h2` ni un en-tête inline.
+- `ManagerKpiCard.vue` : carte de synthèse plate (`card bg-base-200 border border-base-300 shadow-xs p-4 rounded-m3-md`), libellé `text-xs font-semibold` avec point coloré selon le ton, valeur `text-2xl font-black`, légende `text-xs text-base-content/50`. Un bandeau KPI se compose exclusivement de ces cartes, partagées entre le tableau de bord et le contrôle des présences.
+- `ManagerEmptyState.vue` : état vide ou vide de filtre. Pastille de situation `w-12 h-12 rounded-full bg-base-300`, titre `font-bold text-base`, message `text-sm text-base-content/60`, action utile conditionnelle. Le drapeau `bare` le pose dans une carte existante.
+
+Règles associées :
+
+- Aucune action icône et texte n'emprunte `btn-sm`, aucun champ n'emprunte `input-sm` ou `select-sm` : le couple icône/texte reste accordé et la cible tactile tient 44px.
+- Aucune taille de police arbitraire (`text-[11px]`, `text-[10px]`) : l'échelle Tailwind fait foi.
+- Trois états explicites par écran de données : ossature de chargement (`animate-pulse`), état vide distinct (aucune donnée, aucun résultat de recherche, aucun résultat de filtre), état d'erreur avec action de réessai.
+
+### Bascule responsive des données
+
+- Seuil de bascule fiches/tableau : **640px** (`sm:`), seuil déjà retenu par `Contrôle des Présences`. Sous 640px, les tableaux se lisent en fiches empilées (identité, métadonnées, actions) ; au delà, le tableau balisé reprend. La matrice de disponibilités suit la même bascule (fiche par collaborateur sous 640px, matrice au delà).
+- Les barres de filtres `join` défilent horizontalement sur mobile (`overflow-x-auto`), jamais empilées en colonne.
+- Les grilles de cartes passent d'une colonne sous 640px à deux puis trois colonnes (`grid-cols-1 md:grid-cols-2 lg:grid-cols-3`).
+
+Le garde-fou exécutable est `node scripts/verify-gates.mjs --manager-grammar` pour la grammaire et `node scripts/verify-gates.mjs --manager-responsive` pour la bascule.

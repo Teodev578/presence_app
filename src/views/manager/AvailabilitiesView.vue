@@ -3,9 +3,15 @@ import { ref, computed } from 'vue'
 import { db, useLiveQuery } from '../../lib/db'
 import { getLocalDateString } from '../../lib/dateUtils'
 import { getMonday, formatWeekLabel } from '../../composables/useAvailabilities'
+import ManagerPageHeader from '../../components/manager/ManagerPageHeader.vue'
+import ManagerKpiCard from '../../components/manager/ManagerKpiCard.vue'
+import ManagerEmptyState from '../../components/manager/ManagerEmptyState.vue'
 
 const selectedWeekStart = ref(getMonday())
 const todayStr = getLocalDateString()
+
+const searchQuery = ref('')
+const filterTeam = ref('')
 
 const daysHeader = [
   { id: 1, label: 'Lundi' },
@@ -35,7 +41,6 @@ const weekEnd = computed(() => {
 })
 
 // Lecture réactive depuis Dexie : profils, disponibilités et pointages de la semaine.
-// Un changement de semaine réabonne les deux requêtes bornées.
 const employeeRows = useLiveQuery(async () => {
   const list = await db.profiles.toArray()
   return list
@@ -74,6 +79,17 @@ const employees = computed(() => {
   }))
 })
 
+const availableTeams = computed(() => (teamRows.value || []).slice().sort((a, b) => (a.name || '').localeCompare(b.name || '', 'fr')))
+
+const filteredEmployees = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase()
+  return employees.value.filter((emp) => {
+    if (filterTeam.value && emp.team_id !== filterTeam.value) return false
+    if (!q) return true
+    return (emp.full_name || '').toLowerCase().includes(q)
+  })
+})
+
 const availabilities = computed(() => availabilityRows.value || [])
 const presences = computed(() => presenceRows.value || [])
 
@@ -83,109 +99,193 @@ const getDateForDay = (dayNumber) => {
   return getLocalDateString(d)
 }
 
-const getAvailability = (userId, dayNumber) => {
-  return availabilities.value.find(
-    (a) => a.user_id === userId && a.day_of_week === dayNumber
-  )
-}
+const getAvailability = (userId, dayNumber) =>
+  availabilities.value.find((a) => a.user_id === userId && a.day_of_week === dayNumber)
 
 const getActualPresence = (userId, dayNumber) => {
   const dateStr = getDateForDay(dayNumber)
   return presences.value.find((p) => p.user_id === userId && p.work_date === dateStr)
 }
+
+// État d'une case : disponible pointé, disponible non pointé (jour révolu) ou disponible à venir.
+const dayState = (empId, dayNumber) => {
+  const declared = Boolean(getAvailability(empId, dayNumber))
+  const presence = getActualPresence(empId, dayNumber) || null
+  const isPast = getDateForDay(dayNumber) <= todayStr
+  return { declared, presence, isPast }
+}
+
+const dayLabel = (state) => {
+  if (!state.declared) return null
+  if (state.presence) return 'Pointé'
+  return state.isPast ? 'Non pointé' : 'À venir'
+}
+
+const dayBadgeClass = (state) => {
+  if (state.presence) return 'badge-success text-success-content'
+  if (state.isPast) return 'badge-warning text-warning-content'
+  return 'badge-info badge-outline'
+}
+
+// Synthèse : sur les créneaux déclarés déjà révolus, combien ont donné un pointage.
+const stats = computed(() => {
+  const declaredSlots = availabilities.value.filter((a) => getDateForDay(a.day_of_week) <= todayStr)
+  const pointedSlots = declaredSlots.filter((a) => getActualPresence(a.user_id, a.day_of_week))
+  const rate = declaredSlots.length ? Math.round((pointedSlots.length / declaredSlots.length) * 100) : null
+  return { declared: declaredSlots.length, pointed: pointedSlots.length, rate }
+})
+
+const clearFilters = () => {
+  searchQuery.value = ''
+  filterTeam.value = ''
+}
 </script>
 
 <template>
   <div class="flex flex-col gap-6">
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-      <div>
-        <h2 class="text-2xl font-black tracking-tight text-base-content">Disponibilités de l'Équipe</h2>
-        <p class="text-xs text-base-content/60 mt-0.5">
-          Vue croisée : déclarations des collaborateurs et conformité des présences (Prévu vs Réel)
-        </p>
+    <ManagerPageHeader
+      title="Disponibilités de l'Équipe"
+      subtitle="Vue croisée : déclarations des collaborateurs et conformité des présences"
+    >
+      <template #icon>
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="16" y1="2" x2="16" y2="6"></line>
+          <line x1="8" y1="2" x2="8" y2="6"></line>
+          <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+      </template>
+    </ManagerPageHeader>
+
+    <!-- Synthèse de la semaine -->
+    <div class="grid grid-cols-3 gap-3 sm:gap-4">
+      <ManagerKpiCard label="Créneaux déclarés" :value="stats.declared" caption="Jours révolus de la semaine" />
+      <ManagerKpiCard label="Pointés" :value="stats.pointed" caption="Disponibilités tenues" tone="success" />
+      <ManagerKpiCard label="Taux de tenue" :value="stats.rate === null ? '—' : stats.rate + '%'" caption="Sur les jours révolus" tone="info" />
+    </div>
+
+    <!-- Filtres -->
+    <div class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg p-4 flex flex-col gap-3">
+      <div class="flex flex-col sm:flex-row sm:items-end gap-3">
+        <fieldset class="fieldset sm:w-auto">
+          <legend class="fieldset-legend text-xs font-semibold text-base-content/70">Semaine</legend>
+          <div class="join">
+            <button type="button" class="btn join-item min-h-11 min-w-11 p-0 rounded-l-m3-sm" aria-label="Semaine précédente" @click="prevWeek">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M15 18l-6-6 6-6"></path>
+              </svg>
+            </button>
+            <span class="join-item flex items-center px-3 min-h-11 text-sm font-semibold text-base-content whitespace-nowrap">{{ formatWeekLabel(selectedWeekStart) }}</span>
+            <button type="button" class="btn join-item min-h-11 min-w-11 p-0 rounded-r-m3-sm" aria-label="Semaine suivante" @click="nextWeek">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 18l6-6-6-6"></path>
+              </svg>
+            </button>
+          </div>
+        </fieldset>
+
+        <fieldset class="fieldset flex-1 min-w-0">
+          <legend class="fieldset-legend text-xs font-semibold text-base-content/70">Recherche</legend>
+          <label class="input input-bordered flex w-full items-center gap-2 rounded-m3-md bg-base-300/50 min-h-11">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0 text-base-content/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input v-model="searchQuery" type="text" class="grow text-sm" placeholder="Rechercher un nom" />
+          </label>
+        </fieldset>
+
+        <fieldset class="fieldset sm:w-56">
+          <legend class="fieldset-legend text-xs font-semibold text-base-content/70">Équipe</legend>
+          <select v-model="filterTeam" class="select select-bordered min-h-11 w-full rounded-m3-md text-sm">
+            <option value="">Toutes les équipes</option>
+            <option v-for="t in availableTeams" :key="t.id" :value="t.id">{{ t.name }}</option>
+          </select>
+        </fieldset>
       </div>
 
-      <!-- Navigation temporelle DaisyUI -->
-      <div class="card bg-base-200 border border-base-300 shadow-xs flex-row items-center gap-2 p-1.5 rounded-m3-md">
-        <button type="button" class="btn btn-circle btn-ghost btn-sm" aria-label="Semaine précédente" @click="prevWeek">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="15 18 9 12 15 6"></polyline>
-          </svg>
-        </button>
-        <span class="text-xs font-bold text-base-content px-2">{{ formatWeekLabel(selectedWeekStart) }}</span>
-        <button type="button" class="btn btn-circle btn-ghost btn-sm" aria-label="Semaine suivante" @click="nextWeek">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
-        </button>
+      <!-- Légende des états -->
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-base-content/70">
+        <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-success"></span> Disponible et pointé</span>
+        <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-warning"></span> Disponible, non pointé</span>
+        <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-info"></span> Disponible à venir</span>
       </div>
     </div>
 
-    <!-- Tableau croisé matriciel DaisyUI -->
-    <div class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg overflow-hidden">
-      <div v-if="loading" class="p-8 text-center text-sm text-base-content/60 flex items-center justify-center gap-2">
-        <span class="loading loading-spinner loading-sm text-primary"></span>
-        Chargement de la grille d'équipe...
-      </div>
-      <div v-else-if="!employees.length" class="p-8 text-center text-sm text-base-content/60">
-        Aucun collaborateur actif répertorié.
-      </div>
-      <div v-else class="overflow-x-auto">
-        <table class="table table-sm w-full">
-          <thead>
-            <tr class="text-xs uppercase text-base-content/60">
-              <th class="w-48">Collaborateur</th>
-              <th v-for="d in daysHeader" :key="d.id" class="text-center">
-                <div class="font-bold">{{ d.label }}</div>
-                <div class="text-[11px] text-base-content/50 font-normal">{{ getDateForDay(d.id).slice(5) }}</div>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="emp in employees" :key="emp.id" class="hover">
-              <td>
-                <div class="flex flex-col">
-                  <strong class="text-sm font-bold text-base-content">{{ emp.full_name }}</strong>
-                  <span class="badge badge-soft badge-xs w-fit mt-0.5 rounded-m3-xs">{{ emp.teams?.name || 'Sans équipe' }}</span>
-                </div>
-              </td>
-
-              <td v-for="d in daysHeader" :key="d.id" class="text-center">
-                <div v-if="getAvailability(emp.id, d.id)" class="inline-flex flex-col items-center gap-1">
-                  <span
-                    class="badge badge-sm font-semibold rounded-m3-xs gap-1"
-                    :class="[
-                      getActualPresence(emp.id, d.id)
-                        ? 'badge-success text-success-content'
-                        : getDateForDay(d.id) <= todayStr
-                          ? 'badge-warning text-warning-content'
-                          : 'badge-info badge-outline'
-                    ]"
-                  >
-                    <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span>Dispo</span>
-                  </span>
-                  <span
-                    v-if="getActualPresence(emp.id, d.id)"
-                    class="text-[10px] font-bold text-success"
-                  >
-                    Pointé ({{ getActualPresence(emp.id, d.id)?.status }})
-                  </span>
-                  <span
-                    v-else-if="getDateForDay(d.id) <= todayStr"
-                    class="text-[10px] font-medium text-warning"
-                  >
-                    Non pointé
-                  </span>
-                </div>
-                <span v-else class="text-base-content/30 text-xs">-</span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+    <!-- Chargement : ossature -->
+    <div v-if="loading" class="card bg-base-200 border border-base-300 rounded-m3-lg p-4 flex flex-col gap-3">
+      <div v-for="n in 4" :key="n" class="h-14 rounded-m3-md bg-base-300/60 animate-pulse"></div>
     </div>
+
+    <ManagerEmptyState
+      v-else-if="!filteredEmployees.length"
+      :icon="employees.length ? 'search' : 'users'"
+      :title="employees.length ? 'Aucun résultat' : 'Aucun collaborateur'"
+      :message="employees.length ? 'Aucun collaborateur ne correspond à la recherche ou au filtre d\u2019équipe.' : 'Aucun collaborateur actif répertorié.'"
+      :action-label="employees.length ? 'Effacer les filtres' : ''"
+      @action="clearFilters"
+    />
+
+    <template v-else>
+      <!-- Fiches par collaborateur sous 640px : plus de défilement horizontal -->
+      <div class="sm:hidden flex flex-col gap-4">
+        <div v-for="emp in filteredEmployees" :key="emp.id" class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg p-4 flex flex-col gap-3">
+          <div class="min-w-0">
+            <strong class="block text-sm font-bold text-base-content truncate">{{ emp.full_name }}</strong>
+            <span class="badge badge-soft badge-xs w-fit mt-0.5 rounded-m3-xs">{{ emp.teams?.name || 'Sans équipe' }}</span>
+          </div>
+          <ul class="flex flex-col gap-1.5">
+            <li v-for="d in daysHeader" :key="d.id" class="flex items-center justify-between gap-2 text-xs">
+              <span class="text-base-content/60">{{ d.label }} {{ getDateForDay(d.id).slice(5) }}</span>
+              <span v-if="dayState(emp.id, d.id).declared" class="badge badge-sm font-semibold rounded-m3-xs gap-1" :class="dayBadgeClass(dayState(emp.id, d.id))">
+                {{ dayLabel(dayState(emp.id, d.id)) }}
+              </span>
+              <span v-else class="text-base-content/30">—</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Matrice à partir de 640px -->
+      <div class="hidden sm:block card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="table table-sm w-full">
+            <thead>
+              <tr class="text-xs uppercase text-base-content/60">
+                <th class="w-48">Collaborateur</th>
+                <th v-for="d in daysHeader" :key="d.id" class="text-center">
+                  <div class="font-bold">{{ d.label }}</div>
+                  <div class="text-xs text-base-content/50 font-normal">{{ getDateForDay(d.id).slice(5) }}</div>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="emp in filteredEmployees" :key="emp.id" class="hover">
+                <td>
+                  <div class="flex flex-col">
+                    <strong class="text-sm font-bold text-base-content">{{ emp.full_name }}</strong>
+                    <span class="badge badge-soft badge-xs w-fit mt-0.5 rounded-m3-xs">{{ emp.teams?.name || 'Sans équipe' }}</span>
+                  </div>
+                </td>
+                <td v-for="d in daysHeader" :key="d.id" class="text-center">
+                  <div v-if="dayState(emp.id, d.id).declared" class="inline-flex flex-col items-center gap-1">
+                    <span class="badge badge-sm font-semibold rounded-m3-xs gap-1" :class="dayBadgeClass(dayState(emp.id, d.id))">
+                      <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>Dispo</span>
+                    </span>
+                    <span class="text-xs font-semibold" :class="dayState(emp.id, d.id).presence ? 'text-success' : (dayState(emp.id, d.id).isPast ? 'text-warning' : 'text-info')">
+                      {{ dayLabel(dayState(emp.id, d.id)) }}
+                    </span>
+                  </div>
+                  <span v-else class="text-base-content/30 text-xs">—</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </template>
   </div>
 </template>

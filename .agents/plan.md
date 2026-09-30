@@ -6,21 +6,29 @@ Ce fichier porte le plan de la tâche fastidieuse en cours, conformément à la 
 
 ## Tâche en cours
 
-- **Tâche** : Implémenter la boucle d'apprentissage KI (P1 de l'audit `docs/audits/setup-agentique-2026-09.md`, section 10).
-- **Date** : 2026-09-29
-- **Critère d'arrêt** : la mémoire vit dans le dépôt (`.agents/knowledge/` + couche locale ignorée par git), le protocole de capture et l'échelle d'escalade sont documentés et reliés à `AGENTS.md`, la règle 11 et la matrice 08, un oracle déterministe (`scripts/knowledge-check.mjs`) contrôle la structure et le cycle de vie, `npm run build` en sortie 0.
+- **Tâche** : Refonte UI/UX de l'espace gestionnaire, uniformisation des modules sur la grammaire de `LocationsView.vue` et `PresencesView.vue`.
+- **Date** : 2026-09-30
+- **Plan détaillé** : `.agents/plans/2026-09-30-refonte-ui-ux-espace-gestionnaire.md`.
+- **Critère d'arrêt** : les cinq écrans partagent en-tête, carte de filtres à comptes, états chargement/vide/erreur explicites, présentation responsive (fiches sous 640px, tableau ou matrice au-delà) et modales à cibles 44px ; KPI unifiés entre tableau de bord et présences ; `npm run build` en sortie 0 ; `verify-gates.mjs --all` vert hors échecs préexistants.
+- **État** : livré le 2026-09-30, porté par les clauses G88 à G91. Arbitrages retenus : option B (trois composants partagés), remplacement de `StatCard` par `ManagerKpiCard`, UI seule sans bascule local-first pour Collaborateurs et Équipes, bascule fiches/tableau à 640px, export pleine largeur, tableau de bord sans filtre, renommage d'équipe exposé.
 
 ### Étapes
 
-- [x] 1. **Oracle** : `scripts/knowledge-check.mjs` avec flags `--structure`, `--frontmatter`, `--index`, `--staleness`, `--wiring`, `--gitignore`, `--all`, et `--root` pour les contrôles négatifs sur fixtures.
-- [x] 2. **Socle mémoire** : `.agents/knowledge/` avec `README.md` (protocole : capture, format, escalade, métabolisme, mesure), `TEMPLATE.md`, `INDEX.md` (≤ 200 lignes).
-- [x] 3. **Premières fiches réelles** : KI-0001 (dépendances de `useLiveQuery`, active, niveau 3) et KI-0002 (vues hors outbox, candidate, oracle à créer).
-- [x] 4. **Câblage** : section KI d'`AGENTS.md` réécrite, règle `11-apprentissage-et-memoire.md`, ligne dans la matrice `08-skills-activation.md`, `.gitignore` pour `.agents/knowledge.local/`.
-- [x] 5. **Preuves** : clauses G77 à G83 dans `GATES.md` avec contrôles négatifs (5 fixtures cassées, 5 échecs détectés au bon oracle), `npm run build` et `verify-gates.mjs --build` en sortie 0.
+- [x] 0. Arbitrages retenus (option B, remplacement de `StatCard`, UI seule, bascule 640px, export pleine largeur, dashboard sans filtre, renommage d'équipe) puis grammaire figée dans la règle 07 et ledger `GATES.md` (G88-G91).
+- [x] 1. Tableau de bord (`DashboardView.vue`).
+- [x] 2. Collaborateurs (`EmployeesView.vue`).
+- [x] 3. Équipes (`TeamsView.vue`).
+- [x] 4. Disponibilités (`AvailabilitiesView.vue`).
+- [x] 5. Export (`ExportView.vue`).
+- [x] 6. Audit, suppression de `StatCard`, `--manager-grammar`/`--manager-responsive`, build et suite complète.
 
 ### Clôture
 
-Critère d'arrêt atteint le 2026-09-29. Aucune régression : `node scripts/verify-gates.mjs --all` ne laisse que les quatre échecs pré-existants hors périmètre (G1, G3, G4 sur `ToastContainer.vue` et `SyncIndicator.vue`, G8 sur `HomeView.vue`).
+Critère d'arrêt atteint le 2026-09-30. `node scripts/verify-gates.mjs --all` ne laisse que les quatre échecs préexistants hors périmètre (G1, G3, G4 sur `ToastContainer.vue` et `SyncIndicator.vue`, G8 sur `HomeView.vue`). G88, G89, G90, G91 vertes ; `npm run build` en sortie 0 ; suite navigateur verte.
+
+### Tâche close précédente
+
+Boucle d'apprentissage KI (2026-09-29), critère d'arrêt atteint, portée par les clauses G77 à G83.
 
 ### Suites à donner (hors périmètre de ce lot)
 

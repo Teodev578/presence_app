@@ -16,6 +16,8 @@ import {
   resolveSessionMinutes,
 } from '../../lib/dateUtils'
 import StatusBadge from '../../components/shared/StatusBadge.vue'
+import ManagerPageHeader from '../../components/manager/ManagerPageHeader.vue'
+import ManagerKpiCard from '../../components/manager/ManagerKpiCard.vue'
 
 const { user } = useAuth()
 const { profile } = useProfile()
@@ -354,23 +356,18 @@ const saveEdit = async () => {
 <template>
   <div class="flex flex-col gap-6">
     <!-- En-tête -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-      <div>
-        <h1 class="text-2xl font-black tracking-tight text-base-content flex items-center gap-2.5">
-          <div class="w-8 h-8 rounded-m3-sm bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M9 11l3 3L22 4"></path>
-              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-            </svg>
-          </div>
-          <span>Contrôle des Présences</span>
-        </h1>
-        <p class="text-xs text-base-content/60 mt-0.5">
-          Suivi de l'assiduité, précision GPS et audit des temps de travail
-        </p>
-      </div>
+    <ManagerPageHeader
+      title="Contrôle des Présences"
+      subtitle="Suivi de l'assiduité, précision GPS et audit des temps de travail"
+    >
+      <template #icon>
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 11l3 3L22 4"></path>
+          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+        </svg>
+      </template>
 
-      <div>
+      <template #actions>
         <button
           type="button"
           class="btn btn-outline rounded-m3-sm font-bold min-h-11 flex items-center gap-2 px-3"
@@ -382,40 +379,34 @@ const saveEdit = async () => {
           </svg>
           <span>Actualiser</span>
         </button>
-      </div>
-    </div>
+      </template>
+    </ManagerPageHeader>
 
     <!-- Synthèse : le bandeau décrit les temps (ponctualité, clôture), le filtre décrit la session -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-      <div class="card bg-base-200 border border-base-300 shadow-xs p-4 rounded-m3-md flex flex-col gap-1">
-        <span class="text-xs font-semibold text-base-content/60">Pointages</span>
-        <span class="text-2xl font-black text-base-content">{{ stats.total }}</span>
-        <span class="text-xs text-base-content/50">Sur la période</span>
-      </div>
-      <div class="card bg-base-200 border border-base-300 shadow-xs p-4 rounded-m3-md flex flex-col gap-1">
-        <span class="text-xs font-semibold text-success flex items-center gap-1.5">
-          <span class="w-2 h-2 rounded-full bg-success"></span>
-          À l'heure
-        </span>
-        <span class="text-2xl font-black text-success">{{ stats.onTime }}</span>
-        <span class="text-xs text-base-content/50">Arrivées ponctuelles, journées closes comprises</span>
-      </div>
-      <div class="card bg-base-200 border border-base-300 shadow-xs p-4 rounded-m3-md flex flex-col gap-1">
-        <span class="text-xs font-semibold text-warning flex items-center gap-1.5">
-          <span class="w-2 h-2 rounded-full bg-warning"></span>
-          En retard
-        </span>
-        <span class="text-2xl font-black text-warning">{{ stats.late }}</span>
-        <span class="text-xs text-base-content/50">Arrivées tardives, journées closes comprises</span>
-      </div>
-      <div class="card bg-base-200 border border-base-300 shadow-xs p-4 rounded-m3-md flex flex-col gap-1">
-        <span class="text-xs font-semibold text-info flex items-center gap-1.5">
-          <span class="w-2 h-2 rounded-full bg-info"></span>
-          Journées terminées
-        </span>
-        <span class="text-2xl font-black text-info">{{ stats.completed }}</span>
-        <span class="text-xs text-base-content/50">Avec départ enregistré</span>
-      </div>
+      <ManagerKpiCard
+        label="Pointages"
+        :value="stats.total"
+        caption="Sur la période"
+      />
+      <ManagerKpiCard
+        label="À l'heure"
+        :value="stats.onTime"
+        caption="Arrivées ponctuelles, journées closes comprises"
+        tone="success"
+      />
+      <ManagerKpiCard
+        label="En retard"
+        :value="stats.late"
+        caption="Arrivées tardives, journées closes comprises"
+        tone="warning"
+      />
+      <ManagerKpiCard
+        label="Journées terminées"
+        :value="stats.completed"
+        caption="Avec départ enregistré"
+        tone="info"
+      />
     </div>
 
     <!-- Filtres et recherche -->

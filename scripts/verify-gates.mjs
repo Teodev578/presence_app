@@ -1449,7 +1449,7 @@ export function checkToneRuleRegistered() {
 /** Fichiers de l'espace gestionnaire écrits par ce lot. */
 const MANAGER_SCOPE_FILES = [
   'src/layouts/ManagerLayout.vue',
-  'src/components/manager/StatCard.vue',
+  'src/components/manager/ManagerKpiCard.vue',
   'src/views/manager/DashboardView.vue',
   'src/views/manager/PresencesView.vue',
   'src/views/manager/AvailabilitiesView.vue',
@@ -2439,9 +2439,11 @@ export function checkLocationsFilters() {
 export function checkPresencesUi() {
   const uiGaps = (text) => {
     const gaps = [];
-    // En-tête unifié sur la grammaire de la vue Sites
-    if (!/<h1[^>]*>/.test(text) || /<h2[^>]*>/.test(text)) gaps.push('en-tête non unifié en h1');
-    if (!text.includes('bg-primary/10') || !text.includes('border-primary/20')) gaps.push('pastille d’en-tête absente');
+    // En-tête unifié : soit inline en h1, soit porté par le composant partagé ManagerPageHeader,
+    // dont la grammaire (h1, pastille) est vérifiée séparément.
+    const sharedHeader = text.includes('ManagerPageHeader');
+    if (!sharedHeader && (!/<h1[^>]*>/.test(text) || /<h2[^>]*>/.test(text))) gaps.push('en-tête non unifié en h1');
+    if (!sharedHeader && (!text.includes('bg-primary/10') || !text.includes('border-primary/20'))) gaps.push('pastille d’en-tête absente');
     // Recherche intégrée, pleine largeur et nommée, placeholder allégé de sa consigne chargée (C6)
     if (!/class="input input-bordered flex w-full/.test(text)) gaps.push('recherche non intégrée');
     if (!text.includes('placeholder="Rechercher un nom, un email ou un site"')) gaps.push('placeholder de recherche allégé absent');
@@ -2511,6 +2513,19 @@ export function checkPresencesUi() {
     return false;
   }
   const gaps = uiGaps(fs.readFileSync(file, 'utf8'));
+
+  // La grammaire d'en-tête vit désormais dans le composant partagé : il doit porter h1 et pastille.
+  const headerFile = path.join(SRC_DIR, 'components', 'manager', 'ManagerPageHeader.vue');
+  if (!fs.existsSync(headerFile)) {
+    console.error('FAILURE G63: ManagerPageHeader.vue introuvable');
+    return false;
+  }
+  const headerContent = fs.readFileSync(headerFile, 'utf8');
+  if (!/<h1[^>]*>/.test(headerContent)) gaps.push('en-tête partagé sans h1');
+  if (!headerContent.includes('bg-primary/10') || !headerContent.includes('border-primary/20')) {
+    gaps.push('en-tête partagé sans pastille');
+  }
+
   if (gaps.length > 0) {
     console.error(`FAILURE G63: l’écran présences reste incohérent -> ${[...new Set(gaps)].join(', ')}`);
     return false;
@@ -2860,6 +2875,128 @@ export function checkManagerDexie() {
   return true;
 }
 
+/* ---------------------------------------------------------------------------
+   Lot « Refonte UI/UX de l'espace gestionnaire »
+   --------------------------------------------------------------------------- */
+
+const MANAGER_VIEW_FILES = [
+  'DashboardView.vue',
+  'EmployeesView.vue',
+  'TeamsView.vue',
+  'AvailabilitiesView.vue',
+  'ExportView.vue',
+  'PresencesView.vue',
+  'LocationsView.vue',
+];
+
+/**
+ * G88 : Tous les écrans gestionnaire partagent la grammaire : en-tête porté par ManagerPageHeader,
+ * aucun titre h2 résiduel, aucune action input-sm/select-sm/btn-sm, aucune taille de police
+ * arbitraire. Les trois composants partagés existent et portent leur contrat.
+ */
+export function checkManagerGrammar() {
+  const grammarGaps = (text) => {
+    const gaps = [];
+    if (!text.includes('ManagerPageHeader')) gaps.push('en-tête partagé absent');
+    if (/<h2[^>]*>/.test(text)) gaps.push('titre h2 conservé');
+    if (/\bbtn-sm\b/.test(text)) gaps.push('action rétrécie (btn-sm)');
+    if (/\binput-sm\b|\bselect-sm\b/.test(text)) gaps.push('champ rétréci (input-sm/select-sm)');
+    if (/text-\[\d+px\]/.test(text)) gaps.push('taille de police arbitraire');
+    return gaps;
+  };
+
+  // Contrôle négatif : un écran à titre h2, action rétrécie et police arbitraire doit être refusé.
+  const bogus =
+    '<h2>Titre</h2><button class="btn btn-sm">x</button><input class="input input-sm" /><span class="text-[11px]"></span>';
+  const bogusGaps = grammarGaps(bogus);
+  if (bogusGaps.length === 0) {
+    console.error('FAILURE G88: le détecteur de grammaire gestionnaire est aveugle, oracle invalide');
+    return false;
+  }
+  for (const expected of ['titre h2 conservé', 'action rétrécie (btn-sm)', 'champ rétréci (input-sm/select-sm)', 'taille de police arbitraire']) {
+    if (!bogusGaps.includes(expected)) {
+      console.error(`FAILURE G88: contrôle négatif incomplet, ${expected} non détecté`);
+      return false;
+    }
+  }
+
+  const gaps = [];
+  for (const name of MANAGER_VIEW_FILES) {
+    const file = path.join(SRC_DIR, 'views', 'manager', name);
+    if (!fs.existsSync(file)) {
+      console.error(`FAILURE G88: ${name} introuvable`);
+      return false;
+    }
+    for (const gap of grammarGaps(fs.readFileSync(file, 'utf8'))) gaps.push(`${name} : ${gap}`);
+  }
+
+  const headerFile = path.join(SRC_DIR, 'components', 'manager', 'ManagerPageHeader.vue');
+  if (!fs.existsSync(headerFile)) {
+    console.error('FAILURE G88: ManagerPageHeader.vue introuvable');
+    return false;
+  }
+  const header = fs.readFileSync(headerFile, 'utf8');
+  if (!/<h1[^>]*>/.test(header) || !header.includes('bg-primary/10') || !header.includes('border-primary/20')) {
+    gaps.push('ManagerPageHeader.vue : grammaire d\u2019en-tête incomplète');
+  }
+  for (const component of ['ManagerKpiCard.vue', 'ManagerEmptyState.vue']) {
+    if (!fs.existsSync(path.join(SRC_DIR, 'components', 'manager', component))) {
+      gaps.push(`${component} introuvable`);
+    }
+  }
+
+  if (gaps.length > 0) {
+    console.error(`FAILURE G88: des écrans gestionnaire divergent -> ${[...new Set(gaps)].join(', ')}`);
+    return false;
+  }
+  console.log('G88 passed: every manager screen shares one grammar');
+  return true;
+}
+
+/**
+ * G89 : Les écrans de données présentent des fiches sous 640px et un tableau au delà ; les filtres
+ * défilent horizontalement sur mobile ; la grille d'équipes adopte 2 puis 3 colonnes.
+ */
+export function checkManagerResponsive() {
+  const responsiveGaps = (text) => {
+    const gaps = [];
+    for (const token of ['sm:hidden', 'hidden sm:block']) {
+      if (!text.includes(token)) gaps.push(`bascule fiches/tableau absente : ${token}`);
+    }
+    return gaps;
+  };
+
+  // Contrôle négatif : un écran sans bascule mobile doit être refusé.
+  const bogus = '<table></table>';
+  if (responsiveGaps(bogus).length === 0) {
+    console.error('FAILURE G89: le détecteur responsive gestionnaire est aveugle, oracle invalide');
+    return false;
+  }
+
+  const gaps = [];
+  for (const name of ['DashboardView.vue', 'EmployeesView.vue', 'AvailabilitiesView.vue']) {
+    const file = path.join(SRC_DIR, 'views', 'manager', name);
+    if (!fs.existsSync(file)) {
+      console.error(`FAILURE G89: ${name} introuvable`);
+      return false;
+    }
+    const text = fs.readFileSync(file, 'utf8');
+    for (const gap of responsiveGaps(text)) gaps.push(`${name} : ${gap}`);
+    if (!text.includes('overflow-x-auto')) gaps.push(`${name} : filtres ou tableau sans défilement horizontal`);
+  }
+
+  const teamsFile = path.join(SRC_DIR, 'views', 'manager', 'TeamsView.vue');
+  const teams = fs.existsSync(teamsFile) ? fs.readFileSync(teamsFile, 'utf8') : '';
+  if (!teams.includes('md:grid-cols-2 lg:grid-cols-3')) gaps.push('TeamsView.vue : grille responsive absente');
+
+  if (gaps.length > 0) {
+    console.error(`FAILURE G89: la responsivité gestionnaire est incomplète -> ${[...new Set(gaps)].join(', ')}`);
+    return false;
+  }
+  console.log('G89 passed: manager screens present cards below 640px and tables above');
+  return true;
+}
+
 // Exécution CLI
 const arg = process.argv[2] || '--all';let success = true;
 
@@ -2967,6 +3104,10 @@ if (arg === '--emojis') {
   success = checkLiveQueryDeps();
 } else if (arg === '--manager-dexie') {
   success = checkManagerDexie();
+} else if (arg === '--manager-grammar') {
+  success = checkManagerGrammar();
+} else if (arg === '--manager-responsive') {
+  success = checkManagerResponsive();
 } else if (arg === '--sidebar-build') {
   success = checkBuild('G48', 'production build succeeds with exit code 0');
 } else if (arg === '--manager-build') {
@@ -3022,10 +3163,12 @@ if (arg === '--emojis') {
   const r73 = checkSyncScope();
   const r74 = checkLiveQueryDeps();
   const r75 = checkManagerDexie();
+  const r88 = checkManagerGrammar();
+  const r89 = checkManagerResponsive();
   const r48 = r39; // Une seule compilation sert les portes de build G39 et G48
-  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60 && r63 && r64 && r65 && r66 && r72 && r73 && r74 && r75;
+  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60 && r63 && r64 && r65 && r66 && r72 && r73 && r74 && r75 && r88 && r89;
 } else {
-  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--presences-ui|--presences-period|--presences-table|--presences-sort|--presences-localfirst|--sync-scope|--livequery-deps|--manager-dexie|--manager-build|--sidebar-build|--build|--all]`);
+  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--presences-ui|--presences-period|--presences-table|--presences-sort|--presences-localfirst|--sync-scope|--livequery-deps|--manager-dexie|--manager-grammar|--manager-responsive|--manager-build|--sidebar-build|--build|--all]`);
   process.exit(1);
 }
 
