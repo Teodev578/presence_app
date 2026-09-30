@@ -42,7 +42,7 @@ const createIcon = (paths) => () =>
 const MODES = [
   {
     value: 'system',
-    label: 'Système',
+    label: 'Automatique',
     hint: "Suivre le réglage d'apparence du système",
     icon: createIcon([
       ['rect', { x: '2', y: '3', width: '20', height: '14', rx: '2', ry: '2' }],

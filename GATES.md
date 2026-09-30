@@ -731,3 +731,29 @@ Scope: Le terme « Valider mon arrivée » est inapproprié : en français, vali
   CHECK: node scripts/verify-gates.mjs --voice-conformance
   EXPECT: G30 passed: employee-facing copy avoids administrative tone
   EVIDENCE: G30 passed: employee-facing copy avoids administrative tone (vérifié par node scripts/verify-gates.mjs --voice-conformance après ajout de « valider » et « validation » au lexique proscrit le 2026-09-30). G26 (volets de confirmation) alignée sur « Arrivée enregistrée » et « Départ enregistré ». Suite navigateur complète verte, `--all` sans nouvelle régression, `npm run build` en sortie 0.
+
+---
+
+# Gates: Finitions de la Page Paramètres
+
+OWNS: src/views/SettingsView.vue, src/components/shared/ThemeToggle.vue, scripts/verify-browser.mjs, GATES.md
+
+Scope: Recherche sur les bonnes pratiques d'écran de paramètres (Android, Microsoft, Apple FR) puis deux correctifs retenus. La colonne Paramètres est centrée et élargie (`max-w-3xl mx-auto`) pour équilibrer la page sur grand écran, conformément à la consigne d'une largeur bornée centrée. L'option de thème qui suit le réglage système s'intitule « Automatique », convention Apple en français, avec l'infobulle inchangée. L'état de synchronisation vide se lit « Aucune synchronisation enregistrée », plus factuel que « Jamais synchronisé ». Les libellés de section, l'ordre Apparence, Synchronisation, Compte, Déconnexion, et le placement destructeur en bas sont confirmés.
+
+- [x] Contrôle de non-régression: le contrôle d'apparence segmenté porte le libellé « Automatique » et la suite navigateur reste verte
+  CHECK: CHROME_PATH=$(command -v google-chrome-stable) node scripts/verify-browser.mjs --theme --appearance-control --sidebar-rail
+  EXPECT: browser-verify: theme toggle passed
+  EVIDENCE: browser-verify: theme toggle passed, appearance control passed et sidebar rail passed (vérifiés le 2026-09-30, libellés `Automatique|Clair|Sombre`). Rendu headless sombre à 1440 : colonne Paramètres centrée, « Automatique », « Aucune synchronisation enregistrée ». `--all` sans nouvelle régression, `npm run build` en sortie 0.
+
+---
+
+# Gates: Finitions de l'Espace Paramètres
+
+OWNS: src/views/SettingsView.vue, scripts/verify-gates.mjs, docs/audits/audit-espace-parametres-2026-09-30.md, .agents/plans/2026-09-30-plan-action-finitions-parametres.md, GATES.md
+
+Scope: Traitement des constats de `docs/audits/audit-espace-parametres-2026-09-30.md`. Arbitrages actés : déconnexion immédiate, groupe d'apparence segmenté borné, état réseau « En ligne », titre de la section Déconnexion retiré. Le groupe d'apparence est borné à `max-w-md` pour garder des segments lisibles sur grand écran. Les titres de section passent à `text-base font-semibold`, conformément à la règle 07 §5. L'état réseau s'intitule « En ligne » et non « Connecté », sans ambiguïté avec la session. « Dernière synchronisation » passe au contraste `/60`. L'avatar décoratif est masqué aux lecteurs d'écran, et les deux boutons portent un anneau de focus visible. La porte G95 est étendue à ces exigences.
+
+- [x] G95 (étendue): La page Paramètres borne le groupe d'apparence, nomme l'état réseau « En ligne », aligne ses titres sur la règle 07, masque l'avatar décoratif, pose un focus visible et retire le titre de la section Déconnexion
+  CHECK: node scripts/verify-gates.mjs --settings-page
+  EXPECT: G95 passed: settings page wired in both spaces
+  EVIDENCE: G95 passed: settings page wired in both spaces (vérifié par node scripts/verify-gates.mjs --settings-page, contrôle négatif compris ; la porte exige `max-w-md`, `En ligne`, `text-base font-semibold`, `aria-hidden="true"` et `focus-visible:outline-2 focus-visible:outline-primary`, et refuse `Connecté` comme titre `>Déconnexion</h2>`). Rendu headless sombre à 1440 : groupe d'apparence borné, « En ligne », « Aucune synchronisation enregistrée », section Déconnexion sans titre. `--all` sans nouvelle régression, `npm run build` en sortie 0 (vérifiés le 2026-09-30).

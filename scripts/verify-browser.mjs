@@ -897,11 +897,11 @@ async function verifyTheme(cdp) {
 
   check('contrôle segmenté monté', () => assertTrue(Boolean(initial.toggle), 'aucun groupe segmenté mesuré'))
   check('contrôle segmenté : trois états nommés', () =>
-    assertEqual((initial.toggle.segments || []).map((entry) => entry.text).join('|'), 'Système|Clair|Sombre', 'segments'))
+    assertEqual((initial.toggle.segments || []).map((entry) => entry.text).join('|'), 'Automatique|Clair|Sombre', 'segments'))
   check('contrôle segmenté : groupe nommé', () =>
     assertEqual(initial.toggle.groupAria, "Apparence de l'interface", 'nom du groupe'))
   check('contrôle segmenté : état courant annoncé par aria-pressed', () => {
-    assertEqual(segment(initial, 'Système')?.pressed, 'true', 'segment Système')
+    assertEqual(segment(initial, 'Automatique')?.pressed, 'true', 'segment Automatique')
     assertEqual(segment(initial, 'Clair')?.pressed, 'false', 'segment Clair')
   })
   check('contrôle segmenté : chaque segment nomme son mode', () =>
@@ -930,7 +930,7 @@ async function verifyTheme(cdp) {
   check('meta theme-color suit le thème sombre', () => assertEqual(dark.meta, '#111318', 'meta'))
   await cdp.screenshot('theme-dark.png')
 
-  await cdp.clickAt(segment(dark, 'Système').center)
+  await cdp.clickAt(segment(dark, 'Automatique').center)
   const backToSystem = await cdp.measure()
   check('segment système : retour au réglage système', () => assertEqual(backToSystem.theme, null, 'data-theme'))
   check('retour système : préférence effacée', () => assertEqual(backToSystem.stored, null, 'localStorage'))
@@ -1476,7 +1476,7 @@ async function verifySidebarRail(cdp) {
   // Le défilement a suivi le rail : on ramène le contrôle d'apparence dans la fenêtre avant de le viser.
   const reopened = await focusAndMeasure('#toggle-host')
   check('remise en état : barre déployée', () => assertTrue(!reopened.rail.hostRailed, 'barre laissée repliée'))
-  const systemSegment = (reopened.toggle?.segments || []).find((segment) => segment.text === 'Système')
+  const systemSegment = (reopened.toggle?.segments || []).find((segment) => segment.text === 'Automatique')
   const system = await clickCenter(systemSegment ? systemSegment.center : null)
   check('remise en état : thème rendu au système', () => assertEqual(system.theme, null, 'data-theme'))
 

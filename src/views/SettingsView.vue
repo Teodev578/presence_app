@@ -31,9 +31,9 @@ const ROLE_LABELS = { employee: 'Employé', manager: 'Manager', admin: 'Administ
 const roleLabel = computed(() => ROLE_LABELS[profile.value?.role] || 'Employé')
 
 const lastSyncLabel = computed(() => {
-  if (!lastSyncTime.value) return 'Jamais synchronisé'
+  if (!lastSyncTime.value) return 'Aucune synchronisation enregistrée'
   const date = new Date(lastSyncTime.value)
-  if (Number.isNaN(date.getTime())) return 'Jamais synchronisé'
+  if (Number.isNaN(date.getTime())) return 'Aucune synchronisation enregistrée'
   return date.toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
 })
 
@@ -61,32 +61,34 @@ const handleLogout = async () => {
 </script>
 
 <template>
-  <div class="flex flex-col gap-6 max-w-2xl">
+  <div class="flex flex-col gap-6 w-full max-w-3xl mx-auto">
     <!-- Apparence -->
     <section class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg p-4 sm:p-5 flex flex-col gap-4">
       <div>
-        <h2 class="text-sm font-bold text-base-content">Apparence</h2>
+        <h2 class="text-base font-semibold text-base-content">Apparence</h2>
         <p class="text-xs text-base-content/60 mt-0.5">Suivez le réglage du système ou forcez un thème clair ou sombre.</p>
       </div>
-      <ThemeToggle inline />
+      <div class="max-w-md w-full">
+        <ThemeToggle inline />
+      </div>
     </section>
 
     <!-- Synchronisation -->
     <section class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg p-4 sm:p-5 flex flex-col gap-4">
-      <h2 class="text-sm font-bold text-base-content">Synchronisation</h2>
+      <h2 class="text-base font-semibold text-base-content">Synchronisation</h2>
 
       <div class="flex items-start gap-3">
         <span class="w-2.5 h-2.5 rounded-full shrink-0 mt-1.5" :class="isOnline ? 'bg-success' : 'bg-warning'"></span>
         <div class="min-w-0">
-          <p class="text-sm font-semibold text-base-content">{{ isOnline ? 'Connecté' : 'Hors ligne' }}</p>
+          <p class="text-sm font-semibold text-base-content">{{ isOnline ? 'En ligne' : 'Hors ligne' }}</p>
           <p class="text-xs text-base-content/60 mt-0.5">{{ syncLabel }}</p>
-          <p class="text-xs text-base-content/50 mt-1">Dernière synchronisation : {{ lastSyncLabel }}</p>
+          <p class="text-xs text-base-content/60 mt-1">Dernière synchronisation : {{ lastSyncLabel }}</p>
         </div>
       </div>
 
       <button
         type="button"
-        class="btn btn-primary rounded-m3-sm font-bold shadow-xs min-h-11 gap-2 self-start"
+        class="btn btn-primary rounded-m3-sm font-bold shadow-xs min-h-11 gap-2 self-start focus-visible:outline-2 focus-visible:outline-primary"
         :disabled="isSyncing || !isOnline"
         @click="runSync"
       >
@@ -100,10 +102,10 @@ const handleLogout = async () => {
 
     <!-- Compte -->
     <section class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg p-4 sm:p-5 flex flex-col gap-4">
-      <h2 class="text-sm font-bold text-base-content">Compte</h2>
+      <h2 class="text-base font-semibold text-base-content">Compte</h2>
 
       <div class="flex items-center gap-3">
-        <div class="avatar placeholder shrink-0">
+        <div class="avatar placeholder shrink-0" aria-hidden="true">
           <div class="bg-primary/15 text-primary rounded-full w-12 h-12 font-bold text-base flex items-center justify-center">
             <span>{{ (profile?.full_name || 'U').trim()[0].toUpperCase() }}</span>
           </div>
@@ -128,11 +130,10 @@ const handleLogout = async () => {
 
     <!-- Déconnexion -->
     <section class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg p-4 sm:p-5 flex flex-col gap-3">
-      <h2 class="text-sm font-bold text-base-content">Déconnexion</h2>
       <p class="text-xs text-base-content/60">Vous devrez saisir vos identifiants pour revenir.</p>
       <button
         type="button"
-        class="btn btn-error btn-outline rounded-m3-sm font-bold min-h-11 gap-2 self-start"
+        class="btn btn-error btn-outline rounded-m3-sm font-bold min-h-11 gap-2 self-start focus-visible:outline-2 focus-visible:outline-error"
         :disabled="isSigningOut"
         @click="handleLogout"
       >

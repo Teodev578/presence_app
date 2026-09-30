@@ -3172,6 +3172,17 @@ export function checkSettingsPage() {
   const pageGaps = ['Apparence', '<ThemeToggle', 'Synchronisation', 'Compte', 'Déconnexion', 'syncNow', 'signOut'].filter(
     (token) => !settings.includes(token)
   );
+  pageGaps.push(
+    ...[
+      'text-base font-semibold',
+      'max-w-md',
+      'En ligne',
+      'aria-hidden="true"',
+      'focus-visible:outline-2 focus-visible:outline-primary',
+    ].filter((token) => !settings.includes(token))
+  );
+  if (settings.includes('Connecté')) pageGaps.push('état réseau ambigu « Connecté »');
+  if (settings.includes('>Déconnexion</h2>')) pageGaps.push('titre de section Déconnexion conservé');
   if (pageGaps.length > 0) {
     console.error(`FAILURE G95: page Paramètres incomplète -> ${pageGaps.join(', ')}`);
     return false;

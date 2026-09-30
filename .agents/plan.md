@@ -6,28 +6,33 @@ Ce fichier porte le plan de la tâche fastidieuse en cours, conformément à la 
 
 ## Tâche en cours
 
-- **Tâche** : Navigation, retour en bandeau.
+- **Tâche** : Finitions de l'espace Paramètres.
 - **Date** : 2026-09-30
-- **Plan détaillé** : `.agents/plans/2026-09-30-plan-navigation-retour-bandeau.md`.
-- **Critère d'arrêt** : commande de navigation cohérente dans le bandeau (retour sur les écrans hors tiroir, hamburger sur les destinations de tiroir sous 840 px), aucun nom d'espace dans le bandeau, aucun retour en double dans le contenu, cible de 44 px et nom accessible, `npm run build` en sortie 0, `--all` sans régression.
-- **État** : livré le 2026-09-30, porté par la porte G97. Arbitrages actés : retour sur les écrans hors tiroir à toute largeur et sur les destinations du tiroir sur mobile ; en-tête de la page Paramètres retiré ; flèche remplaçant le hamburger ; « Ma disponibilité » avec retour mobile seulement ; flèche seule nommée `Retour`.
+- **Plan détaillé** : `.agents/plans/2026-09-30-plan-action-finitions-parametres.md`.
+- **Critère d'arrêt** : les constats de l'audit traités, contrôle d'apparence lisible sur grand écran, titres conformes à la règle 07, état réseau sans ambiguïté, détails d'accessibilité corrigés ; `npm run build` en sortie 0 ; `--all` sans régression.
+- **État** : livré le 2026-09-30, porté par la porte G95 étendue. Arbitrages actés : apparence bornée `max-w-md`, titres `text-base font-semibold`, état réseau « En ligne », contraste `/60`, avatar masqué, focus visible, titre de la section Déconnexion retiré, déconnexion immédiate.
 
 ### Étapes
 
-- [x] 1. Table de routes et bandeau unifié (titre par écran, plus de nom d'espace).
-- [x] 2. Commande de retour en tête du bandeau, cible 44 px et nom accessible.
-- [x] 3. Retrait des boutons de retour de contenu et de l'en-tête des paramètres.
-- [x] 4. Clôture : build, suite complète, porte G97.
+- [x] 1. Apparence bornée et titres de section conformes.
+- [x] 2. État réseau « En ligne » et contraste du texte secondaire.
+- [x] 3. Accessibilité, focus, avatar décoratif.
+- [x] 4. Déconnexion : immédiate.
+- [x] 5. Clôture : build, suite complète, porte G95 étendue.
 
 ### Clôture
 
-Critère d'arrêt atteint le 2026-09-30. `node scripts/verify-gates.mjs --all` ne laisse que les quatre échecs préexistants hors périmètre (G1, G3, G4, G8). G97 verte, contrôle négatif compris. `npm run build` en sortie 0.
+Critère d'arrêt atteint le 2026-09-30. `node scripts/verify-gates.mjs --all` ne laisse que les quatre échecs préexistants hors périmètre (G1, G3, G4, G8). G95 étendue verte, contrôle négatif compris. `npm run build` en sortie 0.
 
 ### Tâche close précédente
 
-Finitions de l'espace employé (2026-09-30), livrées sous les portes G94, G95 et G96 : typographie, contraste, vocabulaire, onepage hybride, densité bornée, page Paramètres (apparence, synchronisation, compte, déconnexion), pied de tiroir vidé, filet avant « Mon espace », transition entre espaces, passerelles inter-espace. Audit dans `docs/audits/audit-espace-employe-2026-09-30.md`.
+Navigation, retour en bandeau (2026-09-30), livrée sous la porte G97 : table de routes, flèche de retour, hamburger cédé, retours de contenu retirés, bandeau nommant l'écran. Révision : « Ma disponibilité » traitée comme écran descendant, retour à toutes les largeurs.
 
 ### Tâche close antérieure
+
+Finitions de l'espace employé (2026-09-30), livrées sous les portes G94, G95 et G96 : typographie, contraste, vocabulaire, onepage hybride, densité bornée, page Paramètres (apparence, synchronisation, compte, déconnexion), pied de tiroir vidé, filet avant « Mon espace », transition entre espaces, passerelles inter-espace. Audit dans `docs/audits/audit-espace-employe-2026-09-30.md`.
+
+### Tâche close ancienne
 
 Finitions de l'espace gestionnaire (2026-09-30), livrée sous la clause G93 : icônes de rail à 22px, focus des entrées, bandeau à la marque, « Sites » seul, KPI sans tiret, matrice triable par nom. Audit dans `docs/audits/audit-espace-manager-2026-09-30.md`.
 
