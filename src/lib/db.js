@@ -23,6 +23,26 @@ class PresenceDatabase extends Dexie {
 // Instance unique singleton (Règle 03-local-first-and-dexie.md)
 export const db = new PresenceDatabase()
 
+let outboxListener = null
+
+/**
+ * Enregistre un écouteur déclenché à la fin de chaque transaction Dexie écrivant dans sync_outbox.
+ */
+export function setOutboxListener(fn) {
+  outboxListener = fn
+}
+
+// Crochet réactif Dexie sur l'insertion dans la boîte d'envoi (Transactional Outbox Hook)
+db.sync_outbox.hook('creating', function (primKey, obj, transaction) {
+  if (transaction && typeof transaction.on === 'function') {
+    transaction.on('complete', () => {
+      if (typeof outboxListener === 'function') {
+        outboxListener()
+      }
+    })
+  }
+})
+
 /**
  * Composable réactif useLiveQuery natif pour Vue 3 fondé sur shallowRef
  * et onScopeDispose pour éviter toute dépendance tierce à RxJS.

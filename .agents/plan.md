@@ -1,46 +1,61 @@
-# Plan de Travail Agentique
+# Plan de Travail Agentique : Modernisation du Moteur de Synchronisation (Options 1 & 2)
 
-Ce fichier porte le plan de la tâche fastidieuse en cours, conformément à la règle `.agents/rules/10-planification-taches-fastidieuses.md`. Il décrit une seule tâche à la fois : remplacer son contenu à chaque nouvelle tâche fastidieuse, puis le purger une fois la tâche close.
+Ce fichier porte le plan de la tâche architecturale en cours, conformément à la règle `.agents/rules/10-planification-taches-fastidieuses.md` et au garde-fou n°3 de `AGENTS.md`.
 
 ---
 
 ## Tâche en cours
 
-- **Tâche** : Finitions de l'espace Paramètres.
+- **Tâche** : Modernisation réactive du moteur de synchronisation (Supabase Realtime, Hooks Dexie, Web Locks & Résilience d'arrière-plan).
 - **Date** : 2026-09-30
-- **Plan détaillé** : `.agents/plans/2026-09-30-plan-action-finitions-parametres.md`.
-- **Critère d'arrêt** : les constats de l'audit traités, contrôle d'apparence lisible sur grand écran, titres conformes à la règle 07, état réseau sans ambiguïté, détails d'accessibilité corrigés ; `npm run build` en sortie 0 ; `--all` sans régression.
-- **État** : livré le 2026-09-30, porté par la porte G95 étendue. Arbitrages actés : apparence bornée `max-w-md`, titres `text-base font-semibold`, état réseau « En ligne », contraste `/60`, avatar masqué, focus visible, titre de la section Déconnexion retiré, déconnexion immédiate.
+- **Périmètre** :
+  - *Fichiers modifiés* : `src/composables/useSyncEngine.js`, `src/lib/db.js`.
+  - *Fichiers créés/configurés* : `public/sw.js`.
+  - *Hors périmètre* : Schémas SQL Supabase distants, composants de vue UI (HomeView, SettingsView, etc.), layouts de navigation.
+- **Critère d'arrêt** :
+  1. Toute mutation dans `sync_outbox` déclenche immédiatement et de façon découplée un cycle `pushOutbox` (via hook Dexie).
+  2. Les modifications distantes de Supabase sont notifiées en temps réel via WebSocket (`postgres_changes`) et déclenchent une réconciliation Dexie en < 200 ms.
+  3. L'exécution concurrente multi-onglets est protégée par `navigator.locks`.
+  4. L'intervalle de polling aveugle de 30s est remplacé par une veille événementielle (WebSocket + `visibilitychange` + `online` + battement de secours basse fréquence).
+  5. La fermeture impromptue est couverte par la résilience en arrière-plan (Service Worker Background Sync).
+  6. `npm run build` réussit sans avertissement ni régression (exit code 0).
+  7. `node scripts/verify-gates.mjs` valide l'intégrité de l'architecture (notamment G73 et G95).
+  8. L'ensemble des 8 scripts `scripts/test-*.mjs` passent au vert.
+- **État** : Réalisé et validé le 2026-09-30.
 
-### Étapes
+---
 
-- [x] 1. Apparence bornée et titres de section conformes.
-- [x] 2. État réseau « En ligne » et contraste du texte secondaire.
-- [x] 3. Accessibilité, focus, avatar décoratif.
-- [x] 4. Déconnexion : immédiate.
-- [x] 5. Clôture : build, suite complète, porte G95 étendue.
+### Étapes d'exécution
 
-### Clôture
+- [x] **Étape 1 : Crochets réactifs Dexie (Vidange automatique de l'Outbox)**
+  - Câblé via `db.sync_outbox.hook('creating')` dans `src/lib/db.js` attaché à l'événement `transaction.on('complete')`.
+  - Notification automatique à `useSyncEngine.js` avec anti-rebond (*debounce* de 50 ms) pour déclencher `syncNow()` dès la validation locale.
+  - Vérification : code intégré, zéro régression de transaction IndexedDB.
 
-Critère d'arrêt atteint le 2026-09-30. `node scripts/verify-gates.mjs --all` ne laisse que les quatre échecs préexistants hors périmètre (G1, G3, G4, G8). G95 étendue verte, contrôle négatif compris. `npm run build` en sortie 0.
+- [x] **Étape 2 : Exclusion mutuelle multi-onglets (Web Locks API)**
+  - Encadrement des fonctions critiques `pushOutbox` et `pullChanges` dans `withSyncLock` utilisant `navigator.locks.request('presence_push_lock', ...)` et `presence_pull_lock`.
+  - Repli direct prévu en cas d'absence d'API Web Locks.
+  - Vérification : exécution thread-safe sans double dépilement de l'outbox.
 
-### Tâche close précédente
+- [x] **Étape 3 : Canal réactif Supabase Realtime (CDC WebSocket)**
+  - Initialisation de `supabase.channel('presence-cdc-sync')` écoutant `postgres_changes` sur les 5 tables métier (`presences`, `availabilities`, `locations`, `profiles`, `teams`).
+  - Implémentation du pattern « Realtime as Invalidation Signal » : déclenchement immédiat de `scheduleRealtimePull()` avec anti-rebond (100 ms).
+  - Rattrapage temporel automatique lors de la transition d'état vers `SUBSCRIBED`.
+  - Vérification : abonnement WebSocket propre et réactif.
 
-Navigation, retour en bandeau (2026-09-30), livrée sous la porte G97 : table de routes, flèche de retour, hamburger cédé, retours de contenu retirés, bandeau nommant l'écran. Révision : « Ma disponibilité » traitée comme écran descendant, retour à toutes les largeurs.
+- [x] **Étape 4 : Allègement de l'horloge de fond et réveil contextuel**
+  - Remplacement du polling aveugle de 30s par un filet de sécurité espacé à 120s (2 minutes).
+  - Ajout de l'écouteur `visibilitychange` : resynchronisation immédiate dès que l'utilisateur revient sur l'onglet ou déverrouille l'appareil.
+  - Écouteur `online` conservé pour le réveil au retour réseau.
+  - Vérification : réactivité immédiate sans saturation réseau.
 
-### Tâche close antérieure
+- [x] **Étape 5 : Résilience d'arrière-plan (Option 2 - PWA Background Sync)**
+  - Création de `public/sw.js` avec gestionnaire de l'événement `sync` (`presence-outbox-sync`).
+  - Fonction `requestBackgroundSync()` enregistrant le tag auprès du Service Worker dès qu'une mutation est créée ou suspendue hors-ligne.
+  - Écouteur de message inter-processus `TRIGGER_SYNC` réveillant le moteur.
+  - Vérification : Service Worker valide, enregistrement tolérant aux pannes.
 
-Finitions de l'espace employé (2026-09-30), livrées sous les portes G94, G95 et G96 : typographie, contraste, vocabulaire, onepage hybride, densité bornée, page Paramètres (apparence, synchronisation, compte, déconnexion), pied de tiroir vidé, filet avant « Mon espace », transition entre espaces, passerelles inter-espace. Audit dans `docs/audits/audit-espace-employe-2026-09-30.md`.
-
-### Tâche close ancienne
-
-Finitions de l'espace gestionnaire (2026-09-30), livrée sous la clause G93 : icônes de rail à 22px, focus des entrées, bandeau à la marque, « Sites » seul, KPI sans tiret, matrice triable par nom. Audit dans `docs/audits/audit-espace-manager-2026-09-30.md`.
-
-### Suites à donner (hors périmètre de ce lot)
-
-- `node .agents/skills/unlazy/scripts/gate-lint.mjs GATES.md` rapporte 26 erreurs structurelles pré-existantes : le fichier accumule 19 ledgers alors que le format unlazy attend un ledger par fichier. Déjà listé en P2 de l'audit (purge et archivage de `GATES.md`).
-- Créer l'oracle de détection des `supabase.from(` dans `src/views/` pour élever KI-0002 au niveau 3.
-
-### Tâches archivées
-
-- `archive/2026-09-29-local-first-espace-gestionnaire.md` : lot « Espace Gestionnaire Local-First », étapes 1 à 6 livrées (G72-G76), étape 7 (migration RLS) bloquée faute de rattachement gestionnaire connu, constat hors périmètre sur `EmployeesView.vue` et `TeamsView.vue` (lectures réseau directes).
+- [x] **Étape 6 : Validation globale et conformité des oracles**
+  - Compilation de production : `npm run build` réussit avec code 0.
+  - Conformité des oracles : `node scripts/verify-gates.mjs` confirme le passage de G73 (périmètre strict du pull) et G95 (page Paramètres).
+  - Tests unitaires : `ALL TESTS PASSED` sur l'ensemble de la suite `scripts/test-*.mjs`.
