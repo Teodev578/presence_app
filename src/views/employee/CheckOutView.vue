@@ -94,10 +94,10 @@ const buttonState = computed(() => {
 })
 
 const BUTTON_LABELS = {
-  submitting: 'Validation de votre départ en cours...',
-  success: 'Départ validé',
-  ready: 'Confirmer mon départ',
-  'out-of-range': 'Rapprochez-vous pour valider',
+  submitting: 'Enregistrement de votre départ en cours...',
+  success: 'Départ enregistré',
+  ready: 'Enregistrer le pointage',
+  'out-of-range': 'Rapprochez-vous du site',
 }
 
 const buttonText = computed(() => BUTTON_LABELS[buttonState.value])
@@ -142,14 +142,14 @@ const handleConfirmCheckOut = async () => {
       <!-- Aboutissement visuel du pointage, avant la redirection automatique -->
       <CheckConfirmationOverlay
         :visible="isSuccess"
-        title="Départ validé"
+        title="Départ enregistré"
         message="Votre départ a bien été enregistré."
         :site-name="activeLocation?.name || ''"
       />
 
       <!-- En-tête de contexte : le retour vit désormais dans le bandeau -->
       <div class="border-b border-base-300/40 pb-2.5 sm:pb-3.5 shrink-0">
-        <h1 class="text-base sm:text-xl font-extrabold text-base-content tracking-tight">Valider mon départ</h1>
+        <h1 class="text-base sm:text-xl font-extrabold text-base-content tracking-tight">Pointage de départ</h1>
         <p class="text-xs text-base-content/60">Merci pour votre travail, bonne fin de journée !</p>
       </div>
 
@@ -264,7 +264,7 @@ const handleConfirmCheckOut = async () => {
                   Précision satellite fluctuante (±{{ Math.round(gpsAccuracy) }} m). Activer le Wi-Fi (même sans s'y connecter) ou vous approcher d'une ouverture permet de stabiliser le signal.
                 </span>
                 <span v-else class="leading-relaxed">
-                  Vous devez être situé sur votre lieu de travail (<strong class="text-base-content">{{ activeLocation.name }}</strong>, à {{ formatDistance(perimeterResult.distance) }}) pour valider votre départ.
+                  Vous devez être situé sur votre lieu de travail (<strong class="text-base-content">{{ activeLocation.name }}</strong>, à {{ formatDistance(perimeterResult.distance) }}) pour enregistrer votre départ.
                 </span>
               </div>
             </div>

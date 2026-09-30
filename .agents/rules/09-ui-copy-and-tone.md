@@ -26,6 +26,7 @@ Ces termes appartiennent au vocabulaire de l'audit, du contrôle de gestion ou d
 | Anomalie, anomalies | Départ manquant |
 | À corriger, à compléter | Fait constaté : « 1 manquant », « 2 manquants » |
 | Non conforme, non-conformité | Fait constaté, nommé simplement |
+| Valider, validation (pour un fait de pointage) | Enregistrer, pointer : « Enregistrer le pointage » |
 | Veuillez… | Impératif direct : « Sélectionnez votre lieu de travail » |
 | Utilisateur | Vous, votre |
 | Sanction, discipline | (aucun équivalent : hors sujet dans l'interface) |

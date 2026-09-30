@@ -718,3 +718,16 @@ Scope: La navigation de retour remonte dans le bandeau, traité comme une barre 
   CHECK: node scripts/verify-gates.mjs --back-navigation
   EXPECT: G97 passed: the back command lives in the app bar and no content duplicates it
   EVIDENCE: G97 passed: the back command lives in the app bar and no content duplicates it (vérifié par node scripts/verify-gates.mjs --back-navigation, contrôle négatif compris : bouton Retour de contenu détecté le 2026-09-30). Rendu headless sombre : validation d'arrivée à 390 avec flèche et sans hamburger, accueil à 390 avec hamburger et sans flèche, paramètres gestionnaire à 1280 avec flèche et sans en-tête de page, disponibilité employé avec flèche à 390 et sans flèche à 1280. `--all` sans nouvelle régression, `npm run build` en sortie 0.
+
+---
+
+# Gates: Vocabulaire du Pointage
+
+OWNS: src/layouts/EmployeeLayout.vue, src/views/employee/CheckInView.vue, src/views/employee/CheckOutView.vue, src/components/employee/DayCard.vue, .agents/rules/09-ui-copy-and-tone.md, scripts/verify-gates.mjs, scripts/verify-browser.mjs, GATES.md
+
+Scope: Le terme « Valider mon arrivée » est inapproprié : en français, valider signifie approuver ou déclarer conforme, alors que le salarié enregistre un fait. Recherche menée sur les usages des éditeurs de gestion des temps et les guides de rédaction d'interface. Arbitrage retenu : titres « Pointage d'arrivée » et « Pointage de départ », bouton « Enregistrer le pointage ». Le volet de confirmation passe de « Arrivée validée » à « Arrivée enregistrée ». Le lexique proscrit de la règle 09 accueille « valider » et « validation », et l'oracle de tonalité G30 les refuse dans l'espace employé.
+
+- [x] G30 (étendue): Le lexique proscrit refuse « valider » et « validation » dans les textes employé, et les titres de pointage emploient le vocabulaire retenu
+  CHECK: node scripts/verify-gates.mjs --voice-conformance
+  EXPECT: G30 passed: employee-facing copy avoids administrative tone
+  EVIDENCE: G30 passed: employee-facing copy avoids administrative tone (vérifié par node scripts/verify-gates.mjs --voice-conformance après ajout de « valider » et « validation » au lexique proscrit le 2026-09-30). G26 (volets de confirmation) alignée sur « Arrivée enregistrée » et « Départ enregistré ». Suite navigateur complète verte, `--all` sans nouvelle régression, `npm run build` en sortie 0.

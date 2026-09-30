@@ -101,10 +101,10 @@ const buttonState = computed(() => {
 })
 
 const BUTTON_LABELS = {
-  submitting: 'Validation de votre arrivée en cours...',
-  success: 'Arrivée validée',
-  ready: 'Confirmer mon arrivée',
-  'out-of-range': 'Rapprochez-vous pour valider',
+  submitting: 'Enregistrement de votre arrivée en cours...',
+  success: 'Arrivée enregistrée',
+  ready: 'Enregistrer le pointage',
+  'out-of-range': 'Rapprochez-vous du site',
 }
 
 const buttonText = computed(() => BUTTON_LABELS[buttonState.value])
@@ -116,7 +116,7 @@ const handleConfirmCheckIn = async () => {
   }
 
   if (!perimeterResult.value.inPerimeter) {
-    errorMessage.value = 'Rapprochez-vous de votre lieu de travail pour pouvoir valider.'
+    errorMessage.value = 'Rapprochez-vous de votre lieu de travail pour pouvoir pointer.'
     return
   }
 
@@ -150,14 +150,14 @@ const handleConfirmCheckIn = async () => {
       <!-- Aboutissement visuel du pointage, avant la redirection automatique -->
       <CheckConfirmationOverlay
         :visible="isSuccess"
-        title="Arrivée validée"
+        title="Arrivée enregistrée"
         message="Votre pointage a bien été enregistré."
         :site-name="selectedLocation?.name || ''"
       />
 
       <!-- En-tête de contexte : le retour vit désormais dans le bandeau -->
       <div class="border-b border-base-300/40 pb-2.5 sm:pb-3.5 shrink-0">
-        <h1 class="text-base sm:text-xl font-extrabold text-base-content tracking-tight">Valider mon arrivée</h1>
+        <h1 class="text-base sm:text-xl font-extrabold text-base-content tracking-tight">Pointage d'arrivée</h1>
         <p class="text-xs text-base-content/60">Ravi de vous retrouver sur site</p>
       </div>
 
@@ -286,7 +286,7 @@ const handleConfirmCheckIn = async () => {
                   Précision satellite fluctuante (±{{ Math.round(gpsAccuracy) }} m). Activer le Wi-Fi (même sans s'y connecter) ou vous approcher d'une ouverture améliore immédiatement la triangulation.
                 </span>
                 <span v-else-if="selectedLocation" class="leading-relaxed">
-                  Vous êtes situé à <strong class="text-base-content">{{ formatDistance(perimeterResult.distance) }}</strong> du site (rayon autorisé : {{ perimeterResult.allowedRadius }} m). Rapprochez-vous de l'entrée pour débloquer la validation.
+                  Vous êtes situé à <strong class="text-base-content">{{ formatDistance(perimeterResult.distance) }}</strong> du site (rayon autorisé : {{ perimeterResult.allowedRadius }} m). Rapprochez-vous de l'entrée pour débloquer le pointage.
                 </span>
                 <span v-else class="leading-relaxed">
                   Sélectionnez votre lieu de travail pour mesurer la distance.

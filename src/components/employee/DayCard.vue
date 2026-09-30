@@ -132,7 +132,7 @@ const workDuration = computed(() => {
               <polyline points="22 4 12 14.01 9 11.01" />
             </svg>
             <span class="text-base-content/75">
-              {{ presence.check_out_time ? 'Durée validée :' : 'En poste depuis :' }}
+              {{ presence.check_out_time ? 'Durée effectuée :' : 'En poste depuis :' }}
             </span>
             <strong class="text-base-content font-bold text-xs sm:text-sm">{{ workDuration }}</strong>
           </div>
@@ -167,7 +167,7 @@ const workDuration = computed(() => {
           <span>Pointer l'arrivée</span>
         </button>
 
-        <!-- Cas 2 : Arrivée validée mais pas de départ -->
+        <!-- Cas 2 : Arrivée enregistrée mais pas de départ -->
         <button
           v-else-if="!presence.check_out_time"
           type="button"

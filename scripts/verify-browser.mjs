@@ -155,7 +155,7 @@ const OverlayProbe = {
       h('div', { id: 'overlay-host', class: 'relative w-[420px] h-[320px] border border-base-300 bg-base-200 rounded-m3-lg' }, [
         h(CheckConfirmationOverlay, {
           visible: visible.value,
-          title: 'Arrivée validée',
+          title: 'Arrivée enregistrée',
           message: 'Votre pointage a bien été enregistré.',
           siteName: 'Siège Lyon',
         }),
@@ -1211,7 +1211,7 @@ async function verifyCheckOverlay(cdp) {
   check('volet pleinement visible après l’entrée', () => assertEqual(settled.overlay.opacity, '1', 'opacité'))
   check('titre, message et site rendus', () => {
     const text = settled.overlay.text || ''
-    assertTrue(text.includes('Arrivée validée'), `titre : ${text}`)
+    assertTrue(text.includes('Arrivée enregistrée'), `titre : ${text}`)
     assertTrue(text.includes('bien été enregistré'), 'message absent')
     assertTrue(text.includes('Siège Lyon'), 'site absent')
   })

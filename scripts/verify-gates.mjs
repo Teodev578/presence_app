@@ -1050,8 +1050,8 @@ export function checkConfirmationOverlayMarkup() {
  */
 export function checkFeedbackWiring() {
   const views = [
-    { name: 'CheckInView.vue', label: 'Arrivée validée' },
-    { name: 'CheckOutView.vue', label: 'Départ validé' },
+    { name: 'CheckInView.vue', label: 'Arrivée enregistrée' },
+    { name: 'CheckOutView.vue', label: 'Départ enregistré' },
   ];
 
   const wired = (text) =>
@@ -1315,6 +1315,8 @@ const BANNED_VOICE_TERMS = [
   'kpi',
   'optimiser',
   'conformité',
+  'valider',
+  'validation',
 ];
 
 /** Termes proscrits présents dans un texte, insensibles à la casse. */

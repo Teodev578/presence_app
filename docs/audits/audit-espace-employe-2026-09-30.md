@@ -46,7 +46,7 @@ Statut : constat. Aucun correctif appliqué à ce stade, le plan d'action associ
 
 | Notion | Terme retenu | Terme écarté | Raison |
 |---|---|---|---|
-| Acte de pointage sur la page | Arrivée / Départ | Pointage de présence | « Arrivée » et « Départ » nomment le fait daté ; « présence » nomme l'état. La navigation reste « Pointage ». |
+| Acte de pointage sur la page | Pointage d'arrivée / Pointage de départ | Valider mon arrivée | « Valider » signifie approuver un fait ; le salarié enregistre un fait. « Pointage d'arrivée » nomme l'enregistrement. |
 | État d'une session ouverte | En cours | En cours de service | Un seul mot pour une notion, employé déjà par le tableau de bord. |
 | Disponibilités | Mes disponibilités | Partager ma disponibilité | Le libellé nomme l'objet, pas l'action ; la navigation et la page partagent le même mot. |
 | Journées et mois | lundi, septembre | Lundi, Septembre | Noms communs en minuscules, sauf en tête de phrase (Académie française). |
