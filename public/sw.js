@@ -25,3 +25,9 @@ self.addEventListener('sync', (event) => {
     )
   }
 })
+
+// Écouteur de requêtes réseau garantissant la reconnaissance PWA par les navigateurs
+self.addEventListener('fetch', (event) => {
+  // Laisse le réseau et le cache natif répondre normalement
+})
+

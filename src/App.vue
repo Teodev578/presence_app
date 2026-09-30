@@ -4,6 +4,7 @@ import { useRouter } from './router'
 import { useAuth } from './composables/useAuth'
 import { useProfile } from './composables/useProfile'
 import { useSyncEngine } from './composables/useSyncEngine'
+import { initPwaInstall } from './composables/usePwaInstall'
 
 // Layouts
 import EmployeeLayout from './layouts/EmployeeLayout.vue'
@@ -32,6 +33,7 @@ const { profile, profileLoading, fetchProfile } = useProfile()
 const { startSyncWatcher } = useSyncEngine()
 
 onMounted(async () => {
+  initPwaInstall()
   await initAuth()
   startSyncWatcher(() => user.value?.id)
 
