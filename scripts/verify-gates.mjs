@@ -3075,7 +3075,12 @@ export function checkManagerFinish() {
   }
 
   const manager = read('layouts/ManagerLayout.vue');
-  if (/activeTitle|Administration & Suivi/.test(manager)) gaps.push('titre de bandeau gestionnaire conservé');
+  if (!manager.includes('activeTitle')) gaps.push('titre de bandeau gestionnaire absent');
+  const managerHeader = manager.match(/<header[\s\S]*?<\/header>/);
+  if (!managerHeader || !/<h1/.test(managerHeader[0])) gaps.push('bandeau gestionnaire sans h1');
+
+  const employee = read('layouts/EmployeeLayout.vue');
+  if (!employee.includes('activeTitle')) gaps.push('titre de bandeau employé absent');
 
   const locations = read('views/manager/LocationsView.vue');
   if (locations.includes('& Lieux')) gaps.push('« & Lieux » conservé');
@@ -3098,6 +3103,134 @@ export function checkManagerFinish() {
     return false;
   }
   console.log('G93 passed: manager finishing pass applied');
+  return true;
+}
+
+/**
+ * G94 : Passe de finition employé. Aucune taille de police arbitraire, aucune date capitalisée à
+ * tort, vocabulaire unifié, sélecteur de lieu de travail à 44px, verrouillage onepage qui cède
+ * au défilement sur hauteur courte, bandeau nommant l'espace et le module.
+ */
+export function checkEmployeeFinish() {
+  const read = (relative) => {
+    const file = path.join(SRC_DIR, relative);
+    return fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : null;
+  };
+  const missing = (text, tokens) => tokens.filter((token) => !text.includes(token));
+
+  if (missing('', ['employee-onepage']).length === 0) {
+    console.error('FAILURE G94: le détecteur de finition employé est aveugle, oracle invalide');
+    return false;
+  }
+
+  const gaps = [];
+  const employeeFiles = [
+    'components/employee/DayCard.vue',
+    'components/employee/WeekSummaryCard.vue',
+    'components/employee/WeekGrid.vue',
+    'components/employee/GpsRing.vue',
+    'components/employee/AvailabilitySummary.vue',
+    'components/employee/CheckConfirmationOverlay.vue',
+    'views/employee/HomeView.vue',
+    'views/employee/CheckInView.vue',
+    'views/employee/CheckOutView.vue',
+    'views/employee/AvailabilitiesView.vue',
+  ];
+
+  for (const relative of employeeFiles) {
+    const text = read(relative);
+    if (text === null) {
+      console.error(`FAILURE G94: ${relative} introuvable`);
+      return false;
+    }
+    if (/text-\[\d+px\]/.test(text)) gaps.push(`${relative} : taille de police arbitraire`);
+  }
+
+  for (const relative of ['components/employee/DayCard.vue', 'components/employee/WeekSummaryCard.vue', 'components/employee/WeekGrid.vue']) {
+    if ((read(relative) || '').includes('capitalize')) gaps.push(`${relative} : date capitalisée à tort`);
+  }
+
+  const layout = read('layouts/EmployeeLayout.vue') || '';
+  gaps.push(...missing(layout, ["label: 'Pointage'", "label: 'Ma disponibilité'"]).map((token) => `navigation employé sans ${token}`));
+  if (layout.includes('Mes disponibilités')) gaps.push('navigation employé conserve « Mes disponibilités »');
+  if (!layout.includes('activeTitle')) gaps.push('bandeau employé sans titre');
+
+  const availabilities = read('views/employee/AvailabilitiesView.vue') || '';
+  if (!availabilities.includes('>Ma disponibilité<')) gaps.push('page disponibilité mal nommée');
+
+  const checkout = read('views/employee/CheckOutView.vue') || '';
+  if (checkout.includes('En cours de service')) gaps.push('« En cours de service » conservé');
+
+  const checkin = read('views/employee/CheckInView.vue') || '';
+  if (checkin.includes('select-xs')) gaps.push('sélecteur de lieu sous 44px');
+
+  const css = read('style.css') || '';
+  if (!css.includes('.employee-onepage')) gaps.push('marqueur onepage employé absent');
+  if (!/max-height:\s*760px/.test(css)) gaps.push('repli onepage sur hauteur courte absent');
+
+  if (gaps.length > 0) {
+    console.error(`FAILURE G94: la passe de finition employé est incomplète -> ${[...new Set(gaps)].join(', ')}`);
+    return false;
+  }
+  console.log('G94 passed: employee finishing pass applied');
+  return true;
+}
+
+/**
+ * G95 : Page Paramètres dédiée. Une seule vue partagée, portant synchronisation, compte et
+ * déconnexion, sans contrôle d'apparence (le tiroir le garde). Le bandeau des deux espaces
+ * expose une icône d'engrenage vers la page, et App.vue route les deux chemins.
+ */
+export function checkSettingsPage() {
+  const read = (relative) => {
+    const file = path.join(SRC_DIR, relative);
+    return fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : null;
+  };
+
+  const settings = read('views/SettingsView.vue');
+  if (settings === null) {
+    console.error('FAILURE G95: SettingsView.vue introuvable');
+    return false;
+  }
+
+  const pageGaps = ['Synchronisation', 'Compte', 'Déconnexion', 'syncNow', 'signOut'].filter(
+    (token) => !settings.includes(token)
+  );
+  if (settings.includes('<ThemeToggle')) pageGaps.push('contrôle d\u2019apparence dupliqué sur la page');
+  if (pageGaps.length > 0) {
+    console.error(`FAILURE G95: page Paramètres incomplète -> ${pageGaps.join(', ')}`);
+    return false;
+  }
+
+  const app = read('App.vue') || '';
+  for (const route of ["'/manager/settings'", "'/employee/settings'"]) {
+    if (!app.includes(route)) {
+      console.error(`FAILURE G95: route absente dans App.vue -> ${route}`);
+      return false;
+    }
+  }
+
+  const gear = (text) => text.includes('Ouvrir les paramètres') && /navigate\('\/\w+\/settings'\)/.test(text);
+  for (const layout of ['layouts/ManagerLayout.vue', 'layouts/EmployeeLayout.vue']) {
+    const text = read(layout);
+    if (text === null) {
+      console.error(`FAILURE G95: ${layout} introuvable`);
+      return false;
+    }
+    if (!gear(text)) {
+      console.error(`FAILURE G95: ${layout} sans icône d\u2019engrenage vers les paramètres`);
+      return false;
+    }
+  }
+
+  // Contrôle négatif : une page vide doit être refusée.
+  const missingTokens = (text) => ['Synchronisation', 'Compte', 'Déconnexion'].filter((token) => !text.includes(token));
+  if (missingTokens('').length !== 3) {
+    console.error('FAILURE G95: le détecteur de page Paramètres est aveugle, oracle invalide');
+    return false;
+  }
+
+  console.log('G95 passed: settings page wired in both spaces');
   return true;
 }
 
@@ -3216,6 +3349,10 @@ if (arg === '--emojis') {
   success = checkManagerNavIcons();
 } else if (arg === '--manager-finish') {
   success = checkManagerFinish();
+} else if (arg === '--employee-finish') {
+  success = checkEmployeeFinish();
+} else if (arg === '--settings-page') {
+  success = checkSettingsPage();
 } else if (arg === '--sidebar-build') {
   success = checkBuild('G48', 'production build succeeds with exit code 0');
 } else if (arg === '--manager-build') {
@@ -3275,10 +3412,12 @@ if (arg === '--emojis') {
   const r89 = checkManagerResponsive();
   const r92 = checkManagerNavIcons();
   const r93 = checkManagerFinish();
+  const r94 = checkEmployeeFinish();
+  const r95 = checkSettingsPage();
   const r48 = r39; // Une seule compilation sert les portes de build G39 et G48
-  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60 && r63 && r64 && r65 && r66 && r72 && r73 && r74 && r75 && r88 && r89 && r92 && r93;
+  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60 && r63 && r64 && r65 && r66 && r72 && r73 && r74 && r75 && r88 && r89 && r92 && r93 && r94 && r95;
 } else {
-  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--presences-ui|--presences-period|--presences-table|--presences-sort|--presences-localfirst|--sync-scope|--livequery-deps|--manager-dexie|--manager-grammar|--manager-responsive|--manager-nav-icons|--manager-finish|--manager-build|--sidebar-build|--build|--all]`);
+  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--presences-ui|--presences-period|--presences-table|--presences-sort|--presences-localfirst|--sync-scope|--livequery-deps|--manager-dexie|--manager-grammar|--manager-responsive|--manager-nav-icons|--manager-finish|--employee-finish|--settings-page|--manager-build|--sidebar-build|--build|--all]`);
   process.exit(1);
 }
 

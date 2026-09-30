@@ -217,10 +217,10 @@ const handleConfirmCheckIn = async () => {
                     {{ perimeterResult.inPerimeter ? 'Vous êtes au bon endroit' : 'Lieu le plus proche' }}
                   </span>
                 </div>
-                <span v-if="perimeterResult.inPerimeter" class="badge badge-success text-[10px] font-bold rounded-m3-xs py-1 px-2.5">
+                <span v-if="perimeterResult.inPerimeter" class="badge badge-success text-xs font-bold rounded-m3-xs py-1 px-2.5">
                   Sur place
                 </span>
-                <span v-else class="badge badge-ghost text-[10px] text-base-content/60 rounded-m3-xs py-1 px-2.5">
+                <span v-else class="badge badge-ghost text-xs text-base-content/60 rounded-m3-xs py-1 px-2.5">
                   À distance du site
                 </span>
               </div>
@@ -239,7 +239,7 @@ const handleConfirmCheckIn = async () => {
                 <select
                   id="loc-select"
                   v-model="selectedLocation"
-                  class="select select-bordered select-xs rounded-m3-sm text-xs font-normal max-w-xs"
+                  class="select select-bordered min-h-11 rounded-m3-sm text-sm font-normal max-w-xs"
                 >
                   <option v-for="loc in locations" :key="loc.id" :value="loc">
                     {{ loc.name }} (tolérance : {{ loc.radius_meters }}m)
@@ -251,7 +251,7 @@ const handleConfirmCheckIn = async () => {
             <!-- Fiche récapitulative contextuelle équilibrée -->
             <div class="grid grid-cols-2 gap-2.5 sm:gap-3">
               <div class="bg-base-200/50 border border-base-300/40 rounded-m3-md p-3 flex flex-col gap-1">
-                <span class="text-[11px] font-medium text-base-content/60 flex items-center gap-1.5">
+                <span class="text-xs font-medium text-base-content/60 flex items-center gap-1.5">
                   <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="10" />
                     <polyline points="12 6 12 12 16 14" />
@@ -264,7 +264,7 @@ const handleConfirmCheckIn = async () => {
               </div>
 
               <div class="bg-base-200/50 border border-base-300/40 rounded-m3-md p-3 flex flex-col gap-1">
-                <span class="text-[11px] font-medium text-base-content/60 flex items-center gap-1.5">
+                <span class="text-xs font-medium text-base-content/60 flex items-center gap-1.5">
                   <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z" />
                     <path d="M12 6a6 6 0 1 0 6 6 6 6 0 0 0-6-6zm0 10a4 4 0 1 1 4-4 4 4 0 0 1-4 4z" />
@@ -293,7 +293,7 @@ const handleConfirmCheckIn = async () => {
                 </svg>
               </div>
               <div class="flex flex-col gap-0.5">
-                <span class="font-bold text-base-content text-[11px] uppercase tracking-wider">Aide à la localisation</span>
+                <span class="font-bold text-base-content text-xs uppercase tracking-wider">Aide à la localisation</span>
                 <span v-if="gpsAccuracy && gpsAccuracy > 35" class="leading-relaxed">
                   Précision satellite fluctuante (±{{ Math.round(gpsAccuracy) }} m). Activer le Wi-Fi (même sans s'y connecter) ou vous approcher d'une ouverture améliore immédiatement la triangulation.
                 </span>

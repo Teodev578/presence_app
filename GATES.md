@@ -580,9 +580,48 @@ Scope: Passe de finition issue de l'audit `docs/audits/audit-espace-manager-2026
 
 OWNS: src/style.css, src/layouts/ManagerLayout.vue, src/layouts/EmployeeLayout.vue, src/components/manager/ManagerKpiCard.vue, src/views/manager/AvailabilitiesView.vue, src/views/manager/LocationsView.vue, scripts/verify-gates.mjs, .agents/plans/2026-09-30-plan-action-finitions-espace-manager.md, GATES.md
 
-Scope: Traitement des huit propositions validées de `docs/audits/audit-espace-manager-2026-09-30.md`. Arbitrages actés : option A (H1 de page conservé, bandeau réduit à la marque), matrice de disponibilités triable par nom, « Sites » seul. (1) Icônes du rail portées à 22px. (2) Focus visible sur les entrées de navigation des deux espaces. (3) Bandeau gestionnaire réduit à la marque, le computed `activeTitle` disparaît. (4) « & Lieux » retiré de la navigation et du titre de page. (5) KPI « Taux de tenue » affiche « Aucun » au lieu d'un tiret isolé. (6) Grille KPI des disponibilités en `grid-cols-2 sm:grid-cols-3`. (7) États vides distincts dans la matrice de disponibilités. (8) Colonne Collaborateur triable par nom, avec `aria-sort` et icône orientée.
+Scope: Traitement des huit propositions validées de `docs/audits/audit-espace-manager-2026-09-30.md`. Arbitrages actés : option A revue le 2026-09-30 (le bandeau affiche l'espace et le module dans les deux espaces, la marque restant dans la barre latérale), matrice de disponibilités triable par nom, « Sites » seul. (1) Icônes du rail portées à 22px. (2) Focus visible sur les entrées de navigation des deux espaces. (3) Bandeau nommant l'espace et le module courant (`activeTitle`) dans les deux espaces. (4) « & Lieux » retiré de la navigation et du titre de page. (5) KPI « Taux de tenue » affiche « Aucun » au lieu d'un tiret isolé. (6) Grille KPI des disponibilités en `grid-cols-2 sm:grid-cols-3`. (7) États vides distincts dans la matrice de disponibilités. (8) Colonne Collaborateur triable par nom, avec `aria-sort` et icône orientée.
 
-- [x] G93: Icônes de rail à 22px, focus des entrées de navigation des deux espaces, bandeau gestionnaire sans titre dupliqué, titre « Sites » seul, matrice de disponibilités triable par nom avec états vides distincts et grille KPI responsive, aucun tiret isolé
+- [x] G93: Icônes de rail à 22px, focus des entrées de navigation des deux espaces, bandeau nommant l'espace et le module dans les deux espaces, titre « Sites » seul, matrice de disponibilités triable par nom avec états vides distincts et grille KPI responsive, aucun tiret isolé
   CHECK: node scripts/verify-gates.mjs --manager-finish
   EXPECT: G93 passed: manager finishing pass applied
-  EVIDENCE: G93 passed: manager finishing pass applied (vérifié par node scripts/verify-gates.mjs --manager-finish, contrôle négatif compris). Rendu headless sombre à 1440 et 900 : bandeau « PresenceApp » seul, nav « Sites / Collaborateurs / Disponibilités », KPI « Aucun · Aucun jour révolu », icônes de rail agrandies. `--all` sans nouvelle régression, suite navigateur complète verte, `npm run build` en sortie 0 (vérifiés le 2026-09-30).
+  EVIDENCE: G93 passed: manager finishing pass applied (vérifié par node scripts/verify-gates.mjs --manager-finish, contrôle négatif compris). Rendu headless sombre : bandeau « Espace Collaborateur » côté employé et libellé de module côté gestionnaire, nav « Sites / Collaborateurs / Disponibilités », KPI « Aucun · Aucun jour révolu », icônes de rail agrandies. `--all` sans nouvelle régression, suite navigateur complète verte, `npm run build` en sortie 0 (vérifiés le 2026-09-30).
+
+---
+
+# Gates: Passe de Finition Gestionnaire (correctif de décision)
+
+OWNS: src/layouts/ManagerLayout.vue, src/layouts/EmployeeLayout.vue, scripts/verify-gates.mjs, docs/audits/audit-espace-manager-2026-09-30.md, .agents/plans/2026-09-30-plan-action-finitions-espace-employe.md, GATES.md
+
+Scope: L'arbitrage « option A » de l'audit gestionnaire est révisé le 2026-09-30 : le bandeau supérieur ne se réduit plus à la marque, il nomme l'espace et le module courant dans les deux espaces, la marque restant portée par la barre latérale. Le computed `activeTitle` revient dans `ManagerLayout` et apparaît dans `EmployeeLayout`. Un emplacement d'icône de paramètres à droite du bandeau reste à préciser.
+
+- [x] G93 (révalidée): Le bandeau gestionnaire et le bandeau employé nomment l'espace et le module courant via `activeTitle`, après révision de l'arbitrage option A
+  CHECK: node scripts/verify-gates.mjs --manager-finish
+  EXPECT: G93 passed: manager finishing pass applied
+  EVIDENCE: G93 passed: manager finishing pass applied (vérifié par node scripts/verify-gates.mjs --manager-finish après adaptation de l'oracle au titre de bandeau requis, contrôle négatif compris le 2026-09-30).
+
+---
+
+# Gates: Finitions de l'Espace Employé
+
+OWNS: src/layouts/EmployeeLayout.vue, src/components/employee/DayCard.vue, src/components/employee/WeekSummaryCard.vue, src/components/employee/WeekGrid.vue, src/components/employee/GpsRing.vue, src/components/employee/AvailabilitySummary.vue, src/components/employee/CheckConfirmationOverlay.vue, src/views/employee/CheckInView.vue, src/views/employee/CheckOutView.vue, src/views/employee/AvailabilitiesView.vue, src/style.css, scripts/verify-gates.mjs, docs/audits/audit-espace-employe-2026-09-30.md, .agents/plans/2026-09-30-plan-action-finitions-espace-employe.md, GATES.md
+
+Scope: Traitement des constats de `docs/audits/audit-espace-employe-2026-09-30.md`. Arbitrages actés : « Arrivée / Départ » sur les pages, « Pointage » en navigation, « En cours » partout, « Ma disponibilité » ; le bandeau nomme l'espace et le module ; l'onepage cède au défilement sur hauteur courte ; les cartes s'étirent par ligne avec un contenu borné. (A1) `capitalize` retiré des dates françaises. (A2) `text-[10px]` et `text-[11px]` rentrés dans l'échelle `text-xs`. (A3) vocabulaire unifié. (B1) jours révolus lisibles sans `opacity-45`. (B2) placeholder contrasté. (C1) libellé de semaine équilibré. (C2) tuile « Départs » sans troncature. (C3) contenu de la carte du jour borné. (C4) sélecteur de lieu à 44px. (D1) repli onepage sous 760px de haut. La logique de pointage, la transaction Dexie et la géolocalisation restent intactes.
+
+- [x] G94: Aucune taille de police arbitraire ni date capitalisée à tort dans les fichiers employé, vocabulaire unifié, sélecteur de lieu à 44px, repli onepage présent, bandeau employé nommé
+  CHECK: node scripts/verify-gates.mjs --employee-finish
+  EXPECT: G94 passed: employee finishing pass applied
+  EVIDENCE: G94 passed: employee finishing pass applied (vérifié par node scripts/verify-gates.mjs --employee-finish, contrôle négatif compris). Rendu headless sombre à 1440, 700 et 480 de haut : bandeau « Espace Collaborateur », dates « mercredi 30 septembre », tuile « Tous », semaine équilibrée, contenu de carte borné. `--all` sans nouvelle régression, `npm run build` en sortie 0 (vérifiés le 2026-09-30).
+
+---
+
+# Gates: Page Paramètres Dédiée
+
+OWNS: src/views/SettingsView.vue, src/App.vue, src/layouts/ManagerLayout.vue, src/layouts/EmployeeLayout.vue, scripts/verify-gates.mjs, .agents/plans/2026-09-30-plan-action-finitions-espace-employe.md, GATES.md
+
+Scope: Une page Paramètres unique, partagée par les deux espaces, accessible par une icône d'engrenage à droite du bandeau, sur les routes `/manager/settings` et `/employee/settings`. La page porte la synchronisation (état réseau, compteur en attente, dernière synchronisation, bouton « Synchroniser maintenant »), le compte (nom, email, rôle, espace) et la déconnexion. Le pied de tiroir reste inchangé : l'apparence, l'identité et la déconnexion y demeurent, aucune duplication n'est introduite sur la page.
+
+- [x] G95: La page Paramètres existe avec synchronisation, compte et déconnexion, sans contrôle d'apparence dupliqué ; les deux routes sont déclarées et les deux bandeaux exposent l'icône d'engrenage
+  CHECK: node scripts/verify-gates.mjs --settings-page
+  EXPECT: G95 passed: settings page wired in both spaces
+  EVIDENCE: G95 passed: settings page wired in both spaces (vérifié par node scripts/verify-gates.mjs --settings-page, contrôle négatif compris). Rendu headless sombre : page complète à 390 et 1440, bandeau « Espace Collaborateur » et « Espace Manager », engrenage à droite. `--all` sans nouvelle régression, `npm run build` en sortie 0 (vérifiés le 2026-09-30).

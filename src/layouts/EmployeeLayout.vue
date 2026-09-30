@@ -43,7 +43,7 @@ const createIcon = (paths) => () =>
 const navItems = [
   {
     path: '/employee',
-    label: 'Pointage de présence',
+    label: 'Pointage',
     isActive: (path) => path === '/employee' || path.includes('/employee/check'),
     icon: createIcon([
       ['circle', { cx: '12', cy: '12', r: '10' }],
@@ -52,7 +52,7 @@ const navItems = [
   },
   {
     path: '/employee/availabilities',
-    label: 'Mes disponibilités',
+    label: 'Ma disponibilité',
     isActive: (path) => path === '/employee/availabilities',
     icon: createIcon([
       ['rect', { x: '3', y: '4', width: '18', height: '18', rx: '2', ry: '2' }],
@@ -62,6 +62,11 @@ const navItems = [
     ]),
   },
 ]
+
+const activeTitle = computed(() => {
+  const current = navItems.find((item) => item.isActive(currentPath.value))
+  return current ? current.label : 'Espace Collaborateur'
+})
 
 const gatewayLabel = 'Espace Gestionnaire'
 
@@ -88,7 +93,7 @@ const handleLogout = async () => {
     <input id="employee-drawer" type="checkbox" class="drawer-toggle" v-model="drawerOpen" />
 
     <!-- Conteneur principal de l'application : onepage strict sans défilement sur tablette et desktop -->
-    <div class="drawer-content flex flex-col min-h-screen md:h-screen md:max-h-screen md:overflow-hidden pb-[calc(0.75rem+var(--safe-bottom,0px))] md:pb-2">
+    <div class="employee-onepage drawer-content flex flex-col min-h-screen md:h-screen md:max-h-screen md:overflow-hidden pb-[calc(0.75rem+var(--safe-bottom,0px))] md:pb-2">
       <!-- Barre de navigation supérieure épurée -->
       <header class="navbar bg-base-100/90 backdrop-blur-md sticky top-0 z-30 border-b border-base-300 px-4 sm:px-6 min-h-14 shrink-0">
         <!-- Bouton hamburger (mobile et tablette < 840px) + Marque -->
@@ -103,7 +108,7 @@ const handleLogout = async () => {
             </svg>
           </label>
 
-          <span class="font-bold text-base tracking-tight text-base-content">PresenceApp</span>
+          <span class="font-bold text-base tracking-tight text-base-content truncate">{{ activeTitle }}</span>
         </div>
 
         <div class="flex-1"></div>
@@ -111,6 +116,18 @@ const handleLogout = async () => {
         <!-- Alerte réseau uniquement : le raccourci gestionnaire vit dans le tiroir, avec les autres entrées -->
         <div class="flex items-center gap-2">
           <SyncAlert />
+          <button
+            type="button"
+            class="btn btn-ghost btn-circle min-w-11 min-h-11 text-base-content/70 hover:text-base-content"
+            aria-label="Ouvrir les paramètres"
+            title="Paramètres"
+            @click="navigate('/employee/settings')"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+          </button>
         </div>
       </header>
 

@@ -24,6 +24,7 @@ import ManagerAvailabilitiesView from './views/manager/AvailabilitiesView.vue'
 import EmployeesView from './views/manager/EmployeesView.vue'
 import TeamsView from './views/manager/TeamsView.vue'
 import ExportView from './views/manager/ExportView.vue'
+import SettingsView from './views/SettingsView.vue'
 
 const { route, navigate } = useRouter()
 const { session, user, authLoading, initAuth } = useAuth()
@@ -92,6 +93,7 @@ watch([() => route.value.path, isManager, () => profile.value, profileLoading], 
       <EmployeesView v-else-if="route.path === '/manager/employees'" />
       <TeamsView v-else-if="route.path === '/manager/teams'" />
       <ExportView v-else-if="route.path === '/manager/export'" />
+      <SettingsView v-else-if="route.path === '/manager/settings'" />
       <DashboardView v-else />
     </Transition>
   </ManagerLayout>
@@ -103,6 +105,7 @@ watch([() => route.value.path, isManager, () => profile.value, profileLoading], 
       <CheckInView v-else-if="route.path === '/employee/check-in'" />
       <CheckOutView v-else-if="route.path === '/employee/check-out'" />
       <EmployeeAvailabilitiesView v-else-if="route.path === '/employee/availabilities'" />
+      <SettingsView v-else-if="route.path === '/employee/settings'" />
       <HomeView v-else />
     </Transition>
   </EmployeeLayout>

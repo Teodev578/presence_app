@@ -142,7 +142,7 @@ const handleSave = async () => {
 
       <div class="text-center flex flex-col items-center">
         <span class="badge badge-primary badge-xs font-bold uppercase tracking-wider mb-0.5 rounded-m3-xs">Semaine</span>
-        <h2 class="font-bold text-xs sm:text-sm md:text-base text-base-content">{{ formatWeekLabel(currentWeekStart) }}</h2>
+        <h2 class="font-bold text-xs sm:text-sm md:text-base text-base-content text-balance">{{ formatWeekLabel(currentWeekStart) }}</h2>
       </div>
 
       <button
@@ -171,7 +171,7 @@ const handleSave = async () => {
         class="card border p-3.5 sm:p-4 rounded-m3-md flex flex-row md:flex-col items-center md:items-start justify-between min-h-[76px] md:min-h-[112px] gap-2.5 transition-all select-none !outline-none shadow-xs"
         :class="[
           d.isPast
-            ? 'opacity-45 bg-base-300/30 border-base-300/40 cursor-not-allowed'
+            ? 'bg-base-300/40 border-base-300/40 cursor-not-allowed'
             : selectedDays.includes(d.id)
               ? 'border-primary bg-primary/10 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2'
               : 'border-base-300/60 bg-base-100/70 hover:bg-base-100 hover:border-base-content/25 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2'
@@ -183,10 +183,10 @@ const handleSave = async () => {
         <div class="flex flex-col">
           <div class="font-bold text-xs sm:text-sm text-base-content flex items-center gap-1.5">
             <span :class="d.isPast ? 'text-base-content/60' : ''">{{ d.label }}</span>
-            <span v-if="d.isPast" class="badge badge-ghost badge-xs text-[10px] text-base-content/50 rounded-m3-xs py-0.5 px-1.5">Passé</span>
+            <span v-if="d.isPast" class="badge badge-ghost badge-xs text-xs text-base-content/50 rounded-m3-xs py-0.5 px-1.5">Passé</span>
             <span v-else-if="d.isToday" class="badge badge-primary badge-xs font-bold rounded-m3-xs">Aujourd'hui</span>
           </div>
-          <div class="text-[11px] sm:text-xs text-base-content/50 mt-0.5 capitalize">{{ d.dateFormatted }}</div>
+          <div class="text-xs text-base-content/50 mt-0.5">{{ d.dateFormatted }}</div>
         </div>
 
         <!-- Toggle DaisyUI synchronisé (grisé et inactif si passé) -->
@@ -215,7 +215,7 @@ const handleSave = async () => {
         id="week-note"
         v-model="note"
         rows="2"
-        class="textarea textarea-bordered w-full rounded-m3-sm text-xs sm:text-sm py-1.5 px-3 bg-base-200/60 border-base-300/50 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary"
+        class="textarea textarea-bordered w-full rounded-m3-sm text-xs sm:text-sm py-1.5 px-3 bg-base-200/60 border-base-300/50 placeholder:text-base-content/60 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary"
         :disabled="isEntireWeekPast"
         :placeholder="isEntireWeekPast ? 'Semaine archivée' : 'Ex : Télétravail mercredi, déplacement client vendredi...'"
       ></textarea>

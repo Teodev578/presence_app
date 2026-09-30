@@ -111,15 +111,15 @@ const formattedAllowedRadius = computed(() => formatDistance(props.allowedRadius
       </div>
       <div v-else class="flex flex-col items-center gap-0.5 text-xs text-error font-medium">
         <div class="font-bold text-sm">Encore quelques mètres pour rejoindre le site</div>
-        <p v-if="closestSiteName" class="text-base-content/70 text-[11px] mt-0.5">
+        <p v-if="closestSiteName" class="text-base-content/70 text-xs mt-0.5">
           Lieu le plus proche : <strong class="text-base-content">{{ closestSiteName }}</strong> (à {{ formattedDistance }}, tolérance : {{ formattedAllowedRadius }})
         </p>
-        <p v-else class="text-base-content/60 text-[11px] mt-0.5">
+        <p v-else class="text-base-content/60 text-xs mt-0.5">
           Distance : {{ formattedDistance }} (tolérance : {{ formattedAllowedRadius }})
         </p>
       </div>
 
-      <div v-if="accuracy" class="badge badge-ghost badge-sm text-[11px] text-base-content/60 mt-1 rounded-m3-xs">
+      <div v-if="accuracy" class="badge badge-ghost badge-sm text-xs text-base-content/60 mt-1 rounded-m3-xs">
         Précision de la position : ±{{ accuracy }} m
       </div>
     </div>

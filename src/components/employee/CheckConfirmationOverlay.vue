@@ -49,7 +49,7 @@ defineProps({
       <p class="text-xs sm:text-sm text-base-content/70 max-w-xs leading-relaxed">
         {{ message }}
       </p>
-      <p v-if="siteName" class="badge badge-ghost rounded-m3-xs py-1.5 px-2.5 text-[11px] font-semibold text-base-content/75">
+      <p v-if="siteName" class="badge badge-ghost rounded-m3-xs py-1.5 px-2.5 text-xs font-semibold text-base-content/75">
         {{ siteName }}
       </p>
     </div>

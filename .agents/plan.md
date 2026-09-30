@@ -6,26 +6,28 @@ Ce fichier porte le plan de la tâche fastidieuse en cours, conformément à la 
 
 ## Tâche en cours
 
-- **Tâche** : Finitions de l'espace gestionnaire, issues de l'audit `docs/audits/audit-espace-manager-2026-09-30.md`.
+- **Tâche** : Finitions de l'espace employé, issues de l'audit `docs/audits/audit-espace-employe-2026-09-30.md`.
 - **Date** : 2026-09-30
-- **Plan détaillé** : `.agents/plans/2026-09-30-plan-action-finitions-espace-manager.md`.
-- **Critère d'arrêt** : les huit propositions de l'audit sont traitées, livrées ou actées ; oracles existants verts, chaque nouvelle règle dotée d'un contrôle négatif ; `npm run build` en sortie 0 ; `verify-gates.mjs --all` vert hors échecs préexistants.
-- **État** : livré le 2026-09-30, porté par la clause G93. Arbitrages actés : option A (H1 de page, bandeau à la marque), matrice triable par nom, « Sites » seul. Icônes de rail à 22px, focus visible des entrées, KPI « Taux de tenue » sans tiret, grille KPI responsive, états vides distincts.
+- **Plan détaillé** : `.agents/plans/2026-09-30-plan-action-finitions-espace-employe.md`.
+- **Critère d'arrêt** : les constats de l'audit sont traités, livrés ou actés ; aucune taille de police arbitraire ni date capitalisée à tort ; cibles du pointage à 44 px ; oracles verts ; `npm run build` en sortie 0.
+- **État** : livré le 2026-09-30 pour les lots 1 à 6, porté par les portes G94 et G95. Arbitrages actés : vocabulaire « Arrivée / Départ », « Pointage », « En cours », « Ma disponibilité » ; bandeau nommant l'espace et le module dans les deux espaces ; onepage hybride sous 760px de haut ; cartes étirées au contenu borné ; page Paramètres dédiée par engrenage, pied de tiroir inchangé.
 
 ### Étapes
 
-- [x] 1. Finitions visuelles sûres : icônes du rail à 22px, KPI « Taux de tenue » sans tiret isolé, grille KPI responsive, focus clavier des entrées de navigation.
-- [x] 2. Vocabulaire et titres : retrait de « & Lieux », bandeau gestionnaire réduit à la marque (option A).
-- [x] 3. États et cohérence : états vides distincts de la matrice de disponibilités, colonne Collaborateur triable par nom avec `aria-sort`.
-- [x] 4. Clôture : build sortie 0, suite complète sans nouvelle régression, suite navigateur verte.
+- [x] 1. Typographie et contraste : retrait de `capitalize`, tailles dans l'échelle, jours révolus lisibles, placeholders contrastés.
+- [x] 2. Densité, libellés et cibles : semaine équilibrée, tuile Départs sans troncature, panneaux bornés, sélecteur à 44 px.
+- [x] 3. Vocabulaire : termes uniques par notion, « Ma disponibilité ».
+- [x] 4. Bandeau nommant l'espace et le module dans les deux espaces. Icône de paramètres en attente.
+- [x] 5. Repli onepage sous 760px de haut.
+- [x] 6. Clôture : build, suite complète, G94.
 
 ### Clôture
 
-Critère d'arrêt atteint le 2026-09-30. `node scripts/verify-gates.mjs --all` ne laisse que les quatre échecs préexistants hors périmètre (G1, G3, G4, G8). G93 verte, contrôle négatif compris. Suite navigateur complète verte. `npm run build` en sortie 0.
+Critère d'arrêt atteint pour les lots 1 à 3 et 5. `node scripts/verify-gates.mjs --all` ne laisse que les quatre échecs préexistants hors périmètre (G1, G3, G4, G8). G94 verte, contrôle négatif compris. `npm run build` en sortie 0. Reste l'icône de paramètres du bandeau à préciser.
 
 ### Tâche close précédente
 
-Refonte UI/UX de l'espace gestionnaire (2026-09-30), livrée sous les clauses G88 à G92 : composants partagés, cinq écrans réalignés, passe de finition, garde-fou d'icônes de navigation. Audit dans `docs/audits/audit-espace-manager-2026-09-30.md`.
+Finitions de l'espace gestionnaire (2026-09-30), livrée sous la clause G93 : icônes de rail à 22px, focus des entrées, bandeau à la marque, « Sites » seul, KPI sans tiret, matrice triable par nom. Audit dans `docs/audits/audit-espace-manager-2026-09-30.md`.
 
 ### Suites à donner (hors périmètre de ce lot)
 

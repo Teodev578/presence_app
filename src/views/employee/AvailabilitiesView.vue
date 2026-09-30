@@ -21,7 +21,7 @@ const { navigate } = useRouter()
           <span>Retour</span>
         </button>
         <div class="text-right">
-          <h1 class="text-base sm:text-xl font-extrabold text-base-content tracking-tight">Mes disponibilités</h1>
+          <h1 class="text-base sm:text-xl font-extrabold text-base-content tracking-tight">Ma disponibilité</h1>
           <p class="text-xs text-base-content/60">Organisation de votre semaine</p>
         </div>
       </div>

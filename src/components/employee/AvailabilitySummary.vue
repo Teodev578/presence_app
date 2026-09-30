@@ -54,12 +54,12 @@ const countLabel = computed(() => describeAvailabilityCount(props.count))
       <span
         v-for="day in labels"
         :key="day"
-        class="badge badge-ghost rounded-m3-xs py-1 px-2 text-[11px] font-semibold text-base-content/75"
+        class="badge badge-ghost rounded-m3-xs py-1 px-2 text-xs font-semibold text-base-content/75"
       >
         {{ day }}
       </span>
     </div>
-    <p v-else class="text-[11px] sm:text-xs text-base-content/60 leading-relaxed">
+    <p v-else class="text-xs sm:text-xs text-base-content/60 leading-relaxed">
       Aucun jour coché : l'enregistrement retirera vos disponibilités de cette semaine.
     </p>
   </div>

@@ -77,7 +77,7 @@ Oracles : `--manager-responsive`, oracle d'états vides.
 
 ## 6. Arbitrages actés le 2026-09-30
 
-1. **Titre dupliqué** : option A. Le H1 de page est conservé, le bandeau supérieur gestionnaire se réduit à la marque et au hamburger.
+1. **Titre dupliqué** : révisé le 2026-09-30. Le H1 de page est conservé et le bandeau nomme l'espace et le module courant dans les deux espaces, la marque restant dans la barre latérale. L'option A initiale est abandonnée.
 2. **Tri de la matrice de disponibilités** : la colonne Collaborateur devient triable par nom, croissant puis décroissant, avec `aria-sort`.
 3. **« Sites » seul** : « & Lieux » retiré de la navigation et du titre de page.
 

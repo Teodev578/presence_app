@@ -26,7 +26,7 @@ Le défaut d'icônes non reproduit mérite une vérification côté navigateur d
 
 Les huit propositions sont livrées sous la clause G93, après arbitrages actés : option A pour le titre, tri par nom de la matrice, « Sites » seul.
 
-1. **Titre dupliqué sur desktop.** Livré (option A) : le H1 de page est conservé, le bandeau supérieur gestionnaire ne porte plus que la marque et le hamburger.
+1. **Titre dupliqué sur desktop.** Révisé le 2026-09-30 : le H1 de page est conservé et le bandeau nomme l'espace et le module courant, la marque restant dans la barre latérale. L'option A initiale est abandonnée.
 2. **Icônes du rail à 20 px.** Livré : 22 px via une règle confinée à la media query de 840 px.
 3. **Valeur KPI isolée.** Livré : « Taux de tenue » affiche « Aucun » avec la légende « Aucun jour révolu » quand aucun jour de la semaine n'est révolu.
 4. **Grille KPI en trois colonnes sous 640 px.** Livré : `grid-cols-2 sm:grid-cols-3`.

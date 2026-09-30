@@ -85,8 +85,8 @@ const recentCountLabel = computed(() => {
       <!-- En-tête de la carte avec typographie rehaussée -->
       <div class="flex items-start justify-between shrink-0 gap-2">
         <div>
-          <span class="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-base-content/60">Cette semaine</span>
-          <h2 class="text-xl sm:text-2xl lg:text-3xl font-extrabold text-base-content capitalize mt-0.5 tracking-tight leading-tight">
+          <span class="text-xs font-bold uppercase tracking-wider text-base-content/60">Cette semaine</span>
+          <h2 class="text-xl sm:text-2xl lg:text-3xl font-extrabold text-base-content mt-0.5 tracking-tight leading-tight">
             Votre semaine
           </h2>
         </div>
@@ -136,12 +136,12 @@ const recentCountLabel = computed(() => {
               </svg>
             </div>
             <div class="flex flex-col min-w-0">
-              <span class="text-[10px] font-semibold text-base-content/50 uppercase tracking-wider">Départs</span>
+              <span class="text-xs font-semibold text-base-content/50 uppercase tracking-wider">Départs</span>
               <span
                 class="text-xs sm:text-sm font-bold truncate"
                 :class="weekMissingDepartures > 0 ? 'text-warning' : 'text-base-content'"
               >
-                {{ weekMissingDepartures > 0 ? `${weekMissingDepartures} manquant${weekMissingDepartures > 1 ? 's' : ''}` : 'Tous enregistrés' }}
+                {{ weekMissingDepartures > 0 ? `${weekMissingDepartures} manquant${weekMissingDepartures > 1 ? 's' : ''}` : 'Tous' }}
               </span>
             </div>
           </div>
@@ -160,7 +160,7 @@ const recentCountLabel = computed(() => {
               </svg>
             </div>
             <div class="flex flex-col min-w-0">
-              <span class="text-[10px] font-semibold text-base-content/50 uppercase tracking-wider">Temps restant</span>
+              <span class="text-xs font-semibold text-base-content/50 uppercase tracking-wider">Temps restant</span>
               <span
                 class="text-xs sm:text-sm font-bold truncate"
                 :class="progressPercent >= 100 ? 'text-success' : 'text-base-content'"
@@ -175,10 +175,10 @@ const recentCountLabel = computed(() => {
       <!-- Section Historique Récent extensible en hauteur -->
       <div class="flex-1 flex flex-col min-h-0 gap-2 my-0.5">
         <div class="flex items-center justify-between shrink-0">
-          <span class="text-[11px] sm:text-xs font-bold text-base-content/75 uppercase tracking-wider">
+          <span class="text-xs font-bold text-base-content/75 uppercase tracking-wider">
             Pointages récents
           </span>
-          <span class="badge badge-ghost text-[10px] font-semibold py-0.5 px-2 rounded-m3-xs text-base-content/60">
+          <span class="badge badge-ghost text-xs font-semibold py-0.5 px-2 rounded-m3-xs text-base-content/60">
             {{ recentCountLabel }}
           </span>
         </div>
@@ -199,10 +199,10 @@ const recentCountLabel = computed(() => {
             </div>
 
             <div class="flex items-center gap-2.5">
-              <span class="font-mono text-base-content/75 text-[11px] sm:text-xs">
+              <span class="font-mono text-base-content/75 text-xs">
                 {{ formatTime(item.check_in_time) }} → {{ sessionOutLabel(item) }}
               </span>
-              <span class="badge badge-ghost font-bold rounded-m3-xs py-0.5 px-1.5 text-[10px] sm:text-[11px]">
+              <span class="badge badge-ghost font-bold rounded-m3-xs py-0.5 px-1.5 text-xs">
                 {{ getPresenceDuration(item) }}
               </span>
             </div>
@@ -226,7 +226,7 @@ const recentCountLabel = computed(() => {
             <span class="text-xs sm:text-sm font-bold text-base-content">
               Aucun pointage pour l'instant
             </span>
-            <span class="text-[11px] sm:text-xs text-base-content/60 leading-normal">
+            <span class="text-xs text-base-content/60 leading-normal">
               Vos arrivées et départs apparaîtront ici.
             </span>
           </div>
