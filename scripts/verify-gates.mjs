@@ -3175,7 +3175,7 @@ export function checkSettingsPage() {
   pageGaps.push(
     ...[
       'text-base font-semibold',
-      'max-w-5xl',
+      'md:grid-cols-2',
       'max-w-md',
       'En ligne',
       'aria-hidden="true"',

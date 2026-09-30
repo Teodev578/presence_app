@@ -61,7 +61,7 @@ const handleLogout = async () => {
 </script>
 
 <template>
-  <div class="flex flex-col gap-6 w-full max-w-5xl mx-auto">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 items-start w-full">
     <!-- Compte -->
     <section class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg p-4 sm:p-5 flex flex-col gap-4">
       <h2 class="text-base font-semibold text-base-content">Compte</h2>
@@ -118,7 +118,7 @@ const handleLogout = async () => {
     </section>
 
     <!-- Apparence -->
-    <section class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg p-4 sm:p-5 flex flex-col gap-4">
+    <section class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg p-4 sm:p-5 flex flex-col gap-4 md:col-span-2">
       <div>
         <h2 class="text-base font-semibold text-base-content">Apparence</h2>
         <p class="text-xs text-base-content/60 mt-0.5">Suivez le réglage du système ou forcez un thème clair ou sombre.</p>
@@ -129,7 +129,7 @@ const handleLogout = async () => {
     </section>
 
     <!-- Déconnexion -->
-    <section class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg p-4 sm:p-5 flex flex-col gap-3">
+    <section class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg p-4 sm:p-5 flex flex-col gap-3 md:col-span-2">
       <p class="text-xs text-base-content/60">Vous devrez saisir vos identifiants pour revenir.</p>
       <button
         type="button"
