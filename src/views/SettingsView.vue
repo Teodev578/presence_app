@@ -68,24 +68,24 @@ const handleLogout = async () => {
 
       <div class="flex items-center gap-3">
         <div class="avatar placeholder shrink-0" aria-hidden="true">
-          <div class="bg-primary/15 text-primary rounded-full w-12 h-12 font-bold text-base flex items-center justify-center">
+          <div class="bg-primary/15 text-primary rounded-full w-14 h-14 font-bold text-lg flex items-center justify-center ring-1 ring-primary/20">
             <span>{{ (profile?.full_name || 'U').trim()[0].toUpperCase() }}</span>
           </div>
         </div>
         <div class="min-w-0">
-          <p class="font-bold text-sm text-base-content truncate">{{ profile?.full_name || 'Mon compte' }}</p>
-          <p class="text-xs text-base-content/60 truncate">{{ profile?.email || user?.email || 'Adresse inconnue' }}</p>
+          <p class="text-base font-semibold text-base-content truncate">{{ profile?.full_name || 'Mon compte' }}</p>
+          <p class="text-sm text-base-content/60 truncate">{{ profile?.email || user?.email || 'Adresse inconnue' }}</p>
         </div>
       </div>
 
-      <dl class="flex flex-col gap-2 text-sm border-t border-base-300/60 pt-4">
-        <div class="flex items-center justify-between gap-3">
-          <dt class="text-base-content/60">Rôle</dt>
-          <dd class="font-semibold text-base-content">{{ roleLabel }}</dd>
+      <dl class="grid grid-cols-2 gap-2 border-t border-base-300/60 pt-4">
+        <div class="flex flex-col gap-0.5 rounded-m3-md bg-base-100 border border-base-300/60 p-3">
+          <dt class="text-xs font-medium uppercase tracking-wide text-base-content/60">Rôle</dt>
+          <dd class="text-sm font-semibold text-base-content">{{ roleLabel }}</dd>
         </div>
-        <div class="flex items-center justify-between gap-3">
-          <dt class="text-base-content/60">Espace</dt>
-          <dd class="font-semibold text-base-content">{{ isManagerSpace ? 'Gestionnaire' : 'Collaborateur' }}</dd>
+        <div class="flex flex-col gap-0.5 rounded-m3-md bg-base-100 border border-base-300/60 p-3">
+          <dt class="text-xs font-medium uppercase tracking-wide text-base-content/60">Espace</dt>
+          <dd class="text-sm font-semibold text-base-content">{{ isManagerSpace ? 'Gestionnaire' : 'Collaborateur' }}</dd>
         </div>
       </dl>
     </section>
@@ -94,7 +94,7 @@ const handleLogout = async () => {
     <section class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg p-4 sm:p-5 flex flex-col gap-4">
       <h2 class="text-base font-semibold text-base-content">Synchronisation</h2>
 
-      <div class="flex items-start gap-3">
+      <div class="flex gap-3">
         <span class="w-2.5 h-2.5 rounded-full shrink-0 mt-1.5" :class="isOnline ? 'bg-success' : 'bg-warning'"></span>
         <div class="min-w-0">
           <p class="text-sm font-semibold text-base-content">{{ isOnline ? 'En ligne' : 'Hors ligne' }}</p>
