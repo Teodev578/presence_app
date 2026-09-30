@@ -6,26 +6,28 @@ Ce fichier porte le plan de la tâche fastidieuse en cours, conformément à la 
 
 ## Tâche en cours
 
-- **Tâche** : Finitions de l'espace employé, issues de l'audit `docs/audits/audit-espace-employe-2026-09-30.md`.
+- **Tâche** : Navigation, retour en bandeau.
 - **Date** : 2026-09-30
-- **Plan détaillé** : `.agents/plans/2026-09-30-plan-action-finitions-espace-employe.md`.
-- **Critère d'arrêt** : les constats de l'audit sont traités, livrés ou actés ; aucune taille de police arbitraire ni date capitalisée à tort ; cibles du pointage à 44 px ; oracles verts ; `npm run build` en sortie 0.
-- **État** : livré le 2026-09-30 pour les lots 1 à 6, porté par les portes G94, G95 et G96, avec révision du pied de tiroir, filet de séparation avant « Mon espace » et transition native entre les espaces. Arbitrages actés : vocabulaire « Arrivée / Départ », « Pointage », « En cours », « Ma disponibilité » ; bandeau nommant l'espace et le module dans les deux espaces ; onepage hybride sous 760px de haut ; cartes étirées au contenu borné ; page Paramètres dédiée (apparence, synchronisation, compte, déconnexion) par engrenage ; pied de tiroir vidé de ses réglages au profit de la page. Correctif : l'import `useProfile` d'`EmployeeLayout` manquait, la passerelle « Espace Gestionnaire » avait disparu pour les rôles autorisés ; G96 verrouille le cas. Portes G11, G20, G22, G35 réécrites.
+- **Plan détaillé** : `.agents/plans/2026-09-30-plan-navigation-retour-bandeau.md`.
+- **Critère d'arrêt** : commande de navigation cohérente dans le bandeau (retour sur les écrans hors tiroir, hamburger sur les destinations de tiroir sous 840 px), aucun nom d'espace dans le bandeau, aucun retour en double dans le contenu, cible de 44 px et nom accessible, `npm run build` en sortie 0, `--all` sans régression.
+- **État** : livré le 2026-09-30, porté par la porte G97. Arbitrages actés : retour sur les écrans hors tiroir à toute largeur et sur les destinations du tiroir sur mobile ; en-tête de la page Paramètres retiré ; flèche remplaçant le hamburger ; « Ma disponibilité » avec retour mobile seulement ; flèche seule nommée `Retour`.
 
 ### Étapes
 
-- [x] 1. Typographie et contraste : retrait de `capitalize`, tailles dans l'échelle, jours révolus lisibles, placeholders contrastés.
-- [x] 2. Densité, libellés et cibles : semaine équilibrée, tuile Départs sans troncature, panneaux bornés, sélecteur à 44 px.
-- [x] 3. Vocabulaire : termes uniques par notion, « Ma disponibilité ».
-- [x] 4. Bandeau nommant l'espace et le module dans les deux espaces. Icône de paramètres en attente.
-- [x] 5. Repli onepage sous 760px de haut.
-- [x] 6. Clôture : build, suite complète, G94.
+- [x] 1. Table de routes et bandeau unifié (titre par écran, plus de nom d'espace).
+- [x] 2. Commande de retour en tête du bandeau, cible 44 px et nom accessible.
+- [x] 3. Retrait des boutons de retour de contenu et de l'en-tête des paramètres.
+- [x] 4. Clôture : build, suite complète, porte G97.
 
 ### Clôture
 
-Critère d'arrêt atteint pour les lots 1 à 3 et 5. `node scripts/verify-gates.mjs --all` ne laisse que les quatre échecs préexistants hors périmètre (G1, G3, G4, G8). G94 verte, contrôle négatif compris. `npm run build` en sortie 0. Reste l'icône de paramètres du bandeau à préciser.
+Critère d'arrêt atteint le 2026-09-30. `node scripts/verify-gates.mjs --all` ne laisse que les quatre échecs préexistants hors périmètre (G1, G3, G4, G8). G97 verte, contrôle négatif compris. `npm run build` en sortie 0.
 
 ### Tâche close précédente
+
+Finitions de l'espace employé (2026-09-30), livrées sous les portes G94, G95 et G96 : typographie, contraste, vocabulaire, onepage hybride, densité bornée, page Paramètres (apparence, synchronisation, compte, déconnexion), pied de tiroir vidé, filet avant « Mon espace », transition entre espaces, passerelles inter-espace. Audit dans `docs/audits/audit-espace-employe-2026-09-30.md`.
+
+### Tâche close antérieure
 
 Finitions de l'espace gestionnaire (2026-09-30), livrée sous la clause G93 : icônes de rail à 22px, focus des entrées, bandeau à la marque, « Sites » seul, KPI sans tiret, matrice triable par nom. Audit dans `docs/audits/audit-espace-manager-2026-09-30.md`.
 

@@ -705,3 +705,16 @@ Scope: Le passage d'un espace à l'autre (collaborateur, gestionnaire) et les é
   CHECK: node scripts/verify-gates.mjs --motion-conformance
   EXPECT: G28 passed: batch animations use GPU properties within timing budget
   EVIDENCE: G28 passed: batch animations use GPU properties within timing budget (vérifié par node scripts/verify-gates.mjs --motion-conformance, `App.vue` ajouté au périmètre : transition 250 ms sur `opacity` et `transform`, `mode="out-in"` présent le 2026-09-30). `npm run build` en sortie 0, `--all` sans nouvelle régression.
+
+---
+
+# Gates: Navigation, Retour en Bandeau
+
+OWNS: src/layouts/ManagerLayout.vue, src/layouts/EmployeeLayout.vue, src/composables/useSidebarNav.js, src/views/SettingsView.vue, src/views/employee/CheckInView.vue, src/views/employee/CheckOutView.vue, src/views/employee/AvailabilitiesView.vue, scripts/verify-gates.mjs, .agents/plans/2026-09-30-plan-navigation-retour-bandeau.md, GATES.md
+
+Scope: La navigation de retour remonte dans le bandeau, traité comme une barre d'application. Chaque espace définit une table de routes portant le titre de l'écran et la cible de retour. Le retour s'affiche sur les écrans descendants (validation d'arrivée, validation de départ, paramètres) à toute largeur, et sur les destinations du tiroir une fois le tiroir masqué (mobile). Le hamburger lui cède la place sous 840px. Le nom de l'espace disparaît du bandeau : la page Paramètres affiche « Paramètres » précédé de la flèche. Les boutons de retour de contenu sont retirés, et l'en-tête de la page Paramètres disparaît au profit du bandeau. Le bouton de retour est une flèche seule, nommée `Retour`, cible de 44px. `useSidebarNav` expose `isDocked` pour la décision. Arbitrages actés : portée du retour confirmée, en-tête de paramètres retiré, flèche remplaçant le hamburger, disponibilité employé avec retour mobile seulement, flèche seule.
+
+- [x] G97: Chaque espace porte une table de routes, le bandeau offre un bouton de retour nommé de 44px, le hamburger lui cède la place, et aucune vue de contenu ne conserve de bouton Retour ni l'en-tête de la page Paramètres
+  CHECK: node scripts/verify-gates.mjs --back-navigation
+  EXPECT: G97 passed: the back command lives in the app bar and no content duplicates it
+  EVIDENCE: G97 passed: the back command lives in the app bar and no content duplicates it (vérifié par node scripts/verify-gates.mjs --back-navigation, contrôle négatif compris : bouton Retour de contenu détecté le 2026-09-30). Rendu headless sombre : validation d'arrivée à 390 avec flèche et sans hamburger, accueil à 390 avec hamburger et sans flèche, paramètres gestionnaire à 1280 avec flèche et sans en-tête de page, disponibilité employé avec flèche à 390 et sans flèche à 1280. `--all` sans nouvelle régression, `npm run build` en sortie 0.

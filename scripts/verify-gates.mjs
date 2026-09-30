@@ -2009,7 +2009,7 @@ export function checkSidebarRail() {
       ok = false;
       continue;
     }
-    if (!content.includes('useSidebarNav') || !/const\s*\{\s*isRail,\s*toggleRail\s*\}\s*=\s*useSidebarNav\(\)/.test(content)) {
+    if (!content.includes('useSidebarNav') || !/const\s*\{\s*isRail,[^}]*toggleRail\s*\}\s*=\s*useSidebarNav\(\)/.test(content)) {
       console.error(`FAILURE G45: ${name} ne consomme plus le composable de repli`);
       ok = false;
     }
@@ -3049,12 +3049,12 @@ export function checkManagerFinish() {
   }
 
   const manager = read('layouts/ManagerLayout.vue');
-  if (!manager.includes('activeTitle')) gaps.push('titre de bandeau gestionnaire absent');
+  if (!manager.includes('barTitle')) gaps.push('titre de bandeau gestionnaire absent');
   const managerHeader = manager.match(/<header[\s\S]*?<\/header>/);
-  if (!managerHeader || !/<h1/.test(managerHeader[0])) gaps.push('bandeau gestionnaire sans h1');
+  if (!managerHeader || !/aria-label="Retour"/.test(managerHeader[0])) gaps.push('commande de retour absente du bandeau gestionnaire');
 
   const employee = read('layouts/EmployeeLayout.vue');
-  if (!employee.includes('activeTitle')) gaps.push('titre de bandeau employé absent');
+  if (!employee.includes('barTitle')) gaps.push('titre de bandeau employé absent');
 
   const locations = read('views/manager/LocationsView.vue');
   if (locations.includes('& Lieux')) gaps.push('« & Lieux » conservé');
@@ -3127,7 +3127,7 @@ export function checkEmployeeFinish() {
   const layout = read('layouts/EmployeeLayout.vue') || '';
   gaps.push(...missing(layout, ["label: 'Pointage'", "label: 'Ma disponibilité'"]).map((token) => `navigation employé sans ${token}`));
   if (layout.includes('Mes disponibilités')) gaps.push('navigation employé conserve « Mes disponibilités »');
-  if (!layout.includes('activeTitle')) gaps.push('bandeau employé sans titre');
+  if (!layout.includes('barTitle')) gaps.push('bandeau employé sans titre');
 
   const availabilities = read('views/employee/AvailabilitiesView.vue') || '';
   if (!availabilities.includes('>Ma disponibilité<')) gaps.push('page disponibilité mal nommée');
@@ -3253,6 +3253,71 @@ export function checkCrossSpaceGateways() {
   return true;
 }
 
+/**
+ * G97 : Navigation de retour en bandeau. Chaque espace définit une table de routes portant le titre
+ * de l'écran et la cible de retour, le bandeau offre un bouton retour nommé et une cible de 44px, le
+ * hamburger lui cède la place sur les écrans descendants, et plus aucune vue de contenu ne porte son
+ * propre bouton Retour.
+ */
+export function checkBackNavigation() {
+  const read = (relative) => {
+    const file = path.join(SRC_DIR, relative);
+    return fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : null;
+  };
+
+  const layoutGaps = (name, text) => {
+    const gaps = [];
+    if (!/ROUTES\s*=\s*\{/.test(text)) gaps.push(`${name} : table de routes absente`);
+    if (!text.includes("title: 'Paramètres'")) gaps.push(`${name} : écran Paramètres absent de la table`);
+    if (!/class="[^"]*min-w-11 min-h-11[^"]*"\s+aria-label="Retour"/.test(text)) {
+      gaps.push(`${name} : bouton de retour sans cible de 44px ou sans nom accessible`);
+    }
+    if (!/v-if="!showBack"/.test(text)) gaps.push(`${name} : hamburger non cédé au retour`);
+    if (!text.includes('barTitle')) gaps.push(`${name} : titre de bandeau absent`);
+    return gaps;
+  };
+
+  // Contrôle négatif : un bouton de contenu libellé Retour doit être refusé.
+  const contentRetour = (text) => />\s*Retour\s*</.test(text);
+  if (!contentRetour('<button>Retour</button>')) {
+    console.error('FAILURE G97: le détecteur de retour de contenu est aveugle, oracle invalide');
+    return false;
+  }
+
+  const manager = read('layouts/ManagerLayout.vue');
+  const employee = read('layouts/EmployeeLayout.vue');
+  if (manager === null || employee === null) {
+    console.error('FAILURE G97: une des mises en page est introuvable');
+    return false;
+  }
+
+  const gaps = [...layoutGaps('ManagerLayout.vue', manager), ...layoutGaps('EmployeeLayout.vue', employee)];
+
+  for (const relative of [
+    'views/employee/CheckInView.vue',
+    'views/employee/CheckOutView.vue',
+    'views/employee/AvailabilitiesView.vue',
+    'views/SettingsView.vue',
+  ]) {
+    const text = read(relative);
+    if (text === null) {
+      console.error(`FAILURE G97: ${relative} introuvable`);
+      return false;
+    }
+    if (contentRetour(text)) gaps.push(`${relative} : bouton Retour de contenu conservé`);
+  }
+
+  const settings = read('views/SettingsView.vue') || '';
+  if (settings.includes('>Paramètres</h1>')) gaps.push('views/SettingsView.vue : en-tête de page conservé');
+
+  if (gaps.length > 0) {
+    console.error(`FAILURE G97: navigation de retour incomplète -> ${gaps.join(', ')}`);
+    return false;
+  }
+  console.log('G97 passed: the back command lives in the app bar and no content duplicates it');
+  return true;
+}
+
 // Exécution CLI
 const arg = process.argv[2] || '--all';let success = true;
 
@@ -3374,6 +3439,8 @@ if (arg === '--emojis') {
   success = checkSettingsPage();
 } else if (arg === '--cross-space-gateways') {
   success = checkCrossSpaceGateways();
+} else if (arg === '--back-navigation') {
+  success = checkBackNavigation();
 } else if (arg === '--sidebar-build') {
   success = checkBuild('G48', 'production build succeeds with exit code 0');
 } else if (arg === '--manager-build') {
@@ -3436,10 +3503,11 @@ if (arg === '--emojis') {
   const r94 = checkEmployeeFinish();
   const r95 = checkSettingsPage();
   const r96 = checkCrossSpaceGateways();
+  const r97 = checkBackNavigation();
   const r48 = r39; // Une seule compilation sert les portes de build G39 et G48
-  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60 && r63 && r64 && r65 && r66 && r72 && r73 && r74 && r75 && r88 && r89 && r92 && r93 && r94 && r95 && r96;
+  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60 && r63 && r64 && r65 && r66 && r72 && r73 && r74 && r75 && r88 && r89 && r92 && r93 && r94 && r95 && r96 && r97;
 } else {
-  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--presences-ui|--presences-period|--presences-table|--presences-sort|--presences-localfirst|--sync-scope|--livequery-deps|--manager-dexie|--manager-grammar|--manager-responsive|--manager-nav-icons|--manager-finish|--employee-finish|--settings-page|--cross-space-gateways|--manager-build|--sidebar-build|--build|--all]`);
+  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--presences-ui|--presences-period|--presences-table|--presences-sort|--presences-localfirst|--sync-scope|--livequery-deps|--manager-dexie|--manager-grammar|--manager-responsive|--manager-nav-icons|--manager-finish|--employee-finish|--settings-page|--cross-space-gateways|--back-navigation|--manager-build|--sidebar-build|--build|--all]`);
   process.exit(1);
 }
 

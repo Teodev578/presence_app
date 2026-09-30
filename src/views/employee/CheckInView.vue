@@ -155,22 +155,10 @@ const handleConfirmCheckIn = async () => {
         :site-name="selectedLocation?.name || ''"
       />
 
-      <!-- En-tête navigation avec touch target 44px+ -->
-      <div class="flex items-center justify-between border-b border-base-300/40 pb-2.5 sm:pb-3.5 shrink-0">
-        <button
-          type="button"
-          class="btn btn-ghost btn-sm min-h-11 px-3 text-xs font-semibold gap-1.5 rounded-m3-sm text-base-content/75 hover:text-base-content focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-          @click="navigate('/employee')"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="15 18 9 12 15 6"></polyline>
-          </svg>
-          <span>Retour</span>
-        </button>
-        <div class="text-right">
-          <h1 class="text-base sm:text-xl font-extrabold text-base-content tracking-tight">Valider mon arrivée</h1>
-          <p class="text-xs text-base-content/60">Ravi de vous retrouver sur site</p>
-        </div>
+      <!-- En-tête de contexte : le retour vit désormais dans le bandeau -->
+      <div class="border-b border-base-300/40 pb-2.5 sm:pb-3.5 shrink-0">
+        <h1 class="text-base sm:text-xl font-extrabold text-base-content tracking-tight">Valider mon arrivée</h1>
+        <p class="text-xs text-base-content/60">Ravi de vous retrouver sur site</p>
       </div>
 
       <!-- Si aucun site n'est configuré en base -->

@@ -97,6 +97,7 @@ export function useSidebarNav() {
 
   return {
     isRail,
+    isDocked,
     toggleRail,
   }
 }

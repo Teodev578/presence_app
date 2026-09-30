@@ -6,7 +6,7 @@ import SyncIndicator from '../components/shared/SyncIndicator.vue'
 import SyncAlert from '../components/shared/SyncAlert.vue'
 
 const { currentPath, navigate } = useRouter()
-const { isRail, toggleRail } = useSidebarNav()
+const { isRail, isDocked, toggleRail } = useSidebarNav()
 
 const drawerOpen = ref(false)
 
@@ -96,10 +96,25 @@ const navItems = [
   },
 ]
 
-const activeTitle = computed(() => {
-  const current = navItems.find((item) => item.path === currentPath.value)
-  return current ? current.label : 'Espace Manager'
-})
+// Table de navigation : chaque écran porte son titre et, pour les écrans descendants, sa cible de
+// retour. Les destinations du tiroir n'affichent le retour qu'une fois le tiroir masqué (mobile).
+const MANAGER_ROUTES = {
+  '/manager': { title: 'Tableau de bord', back: null, sub: false },
+  '/manager/locations': { title: 'Sites', back: '/manager', sub: false },
+  '/manager/presences': { title: 'Présences', back: '/manager', sub: false },
+  '/manager/availabilities': { title: 'Disponibilités', back: '/manager', sub: false },
+  '/manager/employees': { title: 'Collaborateurs', back: '/manager', sub: false },
+  '/manager/teams': { title: 'Équipes', back: '/manager', sub: false },
+  '/manager/export': { title: 'Export CSV', back: '/manager', sub: false },
+  '/manager/settings': { title: 'Paramètres', back: '/manager', sub: true },
+}
+
+const barEntry = computed(
+  () => MANAGER_ROUTES[currentPath.value] ?? { title: 'Espace Manager', back: null, sub: false }
+)
+const barTitle = computed(() => barEntry.value.title)
+const backTarget = computed(() => barEntry.value.back)
+const showBack = computed(() => Boolean(backTarget.value) && (barEntry.value.sub || !isDocked.value))
 
 const handleNav = (path) => {
   drawerOpen.value = false
@@ -119,8 +134,9 @@ const handleNav = (path) => {
       <!-- En-tête supérieur adaptatif -->
       <header class="navbar bg-base-100/90 backdrop-blur-md border-b border-base-300 px-4 sm:px-6 min-h-14 lg:min-h-16 sticky top-0 z-30 justify-between">
         <div class="flex items-center gap-2 sm:gap-3">
-          <!-- Bouton hamburger (mobile et tablette < 840px) -->
+          <!-- Bouton hamburger (mobile et tablette < 840px), cédé au retour sur les écrans descendants -->
           <label
+            v-if="!showBack"
             for="manager-drawer"
             class="btn btn-ghost btn-circle btn-sm min-h-12 min-w-12 sm:min-h-10 sm:min-w-10 text-base-content docked:hidden cursor-pointer"
             aria-label="Ouvrir le menu de gestion"
@@ -130,9 +146,22 @@ const handleNav = (path) => {
             </svg>
           </label>
 
-          <div class="flex items-center gap-2">
-            <h1 class="text-base sm:text-lg font-bold text-base-content truncate">{{ activeTitle }}</h1>
-          </div>
+          <!-- Retour : écrans descendants à toute largeur, destinations du tiroir une fois le tiroir masqué -->
+          <button
+            v-if="showBack"
+            type="button"
+            class="btn btn-ghost btn-circle min-w-11 min-h-11 text-base-content/80 hover:text-base-content"
+            aria-label="Retour"
+            title="Retour"
+            @click="navigate(backTarget)"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+          </button>
+
+          <span class="text-base sm:text-lg font-bold text-base-content truncate">{{ barTitle }}</span>
         </div>
 
         <!-- Alerte réseau uniquement : silencieuse tant que tout est synchronisé, la consultation permanente vit dans le tiroir -->

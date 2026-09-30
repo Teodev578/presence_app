@@ -8,7 +8,7 @@ import SyncAlert from '../components/shared/SyncAlert.vue'
 
 const { currentPath, navigate } = useRouter()
 const { profile } = useProfile()
-const { isRail, toggleRail } = useSidebarNav()
+const { isRail, isDocked, toggleRail } = useSidebarNav()
 
 const drawerOpen = ref(false)
 
@@ -53,10 +53,23 @@ const navItems = [
   },
 ]
 
-const activeTitle = computed(() => {
-  const current = navItems.find((item) => item.isActive(currentPath.value))
-  return current ? current.label : 'Espace Collaborateur'
-})
+// Table de navigation : chaque écran porte son titre et, pour les écrans descendants, sa cible de
+// retour. Les destinations du tiroir n'affichent le retour qu'une fois le tiroir masqué (mobile).
+const EMPLOYEE_ROUTES = {
+  '/': { title: 'Pointage', back: null, sub: false },
+  '/employee': { title: 'Pointage', back: null, sub: false },
+  '/employee/availabilities': { title: 'Ma disponibilité', back: '/employee', sub: false },
+  '/employee/check-in': { title: "Valider mon arrivée", back: '/employee', sub: true },
+  '/employee/check-out': { title: 'Valider mon départ', back: '/employee', sub: true },
+  '/employee/settings': { title: 'Paramètres', back: '/employee', sub: true },
+}
+
+const barEntry = computed(
+  () => EMPLOYEE_ROUTES[currentPath.value] ?? { title: 'Espace Collaborateur', back: null, sub: false }
+)
+const barTitle = computed(() => barEntry.value.title)
+const backTarget = computed(() => barEntry.value.back)
+const showBack = computed(() => Boolean(backTarget.value) && (barEntry.value.sub || !isDocked.value))
 
 const gatewayLabel = 'Espace Gestionnaire'
 
@@ -80,9 +93,11 @@ const handleNav = (path) => {
     <div class="employee-onepage drawer-content flex flex-col min-h-screen md:h-screen md:max-h-screen md:overflow-hidden pb-[calc(0.75rem+var(--safe-bottom,0px))] md:pb-2">
       <!-- Barre de navigation supérieure épurée -->
       <header class="navbar bg-base-100/90 backdrop-blur-md sticky top-0 z-30 border-b border-base-300 px-4 sm:px-6 min-h-14 shrink-0">
-        <!-- Bouton hamburger (mobile et tablette < 840px) + Marque -->
+        <!-- Commande de tête : hamburger sur les destinations de tiroir sous 840px, retour sur les
+             écrans descendants et sur les destinations de tiroir une fois le tiroir masqué -->
         <div class="flex items-center gap-2 sm:gap-3">
           <label
+            v-if="!showBack"
             for="employee-drawer"
             class="btn btn-ghost btn-circle btn-sm min-h-12 min-w-12 sm:min-h-10 sm:min-w-10 text-base-content inline-flex cursor-pointer docked:hidden"
             aria-label="Ouvrir le menu de navigation"
@@ -92,7 +107,21 @@ const handleNav = (path) => {
             </svg>
           </label>
 
-          <span class="font-bold text-base tracking-tight text-base-content truncate">{{ activeTitle }}</span>
+          <button
+            v-if="showBack"
+            type="button"
+            class="btn btn-ghost btn-circle min-w-11 min-h-11 text-base-content/80 hover:text-base-content"
+            aria-label="Retour"
+            title="Retour"
+            @click="navigate(backTarget)"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+          </button>
+
+          <span class="font-bold text-base tracking-tight text-base-content truncate">{{ barTitle }}</span>
         </div>
 
         <div class="flex-1"></div>
