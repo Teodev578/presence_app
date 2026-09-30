@@ -125,6 +125,33 @@ export function useAuth() {
     }
   }
 
+  const changePassword = async (newPassword) => {
+    authLoading.value = true
+    authError.value = null
+    const cleanPassword = (newPassword || '').trim()
+
+    if (cleanPassword.length < 6) {
+      const msg = 'Le mot de passe doit comporter au moins 6 caractères.'
+      authError.value = msg
+      authLoading.value = false
+      return { data: null, error: new Error(msg), formattedMessage: msg }
+    }
+
+    try {
+      const { data, error } = await supabase.auth.updateUser({
+        password: cleanPassword,
+      })
+      if (error) throw error
+      return { data, error: null }
+    } catch (err) {
+      const formatted = formatAuthError(err)
+      authError.value = formatted
+      return { data: null, error: err, formattedMessage: formatted }
+    } finally {
+      authLoading.value = false
+    }
+  }
+
   const signOut = async () => {
     authLoading.value = true
     try {
@@ -149,5 +176,6 @@ export function useAuth() {
     signUp,
     signOut,
     resetPassword,
+    changePassword,
   }
 }
