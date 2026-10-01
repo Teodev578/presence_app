@@ -399,10 +399,10 @@ const toggleStatus = async (loc) => {
       <template #actions>
         <button
           type="button"
-          class="btn btn-primary rounded-m3-sm font-bold shadow-xs min-h-11 flex items-center justify-center gap-2 w-full sm:w-auto active:scale-95 transition-transform duration-150"
+          class="btn btn-primary rounded-m3-sm font-bold shadow-xs min-h-11 flex items-center justify-center gap-2 w-full sm:w-auto active:scale-95 transition-transform duration-150 motion-reduce:transform-none focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
           @click="openCreateModal"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M12 5v14M5 12h14"></path>
           </svg>
           <span>Ajouter un lieu</span>
@@ -415,7 +415,7 @@ const toggleStatus = async (loc) => {
       <!-- Recherche : pleine largeur du conteneur, cible confortable -->
       <div class="w-full">
         <label class="input input-bordered flex w-full items-center gap-2 rounded-m3-md bg-base-300/50 min-h-11">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0 text-base-content/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0 text-base-content/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="11" cy="11" r="8"></circle>
             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
           </svg>
@@ -431,27 +431,30 @@ const toggleStatus = async (loc) => {
       <!-- Filtre Statut -->
       <div class="flex items-center gap-2 self-start">
         <span class="text-sm font-semibold text-base-content/60">Statut :</span>
-        <div class="join">
+        <div class="join" role="group" aria-label="Filtrer les lieux par statut">
           <button
             type="button"
-            class="btn join-item min-h-11 px-3 rounded-l-m3-sm"
+            class="btn join-item min-h-11 px-3 rounded-l-m3-sm active:scale-95 transition-transform duration-150 motion-reduce:transform-none focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
             :class="{ 'btn-primary': filterStatus === 'all' }"
+            :aria-pressed="filterStatus === 'all'"
             @click="filterStatus = 'all'"
           >
             Tous ({{ locationCounts.all }})
           </button>
           <button
             type="button"
-            class="btn join-item min-h-11 px-3"
+            class="btn join-item min-h-11 px-3 active:scale-95 transition-transform duration-150 motion-reduce:transform-none focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
             :class="{ 'btn-primary': filterStatus === 'active' }"
+            :aria-pressed="filterStatus === 'active'"
             @click="filterStatus = 'active'"
           >
             Actifs ({{ locationCounts.active }})
           </button>
           <button
             type="button"
-            class="btn join-item min-h-11 px-3 rounded-r-m3-sm"
+            class="btn join-item min-h-11 px-3 rounded-r-m3-sm active:scale-95 transition-transform duration-150 motion-reduce:transform-none focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
             :class="{ 'btn-primary': filterStatus === 'inactive' }"
+            :aria-pressed="filterStatus === 'inactive'"
             @click="filterStatus = 'inactive'"
           >
             Inactifs ({{ locationCounts.inactive }})
@@ -473,7 +476,7 @@ const toggleStatus = async (loc) => {
       <div class="mt-4">
         <button
           type="button"
-          class="btn btn-primary min-h-11 rounded-m3-sm"
+          class="btn btn-primary min-h-11 rounded-m3-sm active:scale-95 transition-transform duration-150 motion-reduce:transform-none focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
           @click="runEmptyAction"
         >
           {{ emptyState.actionLabel }}
@@ -490,7 +493,7 @@ const toggleStatus = async (loc) => {
         <!-- Titre & État de pointage -->
         <div class="flex items-center justify-between gap-3">
           <div class="flex items-center gap-2 min-w-0">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
               <line x1="9" y1="22" x2="9" y2="2"></line>
               <line x1="15" y1="22" x2="15" y2="2"></line>
@@ -545,11 +548,11 @@ const toggleStatus = async (loc) => {
             :href="mapUrl(loc)"
             target="_blank"
             rel="noopener noreferrer"
-            class="btn btn-ghost min-h-11 w-full justify-start gap-1.5 rounded-m3-sm px-2 text-primary font-semibold"
+            class="btn btn-ghost min-h-11 w-full justify-start gap-1.5 rounded-m3-sm px-2 text-primary font-semibold active:scale-95 transition-transform duration-150 motion-reduce:transform-none focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
             :aria-label="`Voir ${loc.name} sur la carte`"
             title="Ouvrir la position dans la carte"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
               <circle cx="12" cy="10" r="3"></circle>
             </svg>
@@ -561,7 +564,7 @@ const toggleStatus = async (loc) => {
         <div class="flex items-center justify-end gap-2 mt-auto pt-3 border-t border-base-300/60">
           <button
             type="button"
-            class="btn btn-ghost text-error font-medium rounded-m3-sm min-h-11 px-3"
+            class="btn btn-ghost text-error font-medium rounded-m3-sm min-h-11 px-3 active:scale-95 transition-transform duration-150 motion-reduce:transform-none focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
             @click="requestDelete(loc)"
             title="Supprimer ce lieu"
           >
@@ -569,10 +572,10 @@ const toggleStatus = async (loc) => {
           </button>
           <button
             type="button"
-            class="btn btn-secondary btn-outline font-semibold rounded-m3-sm gap-1.5 min-h-11 px-3"
+            class="btn btn-secondary btn-outline font-semibold rounded-m3-sm gap-1.5 min-h-11 px-3 active:scale-95 transition-transform duration-150 motion-reduce:transform-none focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
             @click="openEditModal(loc)"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
             </svg>
@@ -587,11 +590,11 @@ const toggleStatus = async (loc) => {
       <div class="modal-box max-w-xl rounded-m3-xl p-5 sm:p-6 bg-base-100 border border-base-300 shadow-sm">
         <div class="flex items-center justify-between mb-4 pb-2 border-b border-base-200">
           <h3 class="font-black text-xl text-base-content flex items-center gap-2">
-            <svg v-if="isEditing" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg v-if="isEditing" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
             </svg>
-            <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
               <circle cx="12" cy="10" r="3"></circle>
             </svg>
@@ -599,11 +602,11 @@ const toggleStatus = async (loc) => {
           </h3>
           <button
             type="button"
-            class="btn btn-circle btn-ghost min-w-11 min-h-11"
-            aria-label="Fermer la modale"
+            class="btn btn-circle btn-ghost min-w-11 min-h-11 active:scale-95 transition-transform duration-150 motion-reduce:transform-none focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+            aria-label="Fermer le dialogue"
             @click="closeModal"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
@@ -612,7 +615,7 @@ const toggleStatus = async (loc) => {
 
         <!-- Message d'erreur -->
         <div v-if="formError" class="alert alert-error text-xs py-2.5 rounded-m3-md mb-4 text-error-content flex items-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="12" cy="12" r="10"></circle>
             <line x1="12" y1="8" x2="12" y2="12"></line>
             <line x1="12" y1="16" x2="12.01" y2="16"></line>
@@ -642,12 +645,12 @@ const toggleStatus = async (loc) => {
             <!-- Bouton GPS actuel -->
             <button
               type="button"
-              class="btn btn-outline btn-primary min-h-11 w-full rounded-m3-sm font-bold flex items-center justify-center gap-2"
+              class="btn btn-outline btn-primary min-h-11 w-full rounded-m3-sm font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform duration-150 motion-reduce:transform-none focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
               :disabled="isLocating"
               @click="useCurrentLocation"
             >
-              <span v-if="isLocating" class="loading loading-spinner loading-xs"></span>
-              <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <span v-if="isLocating" class="loading loading-spinner loading-xs" aria-hidden="true"></span>
+              <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
               </svg>
               <span>Prendre ma position actuelle</span>
@@ -789,22 +792,91 @@ const toggleStatus = async (loc) => {
           <div class="form-control">
             <div class="flex items-center justify-between py-1">
               <span class="label-text font-bold text-sm">Rayon de détection</span>
-              <span class="badge badge-primary badge-sm font-bold">{{ form.radius_meters }} mètres</span>
+              <span class="badge badge-primary font-bold text-xs">{{ form.radius_meters }} mètres</span>
             </div>
-            <input
-              v-model.number="form.radius_meters"
-              type="range"
-              min="20"
-              max="500"
-              step="10"
-              class="range range-primary range-sm w-full mt-3"
-            />
-            <div class="w-full flex justify-between text-xs text-base-content/50 px-1 mt-1 font-mono">
-              <span>20m</span>
-              <span>100m</span>
-              <span>250m</span>
-              <span>500m</span>
+
+            <!-- Contrôle par slider et boutons de pas fin -->
+            <div class="flex items-center gap-3 mt-2">
+              <button
+                type="button"
+                class="btn btn-ghost border border-base-300 min-h-11 min-w-11 rounded-m3-sm flex items-center justify-center text-base-content active:scale-95 transition-transform duration-150 motion-reduce:transform-none focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+                :disabled="form.radius_meters <= 20"
+                aria-label="Diminuer le rayon de 10 mètres"
+                @click="form.radius_meters = Math.max(20, form.radius_meters - 10)"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+              </button>
+
+              <div class="flex-1 flex flex-col justify-center">
+                <input
+                  v-model.number="form.radius_meters"
+                  type="range"
+                  min="20"
+                  max="500"
+                  step="10"
+                  class="range range-primary w-full focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                  aria-label="Rayon de détection en mètres"
+                  :aria-valuenow="form.radius_meters"
+                  aria-valuemin="20"
+                  aria-valuemax="500"
+                />
+                <div class="w-full flex justify-between text-xs text-base-content/50 font-medium px-1 mt-1 font-mono">
+                  <span>Min 20 m</span>
+                  <span>Max 500 m</span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                class="btn btn-ghost border border-base-300 min-h-11 min-w-11 rounded-m3-sm flex items-center justify-center text-base-content active:scale-95 transition-transform duration-150 motion-reduce:transform-none focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+                :disabled="form.radius_meters >= 500"
+                aria-label="Augmenter le rayon de 10 mètres"
+                @click="form.radius_meters = Math.min(500, form.radius_meters + 10)"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+              </button>
             </div>
+
+            <!-- Raccourcis de sélection rapide (presets) -->
+            <div class="flex items-center gap-2 mt-3" role="group" aria-label="Valeurs courantes de rayon">
+              <button
+                type="button"
+                class="btn min-h-11 flex-1 text-sm font-bold rounded-m3-sm transition-all active:scale-95 duration-150 motion-reduce:transform-none focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                :class="form.radius_meters === 50 ? 'btn-primary shadow-xs' : 'btn-ghost bg-base-200/70 border border-base-300 text-base-content/80 hover:bg-base-300/60'"
+                :aria-pressed="form.radius_meters === 50"
+                @click="form.radius_meters = 50"
+              >
+                50 m
+              </button>
+              <button
+                type="button"
+                class="btn min-h-11 flex-1 text-sm font-bold rounded-m3-sm transition-all active:scale-95 duration-150 motion-reduce:transform-none focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                :class="form.radius_meters === 100 ? 'btn-primary shadow-xs' : 'btn-ghost bg-base-200/70 border border-base-300 text-base-content/80 hover:bg-base-300/60'"
+                :aria-pressed="form.radius_meters === 100"
+                @click="form.radius_meters = 100"
+              >
+                100 m
+              </button>
+              <button
+                type="button"
+                class="btn min-h-11 flex-1 text-sm font-bold rounded-m3-sm transition-all active:scale-95 duration-150 motion-reduce:transform-none focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                :class="form.radius_meters === 200 ? 'btn-primary shadow-xs' : 'btn-ghost bg-base-200/70 border border-base-300 text-base-content/80 hover:bg-base-300/60'"
+                :aria-pressed="form.radius_meters === 200"
+                @click="form.radius_meters = 200"
+              >
+                200 m
+              </button>
+            </div>
+
+            <!-- Texte contextuel et humain -->
+            <p class="text-xs text-base-content/70 mt-2.5 leading-relaxed">
+              Le pointage sera autorisé dans un cercle de <strong class="text-base-content font-bold">{{ form.radius_meters }} mètres</strong> autour de cette adresse.
+            </p>
           </div>
 
           <!-- Statut actif -->
@@ -822,10 +894,10 @@ const toggleStatus = async (loc) => {
           </div>
 
           <!-- Boutons de validation -->
-          <div class="modal-action mt-2 pt-4 border-t border-base-200 gap-2">
+          <div class="modal-action mt-2 pt-4 border-t border-base-200 flex items-center gap-2">
             <button
               type="button"
-              class="btn btn-ghost min-h-11 rounded-m3-sm font-medium"
+              class="btn btn-ghost px-5 min-h-11 rounded-m3-sm font-medium active:scale-95 transition-transform duration-150 motion-reduce:transform-none focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
               :disabled="isSubmitting"
               @click="closeModal"
             >
@@ -833,10 +905,10 @@ const toggleStatus = async (loc) => {
             </button>
             <button
               type="submit"
-              class="btn btn-primary min-h-11 rounded-m3-sm font-bold shadow-xs"
+              class="btn btn-primary flex-1 min-h-11 rounded-m3-sm font-bold shadow-xs active:scale-95 transition-transform duration-150 motion-reduce:transform-none focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
               :disabled="isSubmitting"
             >
-              <span v-if="isSubmitting" class="loading loading-spinner loading-xs"></span>
+              <span v-if="isSubmitting" class="loading loading-spinner loading-xs" aria-hidden="true"></span>
               <span v-else>{{ isEditing ? 'Enregistrer les modifications' : 'Ajouter ce lieu' }}</span>
             </button>
           </div>

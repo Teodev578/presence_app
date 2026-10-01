@@ -120,32 +120,34 @@ const generateCSV = async () => {
 
     const headers = [
       'Date',
-      'Collaborateur',
+      'Nom',
       'Email',
       'Équipe',
-      'Site',
-      'Heure Arrivée',
-      'Heure Départ',
+      'Lieu de travail',
+      'Heure d\'arrivée',
+      'Heure de départ',
       'Statut',
-      'Latitude Arrivée',
-      'Longitude Arrivée',
-      'Précision GPS (m)',
     ]
 
+    const statusLabels = {
+      present: 'Sur site',
+      completed: 'Terminé',
+      late: 'Arrivée tardive',
+      completed_late: 'Terminé (arrivée tardive)',
+      absent: 'Absence signalée',
+    }
+
     const rows = data.map((p) => {
-      const formatTime = (iso) => (iso ? new Date(iso).toLocaleTimeString('fr-FR') : '')
+      const formatTime = (iso) => (iso ? new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '')
       return [
         p.work_date,
         `"${(p.profiles?.full_name || '').replace(/"/g, '""')}"`,
         `"${(p.profiles?.email || '').replace(/"/g, '""')}"`,
         `"${(p.profiles?.teams?.name || 'Sans équipe').replace(/"/g, '""')}"`,
-        `"${(p.locations?.name || '').replace(/"/g, '""')}"`,
+        `"${(p.locations?.name || 'Non spécifié').replace(/"/g, '""')}"`,
         formatTime(p.check_in_time),
         formatTime(p.check_out_time),
-        p.status,
-        p.check_in_lat ?? '',
-        p.check_in_lng ?? '',
-        p.check_in_accuracy ? Math.round(p.check_in_accuracy) : '',
+        `"${statusLabels[p.status] || p.status || ''}"`,
       ]
     })
 

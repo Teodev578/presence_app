@@ -59,10 +59,10 @@ const handleConfirm = () => {
         </div>
       </div>
 
-      <div class="modal-action mt-2 gap-2">
+      <div class="modal-action mt-2 pt-2 border-t border-base-200/60 flex items-center gap-2">
         <button
           type="button"
-          class="btn btn-ghost btn-sm rounded-m3-sm text-base-content/80 min-h-10 px-3.5"
+          class="btn btn-ghost px-5 min-h-11 rounded-m3-sm text-base-content/80 font-medium active:scale-95 transition-transform duration-150 motion-reduce:transform-none focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
           :disabled="loading"
           @click="handleCancel"
         >
@@ -70,18 +70,18 @@ const handleConfirm = () => {
         </button>
         <button
           type="button"
-          class="btn btn-sm rounded-m3-sm font-bold shadow-xs min-h-10 px-4"
+          class="btn flex-1 min-h-11 rounded-m3-sm font-bold shadow-xs active:scale-95 transition-transform duration-150 motion-reduce:transform-none focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
           :class="confirmClass"
           :disabled="loading"
           @click="handleConfirm"
         >
-          <span v-if="loading" class="loading loading-spinner loading-xs"></span>
+          <span v-if="loading" class="loading loading-spinner loading-xs" aria-hidden="true"></span>
           <span v-else>{{ confirmText }}</span>
         </button>
       </div>
     </div>
     <form method="dialog" class="modal-backdrop bg-black/40 backdrop-blur-xs" @click="handleCancel">
-      <button>close</button>
+      <button type="button">fermer</button>
     </form>
   </dialog>
 </template>
