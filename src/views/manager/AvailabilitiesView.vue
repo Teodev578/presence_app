@@ -50,14 +50,14 @@ const employeeRows = useLiveQuery(async () => {
   return list
     .filter((p) => p.is_active !== false && !p.deleted_at)
     .sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''))
-}, null)
+}, [])
 
 const availabilityRows = useLiveQuery(async () =>
   db.availabilities
     .where('week_start')
     .equals(selectedWeekStart.value)
     .toArray(),
-null, () => selectedWeekStart.value)
+[], () => selectedWeekStart.value)
 
 const presenceRows = useLiveQuery(async () =>
   db.presences
@@ -65,14 +65,10 @@ const presenceRows = useLiveQuery(async () =>
     .between(selectedWeekStart.value, weekEnd.value, true, false)
     .filter((p) => !p.deleted_at)
     .toArray(),
-null, () => `${selectedWeekStart.value}|${weekEnd.value}`)
+[], () => `${selectedWeekStart.value}|${weekEnd.value}`)
 
 const teamRows = useLiveQuery(async () => db.teams.toArray(), [])
 const locationRows = useLiveQuery(async () => db.locations.toArray(), [])
-
-const loading = computed(() =>
-  employeeRows.value === null || availabilityRows.value === null || presenceRows.value === null
-)
 
 const locationsMap = computed(() => new Map((locationRows.value || []).map((loc) => [loc.id, loc])))
 
@@ -417,13 +413,8 @@ const goToPresences = (dateStr) => {
       </div>
     </div>
 
-    <!-- Chargement : ossature -->
-    <div v-if="loading" class="card bg-base-200 border border-base-300 rounded-m3-lg p-4 flex flex-col gap-3">
-      <div v-for="n in 4" :key="n" class="h-14 rounded-m3-md bg-base-300/60 animate-pulse"></div>
-    </div>
-
     <ManagerEmptyState
-      v-else-if="!filteredEmployees.length"
+      v-if="!filteredEmployees.length"
       :icon="emptyState.icon"
       :title="emptyState.title"
       :message="emptyState.message"

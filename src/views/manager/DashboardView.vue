@@ -22,18 +22,16 @@ const todayLabel = computed(() => {
 })
 
 // Lecture réactive depuis Dexie. L'écran ne tire rien du réseau : l'engine rapatrie,
-// Dexie expose, la vue se rafraîchit seule.
-const profileRows = useLiveQuery(async () => db.profiles.toArray(), null)
+// Dexie expose, la vue se rafraîchit seule sans flash de chargement.
+const profileRows = useLiveQuery(async () => db.profiles.toArray(), [])
 const presenceRows = useLiveQuery(async () =>
   db.presences
     .where('work_date')
     .equals(todayStr)
     .filter((p) => !p.deleted_at)
     .toArray(),
-null)
+[])
 const localLocations = useLiveQuery(async () => db.locations.toArray(), [])
-
-const loading = computed(() => profileRows.value === null || presenceRows.value === null)
 
 const totalEmployees = computed(() =>
   (profileRows.value || []).filter((p) => p.is_active !== false && !p.deleted_at).length
@@ -181,13 +179,8 @@ const goToPresences = () => navigate('/manager/presences')
         <span class="badge badge-primary badge-sm font-semibold shrink-0">{{ presencesToday.length === 1 ? '1 pointage' : `${presencesToday.length} pointages` }}</span>
       </div>
 
-      <!-- Chargement : ossature à la forme du contenu attendu -->
-      <div v-if="loading" class="p-4 flex flex-col gap-3">
-        <div v-for="n in 3" :key="n" class="h-14 rounded-m3-md bg-base-300/60 animate-pulse"></div>
-      </div>
-
       <ManagerEmptyState
-        v-else-if="!presencesToday.length"
+        v-if="!presencesToday.length"
         bare
         icon="calendar"
         title="Aucun pointage aujourd'hui"

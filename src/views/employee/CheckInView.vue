@@ -4,9 +4,7 @@ import { useRouter } from '../../router'
 import { useGeolocation, formatDistance } from '../../composables/useGeolocation'
 import { usePresences } from '../../composables/usePresences'
 import { useProfile } from '../../composables/useProfile'
-import { isLocationActive } from '../../composables/useLocations'
-import { db } from '../../lib/db'
-import { supabase } from '../../lib/supabase'
+import { useLocations, isLocationActive } from '../../composables/useLocations'
 import GpsRing from '../../components/employee/GpsRing.vue'
 import CheckConfirmationOverlay from '../../components/employee/CheckConfirmationOverlay.vue'
 
@@ -24,43 +22,21 @@ const {
 
 const { checkIn } = usePresences()
 const { profile } = useProfile()
+const { locations: rawLocations, ensureLoaded } = useLocations()
 
-const locations = ref([])
+// Observation réactive et instantanée des sites actifs via Dexie
+const locations = computed(() => {
+  return (rawLocations.value || []).filter((loc) => !loc.deleted_at && isLocationActive(loc))
+})
+
 const manualSelectedLocation = ref(null)
 const isSubmitting = ref(false)
 const isSuccess = ref(false)
 const errorMessage = ref('')
-const isLoadingLocations = ref(true)
 
-onMounted(async () => {
+onMounted(() => {
   startWatching()
-
-  try {
-    isLoadingLocations.value = true
-    // Récupération stricte des sites actifs réels sans filtres de type IndexedDB restrictifs
-    let list = await db.locations
-      .filter((loc) => !loc.deleted_at && isLocationActive(loc))
-      .toArray()
-
-    // Si le cache local est vide, synchronisation initiale depuis Supabase
-    if (!list.length && navigator.onLine) {
-      const { data, error } = await supabase
-        .from('locations')
-        .select('*')
-        .eq('is_active', true)
-        .is('deleted_at', null)
-      if (!error && data && data.length) {
-        list = data
-        await db.locations.bulkPut(data)
-      }
-    }
-
-    locations.value = list
-  } catch (err) {
-    console.error('Erreur chargement sites :', err)
-  } finally {
-    isLoadingLocations.value = false
-  }
+  ensureLoaded()
 })
 
 onUnmounted(() => {
@@ -163,7 +139,7 @@ const handleConfirmCheckIn = async () => {
 
       <!-- Si aucun site n'est configuré en base -->
       <div
-        v-if="!isLoadingLocations && locations.length === 0"
+        v-if="locations.length === 0"
         class="alert alert-warning text-xs py-3 rounded-m3-md flex items-center gap-2"
       >
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

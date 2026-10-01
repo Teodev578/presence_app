@@ -1,57 +1,68 @@
-# Plan : Gestion des Jours Fériés dans PresenceApp (Option 1 : Moteur Local-First)
+# Plan : Éradication des Temps de Chargement & Alignement Local-First Intégral
 
 Date : 2026-10-01
-Déclencheur : Prise en charge des jours fériés légaux français (11 jours fériés + Alsace-Moselle) pour éliminer les fausses anomalies « Non pointé » et assainir les présences attendues
-Statut : Terminé (Validé par les portes G88, G89, G93, G108, G109, G110 et npm run build)
+Déclencheur : Présence d'indicateurs et de temps de chargement bloquants dans une application architecturée en Local-First
+Statut : Terminé (Validé par les portes G111 à G115 et npm run build)
 
 ## 1. Périmètre
 
 ### Fichiers lus
-- `src/lib/dateUtils.js`
-- `src/views/manager/AvailabilitiesView.vue`
+- `src/views/manager/TeamsView.vue`
+- `src/views/manager/EmployeesView.vue`
+- `src/views/manager/DashboardView.vue`
 - `src/views/manager/PresencesView.vue`
-- `src/components/employee/WeekGrid.vue`
+- `src/views/manager/AvailabilitiesView.vue`
+- `src/views/employee/CheckInView.vue`
+- `src/views/employee/CheckOutView.vue`
+- `src/composables/useSyncEngine.js`
+- `src/composables/useLocations.js`
+- `src/lib/db.js`
 - `GATES.md`
 
 ### Fichiers à modifier
-1. `src/lib/dateUtils.js` :
-   - Algorithme canonique de calcul de Pâques (formule de Butcher/Meeus).
-   - Génération de la table des jours fériés d'une année donnée (`getFrenchHolidays(year, options)`).
-   - Prise en charge du régime général (11 jours) et de l'Alsace-Moselle (Vendredi saint, Saint-Étienne).
-   - Prédicats d'aide `getPublicHoliday(dateStr, options)` et `isPublicHoliday(dateStr, options)`.
+1. `src/views/manager/TeamsView.vue` :
+   - Élimination des requêtes réseau distantes `supabase.from('teams')`.
+   - Lecture réactive locale via `useLiveQuery` sur `db.teams` et `db.profiles`.
+   - Écritures locales atomiques (création, renommage, archivage) via `db.transaction('rw', db.teams, db.sync_outbox, ...)` avec UUIDv7.
+   - Suppression de l'état bloquant `loading = ref(true)` et du squelette d'attente.
 
-2. `src/views/manager/AvailabilitiesView.vue` :
-   - Qualification des cellules : un jour férié chômé (sans pointage) n'est plus marqué en anomalie `Non pointé` mais reçoit un état apaisant `holiday` (« Férié »).
-   - Si un collaborateur effectue un pointage effectif un jour férié, le badge de succès `present` est conservé avec mention du caractère férié.
-   - En-tête des jours : mise en valeur du nom du jour férié (ex. `Lun. 6 avr. (L. Pâques)`).
-   - Calcul des `Présences attendues` : les jours fériés chômés ne sont pas comptés comme attendus manquants.
-   - Modale de détail et légende enrichies avec la mention du jour férié.
+2. `src/views/manager/EmployeesView.vue` :
+   - Élimination des requêtes réseau distantes `supabase.from('profiles')` et `supabase.from('teams')`.
+   - Lecture réactive locale via `useLiveQuery` sur `db.profiles` et `db.teams`.
+   - Écritures locales atomiques (édition, archivage) via `db.transaction('rw', db.profiles, db.sync_outbox, ...)` avec UUIDv7.
+   - Suppression de l'état bloquant `loading = ref(true)` et du squelette d'attente.
 
-3. `GATES.md` :
-   - Spécification des portes d'acceptation G108, G109, G110.
+3. `src/views/manager/DashboardView.vue` :
+   - Amorçage des `useLiveQuery` avec un tableau vide par défaut `[]` au lieu de `null`.
+   - Suppression du flash visuel de squelette (`v-if="loading"`) pour un rendu instantané.
+
+4. `src/views/manager/PresencesView.vue` :
+   - Amorçage de `presenceRows` avec un tableau vide par défaut `[]` au lieu de `null`.
+   - Rendu immédiat des fiches et statistiques sans flash de spinner.
+
+5. `src/views/manager/AvailabilitiesView.vue` :
+   - Amorçage des requêtes `useLiveQuery` avec `[]` par défaut au lieu de `null`.
+   - Suppression du bloc d'ossature clignotante à chaque navigation.
+
+6. `src/views/employee/CheckInView.vue` & `src/views/employee/CheckOutView.vue` :
+   - Remplacement de l'initialisation bloquante des sites par `useLocations()` réactif.
+   - Suppression de `isLoadingLocations` et `isLoading` bloquants au montage.
+
+7. `GATES.md` :
+   - Inscription des portes d'acceptation G111 à G115.
 
 ### Hors périmètre
-- Dépendances logicielles : interdiction stricte d'installer des paquets npm externes.
-- Requêtes réseau : pas d'API distante pour préserver le fonctionnement 100% hors-ligne.
+- Modification des versions de paquets ou du `package.json` (règle absolue de non-altération sans accord).
+- Altération de la logique sous-jacente du moteur de réplication `useSyncEngine.js`.
 
 ## 2. Étapes ordonnées
 
-1. **Formalisation des gates dans GATES.md**
-   - Inscription des oracles déterministes G108 (moteur `dateUtils.js`), G109 (intégration dans `AvailabilitiesView.vue`), G110 (compilation Vite).
-
-2. **Implémentation du moteur algorithmique dans `dateUtils.js`**
-   - Fonctions `getEasterDate`, `getFrenchHolidays`, `getPublicHoliday`, `isPublicHoliday`.
-   - Tests de régression sur les années 2025, 2026, 2027 et le régime d'Alsace-Moselle.
-
-3. **Intégration dans `AvailabilitiesView.vue`**
-   - Enrichissement du modèle d'état `dayState` avec le type `holiday`.
-   - Ajustement de l'indicateur d'en-tête pour afficher le libellé du férié.
-   - Ajustement de la formule de calcul de `stats` (présences attendues).
-   - Mise à jour de la légende et de la modale de détail (sans émojis bruts, conformité G1/G88).
-
-4. **Vérification et oracles déterministes**
-   - Exécution des oracles G108, G109, G110 et vérification des gates gestionnaires (G88, G89, G93).
-   - Validation du build de production (`npm run build`).
+1. **Formalisation des portes dans `GATES.md`** (G111 à G115).
+2. **Refonte Local-First de `TeamsView.vue`** (lecture Dexie + outbox).
+3. **Refonte Local-First de `EmployeesView.vue`** (lecture Dexie + outbox).
+4. **Suppression du Flash of Loading dans `DashboardView.vue`, `PresencesView.vue` et `AvailabilitiesView.vue`**.
+5. **Assainissement réactif de `CheckInView.vue` et `CheckOutView.vue`**.
+6. **Vérification déterministe des oracles et compilation de production Vite**.
 
 ## 3. Critère d'arrêt
-Toutes les portes G108, G109, G110 satisfaites, build Vite sans erreur, et absence d'anomalie injustifiée sur les jours fériés.
+Toutes les portes G111 à G115 validées avec succès, absence totale d'appels `supabase.from()` dans les vues gestionnaire, navigation instantanée sans aucun spinner/squelette intempestif, et compilation Vite sans erreur.

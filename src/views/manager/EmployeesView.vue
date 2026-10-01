@@ -1,51 +1,49 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { supabase } from '../../lib/supabase'
+import { ref, computed } from 'vue'
+import { db, useLiveQuery } from '../../lib/db'
+import { generateUUIDv7 } from '../../lib/uuidv7'
+import { useAuth } from '../../composables/useAuth'
+import { useSyncEngine } from '../../composables/useSyncEngine'
 import ConfirmModal from '../../components/shared/ConfirmModal.vue'
 import ManagerPageHeader from '../../components/manager/ManagerPageHeader.vue'
 import ManagerEmptyState from '../../components/manager/ManagerEmptyState.vue'
 import { useToast } from '../../composables/useToast'
 
-const employees = ref([])
-const teams = ref([])
-const loading = ref(true)
-const loadError = ref('')
+const { user } = useAuth()
+const { refreshPendingCount, syncNow } = useSyncEngine()
+const { success, error: toastError } = useToast()
+
+// Lectures réactives Local-First depuis Dexie (sans latence réseau)
+const rawEmployees = useLiveQuery(async () => {
+  return await db.profiles
+    .filter((p) => !p.deleted_at)
+    .toArray()
+}, [])
+
+const rawTeams = useLiveQuery(async () => {
+  return await db.teams
+    .filter((t) => !t.deleted_at)
+    .toArray()
+}, [])
 
 // Recherche et filtres : la liste complète peut être longue, le gestionnaire doit y entrer par le nom.
 const searchQuery = ref('')
 const filterRole = ref('all') // 'all', 'employee', 'manager', 'admin'
 const filterTeam = ref('')
 
-const loadData = async () => {
-  loading.value = true
-  loadError.value = ''
-  try {
-    const { data: profs, error: profError } = await supabase
-      .from('profiles')
-      .select('*, teams(name)')
-      .is('deleted_at', null)
-      .order('full_name')
+// Jointure locale réactive entre profils et équipes
+const employees = computed(() => {
+  const teamsMap = new Map((rawTeams.value || []).map((t) => [t.id, t]))
+  return (rawEmployees.value || [])
+    .map((emp) => ({
+      ...emp,
+      teams: teamsMap.get(emp.team_id) || null,
+    }))
+    .sort((a, b) => (a.full_name || '').localeCompare(b.full_name || '', 'fr'))
+})
 
-    if (profError) throw profError
-    employees.value = profs || []
-
-    const { data: tms, error: teamError } = await supabase
-      .from('teams')
-      .select('*')
-      .is('deleted_at', null)
-      .order('name')
-
-    if (teamError) throw teamError
-    teams.value = tms || []
-  } catch (err) {
-    loadError.value = err.message || 'Chargement impossible.'
-  } finally {
-    loading.value = false
-  }
-}
-
-onMounted(() => {
-  loadData()
+const teams = computed(() => {
+  return (rawTeams.value || []).slice().sort((a, b) => (a.name || '').localeCompare(b.name || '', 'fr'))
 })
 
 // Comptes par rôle : les filtres annoncent ce qu'ils contiennent avant qu'on les ouvre.
@@ -127,12 +125,30 @@ const sortIconPath = (key) => {
 
 const emptyState = computed(() => {
   if (!(employees.value || []).length) {
-    return { title: 'Aucun collaborateur', message: 'Aucun profil actif pour le moment. Les comptes apparaissent ici après leur création.', icon: 'users', action: null, actionLabel: '' }
+    return {
+      title: 'Aucun collaborateur',
+      message: 'Aucun profil actif pour le moment. Les comptes apparaissent ici après leur création.',
+      icon: 'users',
+      action: null,
+      actionLabel: '',
+    }
   }
   if (searchQuery.value.trim()) {
-    return { title: 'Aucun résultat', message: `Aucun collaborateur ne correspond à « ${searchQuery.value.trim()} ».`, icon: 'search', action: 'clear-search', actionLabel: 'Effacer la recherche' }
+    return {
+      title: 'Aucun résultat',
+      message: `Aucun collaborateur ne correspond à « ${searchQuery.value.trim()} ».`,
+      icon: 'search',
+      action: 'clear-search',
+      actionLabel: 'Effacer la recherche',
+    }
   }
-  return { title: 'Aucun collaborateur pour ce filtre', message: 'Aucun profil ne correspond au rôle ou à l\u2019équipe sélectionnés.', icon: 'filter', action: 'show-all', actionLabel: 'Voir tous les collaborateurs' }
+  return {
+    title: 'Aucun collaborateur pour ce filtre',
+    message: 'Aucun profil ne correspond au rôle ou à l\u2019équipe sélectionnés.',
+    icon: 'filter',
+    action: 'show-all',
+    actionLabel: 'Voir tous les collaborateurs',
+  }
 })
 
 const runEmptyAction = () => {
@@ -174,34 +190,51 @@ const openEditModal = (emp) => {
   editingEmployee.value = emp
   editError.value = ''
   editForm.value = {
-    full_name: emp.full_name,
-    role: emp.role,
+    full_name: emp.full_name || '',
+    role: emp.role || 'employee',
     team_id: emp.team_id || '',
     expected_arrival_time: emp.expected_arrival_time || '09:00:00',
   }
 }
 
-const { success, error: toastError } = useToast()
-
 const saveEmployee = async () => {
   if (!editingEmployee.value) return
   isSaving.value = true
   editError.value = ''
-  try {
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        full_name: editForm.value.full_name,
-        role: editForm.value.role,
-        team_id: editForm.value.team_id || null,
-        expected_arrival_time: editForm.value.expected_arrival_time,
-      })
-      .eq('id', editingEmployee.value.id)
 
-    if (error) throw error
+  try {
+    const now = new Date().toISOString()
+    const id = editingEmployee.value.id
+    const payload = {
+      id,
+      full_name: editForm.value.full_name,
+      role: editForm.value.role,
+      team_id: editForm.value.team_id || null,
+      expected_arrival_time: editForm.value.expected_arrival_time,
+      updated_at: now,
+    }
+    const clientMutationId = generateUUIDv7()
+
+    await db.transaction('rw', db.profiles, db.sync_outbox, async () => {
+      await db.profiles.update(id, payload)
+      await db.sync_outbox.add({
+        client_mutation_id: clientMutationId,
+        table_name: 'profiles',
+        record_id: id,
+        operation: 'UPDATE',
+        payload,
+        created_at: now,
+        attempts: 0,
+        status: 'pending',
+      })
+    })
+
     success('Profil mis à jour avec succès.')
     editingEmployee.value = null
-    await loadData()
+    await refreshPendingCount()
+    if (user.value?.id) {
+      syncNow(user.value.id)
+    }
   } catch (err) {
     editError.value = err.message || 'Mise à jour impossible.'
     toastError(`Erreur de mise à jour : ${err.message}`)
@@ -221,16 +254,37 @@ const confirmArchive = async () => {
   if (!employeeToArchive.value) return
   isArchiving.value = true
   const target = employeeToArchive.value
-  try {
-    const { error } = await supabase
-      .from('profiles')
-      .update({ deleted_at: new Date().toISOString(), is_active: false })
-      .eq('id', target.id)
+  const now = new Date().toISOString()
+  const clientMutationId = generateUUIDv7()
 
-    if (error) throw error
+  try {
+    const payload = {
+      id: target.id,
+      deleted_at: now,
+      is_active: false,
+      updated_at: now,
+    }
+
+    await db.transaction('rw', db.profiles, db.sync_outbox, async () => {
+      await db.profiles.update(target.id, payload)
+      await db.sync_outbox.add({
+        client_mutation_id: clientMutationId,
+        table_name: 'profiles',
+        record_id: target.id,
+        operation: 'UPDATE',
+        payload,
+        created_at: now,
+        attempts: 0,
+        status: 'pending',
+      })
+    })
+
     success(`Le collaborateur « ${target.full_name} » a été archivé.`)
     employeeToArchive.value = null
-    await loadData()
+    await refreshPendingCount()
+    if (user.value?.id) {
+      syncNow(user.value.id)
+    }
   } catch (err) {
     toastError(`Erreur d'archivage : ${err.message}`)
   } finally {
@@ -255,47 +309,52 @@ const confirmArchive = async () => {
       </template>
     </ManagerPageHeader>
 
-    <!-- Erreur de chargement : le fait, puis l'action qui débloque -->
-    <div v-if="loadError" class="alert alert-error rounded-m3-lg flex items-center justify-between gap-3">
-      <div class="flex items-center gap-2 min-w-0">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"></circle>
-          <line x1="12" y1="8" x2="12" y2="12"></line>
-          <line x1="12" y1="16" x2="12.01" y2="16"></line>
-        </svg>
-        <span class="text-sm truncate">Chargement des profils impossible : {{ loadError }}</span>
-      </div>
-      <button type="button" class="btn min-h-11 rounded-m3-sm font-semibold" @click="loadData">Réessayer</button>
-    </div>
-
-    <!-- Filtres et recherche -->
+    <!-- Filtres -->
     <div class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg p-4 flex flex-col gap-3">
-      <label class="input input-bordered flex w-full items-center gap-2 rounded-m3-md bg-base-300/50 min-h-11">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0 text-base-content/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="8"></circle>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-        </svg>
-        <input v-model="searchQuery" type="text" class="grow text-sm" placeholder="Rechercher un nom ou un email" />
-      </label>
+      <!-- Filtres rapides par rôle -->
+      <div class="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          class="btn btn-sm rounded-m3-sm font-semibold min-h-11 px-3"
+          :class="filterRole === 'all' ? 'btn-primary' : 'btn-ghost'"
+          @click="filterRole = 'all'"
+        >
+          Tous ({{ roleCounts.all }})
+        </button>
+        <button
+          type="button"
+          class="btn btn-sm rounded-m3-sm font-semibold min-h-11 px-3"
+          :class="filterRole === 'employee' ? 'btn-primary' : 'btn-ghost'"
+          @click="filterRole = 'employee'"
+        >
+          Employés ({{ roleCounts.employee }})
+        </button>
+        <button
+          type="button"
+          class="btn btn-sm rounded-m3-sm font-semibold min-h-11 px-3"
+          :class="filterRole === 'manager' ? 'btn-primary' : 'btn-ghost'"
+          @click="filterRole = 'manager'"
+        >
+          Managers ({{ roleCounts.manager }})
+        </button>
+        <button
+          type="button"
+          class="btn btn-sm rounded-m3-sm font-semibold min-h-11 px-3"
+          :class="filterRole === 'admin' ? 'btn-primary' : 'btn-ghost'"
+          @click="filterRole = 'admin'"
+        >
+          Administrateurs ({{ roleCounts.admin }})
+        </button>
+      </div>
 
-      <div class="flex flex-col sm:flex-row sm:items-end gap-3">
-        <fieldset class="fieldset flex-1 min-w-0">
-          <legend class="fieldset-legend text-xs font-semibold text-base-content/70">Rôle</legend>
-          <div class="join w-full overflow-x-auto sm:w-auto">
-            <button type="button" class="btn join-item min-h-11 px-3 shrink-0" :class="{ 'btn-primary': filterRole === 'all' }" @click="filterRole = 'all'">
-              Tous ({{ roleCounts.all }})
-            </button>
-            <button type="button" class="btn join-item min-h-11 px-3 shrink-0" :class="{ 'btn-primary': filterRole === 'employee' }" @click="filterRole = 'employee'">
-              Employés ({{ roleCounts.employee }})
-            </button>
-            <button type="button" class="btn join-item min-h-11 px-3 shrink-0" :class="{ 'btn-primary': filterRole === 'manager' }" @click="filterRole = 'manager'">
-              Managers ({{ roleCounts.manager }})
-            </button>
-            <button type="button" class="btn join-item min-h-11 px-3 shrink-0" :class="{ 'btn-primary': filterRole === 'admin' }" @click="filterRole = 'admin'">
-              Admins ({{ roleCounts.admin }})
-            </button>
-          </div>
-        </fieldset>
+      <div class="flex flex-col sm:flex-row sm:items-end gap-3 pt-2 border-t border-base-300/60">
+        <label class="input input-bordered flex w-full items-center gap-2 rounded-m3-md bg-base-300/50 min-h-11 flex-1">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0 text-base-content/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input v-model="searchQuery" type="text" class="grow text-sm" placeholder="Rechercher par nom ou email" />
+        </label>
 
         <fieldset class="fieldset sm:w-64">
           <legend class="fieldset-legend text-xs font-semibold text-base-content/70">Équipe</legend>
@@ -307,13 +366,8 @@ const confirmArchive = async () => {
       </div>
     </div>
 
-    <!-- Chargement : ossature à la forme du contenu attendu -->
-    <div v-if="loading" class="card bg-base-200 border border-base-300 rounded-m3-lg p-4 flex flex-col gap-3">
-      <div v-for="n in 4" :key="n" class="h-14 rounded-m3-md bg-base-300/60 animate-pulse"></div>
-    </div>
-
     <ManagerEmptyState
-      v-else-if="!filteredEmployees.length"
+      v-if="!filteredEmployees.length"
       :icon="emptyState.icon"
       :title="emptyState.title"
       :message="emptyState.message"
@@ -350,69 +404,63 @@ const confirmArchive = async () => {
                 </svg>
                 <span>Modifier</span>
               </button>
-              <button type="button" class="btn btn-ghost text-error font-medium rounded-m3-sm gap-1.5 min-h-11 px-3" @click="requestArchive(emp)">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="21 8 21 21 3 21 3 8"></polyline>
-                  <rect x="1" y="3" width="22" height="5"></rect>
-                  <line x1="10" y1="12" x2="14" y2="12"></line>
-                </svg>
-                <span>Archiver</span>
+              <button type="button" class="btn btn-ghost font-semibold text-error rounded-m3-sm min-h-11 px-3 hover:bg-error/10" @click="requestArchive(emp)">
+                Archiver
               </button>
             </div>
           </li>
         </ul>
 
-        <!-- Tableau triable à partir de 640px -->
+        <!-- Tableau complet à partir de 640px -->
         <div class="hidden sm:block overflow-x-auto">
-          <table class="table table-sm w-full">
+          <table class="table table-zebra table-sm">
             <thead>
-              <tr class="text-xs uppercase text-base-content/60">
-                <th v-for="col in SORTABLE_COLUMNS" :key="col.key" :aria-sort="ariaSort(col.key)">
-                  <button
-                    type="button"
-                    class="inline-flex items-center gap-1 font-semibold uppercase tracking-wide rounded-m3-xs transition-colors hover:text-base-content focus-visible:outline-2 focus-visible:outline-primary"
-                    :title="`Trier par ${col.label.toLowerCase()}`"
-                    @click="toggleSort(col.key)"
-                  >
+              <tr class="bg-base-300/40 text-base-content/70">
+                <th
+                  v-for="col in SORTABLE_COLUMNS"
+                  :key="col.key"
+                  class="font-bold cursor-pointer select-none hover:text-base-content"
+                  :aria-sort="ariaSort(col.key)"
+                  @click="toggleSort(col.key)"
+                >
+                  <div class="flex items-center gap-1.5">
                     <span>{{ col.label }}</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 shrink-0" :class="sortKey === col.key ? 'text-primary' : 'text-base-content/30'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 shrink-0 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                       <path :d="sortIconPath(col.key)"></path>
                     </svg>
-                  </button>
+                  </div>
                 </th>
-                <th>Actions</th>
+                <th class="text-right font-bold">Actions</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="emp in sortedEmployees" :key="emp.id" class="hover">
+              <tr v-for="emp in sortedEmployees" :key="emp.id" class="hover:bg-base-300/30">
                 <td>
-                  <div class="flex items-center gap-3 min-w-0">
-                    <div class="w-9 h-9 rounded-full bg-primary/10 border border-primary/20 text-primary font-bold text-xs flex items-center justify-center shrink-0" aria-hidden="true">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-7 h-7 rounded-full bg-primary/10 border border-primary/20 text-primary font-bold text-xs flex items-center justify-center shrink-0" aria-hidden="true">
                       {{ initials(emp.full_name) }}
                     </div>
-                    <strong class="text-sm font-bold text-base-content truncate">{{ emp.full_name }}</strong>
+                    <strong class="font-bold text-base-content">{{ emp.full_name }}</strong>
                   </div>
                 </td>
-                <td class="text-xs text-base-content/60">{{ emp.email }}</td>
-                <td><span class="badge badge-soft badge-sm rounded-m3-xs">{{ emp.teams?.name || 'Non assigné' }}</span></td>
-                <td><span class="badge badge-sm font-semibold rounded-m3-xs" :class="roleClass(emp.role)">{{ roleLabel(emp.role) }}</span></td>
-                <td class="font-mono text-xs font-semibold">{{ emp.expected_arrival_time?.slice(0, 5) || '—' }}</td>
+                <td class="font-mono text-xs text-base-content/80">{{ emp.email }}</td>
                 <td>
-                  <div class="flex items-center gap-1">
-                    <button type="button" class="btn btn-ghost text-primary font-semibold gap-1.5 rounded-m3-sm min-h-11 px-3" @click="openEditModal(emp)">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                      </svg>
-                      <span>Modifier</span>
+                  <span v-if="emp.teams?.name" class="badge badge-soft badge-sm rounded-m3-xs font-semibold">{{ emp.teams.name }}</span>
+                  <span v-else class="text-xs text-base-content/50 italic">Non assigné</span>
+                </td>
+                <td>
+                  <span class="badge badge-sm font-semibold capitalize rounded-m3-xs" :class="roleClass(emp.role)">{{ roleLabel(emp.role) }}</span>
+                </td>
+                <td class="font-mono text-xs font-semibold text-base-content/80">
+                  {{ emp.expected_arrival_time?.slice(0, 5) || '—' }}
+                </td>
+                <td class="text-right">
+                  <div class="inline-flex items-center gap-1">
+                    <button type="button" class="btn btn-ghost btn-sm min-h-11 rounded-m3-sm font-semibold px-2.5" @click="openEditModal(emp)">
+                      Modifier
                     </button>
-                    <button type="button" class="btn btn-ghost text-error font-semibold gap-1.5 rounded-m3-sm min-h-11 px-3" @click="requestArchive(emp)">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="21 8 21 21 3 21 3 8"></polyline>
-                        <rect x="1" y="3" width="22" height="5"></rect>
-                        <line x1="10" y1="12" x2="14" y2="12"></line>
-                      </svg>
-                      <span>Archiver</span>
+                    <button type="button" class="btn btn-ghost btn-sm min-h-11 rounded-m3-sm font-semibold text-error px-2.5 hover:bg-error/10" @click="requestArchive(emp)">
+                      Archiver
                     </button>
                   </div>
                 </td>
@@ -423,87 +471,94 @@ const confirmArchive = async () => {
       </div>
     </template>
 
-    <!-- Modal d'édition -->
+    <!-- Modal d'édition collaborateur -->
     <dialog class="modal" :class="{ 'modal-open': !!editingEmployee }">
-      <div class="modal-box rounded-m3-xl max-w-xl p-5 sm:p-6 bg-base-100 border border-base-300 shadow-sm">
-        <div class="flex items-center justify-between mb-4 pb-2 border-b border-base-200">
-          <h3 class="font-black text-xl text-base-content flex items-center gap-2">
-            <div class="w-8 h-8 rounded-m3-sm bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-              </svg>
-            </div>
-            <span>Modifier le collaborateur</span>
-          </h3>
-          <button type="button" class="btn btn-circle btn-ghost min-w-11 min-h-11" aria-label="Fermer la modale" @click="editingEmployee = null">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
-        </div>
+      <div class="modal-box rounded-m3-xl max-w-lg border border-base-300 bg-base-100 p-6 flex flex-col gap-4">
+        <h3 class="font-bold text-lg text-base-content">
+          Modifier « {{ editingEmployee?.full_name }} »
+        </h3>
+        <p class="text-xs text-base-content/70">
+          Les modifications sont instantanées localement et synchronisées en arrière-plan.
+        </p>
 
-        <p class="text-xs text-base-content/60 mb-4">{{ editingEmployee?.email }}</p>
+        <form v-if="editingEmployee" @submit.prevent="saveEmployee" class="flex flex-col gap-4">
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs font-semibold text-base-content/80">Nom complet</legend>
+            <input
+              v-model="editForm.full_name"
+              type="text"
+              class="input input-bordered w-full rounded-m3-md min-h-11 text-sm"
+              required
+            />
+          </fieldset>
 
-        <div v-if="editError" class="alert alert-error text-xs py-2.5 rounded-m3-md mb-4 flex items-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="8" x2="12" y2="12"></line>
-            <line x1="12" y1="16" x2="12.01" y2="16"></line>
-          </svg>
-          <span>{{ editError }}</span>
-        </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend text-xs font-semibold text-base-content/80">Rôle dans l'application</legend>
+              <select v-model="editForm.role" class="select select-bordered w-full rounded-m3-md min-h-11 text-sm">
+                <option value="employee">Employé</option>
+                <option value="manager">Manager</option>
+                <option value="admin">Administrateur</option>
+              </select>
+            </fieldset>
 
-        <form class="flex flex-col gap-5" @submit.prevent="saveEmployee">
-          <div class="form-control">
-            <label for="f-name" class="label py-1"><span class="label-text font-bold text-sm">Nom complet</span></label>
-            <input id="f-name" v-model="editForm.full_name" type="text" class="input input-bordered w-full min-h-11 rounded-m3-md text-sm" />
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend text-xs font-semibold text-base-content/80">Équipe affectée</legend>
+              <select v-model="editForm.team_id" class="select select-bordered w-full rounded-m3-md min-h-11 text-sm">
+                <option value="">Aucune équipe</option>
+                <option v-for="t in teams" :key="t.id" :value="t.id">{{ t.name }}</option>
+              </select>
+            </fieldset>
           </div>
 
-          <div class="form-control">
-            <label for="f-role" class="label py-1"><span class="label-text font-bold text-sm">Rôle d'accès</span></label>
-            <select id="f-role" v-model="editForm.role" class="select select-bordered w-full min-h-11 rounded-m3-md text-sm">
-              <option value="employee">Employé</option>
-              <option value="manager">Manager</option>
-              <option value="admin">Administrateur</option>
-            </select>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs font-semibold text-base-content/80">Heure d'arrivée attendue</legend>
+            <input
+              v-model="editForm.expected_arrival_time"
+              type="time"
+              step="60"
+              class="input input-bordered w-full rounded-m3-md min-h-11 text-sm"
+              required
+            />
+            <span class="fieldset-label text-xs text-base-content/60">Utilisée pour qualifier les retards lors des pointages.</span>
+          </fieldset>
+
+          <div v-if="editError" class="alert alert-error text-xs rounded-m3-md py-2">
+            {{ editError }}
           </div>
 
-          <div class="form-control">
-            <label for="f-team" class="label py-1"><span class="label-text font-bold text-sm">Équipe de rattachement</span></label>
-            <select id="f-team" v-model="editForm.team_id" class="select select-bordered w-full min-h-11 rounded-m3-md text-sm">
-              <option value="">Aucune équipe</option>
-              <option v-for="t in teams" :key="t.id" :value="t.id">{{ t.name }}</option>
-            </select>
-          </div>
-
-          <div class="form-control">
-            <label for="f-time" class="label py-1"><span class="label-text font-bold text-sm">Heure d'arrivée attendue</span></label>
-            <input id="f-time" v-model="editForm.expected_arrival_time" type="time" class="input input-bordered w-full min-h-11 rounded-m3-md text-sm" />
-          </div>
-
-          <div class="modal-action mt-2 pt-4 border-t border-base-200 gap-2">
-            <button type="button" class="btn btn-ghost min-h-11 rounded-m3-sm font-medium px-5 active:scale-95 transition-transform duration-150" :disabled="isSaving" @click="editingEmployee = null">Annuler</button>
-            <button type="submit" class="btn btn-primary min-h-11 rounded-m3-sm font-bold shadow-xs flex-1 active:scale-95 transition-transform duration-150" :disabled="isSaving">
+          <div class="modal-action mt-2 flex items-center justify-end gap-2">
+            <button
+              type="button"
+              class="btn btn-ghost rounded-m3-sm min-h-11 px-4 font-semibold"
+              :disabled="isSaving"
+              @click="editingEmployee = null"
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              class="btn btn-primary rounded-m3-sm min-h-11 px-5 font-bold shadow-xs flex items-center gap-2"
+              :disabled="isSaving"
+            >
               <span v-if="isSaving" class="loading loading-spinner loading-xs"></span>
-              <span v-else>Enregistrer</span>
+              <span>Enregistrer</span>
             </button>
           </div>
         </form>
       </div>
-      <form method="dialog" class="modal-backdrop bg-black/40 backdrop-blur-xs" @click="editingEmployee = null">
-        <button>close</button>
+      <form method="dialog" class="modal-backdrop" @click="editingEmployee = null">
+        <button>Fermer</button>
       </form>
     </dialog>
 
-    <!-- Modale de confirmation d'archivage collaborateur -->
+    <!-- Modal de confirmation d'archivage -->
     <ConfirmModal
       :open="!!employeeToArchive"
-      title="Archiver le collaborateur"
-      :message="`Confirmez-vous l'archivage de « ${employeeToArchive?.full_name} » ? Ses accès seront suspendus.`"
-      confirm-text="Archiver"
-      confirm-class="btn-error"
+      title="Archiver ce collaborateur ?"
+      :message="`Le collaborateur « ${employeeToArchive?.full_name || ''} » ne pourra plus se connecter ni pointer. Son historique de présence sera conservé.`"
+      confirm-label="Archiver le collaborateur"
+      confirm-variant="error"
       :loading="isArchiving"
       @confirm="confirmArchive"
       @cancel="employeeToArchive = null"

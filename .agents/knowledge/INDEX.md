@@ -9,12 +9,13 @@ Lecture en tête de session, avant toute conception. Une fiche `a-verifier` se c
 | Id | Règle | Domaine | Vérification | Revalider avant |
 |---|---|---|---|---|
 | KI-0001 | `useLiveQuery` sur requête paramétrée : déclarer la dépendance `dependsOn` pour réabonner | dexie | `verify-gates.mjs --livequery-deps` | 2026-11-28 |
+| KI-0002 | Vue = lecture Dexie + écriture outbox, jamais de `supabase.from()` dans `src/views/` | sync | oracle G111 (`node -e ...`) | 2026-11-28 |
 
 ## Fiches candidates
 
 | Id | Règle | Domaine | Vérification | Revalider avant |
 |---|---|---|---|---|
-| KI-0002 | Vue = lecture Dexie + écriture outbox, jamais de `supab.from()` dans `src/views/` | sync | oracle à créer | 2026-11-28 |
+| (aucune) | | | | |
 
 ## Compteur de récurrence
 

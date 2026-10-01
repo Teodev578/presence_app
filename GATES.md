@@ -855,4 +855,38 @@ Scope: Fournir un moteur de calcul pur et autonome pour les 11 jours fériés l�
   EXPECT: built in
   EVIDENCE: npm run build avec code de sortie 0 (117 modules transformés en 1.26s, assets dist/ générés sans erreur le 2026-10-01)
 
+---
+
+# Gates: Éradication des Temps de Chargement & Alignement Local-First Intégral
+
+OWNS: src/views/manager/TeamsView.vue, src/views/manager/EmployeesView.vue, src/views/manager/DashboardView.vue, src/views/manager/PresencesView.vue, src/views/manager/AvailabilitiesView.vue, src/views/employee/CheckInView.vue, src/views/employee/CheckOutView.vue, .agents/plan.md, GATES.md
+
+Scope: Supprimer définitivement les appels réseau directs `supabase.from()` dans `TeamsView.vue` et `EmployeesView.vue` au profit de `useLiveQuery` et des transactions atomiques Dexie (`sync_outbox`). Éliminer les états de chargement artificiels et squelettes clignotants (*Flash of Loading*) dans `DashboardView.vue`, `PresencesView.vue` et `AvailabilitiesView.vue` en amorçant les requêtes réactives sur un tableau vide. Nettoyer les initialisations bloquantes au montage de `CheckInView.vue` et `CheckOutView.vue`.
+
+- [x] G111: Éradication totale des requêtes réseau directes supabase.from() dans TeamsView et EmployeesView
+  CHECK: node -e "const fs = require('fs'); const t = fs.readFileSync('src/views/manager/TeamsView.vue', 'utf8'); const e = fs.readFileSync('src/views/manager/EmployeesView.vue', 'utf8'); if (t.includes('supabase.from') || e.includes('supabase.from')) { console.error('FAILURE: supabase.from still present in manager views'); process.exit(1); } if (t.includes('import { supabase }') || e.includes('import { supabase }')) { console.error('FAILURE: supabase import still present'); process.exit(1); } console.log('G111 passed: zero direct supabase calls in TeamsView and EmployeesView');"
+  EXPECT: G111 passed: zero direct supabase calls in TeamsView and EmployeesView
+  EVIDENCE: G111 passed: zero direct supabase calls in TeamsView and EmployeesView (vérifié par oracle node le 2026-10-01)
+
+- [x] G112: Implémentation réactive et transactionnelle Local-First (useLiveQuery, db.transaction, sync_outbox, generateUUIDv7)
+  CHECK: node -e "const fs = require('fs'); const t = fs.readFileSync('src/views/manager/TeamsView.vue', 'utf8'); const e = fs.readFileSync('src/views/manager/EmployeesView.vue', 'utf8'); if (!t.includes('useLiveQuery') || !e.includes('useLiveQuery')) { console.error('FAILURE: useLiveQuery missing'); process.exit(1); } if (!t.includes('sync_outbox') || !e.includes('sync_outbox')) { console.error('FAILURE: sync_outbox missing'); process.exit(1); } if (!t.includes('generateUUIDv7') || !e.includes('generateUUIDv7')) { console.error('FAILURE: generateUUIDv7 missing'); process.exit(1); } console.log('G112 passed: reactive Dexie reading and outbox transactional writing implemented');"
+  EXPECT: G112 passed: reactive Dexie reading and outbox transactional writing implemented
+  EVIDENCE: G112 passed: reactive Dexie reading and outbox transactional writing implemented (vérifié par oracle node le 2026-10-01)
+
+- [x] G113: Élimination du Flash of Loading et des squelettes d'attente intempestifs (DashboardView, PresencesView, AvailabilitiesView)
+  CHECK: node -e "const fs = require('fs'); const d = fs.readFileSync('src/views/manager/DashboardView.vue', 'utf8'); const p = fs.readFileSync('src/views/manager/PresencesView.vue', 'utf8'); const a = fs.readFileSync('src/views/manager/AvailabilitiesView.vue', 'utf8'); if (d.includes('profileRows.value === null') || p.includes('presenceRows.value === null') || a.includes('employeeRows.value === null')) { console.error('FAILURE: null loading state guard still present'); process.exit(1); } console.log('G113 passed: flash of loading eliminated across manager views');"
+  EXPECT: G113 passed: flash of loading eliminated across manager views
+  EVIDENCE: G113 passed: flash of loading eliminated across manager views (vérifié par oracle node le 2026-10-01)
+
+- [x] G114: Assainissement réactif Local-First des vues de pointage employé (CheckInView, CheckOutView) sans blocage au montage
+  CHECK: node -e "const fs = require('fs'); const ci = fs.readFileSync('src/views/employee/CheckInView.vue', 'utf8'); const co = fs.readFileSync('src/views/employee/CheckOutView.vue', 'utf8'); if (ci.includes('isLoadingLocations = ref(true)') || co.includes('isLoading = ref(true)')) { console.error('FAILURE: blocking mount loading flag still present'); process.exit(1); } if (ci.includes('supabase.from')) { console.error('FAILURE: supabase fallback call in CheckInView'); process.exit(1); } console.log('G114 passed: employee check-in and check-out views fully reactive without mount jank');"
+  EXPECT: G114 passed: employee check-in and check-out views fully reactive without mount jank
+  EVIDENCE: G114 passed: employee check-in and check-out views fully reactive without mount jank (vérifié par oracle node le 2026-10-01)
+
+- [x] G115: Validation de la compilation Vite en production
+  CHECK: npm run build
+  EXPECT: built in
+  EVIDENCE: npm run build avec code de sortie 0 (117 modules transformés en 927ms, assets dist/ générés sans erreur le 2026-10-01)
+
+
 

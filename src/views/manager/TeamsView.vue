@@ -1,41 +1,50 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { supabase } from '../../lib/supabase'
+import { ref, computed } from 'vue'
+import { db, useLiveQuery } from '../../lib/db'
+import { generateUUIDv7 } from '../../lib/uuidv7'
+import { useAuth } from '../../composables/useAuth'
+import { useSyncEngine } from '../../composables/useSyncEngine'
 import ConfirmModal from '../../components/shared/ConfirmModal.vue'
 import ManagerPageHeader from '../../components/manager/ManagerPageHeader.vue'
 import ManagerEmptyState from '../../components/manager/ManagerEmptyState.vue'
 import { useToast } from '../../composables/useToast'
 
-const teams = ref([])
-const loading = ref(true)
-const loadError = ref('')
+const { user } = useAuth()
+const { refreshPendingCount, syncNow } = useSyncEngine()
+const { success, error: toastError } = useToast()
 
 const searchQuery = ref('')
 const sortBy = ref('name') // 'name' | 'members'
 
-const { success, error: toastError } = useToast()
+// Lectures réactives Local-First depuis Dexie (sans latence réseau)
+const rawTeams = useLiveQuery(async () => {
+  return await db.teams
+    .filter((t) => !t.deleted_at)
+    .toArray()
+}, [])
 
-const loadTeams = async () => {
-  loading.value = true
-  loadError.value = ''
-  try {
-    const { data, error } = await supabase
-      .from('teams')
-      .select('*, profiles(id, full_name, email)')
-      .is('deleted_at', null)
-      .order('name')
+const rawProfiles = useLiveQuery(async () => {
+  return await db.profiles
+    .filter((p) => !p.deleted_at && p.is_active !== false)
+    .toArray()
+}, [])
 
-    if (error) throw error
-    teams.value = data || []
-  } catch (err) {
-    loadError.value = err.message || 'Chargement impossible.'
-  } finally {
-    loading.value = false
+// Jointure locale réactive entre équipes et profils
+const teams = computed(() => {
+  const profilesByTeam = new Map()
+  for (const prof of rawProfiles.value || []) {
+    if (prof.team_id) {
+      if (!profilesByTeam.has(prof.team_id)) {
+        profilesByTeam.set(prof.team_id, [])
+      }
+      profilesByTeam.get(prof.team_id).push(prof)
+    }
   }
-}
 
-onMounted(() => {
-  loadTeams()
+  return (rawTeams.value || []).map((t) => ({
+    ...t,
+    profiles: profilesByTeam.get(t.id) || [],
+  }))
 })
 
 const sortedTeams = computed(() => {
@@ -51,9 +60,21 @@ const sortedTeams = computed(() => {
 
 const emptyState = computed(() => {
   if (!(teams.value || []).length) {
-    return { title: 'Aucune équipe', message: 'Créez votre première équipe pour regrouper les collaborateurs par pôle.', icon: 'team', action: 'create', actionLabel: 'Créer une équipe' }
+    return {
+      title: 'Aucune équipe',
+      message: 'Créez votre première équipe pour regrouper les collaborateurs par pôle.',
+      icon: 'team',
+      action: 'create',
+      actionLabel: 'Créer une équipe',
+    }
   }
-  return { title: 'Aucun résultat', message: `Aucune équipe ne correspond à « ${searchQuery.value.trim()} ».`, icon: 'search', action: 'clear-search', actionLabel: 'Effacer la recherche' }
+  return {
+    title: 'Aucun résultat',
+    message: `Aucune équipe ne correspond à « ${searchQuery.value.trim()} ».`,
+    icon: 'search',
+    action: 'clear-search',
+    actionLabel: 'Effacer la recherche',
+  }
 })
 
 const runEmptyAction = () => {
@@ -104,17 +125,60 @@ const saveTeam = async () => {
   isSaving.value = true
   formError.value = ''
   try {
+    const now = new Date().toISOString()
+    const clientMutationId = generateUUIDv7()
+
     if (editingTeam.value) {
-      const { error } = await supabase.from('teams').update({ name }).eq('id', editingTeam.value.id)
-      if (error) throw error
+      const id = editingTeam.value.id
+      const payload = {
+        id,
+        name,
+        updated_at: now,
+      }
+      await db.transaction('rw', db.teams, db.sync_outbox, async () => {
+        await db.teams.update(id, { name, updated_at: now })
+        await db.sync_outbox.add({
+          client_mutation_id: clientMutationId,
+          table_name: 'teams',
+          record_id: id,
+          operation: 'UPDATE',
+          payload,
+          created_at: now,
+          attempts: 0,
+          status: 'pending',
+        })
+      })
       success(`L'équipe « ${name} » a été renommée.`)
     } else {
-      const { error } = await supabase.from('teams').insert({ name })
-      if (error) throw error
+      const id = generateUUIDv7()
+      const payload = {
+        id,
+        name,
+        created_at: now,
+        updated_at: now,
+        deleted_at: null,
+      }
+      await db.transaction('rw', db.teams, db.sync_outbox, async () => {
+        await db.teams.add(payload)
+        await db.sync_outbox.add({
+          client_mutation_id: clientMutationId,
+          table_name: 'teams',
+          record_id: id,
+          operation: 'INSERT',
+          payload,
+          created_at: now,
+          attempts: 0,
+          status: 'pending',
+        })
+      })
       success(`L'équipe « ${name} » a été créée.`)
     }
+
     closeModal()
-    await loadTeams()
+    await refreshPendingCount()
+    if (user.value?.id) {
+      syncNow(user.value.id)
+    }
   } catch (err) {
     formError.value = err.message || 'Enregistrement impossible.'
     toastError(`Erreur : ${err.message}`)
@@ -134,15 +198,37 @@ const confirmArchive = async () => {
   if (!teamToArchive.value) return
   isArchiving.value = true
   const target = teamToArchive.value
+  const now = new Date().toISOString()
+  const clientMutationId = generateUUIDv7()
+
   try {
-    const { error } = await supabase
-      .from('teams')
-      .update({ deleted_at: new Date().toISOString(), is_active: false })
-      .eq('id', target.id)
-    if (error) throw error
+    await db.transaction('rw', db.teams, db.sync_outbox, async () => {
+      await db.teams.update(target.id, {
+        deleted_at: now,
+        updated_at: now,
+      })
+      await db.sync_outbox.add({
+        client_mutation_id: clientMutationId,
+        table_name: 'teams',
+        record_id: target.id,
+        operation: 'UPDATE',
+        payload: {
+          id: target.id,
+          deleted_at: now,
+          updated_at: now,
+        },
+        created_at: now,
+        attempts: 0,
+        status: 'pending',
+      })
+    })
+
     success(`L'équipe « ${target.name} » a été désactivée.`)
     teamToArchive.value = null
-    await loadTeams()
+    await refreshPendingCount()
+    if (user.value?.id) {
+      syncNow(user.value.id)
+    }
   } catch (err) {
     toastError(`Erreur d'archivage : ${err.message}`)
   } finally {
@@ -180,19 +266,6 @@ const confirmArchive = async () => {
       </template>
     </ManagerPageHeader>
 
-    <!-- Erreur de chargement -->
-    <div v-if="loadError" class="alert alert-error rounded-m3-lg flex items-center justify-between gap-3">
-      <div class="flex items-center gap-2 min-w-0">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"></circle>
-          <line x1="12" y1="8" x2="12" y2="12"></line>
-          <line x1="12" y1="16" x2="12.01" y2="16"></line>
-        </svg>
-        <span class="text-sm truncate">Chargement des équipes impossible : {{ loadError }}</span>
-      </div>
-      <button type="button" class="btn min-h-11 rounded-m3-sm font-semibold" @click="loadTeams">Réessayer</button>
-    </div>
-
     <!-- Filtres -->
     <div class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg p-4 flex flex-col sm:flex-row sm:items-end gap-3">
       <label class="input input-bordered flex w-full items-center gap-2 rounded-m3-md bg-base-300/50 min-h-11 flex-1">
@@ -212,13 +285,8 @@ const confirmArchive = async () => {
       </fieldset>
     </div>
 
-    <!-- Chargement : ossature -->
-    <div v-if="loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
-      <div v-for="n in 3" :key="n" class="h-40 rounded-m3-lg bg-base-300/60 animate-pulse"></div>
-    </div>
-
     <ManagerEmptyState
-      v-else-if="!sortedTeams.length"
+      v-if="!sortedTeams.length"
       :icon="emptyState.icon"
       :title="emptyState.title"
       :message="emptyState.message"
@@ -248,94 +316,91 @@ const confirmArchive = async () => {
         <div class="flex-1">
           <div v-if="team.profiles?.length" class="flex flex-wrap gap-1.5">
             <span v-for="m in team.profiles" :key="m.id" class="badge badge-soft badge-sm text-xs rounded-m3-xs gap-1">
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 text-base-content/60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
-              </svg>
-              <span>{{ m.full_name }}</span>
+              <span class="w-1.5 h-1.5 rounded-full bg-primary inline-block"></span>
+              {{ m.full_name || m.email }}
             </span>
           </div>
-          <p v-else class="text-xs text-base-content/50 italic">Aucun membre assigné. Affectez-en depuis la Gestion des Collaborateurs.</p>
+          <p v-else class="text-xs text-base-content/50 italic py-2">Aucun collaborateur affecté à cette équipe.</p>
         </div>
 
-        <div class="flex items-center justify-end gap-2 pt-3 border-t border-base-300/60">
-          <button type="button" class="btn btn-ghost text-primary font-semibold rounded-m3-sm gap-1.5 min-h-11 px-3" @click="openRenameModal(team)">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-            </svg>
-            <span>Renommer</span>
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-base-300/60">
+          <button
+            type="button"
+            class="btn btn-ghost btn-sm min-h-11 rounded-m3-sm text-xs font-semibold px-3"
+            @click="openRenameModal(team)"
+          >
+            Renommer
           </button>
-          <button type="button" class="btn btn-ghost text-error font-medium rounded-m3-sm gap-1.5 min-h-11 px-3" @click="requestArchive(team)">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="3 6 5 6 21 6"></polyline>
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-            </svg>
-            <span>Désactiver</span>
+          <button
+            type="button"
+            class="btn btn-ghost btn-sm min-h-11 rounded-m3-sm text-xs font-semibold text-error px-3 hover:bg-error/10"
+            @click="requestArchive(team)"
+          >
+            Désactiver
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Modale de création / renommage -->
+    <!-- Modale création / renommage -->
     <dialog class="modal" :class="{ 'modal-open': isModalOpen }">
-      <div class="modal-box rounded-m3-xl max-w-md p-5 sm:p-6 bg-base-100 border border-base-300 shadow-sm">
-        <div class="flex items-center justify-between mb-4 pb-2 border-b border-base-200">
-          <h3 class="font-black text-xl text-base-content flex items-center gap-2">
-            <div class="w-8 h-8 rounded-m3-sm bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
-                <line x1="9" y1="22" x2="9" y2="2"></line>
-                <line x1="15" y1="22" x2="15" y2="2"></line>
-                <line x1="4" y1="12" x2="20" y2="12"></line>
-              </svg>
-            </div>
-            <span>{{ editingTeam ? 'Renommer l\u2019équipe' : 'Nouvelle équipe' }}</span>
-          </h3>
-          <button type="button" class="btn btn-circle btn-ghost min-w-11 min-h-11" aria-label="Fermer la modale" @click="closeModal">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
-        </div>
+      <div class="modal-box rounded-m3-xl max-w-md border border-base-300 bg-base-100 p-6 flex flex-col gap-4">
+        <h3 class="font-bold text-lg text-base-content">
+          {{ editingTeam ? `Renommer l'équipe « ${editingTeam.name} »` : 'Créer une nouvelle équipe' }}
+        </h3>
+        <p class="text-xs text-base-content/70">
+          {{ editingTeam ? 'Modifiez le libellé de l’équipe. Le changement est instantané et synchronisé en arrière-plan.' : 'Renseignez le nom du pôle pour regrouper les collaborateurs.' }}
+        </p>
 
-        <div v-if="formError" class="alert alert-error text-xs py-2.5 rounded-m3-md mb-4 flex items-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="8" x2="12" y2="12"></line>
-            <line x1="12" y1="16" x2="12.01" y2="16"></line>
-          </svg>
-          <span>{{ formError }}</span>
-        </div>
+        <form @submit.prevent="saveTeam" class="flex flex-col gap-4">
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs font-semibold text-base-content/80">Nom de l'équipe</legend>
+            <input
+              v-model="formName"
+              type="text"
+              class="input input-bordered w-full rounded-m3-md min-h-11 text-sm"
+              placeholder="Ex: Pôle Développement, Équipe Chantier A..."
+              autofocus
+              required
+            />
+          </fieldset>
 
-        <form class="flex flex-col gap-5" @submit.prevent="saveTeam">
-          <div class="form-control">
-            <label for="team-name" class="label py-1"><span class="label-text font-bold text-sm">Nom de l'équipe</span></label>
-            <input id="team-name" v-model="formName" type="text" class="input input-bordered w-full min-h-11 rounded-m3-md text-sm" placeholder="ex: Chantier Nord, Pôle Technique..." />
+          <div v-if="formError" class="alert alert-error text-xs rounded-m3-md py-2">
+            {{ formError }}
           </div>
 
-          <div class="modal-action mt-2 pt-4 border-t border-base-200 gap-2">
-            <button type="button" class="btn btn-ghost min-h-11 rounded-m3-sm font-medium px-5 active:scale-95 transition-transform duration-150" :disabled="isSaving" @click="closeModal">Annuler</button>
-            <button type="submit" class="btn btn-primary min-h-11 rounded-m3-sm font-bold shadow-xs flex-1 active:scale-95 transition-transform duration-150" :disabled="isSaving">
+          <div class="modal-action mt-2 flex items-center justify-end gap-2">
+            <button
+              type="button"
+              class="btn btn-ghost rounded-m3-sm min-h-11 px-4 font-semibold"
+              :disabled="isSaving"
+              @click="closeModal"
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              class="btn btn-primary rounded-m3-sm min-h-11 px-5 font-bold shadow-xs flex items-center gap-2"
+              :disabled="isSaving"
+            >
               <span v-if="isSaving" class="loading loading-spinner loading-xs"></span>
-              <span v-else>{{ editingTeam ? 'Renommer' : 'Créer l\u2019équipe' }}</span>
+              <span>{{ editingTeam ? 'Enregistrer' : 'Créer' }}</span>
             </button>
           </div>
         </form>
       </div>
-      <form method="dialog" class="modal-backdrop bg-black/40 backdrop-blur-xs" @click="closeModal">
-        <button>close</button>
+      <form method="dialog" class="modal-backdrop" @click="closeModal">
+        <button>Fermer</button>
       </form>
     </dialog>
 
-    <!-- Modale de confirmation d'archivage -->
+    <!-- Modale de confirmation de désactivation -->
     <ConfirmModal
       :open="!!teamToArchive"
-      title="Désactiver l'équipe"
-      :message="`Confirmez-vous la désactivation de l'équipe « ${teamToArchive?.name} » ?`"
-      confirm-text="Désactiver"
-      confirm-class="btn-error"
+      title="Désactiver cette équipe ?"
+      :message="`L'équipe « ${teamToArchive?.name || ''} » ne sera plus proposée pour de nouvelles affectations. Les collaborateurs qui en faisaient partie conserveront leur historique.`"
+      confirm-label="Désactiver l'équipe"
+      confirm-variant="error"
       :loading="isArchiving"
       @confirm="confirmArchive"
       @cancel="teamToArchive = null"

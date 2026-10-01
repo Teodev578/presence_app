@@ -2,16 +2,17 @@
 id: KI-0002
 date: 2026-09-29
 auteur: agent (constat hors périmètre du lot local-first)
-statut: candidate
+statut: active
 domaine: sync
 triggers: ["supabase.from", "lecture réseau directe", "écriture directe", "hors outbox"]
-source: constat hors périmètre du lot Espace Gestionnaire Local-First (plan archivé 2026-09-29)
+source: résolution intégrale du lot éradication des temps de chargement (plan 2026-10-01)
 revalider-avant: 2026-11-28
 ---
 
 ## Situation
 
-Le 29/09/2026, en conclusion du lot local-first, deux vues restaient hors de la boucle : `EmployeesView.vue` et `TeamsView.vue` montent leurs propres requêtes `supabase.from('profiles')` et `from('teams')`, et écrivent directement, sans passer par l'outbox. Chaque vue qui travaille ainsi contredit l'ADR 0001 (Dexie source unique de vérité) et échappe au moteur de sync.
+Le 29/09/2026, deux vues restaient hors de la boucle : `EmployeesView.vue` et `TeamsView.vue` montaient leurs propres requêtes `supabase.from('profiles')` et `from('teams')`.
+Le 01/10/2026, ces deux vues ainsi que `CheckInView.vue` et `CheckOutView.vue` ont été intégralement migrées vers la réactivité Dexie `useLiveQuery` et les transactions atomiques `sync_outbox`.
 
 ## Règle
 
@@ -19,7 +20,7 @@ Quand une vue affiche ou modifie des données métier, la lire par `useLiveQuery
 
 ## Vérification
 
-aucune (statut candidate). Oracle à créer : un flag qui détecte `supabase.from(` dans `src/views/` et distingue les lectures de l'engine des lectures de vues.
+Oracle G111 dans GATES.md : détection de l'absence totale de `supabase.from` et d'import de Supabase dans les vues.
 
 ## Élévation
 

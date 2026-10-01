@@ -3,8 +3,7 @@ import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from '../../router'
 import { useGeolocation, formatDistance } from '../../composables/useGeolocation'
 import { usePresences } from '../../composables/usePresences'
-import { isLocationActive } from '../../composables/useLocations'
-import { db } from '../../lib/db'
+import { useLocations, isLocationActive } from '../../composables/useLocations'
 import GpsRing from '../../components/employee/GpsRing.vue'
 import CheckConfirmationOverlay from '../../components/employee/CheckConfirmationOverlay.vue'
 
@@ -21,45 +20,27 @@ const {
 } = useGeolocation()
 
 const { todayPresence, checkOut } = usePresences()
+const { locations: rawLocations, ensureLoaded } = useLocations()
 
-const location = ref(null)
-const allLocations = ref([])
+// Observation réactive et instantanée des sites actifs via Dexie
+const allLocations = computed(() => {
+  return (rawLocations.value || []).filter((loc) => !loc.deleted_at && isLocationActive(loc))
+})
+
+// Recherche réactive du site associé à la présence active du jour
+const checkInLocation = computed(() => {
+  const locId = todayPresence.value?.location_id
+  if (!locId) return null
+  return (rawLocations.value || []).find((l) => l.id === locId && !l.deleted_at) || null
+})
+
 const isSubmitting = ref(false)
 const isSuccess = ref(false)
 const errorMessage = ref('')
-const isLoading = ref(true)
 
-onMounted(async () => {
+onMounted(() => {
   startWatching()
-
-  try {
-    isLoading.value = true
-
-    // 1. Récupération des sites actifs réels
-    const list = await db.locations
-      .filter((loc) => !loc.deleted_at && isLocationActive(loc))
-      .toArray()
-    allLocations.value = list
-
-    // 2. Recherche du site associé à la présence active du jour
-    if (todayPresence.value?.location_id) {
-      try {
-        const loc = await db.locations.get(todayPresence.value.location_id)
-        if (loc && !loc.deleted_at) {
-          location.value = loc
-        }
-      } catch (e) {
-        console.warn('Erreur chargement site départ :', e)
-      }
-    }
-
-    // 3. Si aucun site d'arrivée explicite, détection dynamique
-    if (!location.value && list.length > 0) {
-      location.value = list[0]
-    }
-  } finally {
-    isLoading.value = false
-  }
+  ensureLoaded()
 })
 
 onUnmounted(() => {
@@ -76,7 +57,7 @@ const activeLocation = computed(() => {
   if (autoMatch.value.matchedLocation) {
     return autoMatch.value.matchedLocation
   }
-  return location.value || autoMatch.value.closestLocation || null
+  return checkInLocation.value || autoMatch.value.closestLocation || (allLocations.value[0] || null)
 })
 
 const perimeterResult = computed(() => {
@@ -155,7 +136,7 @@ const handleConfirmCheckOut = async () => {
 
       <!-- Si aucun site n'est disponible -->
       <div
-        v-if="!isLoading && !activeLocation"
+        v-if="!activeLocation"
         class="alert alert-warning text-xs py-3 rounded-m3-md flex items-center gap-2"
       >
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

@@ -107,7 +107,7 @@ const presenceRows = useLiveQuery(async () => {
       .between(start, end, true, true)
       .filter((p) => !p.deleted_at)
       .toArray()
-  }, null, () => `${dateRange.value.start}|${dateRange.value.end}`)
+  }, [], () => `${dateRange.value.start}|${dateRange.value.end}`)
 
 // Profils et sites sont joints localement : un libellé renommé se répercute sans rechargement.
 const localProfiles = useLiveQuery(async () => db.profiles.toArray(), [])
@@ -123,9 +123,6 @@ const presencesList = computed(() => {
     locations: locationsMap.get(p.location_id) || null,
   }))
 })
-
-// Tant que Dexie n'a rien émis, l'écran affiche le chargement plutôt qu'un faux vide.
-const loading = computed(() => presenceRows.value === null)
 
 // Synthèse chiffrée de la journée
 const stats = computed(() => {
@@ -572,14 +569,8 @@ const saveEdit = async () => {
       </fieldset>
     </div>
 
-    <!-- État de chargement -->
-    <div v-if="loading" class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg p-8 text-center text-sm text-base-content/60 flex items-center justify-center gap-2">
-      <span class="loading loading-spinner loading-sm text-primary"></span>
-      Chargement des pointages...
-    </div>
-
     <!-- État vide : icône de situation, aucune action concurrente de l'actualisation d'en-tête -->
-    <div v-else-if="!filteredPresences.length" class="card bg-base-200 border border-base-300 rounded-m3-lg p-8 text-center items-center">
+    <div v-if="!filteredPresences.length" class="card bg-base-200 border border-base-300 rounded-m3-lg p-8 text-center items-center">
       <div class="w-12 h-12 rounded-full bg-base-300 flex items-center justify-center text-base-content/40 mb-3">
         <svg v-if="emptyState.icon === 'calendar'" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="4" width="18" height="18" rx="2"></rect>
