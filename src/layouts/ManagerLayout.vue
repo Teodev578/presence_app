@@ -184,8 +184,8 @@ const handleNav = (path) => {
         </div>
       </header>
 
-      <!-- Corps de la vue active -->
-      <main class="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-7xl mx-auto">
+      <!-- Corps de la vue active : fluide, exploite l'ensemble de l'espace sur grand écran -->
+      <main class="flex-1 p-4 sm:p-6 lg:p-8 xl:px-10 w-full max-w-none">
         <slot />
       </main>
     </div>

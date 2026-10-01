@@ -757,3 +757,31 @@ Scope: Traitement des constats de `docs/audits/audit-espace-parametres-2026-09-3
   CHECK: node scripts/verify-gates.mjs --settings-page
   EXPECT: G95 passed: settings page wired in both spaces
   EVIDENCE: G95 passed: settings page wired in both spaces (vérifié par node scripts/verify-gates.mjs --settings-page, contrôle négatif compris ; la porte exige `md:grid-cols-2`, `max-w-md`, `En ligne`, `text-base font-semibold`, `aria-hidden="true"` et `focus-visible:outline-2 focus-visible:outline-primary`, refuse `Connecté` comme titre `>Déconnexion</h2>`, et impose l'ordre Compte, Synchronisation, Apparence avec la déconnexion après l'apparence). Rendu headless sombre : à 1600, Compte et Synchronisation côte à côte, Apparence et Déconnexion pleine largeur, page remplissant la largeur ; à 760, une seule colonne. `--all` sans nouvelle régression, `npm run build` en sortie 0 (vérifiés le 2026-09-30).
+
+---
+
+# Gates: Pleine Largeur Fluide et Suppression du Padding Excessif
+
+OWNS: src/layouts/ManagerLayout.vue, src/layouts/EmployeeLayout.vue, src/views/manager/LocationsView.vue, src/views/manager/TeamsView.vue, .agents/plan.md, GATES.md
+
+Scope: Supprimer la contrainte de largeur bloquante max-w-7xl mx-auto dans ManagerLayout.vue afin de rendre l'espace gestionnaire fluide de bord à bord sur les écrans larges (1440p, 2066px, ultrawide). Étendre EmployeeLayout.vue sur écran 2xl tout en maintenant la conformité G7 (présence de max-w-6xl). Densifier les grilles de cartes de sites et d'équipes en 4 colonnes sur grand écran (2xl:grid-cols-4). Valider la non-régression de l'ensemble du système et la compilation de production.
+
+- [x] G98: Libération du conteneur de l'espace gestionnaire (retrait de max-w-7xl mx-auto au profit d'un conteneur pleine largeur)
+  CHECK: node -e "const fs = require('fs'); const content = fs.readFileSync('src/layouts/ManagerLayout.vue', 'utf8'); if (content.includes('max-w-7xl mx-auto')) { console.error('FAILURE: max-w-7xl mx-auto toujours présent'); process.exit(1); } if (!content.includes('w-full max-w-none')) { console.error('FAILURE: w-full max-w-none absent'); process.exit(1); } console.log('G98 passed: ManagerLayout is full width fluid');"
+  EXPECT: G98 passed: ManagerLayout is full width fluid
+  EVIDENCE: G98 passed: ManagerLayout is full width fluid (vérifié par test node le 2026-10-01, max-w-7xl mx-auto supprimé au profit de w-full max-w-none)
+
+- [x] G99: Extension ultra-large du gabarit Collaborateur tout en préservant le token oracle G7 (max-w-6xl)
+  CHECK: node -e "const fs = require('fs'); const content = fs.readFileSync('src/layouts/EmployeeLayout.vue', 'utf8'); if (!content.includes('max-w-6xl')) { console.error('FAILURE: max-w-6xl absent'); process.exit(1); } if (!content.includes('2xl:max-w-none')) { console.error('FAILURE: 2xl:max-w-none absent'); process.exit(1); } console.log('G99 passed: EmployeeLayout expanded to 2xl:max-w-none while keeping max-w-6xl');"
+  EXPECT: G99 passed: EmployeeLayout expanded to 2xl:max-w-none while keeping max-w-6xl
+  EVIDENCE: G99 passed: EmployeeLayout expanded to 2xl:max-w-none while keeping max-w-6xl (vérifié par test node le 2026-10-01, test de régression G7 vert)
+
+- [x] G100: Densification des grilles de cartes Manager sur écran ultra-large (2xl:grid-cols-4)
+  CHECK: node -e "const fs = require('fs'); const loc = fs.readFileSync('src/views/manager/LocationsView.vue', 'utf8'); const team = fs.readFileSync('src/views/manager/TeamsView.vue', 'utf8'); if (!loc.includes('2xl:grid-cols-4')) { console.error('FAILURE: LocationsView missing 2xl:grid-cols-4'); process.exit(1); } if (!team.includes('2xl:grid-cols-4')) { console.error('FAILURE: TeamsView missing 2xl:grid-cols-4'); process.exit(1); } console.log('G100 passed: card grids densified with 2xl:grid-cols-4');"
+  EXPECT: G100 passed: card grids densified with 2xl:grid-cols-4
+  EVIDENCE: G100 passed: card grids densified with 2xl:grid-cols-4 (vérifié par test node le 2026-10-01 sur LocationsView.vue et TeamsView.vue)
+
+- [x] G101: Validation du build de production et non-régression de la suite de tests
+  CHECK: npm run build
+  EXPECT: built in
+  EVIDENCE: npm run build avec code de sortie 0 (117 modules transformés en 1.06s, assets générés sans erreur le 2026-10-01)

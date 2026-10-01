@@ -433,7 +433,7 @@ const handleLogout = async () => {
         <h2 class="text-base font-semibold text-base-content">Apparence</h2>
         <p class="text-xs text-base-content/60 mt-0.5">Suivez le réglage du système ou forcez un thème clair ou sombre.</p>
       </div>
-      <div class="flex-1">
+      <div class="flex-1 max-w-md">
         <ThemeToggle inline />
       </div>
     </section>

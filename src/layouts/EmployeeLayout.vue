@@ -147,7 +147,7 @@ const handleNav = (path) => {
       </header>
 
       <!-- Conteneur principal de la vue active : fluide, optimisé onepage sans scrollbar -->
-      <main class="flex-1 flex flex-col w-full max-w-6xl xl:max-w-7xl 2xl:max-w-[1600px] mx-auto px-4 sm:px-5 md:px-6 lg:px-6 xl:px-8 py-2 md:py-2.5 transition-all min-h-0 overflow-visible md:overflow-hidden">
+      <main class="flex-1 flex flex-col w-full max-w-6xl xl:max-w-7xl 2xl:max-w-none mx-auto px-4 sm:px-5 md:px-6 lg:px-6 xl:px-8 py-2 md:py-2.5 transition-all min-h-0 overflow-visible md:overflow-hidden">
         <slot />
       </main>
     </div>
