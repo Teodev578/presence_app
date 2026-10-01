@@ -484,8 +484,8 @@ const confirmArchive = async () => {
           </div>
 
           <div class="modal-action mt-2 pt-4 border-t border-base-200 gap-2">
-            <button type="button" class="btn btn-ghost min-h-11 rounded-m3-sm font-medium" :disabled="isSaving" @click="editingEmployee = null">Annuler</button>
-            <button type="submit" class="btn btn-primary min-h-11 rounded-m3-sm font-bold shadow-xs" :disabled="isSaving">
+            <button type="button" class="btn btn-ghost min-h-11 rounded-m3-sm font-medium px-5 active:scale-95 transition-transform duration-150" :disabled="isSaving" @click="editingEmployee = null">Annuler</button>
+            <button type="submit" class="btn btn-primary min-h-11 rounded-m3-sm font-bold shadow-xs flex-1 active:scale-95 transition-transform duration-150" :disabled="isSaving">
               <span v-if="isSaving" class="loading loading-spinner loading-xs"></span>
               <span v-else>Enregistrer</span>
             </button>

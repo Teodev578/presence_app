@@ -49,3 +49,22 @@ Les libellés d'état décrivent une situation, pas un verdict.
 Le contrôle `node scripts/verify-gates.mjs --voice-conformance` balaie les fichiers de `src/views/employee/` et `src/components/employee/` et échoue sur tout terme du lexique proscrit. Toute modification de ce lexique s'accompagne de la mise à jour de `BANNED_VOICE_TERMS` dans `scripts/verify-gates.mjs`, sans quoi la règle et le garde-fou divergent.
 
 Une reformulation de libellé n'est pas une modification purement cosmétique : mets à jour les oracles qui asservissent le texte concerné (`scripts/verify-browser.mjs`).
+
+---
+
+## 5. Glossaire positif — Espace gestionnaire
+
+Les correspondances ci-dessous s'appliquent à l'espace gestionnaire (`src/views/manager/`, `src/components/manager/`). Elles remplacent les formulations issues du vocabulaire de gestion des effectifs, de la conformité ou du reporting RH.
+
+| Formulation à éviter | Formulation retenue | Contexte |
+|---|---|---|
+| Effectif actif | Personnes de l’équipe | KPI, libellé de carte, sous-titre de page |
+| Collaborateurs enregistrés | Membres de l’équipe | Légende de valeur chiffrée |
+| Statut des effectifs pour la journée | Activité du jour | Sous-titre du Tableau de bord |
+| Sites autorisés | Mes sites | Bouton ou filtre de contexte de localisation |
+| Conformité des présences | Pointages de la semaine | Sous-titre ou déscripteur de vue |
+| `N absence(s) déclarée(s)` | `1 absence déclarée` / `2 absences déclarées` | Légende de carte KPI (pluriel en clair, règle §3) |
+| `N pointage(s)` | `1 pointage` / `2 pointages` | Badge compteur (pluriel en clair, règle §3) |
+| Mode autonome actif : expérience fluide et stockage persistant | Lancée depuis votre écran d'accueil, sans navigateur. | Confirmation de l’installation PWA |
+
+> **Règle de priorité** : ce glossaire complète, sans le remplacer, le lexique proscrit du §2. Un terme absent des deux tableaux relève du jugement éditorial : appliquer le principe directeur §1 (nommer le fait observé, pas le concept administratif).

@@ -176,7 +176,7 @@ const stats = computed(() => {
   <div class="flex flex-col gap-6">
     <ManagerPageHeader
       title="Disponibilités de l'Équipe"
-      subtitle="Vue croisée : déclarations des collaborateurs et conformité des présences"
+      subtitle="Disponibilités déclarées et pointages de la semaine"
     >
       <template #icon>
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -189,7 +189,7 @@ const stats = computed(() => {
     </ManagerPageHeader>
 
     <!-- Synthèse de la semaine -->
-    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 min-w-0">
       <ManagerKpiCard label="Créneaux déclarés" :value="stats.declared" caption="Jours révolus de la semaine" />
       <ManagerKpiCard label="Pointés" :value="stats.pointed" caption="Disponibilités tenues" tone="success" />
       <ManagerKpiCard

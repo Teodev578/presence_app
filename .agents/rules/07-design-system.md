@@ -139,3 +139,43 @@ Règles associées :
 - Les grilles de cartes passent d'une colonne sous 640px à deux puis trois colonnes (`grid-cols-1 md:grid-cols-2 lg:grid-cols-3`).
 
 Le garde-fou exécutable est `node scripts/verify-gates.mjs --manager-grammar` pour la grammaire et `node scripts/verify-gates.mjs --manager-responsive` pour la bascule.
+
+---
+
+## 10. Grammaire des Boutons
+
+Les boutons suivent une grammaire stricte fondée sur leur position dans l'interface et la cardinalité de leur contexte :
+
+### Largeur selon la cardinalité
+
+| Contexte | Classe | Comportement |
+|---|---|---|
+| Bouton **solitaire** dans une section ou une carte | `w-full` | Prend toute la largeur disponible — invite claire à l'action. |
+| **Exception** : action destructrice solitaire (déconnexion, suppression) | `w-full sm:max-w-64` | Pleine largeur sur mobile, ancré à 256 px sur tablette et desktop — friction visuelle intentionnelle. |
+| **Paire** de boutons dans un `flex-row` (Annuler + Confirmer, Fermer + Enregistrer) | Secondaire : `px-5` — Primaire : `flex-1` | Le bouton primaire étire et domine visuellement. Le secondaire garde sa taille naturelle. |
+
+### Hauteur minimale selon le niveau d'action
+
+| Niveau | Classe | Usage |
+|---|---|---|
+| CTA principal d'une vue (Pointer, Synchroniser, Se connecter) | `min-h-12` (48 px) | Une seule instance par vue ou carte. |
+| Tout autre bouton interactif | `min-h-11` (44 px) | Boutons de formulaire, actions secondaires, filtres. |
+| Bouton icône seul (sans texte) | `min-h-11 min-w-11` | Garantit la cible tactile 44 × 44 px minimum. |
+
+> **Interdiction formelle** : Ne jamais combiner `btn-sm` et `min-h-11`. DaisyUI `btn-sm` contraint la hauteur en dessous du minimum tactile ; le `min-h-11` surajouté crée un conflit silencieux. Utiliser `btn` seul, puis calibrer avec `min-h-*`.
+
+### Feedback tactile universel
+
+Tout bouton interactif visible (hors icônes de navigation dans la barre) intègre obligatoirement :
+
+```html
+active:scale-95 transition-transform duration-150
+```
+
+Cette règle s'applique aussi aux boutons dans les modales, les formulaires et les cartes de paramètres.
+
+### Icône dans un bouton texte
+
+- L'icône **précède toujours** le texte (ordre LTR).
+- L'icône porte `aria-hidden="true"` et `class="w-4 h-4 shrink-0"`.
+- Le `gap-2` entre icône et texte est la valeur canonique.

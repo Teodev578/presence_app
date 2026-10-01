@@ -96,7 +96,7 @@ const desktopButtonLabel = computed(() => {
             <path d="M12 18h.01"></path>
           </svg>
           <span class="text-sm font-semibold text-base-content">
-            {{ isDesktop ? 'Application pour ordinateur' : 'Disponibilité locale' }}
+            {{ isDesktop ? 'Application pour ordinateur' : 'Application sur mobile' }}
           </span>
         </div>
         <span class="badge badge-sm font-semibold" :class="badgeClass">
@@ -144,7 +144,7 @@ const desktopButtonLabel = computed(() => {
         >
           <path d="M20 6 9 17l-5-5"></path>
         </svg>
-        <span>Mode autonome actif : expérience fluide et stockage persistant</span>
+        <span>Lancée depuis votre écran d'accueil, sans navigateur.</span>
       </div>
 
       <!-- Dépliant d'instructions pour ordinateur (Desktop Chrome / Edge / Brave) -->

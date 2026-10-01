@@ -288,7 +288,7 @@ const handleLogout = async () => {
       <button
         v-else
         type="button"
-        class="btn btn-outline btn-primary rounded-m3-sm font-semibold min-h-11 gap-2 w-full mt-auto focus-visible:outline-2 focus-visible:outline-primary"
+        class="btn btn-outline btn-primary rounded-m3-sm font-semibold min-h-11 gap-2 w-full mt-auto active:scale-95 transition-transform duration-150 focus-visible:outline-2 focus-visible:outline-primary"
         @click="openPasswordChange"
       >
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -322,7 +322,7 @@ const handleLogout = async () => {
 
       <button
         type="button"
-        class="btn btn-primary rounded-m3-sm font-bold shadow-xs min-h-11 w-full gap-2 mt-auto focus-visible:outline-2 focus-visible:outline-primary"
+        class="btn btn-primary rounded-m3-sm font-bold shadow-xs min-h-11 w-full gap-2 mt-auto active:scale-95 transition-transform duration-150 focus-visible:outline-2 focus-visible:outline-primary"
         :disabled="isSyncing || !isOnline"
         @click="runSync"
       >
@@ -372,11 +372,15 @@ const handleLogout = async () => {
           <button
             v-if="geoStatus === 'prompt'"
             type="button"
-            class="btn btn-primary btn-sm rounded-m3-sm font-bold min-h-11 gap-2 self-start mt-1 focus-visible:outline-2 focus-visible:outline-primary"
+            class="btn btn-primary rounded-m3-sm font-bold min-h-11 gap-2 w-full mt-1 active:scale-95 transition-transform duration-150 focus-visible:outline-2 focus-visible:outline-primary"
             :disabled="isRequestingGeo"
             @click="requestGeoPermission"
           >
             <span v-if="isRequestingGeo" class="loading loading-spinner loading-xs"></span>
+            <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path>
+              <circle cx="12" cy="10" r="3"></circle>
+            </svg>
             <span>Autoriser la position</span>
           </button>
         </div>
@@ -407,11 +411,16 @@ const handleLogout = async () => {
           <button
             v-if="storagePersisted === false && canPersistStorage"
             type="button"
-            class="btn btn-neutral btn-outline btn-sm rounded-m3-sm font-semibold min-h-11 gap-2 self-start mt-1 focus-visible:outline-2 focus-visible:outline-neutral"
+            class="btn btn-neutral btn-outline rounded-m3-sm font-semibold min-h-11 gap-2 w-full mt-1 active:scale-95 transition-transform duration-150 focus-visible:outline-2 focus-visible:outline-neutral"
             :disabled="isRequestingStorage"
             @click="requestStoragePersistence"
           >
             <span v-if="isRequestingStorage" class="loading loading-spinner loading-xs"></span>
+            <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+              <path d="M3 5V19A9 3 0 0 0 21 19V5"></path>
+              <path d="M3 12A9 3 0 0 0 21 12"></path>
+            </svg>
             <span>Garantir le stockage</span>
           </button>
         </div>
@@ -437,7 +446,7 @@ const handleLogout = async () => {
       <p class="text-xs text-base-content/60">Vous devrez saisir vos identifiants pour revenir.</p>
       <button
         type="button"
-        class="btn btn-error btn-outline rounded-m3-sm font-bold min-h-11 gap-2 self-start focus-visible:outline-2 focus-visible:outline-error"
+        class="btn btn-error btn-outline rounded-m3-sm font-bold min-h-11 gap-2 w-full sm:max-w-64 active:scale-95 transition-transform duration-150 focus-visible:outline-2 focus-visible:outline-error"
         :disabled="isSigningOut"
         @click="handleLogout"
       >

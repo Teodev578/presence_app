@@ -252,7 +252,7 @@ watch(isRail, (railed) => {
               class="w-3.5 h-3.5 shrink-0"
               :class="mode === option.value ? 'text-primary' : 'text-base-content/60'"
             />
-            <span class="text-xs font-semibold tracking-tight truncate">{{ option.label }}</span>
+            <span class="text-xs font-semibold tracking-tight leading-tight break-words min-w-0">{{ option.label }}</span>
           </div>
         </button>
       </div>

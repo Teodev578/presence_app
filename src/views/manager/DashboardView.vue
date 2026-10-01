@@ -101,7 +101,7 @@ const goToPresences = () => navigate('/manager/presences')
   <div class="flex flex-col gap-6">
     <ManagerPageHeader
       title="Tableau de bord de l'activité"
-      :subtitle="`Statut des effectifs pour la journée du ${todayLabel}`"
+      :subtitle="`Activité du ${todayLabel}`"
     >
       <template #icon>
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -115,18 +115,18 @@ const goToPresences = () => navigate('/manager/presences')
       <template #actions>
         <button
           type="button"
-          class="btn btn-outline rounded-m3-sm font-bold min-h-11 gap-2 px-3"
+          class="btn btn-outline rounded-m3-sm font-bold min-h-11 gap-2 px-3 active:scale-95 transition-transform duration-150"
           @click="navigate('/manager/locations')"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
             <circle cx="12" cy="10" r="3"></circle>
           </svg>
-          <span>Sites autorisés ({{ activeLocationsCount }})</span>
+          <span>Mes sites ({{ activeLocationsCount }})</span>
         </button>
         <button
           type="button"
-          class="btn btn-primary rounded-m3-sm font-bold shadow-xs min-h-11"
+          class="btn btn-primary rounded-m3-sm font-bold shadow-xs min-h-11 active:scale-95 transition-transform duration-150"
           @click="goToPresences"
         >
           Voir tous les pointages
@@ -137,9 +137,9 @@ const goToPresences = () => navigate('/manager/presences')
     <!-- Bandeau KPI : chaque carte mène au détail des pointages -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
       <ManagerKpiCard
-        label="Effectif actif"
+        label="Équipe"
         :value="totalEmployees"
-        caption="Collaborateurs enregistrés"
+        caption="Membres actifs"
         tone="primary"
       />
       <ManagerKpiCard
@@ -161,7 +161,11 @@ const goToPresences = () => navigate('/manager/presences')
       <ManagerKpiCard
         label="Non pointés"
         :value="presenceStats.notPointed"
-        :caption="presenceStats.declaredAbsent ? `${presenceStats.declaredAbsent} absence(s) déclarée(s) comprise(s)` : 'Sans pointage ni absence déclarée'"
+        :caption="presenceStats.declaredAbsent > 1
+          ? `${presenceStats.declaredAbsent} absences déclarées comprises`
+          : presenceStats.declaredAbsent === 1
+            ? '1 absence déclarée comprise'
+            : 'Sans pointage ni absence déclarée'"
         tone="error"
         clickable
         @select="goToPresences"
@@ -172,7 +176,7 @@ const goToPresences = () => navigate('/manager/presences')
     <div class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg overflow-hidden">
       <div class="p-4 sm:p-5 border-b border-base-300/60 flex items-center justify-between gap-3">
         <h3 class="text-sm font-bold text-base-content">Derniers pointages enregistrés aujourd'hui</h3>
-        <span class="badge badge-primary badge-sm font-semibold shrink-0">{{ presencesToday.length }} pointage(s)</span>
+        <span class="badge badge-primary badge-sm font-semibold shrink-0">{{ presencesToday.length === 1 ? '1 pointage' : `${presencesToday.length} pointages` }}</span>
       </div>
 
       <!-- Chargement : ossature à la forme du contenu attendu -->
@@ -185,7 +189,7 @@ const goToPresences = () => navigate('/manager/presences')
         bare
         icon="calendar"
         title="Aucun pointage aujourd'hui"
-        message="Aucun collaborateur n'a pointé pour le moment. Vérifiez les sites autorisés ou consultez l'historique."
+        message="Personne n'a pointé pour le moment. Vérifiez vos sites ou consultez l'historique."
         action-label="Voir tous les pointages"
         @action="goToPresences"
       />
