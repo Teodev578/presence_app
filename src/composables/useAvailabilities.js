@@ -203,6 +203,25 @@ export function useAvailabilities() {
               attempts: 0,
               status: 'pending',
             })
+          } else if (!currentRecord) {
+            // Jour non sélectionné dès la première saisie : insérer un tombstone local
+            // pour consigner l'absence déclarée et marquer la semaine comme configurée
+            const id = generateUUIDv7()
+            const clientMutationId = generateUUIDv7()
+            const tombstonedRecord = {
+              id,
+              user_id: userId,
+              client_mutation_id: clientMutationId,
+              week_start: weekStart,
+              day_of_week: day,
+              slot: 'full_day',
+              note: note || null,
+              declared_at: nowIso,
+              created_at: nowIso,
+              updated_at: nowIso,
+              deleted_at: nowIso,
+            }
+            await db.availabilities.put(tombstonedRecord)
           }
         }
       }

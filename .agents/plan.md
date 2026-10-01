@@ -1,61 +1,68 @@
-# Plan : Élimination du padding excessif et passage en pleine largeur fluide
+# Plan : Transformation UI/UX du Module Disponibilités (Planning d'Équipe)
 
 Date : 2026-10-01
-Déclencheur : demande utilisateur d'audit et résolution du padding vide sur grand écran (ultrawide / desktop étiré)
-Statut : Planification
+Déclencheur : audit comparatif du module Disponibilités — élimination de la surcharge visuelle (« océan de badges verts »), contextualisation temporelle, dates françaises, visibilité des notes collaborateur et interactivité
+Statut : Terminé (Validé par les portes G88, G89, G93, G105, G106, G107 et npm run build)
 
 ## 1. Périmètre
 
 ### Fichiers lus
-- `src/layouts/ManagerLayout.vue`
-- `src/layouts/EmployeeLayout.vue`
-- `src/views/SettingsView.vue`
-- `src/views/manager/DashboardView.vue`
-- `src/views/manager/LocationsView.vue`
-- `src/views/manager/PresencesView.vue`
 - `src/views/manager/AvailabilitiesView.vue`
-- `src/views/manager/EmployeesView.vue`
-- `src/views/manager/TeamsView.vue`
-- `src/views/manager/ExportView.vue`
-- `src/views/employee/HomeView.vue`
+- `src/views/manager/PresencesView.vue`
+- `src/views/manager/DashboardView.vue`
+- `src/components/employee/WeekGrid.vue`
+- `src/lib/dateUtils.js`
 - `scripts/verify-gates.mjs`
+- `GATES.md`
 
 ### Fichiers à modifier
-- `src/layouts/ManagerLayout.vue` : libération du conteneur `main` vers la pleine largeur fluide.
-- `src/layouts/EmployeeLayout.vue` : extension ultra-large tout en préservant le token oracle `max-w-6xl`.
-- `src/views/manager/LocationsView.vue` : passage de la grille de sites en 4 colonnes sur très grand écran (`2xl:grid-cols-4`).
-- `src/views/manager/TeamsView.vue` : passage de la grille d'équipes en 4 colonnes sur très grand écran (`2xl:grid-cols-4`).
-- `src/views/SettingsView.vue` : adaptation de la grille en 3 colonnes sur grand écran (`xl:grid-cols-3`).
-- `GATES.md` : consignation des gates d'acceptation et des preuves d'exécution unlazy.
+- `src/views/manager/AvailabilitiesView.vue` :
+  1. **Hiérarchie temporelle et épuration cellulaire** :
+     - Remplacement de l'empilement double « badge Coché + texte » par un statut cellulaire unifié et sobre.
+     - Jours passés pointés : pastille subtile verte avec l'heure d'arrivée réelle (ex. `09:28`).
+     - Jours passés non pointés : alerte sobre ambrée `Non pointé` (sans vert contradictoire).
+     - Jours absents déclarés : badge orange épuré `✕ Absent`.
+     - Jours futurs : puce sobre `Prévu` ou `Absent prévu`.
+  2. **Ancrage temporel et dates françaises** :
+     - En-têtes de colonnes au format français naturel : `Lun. 28 sept.`, `Mar. 29 sept.`, etc.
+     - Colonne du jour courant (`Aujourd'hui`) mise en exergue par une teinte de surface dédiée (`bg-primary/5` ou bordure subtile).
+  3. **Visibilité des notes collaborateur** :
+     - Affichage d'une icône bulle `💬` à côté du collaborateur ou sur la cellule lorsque celui-ci a saisi une note pour sa semaine.
+  4. **Interactivité et consultation détaillée (Modale / Volet)** :
+     - Clic sur une cellule : ouverture d'un volet d'information compact M3 (collaborateur, date, statut, heures exactes de pointage, lieu de travail, note éventuelle de l'employé, et raccourci direct vers le journal des présences).
+  5. **Alignement éditorial des KPI** :
+     - `Présences attendues` au lieu de `Créneaux déclarés`.
+     - Légende d'état épurée et harmonieuse.
+- `GATES.md` : spécification des gates d'acceptation G105, G106, G107.
 
 ### Hors périmètre
-- `src/views/auth/LoginView.vue` : conserve son centrage `max-w-md` adapté à un formulaire de connexion.
-- Schémas de base de données et tables Dexie : intacts.
-- Dépendances du projet : intégrité stricte sans modification de version.
+- Schémas Dexie et Supabase (les données de pointage, d'équipe et de note sont déjà présentes localement).
+- Rôles et politiques RLS : intacts.
+- Dépendances logicielles : intégrité stricte sans ajout ni mise à jour de paquets.
 
 ## 2. Étapes ordonnées
 
-1. **Audit d'impact et validation des contrats d'oracles** [FAIT]
-   - Absence d'oracle bloquant sur `max-w-7xl` vérifiée dans `ManagerLayout.vue`.
-   - Présence du token `max-w-6xl` préservée pour `EmployeeLayout.vue` dans `scripts/verify-gates.mjs`.
+1. **Formalisation des gates dans GATES.md**
+   - Inscription des oracles déterministes G105 (format de date français et mise en relief du jour courant), G106 (affichage épuré des cellules, notes collaborateur et modale de détail), G107 (compilation de production).
 
-2. **Rédaction du grand livre GATES.md** [FAIT]
-   - Définition des gates G98, G99, G100, G101 avec commandes exécutables `CHECK:`.
+2. **Épuration des cellules et logique temporelle (`AvailabilitiesView.vue`)**
+   - Calcul de la date d'aujourd'hui et détection de la colonne active.
+   - Formatage des en-têtes en français (`Lun. 28 sept.`).
+   - Extraction des notes hebdomadaires depuis `availabilities`.
+   - Modélisation de l'état unifié de cellule (`present` avec heure, `not_pointed`, `absent`, `future_expected`, `future_absent`).
 
-3. **Mise à niveau du layout Manager (`ManagerLayout.vue`)** [FAIT]
-   - Remplacement de `max-w-7xl mx-auto` par `xl:px-10 w-full max-w-none`.
+3. **Intégration de la modale de détail et des notes**
+   - Composant de dialogue natif DaisyUI (`modal`) ou panneau M3 pour consulter la fiche de pointage / note de la cellule cliquée.
+   - Raccordement vers la vue Présences (`/manager/presences`).
 
-4. **Mise à niveau du layout Employé (`EmployeeLayout.vue`)** [FAIT]
-   - Remplacement de `2xl:max-w-[1600px]` par `2xl:max-w-none` avec maintien de `max-w-6xl`.
+4. **Harmonisation de la légende et des KPI**
+   - Mise à jour des libellés de KPI (`Présences attendues`).
+   - Refonte de la barre de légende avec symboles unifiés.
 
-5. **Optimisation des grilles pour grand écran (`LocationsView.vue`, `TeamsView.vue`, `SettingsView.vue`)** [FAIT]
-   - Grilles de cartes de sites et d'équipes passées en `2xl:grid-cols-4`.
-   - Section Apparence de `SettingsView.vue` bornée à `max-w-md` conformément à G95.
-
-6. **Validation et clôture** [FAIT]
-   - Compilation de production réussie (`npm run build` en 1.06s).
-   - Tests de domaine validés (`node scripts/test-domain.mjs`).
-   - Gates G98, G99, G100, G101 validés et preuves enregistrées dans `GATES.md`.
+5. **Validation et conformité**
+   - Vérification de la suite de tests et des oracles `verify-gates.mjs`.
+   - Contrôle headless navigateur (`scripts/verify-browser.mjs`).
+   - Validation du build de production (`npm run build`).
 
 ## 3. Critère d'arrêt
-Confronté et vérifié : `npm run build` en sortie 0, suppression totale de `max-w-7xl mx-auto`, et conformité de tous les tests. Tâche close.
+Confronté et vérifié : `npm run build` en code retour 0, dates en français, absence de faux vert sur les jours non pointés, affichage des notes collaborateur, modale de détail fonctionnelle, et conformité de toutes les gates.

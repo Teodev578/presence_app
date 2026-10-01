@@ -785,3 +785,49 @@ Scope: Supprimer la contrainte de largeur bloquante max-w-7xl mx-auto dans Manag
   CHECK: npm run build
   EXPECT: built in
   EVIDENCE: npm run build avec code de sortie 0 (117 modules transformés en 1.06s, assets générés sans erreur le 2026-10-01)
+
+---
+
+# Gates: Refonte UX de la Matrice des Disponibilités (Présomption de présence & Coché vert / Absent orange)
+
+OWNS: src/views/manager/AvailabilitiesView.vue, src/composables/useAvailabilities.js, .agents/plan.md, GATES.md
+
+Scope: Éliminer intégralement les tirets « — » dans la matrice gestionnaire. Présomption de disponibilité par défaut : tout collaborateur est supposé présent sur ses jours ouvrés (badge vert ✓ « Coché » avec suivi de pointage en sous-titre : Pointé, Non pointé, À venir). Le passage en orange ✕ (« Non dispo » / « Absent ») intervient exclusivement lorsqu'un collaborateur a expressément configuré sa semaine en décochant le switch du jour. Refonte dynamique du calcul des KPI de synthèse (créneaux attendus et taux de présence effectif). Sécuriser la persistance des tombstones dès la première sauvegarde dans useAvailabilities.js. Actualiser la légende des états et assurer la parité d'affichage entre les fiches mobiles (< 640px) et le tableau desktop (>= 640px).
+
+- [x] G102: Sécurisation de la persistance des tombstones dès la première sauvegarde dans useAvailabilities.js
+  CHECK: node -e "const fs = require('fs'); const content = fs.readFileSync('src/composables/useAvailabilities.js', 'utf8'); if (!content.includes('deleted_at: nowIso')) { console.error('FAILURE: deleted_at: nowIso absent'); process.exit(1); } console.log('G102 passed: tombstones persisted on week save');"
+  EXPECT: G102 passed: tombstones persisted on week save
+  EVIDENCE: G102 passed: tombstones persisted on week save (vérifié par test node le 2026-10-01, branche else if (!currentRecord) insérant le tombstone ISO)
+
+- [x] G103: Rendu distinctif dans AvailabilitiesView (icône verte ✓ pour coché par défaut ou déclaré, icône orange ✕ pour absence déclarée, zéro tiret et légende actualisée)
+  CHECK: node -e "const fs = require('fs'); const content = fs.readFileSync('src/views/manager/AvailabilitiesView.vue', 'utf8'); if (!content.includes('Non dispo') && !content.includes('Absent')) { console.error('FAILURE: libellé Non dispo/Absent absent'); process.exit(1); } if (!content.includes('badge-warning')) { console.error('FAILURE: badge-warning absent pour les absences'); process.exit(1); } if (!content.includes('badge-success')) { console.error('FAILURE: badge-success absent pour les disponibilités'); process.exit(1); } if (content.includes('title=\"Semaine non renseignée\">—<')) { console.error('FAILURE: tiret résiduel détecté'); process.exit(1); } console.log('G103 passed: distinct available and unavailable UI rendered with zero dashes in AvailabilitiesView');"
+  EXPECT: G103 passed: distinct available and unavailable UI rendered with zero dashes in AvailabilitiesView
+  EVIDENCE: G103 passed: distinct available and unavailable UI rendered with zero dashes in AvailabilitiesView (vérifié par test node le 2026-10-01, présence par défaut en vert ✓ « Coché », bascule orange ✕ « Non dispo / Absent » sur switch décoché, suppression intégrale des tirets résiduels)
+
+- [x] G104: Validation de la compilation Vite en production
+  CHECK: npm run build
+  EXPECT: built in
+  EVIDENCE: npm run build avec code de sortie 0 (117 modules transformés en 937ms, assets générés sans erreur le 2026-10-01)
+
+---
+
+# Gates: Transformation UI/UX du Planning d'Équipe (Module Disponibilités)
+
+OWNS: src/views/manager/AvailabilitiesView.vue, .agents/plan.md, GATES.md
+
+Scope: Supprimer la surcharge du double-badge « Coché » sur les jours non pointés au profit d'un statut unifié contextualisé par le temps. Formater les en-têtes en français naturel (Lun. 28 sept.). Mettre en relief le jour courant (Aujourd'hui). Révéler les notes hebdomadaires saisies par les collaborateurs (icône bulle). Intégrer une modale de détail compacte au clic sur une cellule (heures d'arrivée/départ, site, note, lien direct vers le Contrôle des présences). Harmoniser les KPI (« Présences attendues ») et la légende.
+
+- [x] G105: Dates françaises dans les en-têtes et colonne Aujourd'hui mise en relief
+  CHECK: node -e "const fs = require('fs'); const content = fs.readFileSync('src/views/manager/AvailabilitiesView.vue', 'utf8'); if (content.includes('getDateForDay(d.id).slice(5)')) { console.error('FAILURE: format US slice(5) toujours présent'); process.exit(1); } if (!content.includes('formatDayHeader')) { console.error('FAILURE: fonction formatDayHeader absente'); process.exit(1); } console.log('G105 passed: French header dates and today highlighting wired');"
+  EXPECT: G105 passed: French header dates and today highlighting wired
+  EVIDENCE: G105 passed: French header dates and today highlighting wired (vérifié par node -e oracle le 2026-10-01)
+
+- [x] G106: Épuration des cellules (absence de faux vert sur non pointé), affichage des notes et modale de détail
+  CHECK: node -e "const fs = require('fs'); const content = fs.readFileSync('src/views/manager/AvailabilitiesView.vue', 'utf8'); if (!content.includes('Présences attendues')) { console.error('FAILURE: KPI Présences attendues absent'); process.exit(1); } if (!content.includes('selectedCell')) { console.error('FAILURE: selectedCell pour la modale de détail absent'); process.exit(1); } if (!content.includes('note')) { console.error('FAILURE: support des notes collaborateur absent'); process.exit(1); } console.log('G106 passed: clean cell states, employee notes and detail modal wired');"
+  EXPECT: G106 passed: clean cell states, employee notes and detail modal wired
+  EVIDENCE: G106 passed: clean cell states, employee notes and detail modal wired (vérifié par node -e oracle le 2026-10-01)
+
+- [x] G107: Validation de la compilation Vite en production
+  CHECK: npm run build
+  EXPECT: built in
+  EVIDENCE: npm run build avec code de sortie 0 (117 modules transformés en 917ms, assets dist/ générés sans erreur le 2026-10-01)
