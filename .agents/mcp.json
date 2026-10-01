@@ -1,15 +1,18 @@
 {
-  "$schema": "https://opencode.ai/config.json",
-  "mcp": {
+  "mcpServers": {
     "supabase-readonly": {
-      "type": "remote",
+      "type": "http",
       "url": "https://mcp.supabase.com/mcp?project_ref=pvquzkpfdjrequbwnhur&read_only=true&features=database,debugging,docs",
-      "enabled": true
+      "headers": {
+        "Authorization": "SUPABASE_TOKEN_REDACTED"
+      }
     },
     "supabase": {
-      "type": "remote",
+      "type": "http",
       "url": "https://mcp.supabase.com/mcp?project_ref=pvquzkpfdjrequbwnhur&features=database,debugging,development,docs",
-      "enabled": true
+      "headers": {
+        "Authorization": "SUPABASE_TOKEN_REDACTED"
+      }
     }
   }
 }

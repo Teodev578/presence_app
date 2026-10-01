@@ -2,6 +2,10 @@
 import { ref, computed } from 'vue'
 import { useRouter } from '../../router'
 import { db, useLiveQuery } from '../../lib/db'
+import { generateUUIDv7 } from '../../lib/uuidv7'
+import { useAuth } from '../../composables/useAuth'
+import { useSyncEngine } from '../../composables/useSyncEngine'
+import { useToast } from '../../composables/useToast'
 import { getLocalDateString, formatTime, formatWorkDate, calculateWorkDuration, getPublicHoliday } from '../../lib/dateUtils'
 import { getMonday, formatWeekLabel } from '../../composables/useAvailabilities'
 import ManagerPageHeader from '../../components/manager/ManagerPageHeader.vue'
@@ -9,6 +13,9 @@ import ManagerKpiCard from '../../components/manager/ManagerKpiCard.vue'
 import ManagerEmptyState from '../../components/manager/ManagerEmptyState.vue'
 
 const { navigate } = useRouter()
+const { user } = useAuth()
+const { refreshPendingCount, syncNow } = useSyncEngine()
+const { success: toastSuccess, error: toastError } = useToast()
 
 const selectedWeekStart = ref(getMonday())
 const todayStr = getLocalDateString()
@@ -253,7 +260,12 @@ const stats = computed(() => {
   return { declared: expectedCount, pointed: pointedCount, rate }
 })
 
-// Gestion de la modale de détail
+// Gestion de la modale de détail et d'ajustement d'horaires
+const isSavingSchedule = ref(false)
+const scheduleError = ref('')
+const customStartTime = ref('09:00')
+const customEndTime = ref('18:00')
+
 const openCellDetail = (emp, dayNumber) => {
   const dateStr = getDateForDay(dayNumber)
   const state = dayState(emp.id, dayNumber)
@@ -261,6 +273,24 @@ const openCellDetail = (emp, dayNumber) => {
   const note = getEmployeeWeekNote(emp.id)
   const day = daysHeader.find((d) => d.id === dayNumber)
   const location = presence?.location_id ? locationsMap.value.get(presence.location_id) : null
+  const activeAvailability = getActiveAvailability(emp.id, dayNumber)
+
+  scheduleError.value = ''
+  if (activeAvailability?.start_time) {
+    customStartTime.value = activeAvailability.start_time.slice(0, 5)
+  } else if (emp.expected_arrival_time) {
+    customStartTime.value = emp.expected_arrival_time.slice(0, 5)
+  } else {
+    customStartTime.value = '09:00'
+  }
+
+  if (activeAvailability?.end_time) {
+    customEndTime.value = activeAvailability.end_time.slice(0, 5)
+  } else if (emp.expected_departure_time) {
+    customEndTime.value = emp.expected_departure_time.slice(0, 5)
+  } else {
+    customEndTime.value = '18:00'
+  }
 
   selectedCell.value = {
     employee: emp,
@@ -273,7 +303,150 @@ const openCellDetail = (emp, dayNumber) => {
     duration: presence ? calculateWorkDuration(presence.check_in_time, presence.check_out_time) : null,
     locationName: location?.name || null,
     note,
+    activeAvailability,
   }
+}
+
+const saveCustomSchedule = async () => {
+  if (!selectedCell.value) return
+  const { employee, dayNumber } = selectedCell.value
+  isSavingSchedule.value = true
+  scheduleError.value = ''
+
+  try {
+    const now = new Date().toISOString()
+    const existing = getActiveAvailability(employee.id, dayNumber)
+    const clientMutationId = generateUUIDv7()
+    const formattedStartTime = customStartTime.value
+      ? (customStartTime.value.length === 5 ? `${customStartTime.value}:00` : customStartTime.value)
+      : null
+    const formattedEndTime = customEndTime.value
+      ? (customEndTime.value.length === 5 ? `${customEndTime.value}:00` : customEndTime.value)
+      : null
+
+    if (existing) {
+      const payload = {
+        id: existing.id,
+        start_time: formattedStartTime,
+        end_time: formattedEndTime,
+        updated_at: now,
+      }
+      await db.transaction('rw', db.availabilities, db.sync_outbox, async () => {
+        await db.availabilities.update(existing.id, payload)
+        await db.sync_outbox.add({
+          client_mutation_id: clientMutationId,
+          table_name: 'availabilities',
+          record_id: existing.id,
+          operation: 'UPDATE',
+          payload,
+          created_at: now,
+          attempts: 0,
+          status: 'pending',
+        })
+      })
+    } else {
+      const newId = generateUUIDv7()
+      const payload = {
+        id: newId,
+        user_id: employee.id,
+        week_start: selectedWeekStart.value,
+        day_of_week: dayNumber,
+        slot: 'full_day',
+        note: null,
+        start_time: formattedStartTime,
+        end_time: formattedEndTime,
+        declared_at: now,
+        created_at: now,
+        updated_at: now,
+        deleted_at: null,
+        client_mutation_id: clientMutationId,
+      }
+      await db.transaction('rw', db.availabilities, db.sync_outbox, async () => {
+        await db.availabilities.add(payload)
+        await db.sync_outbox.add({
+          client_mutation_id: clientMutationId,
+          table_name: 'availabilities',
+          record_id: newId,
+          operation: 'INSERT',
+          payload,
+          created_at: now,
+          attempts: 0,
+          status: 'pending',
+        })
+      })
+    }
+
+    toastSuccess('Horaires de la journée enregistrés.')
+    await refreshPendingCount()
+    if (user.value?.id) {
+      syncNow(user.value.id)
+    }
+  } catch (err) {
+    scheduleError.value = err.message || 'Impossible d\'enregistrer les horaires.'
+    toastError(scheduleError.value)
+  } finally {
+    isSavingSchedule.value = false
+  }
+}
+
+const resetToDefaultSchedule = async () => {
+  if (!selectedCell.value) return
+  const { employee, dayNumber } = selectedCell.value
+  const existing = getActiveAvailability(employee.id, dayNumber)
+  if (!existing) {
+    customStartTime.value = employee.expected_arrival_time?.slice(0, 5) || '09:00'
+    customEndTime.value = employee.expected_departure_time?.slice(0, 5) || '18:00'
+    return
+  }
+  isSavingSchedule.value = true
+  scheduleError.value = ''
+  try {
+    const now = new Date().toISOString()
+    const clientMutationId = generateUUIDv7()
+    const payload = {
+      id: existing.id,
+      start_time: null,
+      end_time: null,
+      updated_at: now,
+    }
+    await db.transaction('rw', db.availabilities, db.sync_outbox, async () => {
+      await db.availabilities.update(existing.id, payload)
+      await db.sync_outbox.add({
+        client_mutation_id: clientMutationId,
+        table_name: 'availabilities',
+        record_id: existing.id,
+        operation: 'UPDATE',
+        payload,
+        created_at: now,
+        attempts: 0,
+        status: 'pending',
+      })
+    })
+    customStartTime.value = employee.expected_arrival_time?.slice(0, 5) || '09:00'
+    customEndTime.value = employee.expected_departure_time?.slice(0, 5) || '18:00'
+    toastSuccess('Horaires réinitialisés aux valeurs habituelles.')
+    await refreshPendingCount()
+    if (user.value?.id) {
+      syncNow(user.value.id)
+    }
+  } catch (err) {
+    scheduleError.value = err.message || 'Impossible de réinitialiser.'
+    toastError(scheduleError.value)
+  } finally {
+    isSavingSchedule.value = false
+  }
+}
+
+const getScheduledHours = (emp, dayNumber) => {
+  const avail = getActiveAvailability(emp.id, dayNumber)
+  if (avail?.start_time || avail?.end_time) {
+    const start = avail.start_time ? avail.start_time.slice(0, 5) : (emp.expected_arrival_time ? emp.expected_arrival_time.slice(0, 5) : '09:00')
+    const end = avail.end_time ? avail.end_time.slice(0, 5) : (emp.expected_departure_time ? emp.expected_departure_time.slice(0, 5) : '18:00')
+    return { text: `${start} - ${end}`, isCustom: true }
+  }
+  const start = emp.expected_arrival_time ? emp.expected_arrival_time.slice(0, 5) : '09:00'
+  const end = emp.expected_departure_time ? emp.expected_departure_time.slice(0, 5) : '18:00'
+  return { text: `${start} - ${end}`, isCustom: false }
 }
 
 const closeCellDetail = () => {
@@ -638,7 +811,13 @@ const goToPresences = (dateStr) => {
                         </svg>
                         <span>Non pointé</span>
                       </span>
-                      <span class="text-xs text-warning/80 font-medium">Attendu</span>
+                      <span
+                        class="text-[11px] font-mono leading-tight"
+                        :class="getScheduledHours(emp, d.id).isCustom ? 'text-primary font-bold' : 'text-warning/80 font-medium'"
+                        :title="getScheduledHours(emp, d.id).isCustom ? 'Horaires aménagés pour cette journée' : 'Horaires habituels'"
+                      >
+                        {{ getScheduledHours(emp, d.id).text }}
+                      </span>
                     </template>
 
                     <!-- 3. Absence déclarée par l'employé (orange doux épuré) -->
@@ -658,7 +837,13 @@ const goToPresences = (dateStr) => {
                       <span class="badge badge-sm badge-info badge-outline font-medium rounded-m3-xs">
                         ○ En attente
                       </span>
-                      <span class="text-xs text-primary font-semibold">Aujourd'hui</span>
+                      <span
+                        class="text-[11px] font-mono leading-tight"
+                        :class="getScheduledHours(emp, d.id).isCustom ? 'text-primary font-bold' : 'text-primary font-medium'"
+                        :title="getScheduledHours(emp, d.id).isCustom ? 'Horaires aménagés pour cette journée' : 'Horaires habituels'"
+                      >
+                        {{ getScheduledHours(emp, d.id).text }}
+                      </span>
                     </template>
 
                     <!-- 5. Jour futur : absence planifiée -->
@@ -681,7 +866,13 @@ const goToPresences = (dateStr) => {
                         </svg>
                         <span>Prévu</span>
                       </span>
-                      <span class="text-xs text-base-content/40">Ouvré</span>
+                      <span
+                        class="text-[11px] font-mono leading-tight"
+                        :class="getScheduledHours(emp, d.id).isCustom ? 'text-primary font-bold' : 'text-base-content/60'"
+                        :title="getScheduledHours(emp, d.id).isCustom ? 'Horaires aménagés pour cette journée' : 'Horaires habituels'"
+                      >
+                        {{ getScheduledHours(emp, d.id).text }}
+                      </span>
                     </template>
                   </button>
                 </td>
@@ -773,6 +964,75 @@ const goToPresences = (dateStr) => {
               « {{ selectedCell.note }} »
             </p>
           </div>
+
+          <!-- Ajustement des horaires prévus pour la journée (par le manager) -->
+          <form @submit.prevent="saveCustomSchedule" class="bg-base-200/50 border border-base-300/60 rounded-m3-md p-3.5 flex flex-col gap-3">
+            <div class="flex items-center justify-between">
+              <span class="font-semibold text-base-content/80 text-xs uppercase tracking-wide flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
+                <span>Horaires prévus pour ce jour</span>
+              </span>
+              <span v-if="getActiveAvailability(selectedCell.employee.id, selectedCell.dayNumber)?.start_time || getActiveAvailability(selectedCell.employee.id, selectedCell.dayNumber)?.end_time" class="badge badge-primary badge-xs rounded-m3-xs font-semibold">
+                Aménagé
+              </span>
+              <span v-else class="text-[11px] text-base-content/50 italic">
+                Horaire habituel
+              </span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend text-xs font-semibold text-base-content/80">Arrivée prévue</legend>
+                <input
+                  v-model="customStartTime"
+                  type="time"
+                  step="60"
+                  class="input input-bordered w-full rounded-m3-md min-h-11 text-sm bg-base-100"
+                  required
+                />
+              </fieldset>
+
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend text-xs font-semibold text-base-content/80">Départ prévu</legend>
+                <input
+                  v-model="customEndTime"
+                  type="time"
+                  step="60"
+                  class="input input-bordered w-full rounded-m3-md min-h-11 text-sm bg-base-100"
+                  required
+                />
+              </fieldset>
+            </div>
+
+            <div v-if="scheduleError" class="alert alert-error text-xs rounded-m3-md py-2">
+              {{ scheduleError }}
+            </div>
+
+            <div class="flex items-center justify-between gap-2 pt-1">
+              <button
+                v-if="getActiveAvailability(selectedCell.employee.id, selectedCell.dayNumber)?.start_time || getActiveAvailability(selectedCell.employee.id, selectedCell.dayNumber)?.end_time"
+                type="button"
+                class="btn btn-ghost min-h-11 text-xs text-base-content/70 hover:text-base-content px-2 font-medium"
+                :disabled="isSavingSchedule"
+                @click="resetToDefaultSchedule"
+              >
+                Rétablir l'horaire habituel
+              </button>
+              <span v-else></span>
+
+              <button
+                type="submit"
+                class="btn btn-primary min-h-11 px-4 rounded-m3-sm font-semibold flex items-center gap-1.5"
+                :disabled="isSavingSchedule"
+              >
+                <span v-if="isSavingSchedule" class="loading loading-spinner loading-xs"></span>
+                <span>Enregistrer l'horaire</span>
+              </button>
+            </div>
+          </form>
         </div>
 
         <!-- Pied d'action -->

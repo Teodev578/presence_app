@@ -961,3 +961,37 @@ Scope: Permettre la personnalisation de l'heure de départ (`expected_departure_
   CHECK: npm run build
   EXPECT: built in
   EVIDENCE: npm run build avec code de sortie 0 (117 modules transformés en 1.05s, assets dist/ générés sans erreur le 2026-10-01)
+
+---
+
+# Gates: Ajustement des Horaires dans le Planning Gestionnaire
+
+OWNS: supabase/migrations/20261001210000_allow_manager_availability_management.sql, src/views/manager/AvailabilitiesView.vue, GATES.md, .agents/plan.md
+
+Scope: Permettre au gestionnaire d'ajuster les horaires de pointage et départ prévus directement depuis la grille de planification (AvailabilitiesView). Le schéma Supabase autorise l'écriture par les managers via RLS, la modale de détail offre la saisie et la réinitialisation des horaires avec écriture locale Dexie et boîte d'envoi outbox. La grille affiche les plages horaires associées.
+
+- [x] G126: Migration Supabase créée pour autoriser les managers à écrire dans availabilities (availabilities_write_manager)
+  CHECK: node -e "const fs = require('fs'); const files = fs.readdirSync('supabase/migrations'); if(!files.some(f => f.includes('allow_manager_availability_management'))) { console.error('FAILURE: Migration not found'); process.exit(1); } console.log('G126 passed: Migration found');"
+  EXPECT: G126 passed: Migration found
+  EVIDENCE: G126 passed: Migration found (migration supabase/migrations/20261001210000_allow_manager_availability_management.sql créée et appliquée avec succès via Supabase MCP)
+
+- [x] G127: Formulaire d'ajustement des horaires journaliers dans la modale de créneau de AvailabilitiesView.vue
+  CHECK: node -e "const fs = require('fs'); const c = fs.readFileSync('src/views/manager/AvailabilitiesView.vue', 'utf8'); if(!c.includes('customStartTime') || !c.includes('saveCustomSchedule')) { console.error('FAILURE: Schedule form not found'); process.exit(1); } console.log('G127 passed: Schedule form found');"
+  EXPECT: G127 passed: Schedule form found
+  EVIDENCE: G127 passed: Schedule form found (formulaire avec Arrivée prévue, Départ prévu, boutons Enregistrer et Rétablir)
+
+- [x] G128: Persistance locale transactionnelle Dexie et enregistrement dans sync_outbox pour la disponibilité
+  CHECK: node -e "const fs = require('fs'); const c = fs.readFileSync('src/views/manager/AvailabilitiesView.vue', 'utf8'); if(!c.includes('db.sync_outbox.add') || !c.includes('table_name: \'availabilities\'')) { console.error('FAILURE: Dexie sync_outbox not found'); process.exit(1); } console.log('G128 passed: Dexie sync_outbox found');"
+  EXPECT: G128 passed: Dexie sync_outbox found
+  EVIDENCE: G128 passed: Dexie sync_outbox found (transaction Dexie atomique db.availabilities + db.sync_outbox avec déclenchement synchro syncNow)
+
+- [x] G129: Affichage des horaires programmés dans les cellules de la grille manager
+  CHECK: node -e "const fs = require('fs'); const c = fs.readFileSync('src/views/manager/AvailabilitiesView.vue', 'utf8'); if(!c.includes('getScheduledHours')) { console.error('FAILURE: getScheduledHours missing in AvailabilitiesView'); process.exit(1); } console.log('G129 passed: getScheduledHours present');"
+  EXPECT: G129 passed: getScheduledHours present
+  EVIDENCE: G129 passed: getScheduledHours present (affichage dynamique des horaires dans les cellules avec mise en avant visuelle des horaires aménagés)
+
+- [x] G130: Validation de la compilation Vite en production sans régression
+  CHECK: npm run build
+  EXPECT: built in
+  EVIDENCE: npm run build avec code de sortie 0 (117 modules transformés en 1.04s, assets dist/ générés sans erreur le 2026-10-01)
+

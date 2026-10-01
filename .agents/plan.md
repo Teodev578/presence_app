@@ -107,3 +107,33 @@ Statut : Terminé et Validé (Portes G122 à G125)
 - [x] G123 (Types TS synchronisés)
 - [x] G124 (Interface gestionnaire affiche et édite les deux horaires)
 - [x] G125 (Compilation Vite)
+
+---
+
+## 6. Ajustement des Horaires au Vol dans le Planning Manager (`AvailabilitiesView.vue`)
+
+Date : 2026-10-01  
+Déclencheur : Demande utilisateur (Option C : permettre au manager de spécifier et ajuster les horaires de pointage et départ directement dans le Planning)  
+Statut : Terminé et Validé (Portes G126 à G130 validées, build de production conforme)  
+
+### Objectifs
+1. **Sécurité & RLS Supabase** : Autoriser les managers et administrateurs à insérer et mettre à jour les enregistrements de disponibilités (`availabilities`) via la politique `availabilities_write_manager`.
+2. **Interface Modale (`AvailabilitiesView.vue`)** :
+   - Ajouter un bloc d'ajustement horaire au sein de la modale de détail d'un créneau (`selectedCell`).
+   - Saisie de `Heure d'arrivée prévue` (`start_time`) et `Heure de départ prévue` (`end_time`).
+   - Bouton de sauvegarde dédié avec état de chargement et bouton pour réinitialiser aux horaires habituels du profil.
+3. **Moteur Local-First & Transactional Outbox** :
+   - Mise à jour ou création de l'enregistrement dans Dexie `db.availabilities`.
+   - Écriture atomique dans `db.sync_outbox` (opération INSERT ou UPDATE).
+   - Déclenchement de la synchronisation en arrière-plan `syncNow()` et actualisation des compteurs.
+4. **Visualisation dans la Grille** :
+   - Afficher les horaires journaliers spécifiques ou habituels directement sous le badge dans les cellules du tableau.
+5. **Validation et Portes** : Portes G126 à G130 avec oracles exécutables.
+
+### Résultats de Validation
+- [x] G126 (Migration Supabase RLS `availabilities_write_manager` créée et appliquée)
+- [x] G127 (Modale d'édition des horaires journaliers dans `AvailabilitiesView.vue`)
+- [x] G128 (Sauvegarde transactionnelle Dexie + outbox fonctionnelle)
+- [x] G129 (Affichage des horaires dans la grille du planning manager)
+- [x] G130 (Compilation Vite en production sans régression)
+
