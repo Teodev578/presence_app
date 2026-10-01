@@ -30,7 +30,7 @@ defineProps({
       <p v-if="subtitle" class="text-xs text-base-content/60 mt-0.5">{{ subtitle }}</p>
     </div>
 
-    <div v-if="$slots.actions" class="flex flex-wrap items-center gap-2">
+    <div v-if="$slots.actions" class="w-full sm:w-auto flex flex-wrap sm:flex-nowrap items-stretch sm:items-center gap-2 shrink-0">
       <slot name="actions" />
     </div>
   </div>

@@ -399,7 +399,7 @@ const toggleStatus = async (loc) => {
       <template #actions>
         <button
           type="button"
-          class="btn btn-primary rounded-m3-sm font-bold shadow-xs min-h-11 flex items-center gap-2"
+          class="btn btn-primary rounded-m3-sm font-bold shadow-xs min-h-11 flex items-center justify-center gap-2 w-full sm:w-auto active:scale-95 transition-transform duration-150"
           @click="openCreateModal"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
