@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import { useRouter } from '../../router'
 import { db, useLiveQuery } from '../../lib/db'
-import { getLocalDateString, formatTime, formatWorkDate, calculateWorkDuration } from '../../lib/dateUtils'
+import { getLocalDateString, formatTime, formatWorkDate, calculateWorkDuration, getPublicHoliday } from '../../lib/dateUtils'
 import { getMonday, formatWeekLabel } from '../../composables/useAvailabilities'
 import ManagerPageHeader from '../../components/manager/ManagerPageHeader.vue'
 import ManagerKpiCard from '../../components/manager/ManagerKpiCard.vue'
@@ -154,6 +154,12 @@ const formatDayHeader = (dayNumber) => {
 
 const isCurrentDay = (dayNumber) => getDateForDay(dayNumber) === todayStr
 
+// Détection d'un jour férié légal pour une colonne donnée
+const getDayHoliday = (dayNumber) => {
+  const dateStr = getDateForDay(dayNumber)
+  return getPublicHoliday(dateStr)
+}
+
 // Détermine si un collaborateur a configuré ses disponibilités pour la semaine affichée.
 const isEmployeeConfigured = (userId) =>
   availabilities.value.some((a) => a.user_id === userId)
@@ -176,6 +182,7 @@ const getActualPresence = (userId, dayNumber) => {
 /**
  * Modélisation d'état cellulaire contextuelle et unifiée :
  * - present : pointage effectif (affiche l'heure d'arrivée en vert).
+ * - holiday : jour férié chômé légal (état informatif neutre, sans alerte erronée).
  * - missing : jour passé non pointé (alerte ambrée « Non pointé » sans vert trompeur).
  * - absent : jour passé ou présent déclaré indisponible (switch décoché).
  * - today_waiting : aujourd'hui en attente de pointage.
@@ -187,6 +194,8 @@ const dayState = (empId, dayNumber) => {
   const isPast = dateStr < todayStr
   const isToday = dateStr === todayStr
   const isFuture = dateStr > todayStr
+  const holidayName = getDayHoliday(dayNumber)
+  const isHoliday = !!holidayName
 
   const configured = isEmployeeConfigured(empId)
   const activeRecord = getActiveAvailability(empId, dayNumber)
@@ -194,10 +203,12 @@ const dayState = (empId, dayNumber) => {
   const isExplicitlyUnavailable = configured && !activeRecord
 
   let type = 'future_planned'
-  if (isExplicitlyUnavailable) {
-    type = isFuture ? 'future_absent' : 'absent'
-  } else if (presence) {
+  if (presence) {
     type = 'present'
+  } else if (isHoliday) {
+    type = 'holiday'
+  } else if (isExplicitlyUnavailable) {
+    type = isFuture ? 'future_absent' : 'absent'
   } else if (isPast) {
     type = 'missing'
   } else if (isToday) {
@@ -217,6 +228,8 @@ const dayState = (empId, dayNumber) => {
     isFuture,
     activeRecord,
     locationName,
+    isHoliday,
+    holidayName,
   }
 }
 
@@ -230,7 +243,8 @@ const stats = computed(() => {
   for (const emp of filteredEmployees.value) {
     for (const d of pastDays) {
       const state = dayState(emp.id, d.id)
-      if (state.type !== 'absent') {
+      // Un jour férié chômé n'est pas une présence attendue
+      if (state.type !== 'absent' && state.type !== 'holiday') {
         expectedCount++
         if (state.presence) {
           pointedCount++
@@ -381,6 +395,17 @@ const goToPresences = (dateStr) => {
           </span>
           Prévu (jour ouvré futur)
         </span>
+        <span class="inline-flex items-center gap-1.5 font-medium">
+          <span class="badge badge-xs badge-info/20 text-info border border-info/30 p-0.5 rounded-m3-xs inline-flex items-center justify-center">
+            <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+          </span>
+          Férié (chômé)
+        </span>
         <span class="inline-flex items-center gap-1.5 text-base-content/50 ml-auto">
           <svg class="w-3.5 h-3.5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="10"/>
@@ -442,7 +467,8 @@ const goToPresences = (dateStr) => {
             >
               <div class="flex items-center gap-1.5">
                 <span class="font-medium text-base-content/75">{{ formatDayHeader(d.id) }}</span>
-                <span v-if="isCurrentDay(d.id)" class="badge badge-primary badge-xs font-bold rounded-m3-xs">Auj.</span>
+                <span v-if="getDayHoliday(d.id)" class="badge badge-info badge-soft badge-xs font-semibold rounded-m3-xs">{{ getDayHoliday(d.id) }}</span>
+                <span v-else-if="isCurrentDay(d.id)" class="badge badge-primary badge-xs font-bold rounded-m3-xs">Auj.</span>
               </div>
 
               <!-- Statut contextuel épuré mobile -->
@@ -476,6 +502,21 @@ const goToPresences = (dateStr) => {
                     <line x1="6" y1="6" x2="18" y2="18"></line>
                   </svg>
                   <span>Absent</span>
+                </span>
+              </div>
+
+              <div v-else-if="dayState(emp.id, d.id).type === 'holiday'" class="flex items-center gap-1">
+                <span class="badge badge-sm badge-info/20 text-info border border-info/30 font-medium rounded-m3-xs gap-1">
+                  <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                  </svg>
+                  <span>Férié</span>
+                </span>
+                <span class="text-xs text-base-content/50 truncate max-w-[80px]">
+                  {{ dayState(emp.id, d.id).holidayName }}
                 </span>
               </div>
 
@@ -527,7 +568,10 @@ const goToPresences = (dateStr) => {
                     <div class="font-bold flex items-center gap-1">
                       <span>{{ formatDayHeader(d.id) }}</span>
                     </div>
-                    <span v-if="isCurrentDay(d.id)" class="badge badge-primary badge-xs font-bold rounded-m3-xs uppercase tracking-wider">Aujourd'hui</span>
+                    <span v-if="getDayHoliday(d.id)" class="badge badge-info badge-soft badge-xs font-semibold rounded-m3-xs truncate max-w-[110px]" :title="getDayHoliday(d.id)">
+                      {{ getDayHoliday(d.id) }}
+                    </span>
+                    <span v-else-if="isCurrentDay(d.id)" class="badge badge-primary badge-xs font-bold rounded-m3-xs uppercase tracking-wider">Aujourd'hui</span>
                   </div>
                 </th>
               </tr>
@@ -573,7 +617,23 @@ const goToPresences = (dateStr) => {
                         <span>{{ formatTime(dayState(emp.id, d.id).presence?.check_in_time) }}</span>
                       </span>
                       <span class="text-xs text-base-content/60 truncate max-w-[100px]">
-                        {{ dayState(emp.id, d.id).locationName || 'Pointé' }}
+                        {{ dayState(emp.id, d.id).isHoliday ? `${dayState(emp.id, d.id).locationName || 'Pointé'} (Férié)` : (dayState(emp.id, d.id).locationName || 'Pointé') }}
+                      </span>
+                    </template>
+
+                    <!-- Férié chômé : pas d'anomalie, état neutre informatif -->
+                    <template v-else-if="dayState(emp.id, d.id).type === 'holiday'">
+                      <span class="badge badge-sm badge-info/15 text-info border border-info/30 font-medium rounded-m3-xs gap-1">
+                        <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                          <line x1="16" y1="2" x2="16" y2="6"/>
+                          <line x1="8" y1="2" x2="8" y2="6"/>
+                          <line x1="3" y1="10" x2="21" y2="10"/>
+                        </svg>
+                        <span>Férié</span>
+                      </span>
+                      <span class="text-xs text-base-content/60 truncate max-w-[100px]" :title="dayState(emp.id, d.id).holidayName">
+                        {{ dayState(emp.id, d.id).holidayName }}
                       </span>
                     </template>
 
@@ -686,9 +746,16 @@ const goToPresences = (dateStr) => {
                 <span class="text-base-content/60">Lieu de pointage :</span>
                 <span class="font-medium text-base-content">{{ selectedCell.locationName }}</span>
               </div>
+              <div v-if="selectedCell.state.isHoliday" class="flex items-center justify-between text-info font-medium pt-1 border-t border-base-300/40">
+                <span>Jour férié légal :</span>
+                <span>{{ selectedCell.state.holidayName }} (travaillé)</span>
+              </div>
             </div>
             <div v-else class="text-base-content/60 italic">
-              <template v-if="selectedCell.state.type === 'missing'">
+              <template v-if="selectedCell.state.type === 'holiday'">
+                Jour férié chômé légal ({{ selectedCell.state.holidayName }}).
+              </template>
+              <template v-else-if="selectedCell.state.type === 'missing'">
                 Aucun pointage enregistré pour cette journée travaillée révolue.
               </template>
               <template v-else-if="selectedCell.state.type === 'absent' || selectedCell.state.type === 'future_absent'">

@@ -191,3 +191,102 @@ export function formatSessionDuration(presence, now = new Date()) {
   return '--'
 }
 
+/**
+ * Calcule la date du dimanche de Pâques pour une année donnée selon l'algorithme de Butcher (comput ecclésiastique).
+ * Valide pour le calendrier grégorien.
+ *
+ * @param {number} year
+ * @returns {Date} Date UTC positionnée sur le jour de Pâques
+ */
+export function getEasterDate(year) {
+  const y = typeof year === 'number' ? year : parseInt(year, 10)
+  const a = y % 19
+  const b = Math.floor(y / 100)
+  const c = y % 100
+  const d = Math.floor(b / 4)
+  const e = b % 4
+  const f = Math.floor((b + 8) / 25)
+  const g = Math.floor((b - f + 1) / 3)
+  const h = (19 * a + b - d - g + 15) % 30
+  const i = Math.floor(c / 4)
+  const k = c % 4
+  const l = (32 + 2 * e + 2 * i - h - k) % 7
+  const m = Math.floor((a + 11 * h + 22 * l) / 451)
+  const month = Math.floor((h + l - 7 * m + 114) / 31) // 3 = mars, 4 = avril
+  const day = ((h + l - 7 * m + 114) % 31) + 1
+  return new Date(Date.UTC(y, month - 1, day))
+}
+
+/**
+ * Retourne la table des jours fériés légaux en France pour une année donnée sous forme de dictionnaire { 'YYYY-MM-DD': 'Nom du jour férié' }.
+ * Prend en charge les 11 jours fériés du droit commun métropolitain ainsi que le droit local d'Alsace-Moselle (13 jours).
+ *
+ * @param {number} year
+ * @param {object} [options={}]
+ * @param {boolean} [options.alsaceMoselle=false] Inclut le Vendredi saint et la Saint-Étienne
+ * @returns {Record<string, string>}
+ */
+export function getFrenchHolidays(year, { alsaceMoselle = false } = {}) {
+  const y = typeof year === 'number' ? year : parseInt(year, 10)
+  if (isNaN(y)) return {}
+
+  const easter = getEasterDate(y)
+
+  const offsetEaster = (days) => {
+    const d = new Date(easter)
+    d.setUTCDate(d.getUTCDate() + days)
+    const m = String(d.getUTCMonth() + 1).padStart(2, '0')
+    const day = String(d.getUTCDate()).padStart(2, '0')
+    return `${y}-${m}-${day}`
+  }
+
+  const holidays = {
+    [`${y}-01-01`]: "Jour de l'An",
+    [offsetEaster(1)]: 'Lundi de Pâques',
+    [`${y}-05-01`]: 'Fête du Travail',
+    [`${y}-05-08`]: 'Victoire 1945',
+    [offsetEaster(39)]: 'Ascension',
+    [offsetEaster(50)]: 'Lundi de Pentecôte',
+    [`${y}-07-14`]: 'Fête Nationale',
+    [`${y}-08-15`]: 'Assomption',
+    [`${y}-11-01`]: 'Toussaint',
+    [`${y}-11-11`]: 'Armistice 1918',
+    [`${y}-12-25`]: 'Noël',
+  }
+
+  if (alsaceMoselle) {
+    holidays[offsetEaster(-2)] = 'Vendredi saint'
+    holidays[`${y}-12-26`] = 'Saint-Étienne'
+  }
+
+  return holidays
+}
+
+/**
+ * Détermine si une date donnée ('YYYY-MM-DD') correspond à un jour férié légal français et retourne son libellé, ou null.
+ *
+ * @param {string} dateStr Format 'YYYY-MM-DD'
+ * @param {object} [options={}]
+ * @param {boolean} [options.alsaceMoselle=false]
+ * @returns {string|null} Libellé du jour férié ou null
+ */
+export function getPublicHoliday(dateStr, options = {}) {
+  if (!dateStr || typeof dateStr !== 'string' || dateStr.length < 10) return null
+  const year = parseInt(dateStr.slice(0, 4), 10)
+  if (isNaN(year)) return null
+  const holidays = getFrenchHolidays(year, options)
+  return holidays[dateStr.slice(0, 10)] || null
+}
+
+/**
+ * Prédicat booléen indiquant si une date est un jour férié.
+ *
+ * @param {string} dateStr Format 'YYYY-MM-DD'
+ * @param {object} [options={}]
+ * @returns {boolean}
+ */
+export function isPublicHoliday(dateStr, options = {}) {
+  return !!getPublicHoliday(dateStr, options)
+}
+
+

@@ -1,68 +1,57 @@
-# Plan : Transformation UI/UX du Module Disponibilités (Planning d'Équipe)
+# Plan : Gestion des Jours Fériés dans PresenceApp (Option 1 : Moteur Local-First)
 
 Date : 2026-10-01
-Déclencheur : audit comparatif du module Disponibilités — élimination de la surcharge visuelle (« océan de badges verts »), contextualisation temporelle, dates françaises, visibilité des notes collaborateur et interactivité
-Statut : Terminé (Validé par les portes G88, G89, G93, G105, G106, G107 et npm run build)
+Déclencheur : Prise en charge des jours fériés légaux français (11 jours fériés + Alsace-Moselle) pour éliminer les fausses anomalies « Non pointé » et assainir les présences attendues
+Statut : Terminé (Validé par les portes G88, G89, G93, G108, G109, G110 et npm run build)
 
 ## 1. Périmètre
 
 ### Fichiers lus
+- `src/lib/dateUtils.js`
 - `src/views/manager/AvailabilitiesView.vue`
 - `src/views/manager/PresencesView.vue`
-- `src/views/manager/DashboardView.vue`
 - `src/components/employee/WeekGrid.vue`
-- `src/lib/dateUtils.js`
-- `scripts/verify-gates.mjs`
 - `GATES.md`
 
 ### Fichiers à modifier
-- `src/views/manager/AvailabilitiesView.vue` :
-  1. **Hiérarchie temporelle et épuration cellulaire** :
-     - Remplacement de l'empilement double « badge Coché + texte » par un statut cellulaire unifié et sobre.
-     - Jours passés pointés : pastille subtile verte avec l'heure d'arrivée réelle (ex. `09:28`).
-     - Jours passés non pointés : alerte sobre ambrée `Non pointé` (sans vert contradictoire).
-     - Jours absents déclarés : badge orange épuré `✕ Absent`.
-     - Jours futurs : puce sobre `Prévu` ou `Absent prévu`.
-  2. **Ancrage temporel et dates françaises** :
-     - En-têtes de colonnes au format français naturel : `Lun. 28 sept.`, `Mar. 29 sept.`, etc.
-     - Colonne du jour courant (`Aujourd'hui`) mise en exergue par une teinte de surface dédiée (`bg-primary/5` ou bordure subtile).
-  3. **Visibilité des notes collaborateur** :
-     - Affichage d'une icône bulle `💬` à côté du collaborateur ou sur la cellule lorsque celui-ci a saisi une note pour sa semaine.
-  4. **Interactivité et consultation détaillée (Modale / Volet)** :
-     - Clic sur une cellule : ouverture d'un volet d'information compact M3 (collaborateur, date, statut, heures exactes de pointage, lieu de travail, note éventuelle de l'employé, et raccourci direct vers le journal des présences).
-  5. **Alignement éditorial des KPI** :
-     - `Présences attendues` au lieu de `Créneaux déclarés`.
-     - Légende d'état épurée et harmonieuse.
-- `GATES.md` : spécification des gates d'acceptation G105, G106, G107.
+1. `src/lib/dateUtils.js` :
+   - Algorithme canonique de calcul de Pâques (formule de Butcher/Meeus).
+   - Génération de la table des jours fériés d'une année donnée (`getFrenchHolidays(year, options)`).
+   - Prise en charge du régime général (11 jours) et de l'Alsace-Moselle (Vendredi saint, Saint-Étienne).
+   - Prédicats d'aide `getPublicHoliday(dateStr, options)` et `isPublicHoliday(dateStr, options)`.
+
+2. `src/views/manager/AvailabilitiesView.vue` :
+   - Qualification des cellules : un jour férié chômé (sans pointage) n'est plus marqué en anomalie `Non pointé` mais reçoit un état apaisant `holiday` (« Férié »).
+   - Si un collaborateur effectue un pointage effectif un jour férié, le badge de succès `present` est conservé avec mention du caractère férié.
+   - En-tête des jours : mise en valeur du nom du jour férié (ex. `Lun. 6 avr. (L. Pâques)`).
+   - Calcul des `Présences attendues` : les jours fériés chômés ne sont pas comptés comme attendus manquants.
+   - Modale de détail et légende enrichies avec la mention du jour férié.
+
+3. `GATES.md` :
+   - Spécification des portes d'acceptation G108, G109, G110.
 
 ### Hors périmètre
-- Schémas Dexie et Supabase (les données de pointage, d'équipe et de note sont déjà présentes localement).
-- Rôles et politiques RLS : intacts.
-- Dépendances logicielles : intégrité stricte sans ajout ni mise à jour de paquets.
+- Dépendances logicielles : interdiction stricte d'installer des paquets npm externes.
+- Requêtes réseau : pas d'API distante pour préserver le fonctionnement 100% hors-ligne.
 
 ## 2. Étapes ordonnées
 
 1. **Formalisation des gates dans GATES.md**
-   - Inscription des oracles déterministes G105 (format de date français et mise en relief du jour courant), G106 (affichage épuré des cellules, notes collaborateur et modale de détail), G107 (compilation de production).
+   - Inscription des oracles déterministes G108 (moteur `dateUtils.js`), G109 (intégration dans `AvailabilitiesView.vue`), G110 (compilation Vite).
 
-2. **Épuration des cellules et logique temporelle (`AvailabilitiesView.vue`)**
-   - Calcul de la date d'aujourd'hui et détection de la colonne active.
-   - Formatage des en-têtes en français (`Lun. 28 sept.`).
-   - Extraction des notes hebdomadaires depuis `availabilities`.
-   - Modélisation de l'état unifié de cellule (`present` avec heure, `not_pointed`, `absent`, `future_expected`, `future_absent`).
+2. **Implémentation du moteur algorithmique dans `dateUtils.js`**
+   - Fonctions `getEasterDate`, `getFrenchHolidays`, `getPublicHoliday`, `isPublicHoliday`.
+   - Tests de régression sur les années 2025, 2026, 2027 et le régime d'Alsace-Moselle.
 
-3. **Intégration de la modale de détail et des notes**
-   - Composant de dialogue natif DaisyUI (`modal`) ou panneau M3 pour consulter la fiche de pointage / note de la cellule cliquée.
-   - Raccordement vers la vue Présences (`/manager/presences`).
+3. **Intégration dans `AvailabilitiesView.vue`**
+   - Enrichissement du modèle d'état `dayState` avec le type `holiday`.
+   - Ajustement de l'indicateur d'en-tête pour afficher le libellé du férié.
+   - Ajustement de la formule de calcul de `stats` (présences attendues).
+   - Mise à jour de la légende et de la modale de détail (sans émojis bruts, conformité G1/G88).
 
-4. **Harmonisation de la légende et des KPI**
-   - Mise à jour des libellés de KPI (`Présences attendues`).
-   - Refonte de la barre de légende avec symboles unifiés.
-
-5. **Validation et conformité**
-   - Vérification de la suite de tests et des oracles `verify-gates.mjs`.
-   - Contrôle headless navigateur (`scripts/verify-browser.mjs`).
+4. **Vérification et oracles déterministes**
+   - Exécution des oracles G108, G109, G110 et vérification des gates gestionnaires (G88, G89, G93).
    - Validation du build de production (`npm run build`).
 
 ## 3. Critère d'arrêt
-Confronté et vérifié : `npm run build` en code retour 0, dates en français, absence de faux vert sur les jours non pointés, affichage des notes collaborateur, modale de détail fonctionnelle, et conformité de toutes les gates.
+Toutes les portes G108, G109, G110 satisfaites, build Vite sans erreur, et absence d'anomalie injustifiée sur les jours fériés.

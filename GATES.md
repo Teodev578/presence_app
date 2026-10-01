@@ -831,3 +831,28 @@ Scope: Supprimer la surcharge du double-badge « Coché » sur les jours non poi
   CHECK: npm run build
   EXPECT: built in
   EVIDENCE: npm run build avec code de sortie 0 (117 modules transformés en 917ms, assets dist/ générés sans erreur le 2026-10-01)
+
+---
+
+# Gates: Moteur Déterministe des Jours Fériés et Intégration Planning
+
+OWNS: src/lib/dateUtils.js, src/views/manager/AvailabilitiesView.vue, .agents/plan.md, GATES.md
+
+Scope: Fournir un moteur de calcul pur et autonome pour les 11 jours fériés légaux français (comput pascal de Butcher pour Pâques, Ascension, Pentecôte, dates fixes et régime d'Alsace-Moselle) dans `dateUtils.js`. Intégrer la détection dans `AvailabilitiesView.vue` : qualification d'état `holiday` sans fausse alerte « Non pointé », indication du nom du férié en en-tête et en modale, exclusion des fériés chômés des présences attendues, et légende enrichie.
+
+- [x] G108: Moteur algorithmique des jours fériés français dans dateUtils.js (Pâques, fêtes mobiles, fixes et Alsace-Moselle)
+  CHECK: node --input-type=module -e "import { getPublicHoliday, getFrenchHolidays } from './src/lib/dateUtils.js'; const h2026 = getFrenchHolidays(2026); if (h2026['2026-04-06'] !== 'Lundi de Pâques') throw new Error('Pâques 2026 erroné'); if (h2026['2026-05-14'] !== 'Ascension') throw new Error('Ascension 2026 erronée'); if (h2026['2026-05-25'] !== 'Lundi de Pentecôte') throw new Error('Pentecôte 2026 erronée'); if (h2026['2026-05-01'] !== 'Fête du Travail') throw new Error('1er mai erroné'); const hAlsace = getFrenchHolidays(2026, { alsaceMoselle: true }); if (hAlsace['2026-04-03'] !== 'Vendredi saint') throw new Error('Vendredi saint erroné'); if (getPublicHoliday('2026-07-14') !== 'Fête Nationale') throw new Error('14 juillet erroné'); console.log('G108 passed: French public holidays algorithm accurate and comprehensive');"
+  EXPECT: G108 passed: French public holidays algorithm accurate and comprehensive
+  EVIDENCE: G108 passed: French public holidays algorithm accurate and comprehensive (vérifié par node -e oracle le 2026-10-01)
+
+- [x] G109: Intégration des jours fériés dans le planning d'équipe AvailabilitiesView.vue (qualification, légende et présences attendues)
+  CHECK: node -e "const fs = require('fs'); const content = fs.readFileSync('src/views/manager/AvailabilitiesView.vue', 'utf8'); if (!content.includes('getPublicHoliday')) throw new Error('getPublicHoliday non importé'); if (!content.includes('holiday')) throw new Error('type holiday absent de dayState'); if (!content.includes('Férié')) throw new Error('mention Férié absente de la vue'); console.log('G109 passed: public holidays integrated in AvailabilitiesView');"
+  EXPECT: G109 passed: public holidays integrated in AvailabilitiesView
+  EVIDENCE: G109 passed: public holidays integrated in AvailabilitiesView (vérifié par node -e oracle le 2026-10-01)
+
+- [x] G110: Validation de la compilation Vite en production
+  CHECK: npm run build
+  EXPECT: built in
+  EVIDENCE: npm run build avec code de sortie 0 (117 modules transformés en 1.26s, assets dist/ générés sans erreur le 2026-10-01)
+
+
