@@ -65,3 +65,24 @@ Artifact Antigravity : `audit_stop_slop_manager.md`
 - Oracle G116 (Éradication du jargon policier/corporate) : Validé (0 violation).
 - Oracle G117 (Rigueur grammaticale et pluriels en clair) : Validé (0 parenthèse résiduelle).
 - Oracle G118 (Compilation de production Vite) : Validé (code de sortie 0, 117 modules transformés).
+
+---
+
+## 4. Humanisation, Structure Sémantique et Accessibilité du Dialogue des Lieux
+
+Date : 2026-10-01  
+Déclencheur : Validation utilisateur de l'audit éditorial et de la refonte DaisyUI v5 `<fieldset class="fieldset">`  
+Statut : Terminé et Validé (Portes G119 à G121 validées, build conforme)
+
+### Objectifs
+1. Structurer le dialogue avec `<fieldset class="fieldset">`, `<legend class="fieldset-legend">` et `<span class="fieldset-label">`.
+2. Adopter un vocabulaire d'usage centré sur l'équipe : « Périmètre de pointage autorisé », « Trouver l'emplacement », « Rendre ce lieu actif immédiatement ».
+3. Clarifier les 3 modes de localisation (adresse postale, position actuelle sur place, repère cartographique) avec des micro-copies d'aide.
+4. Expliquer le rôle des sélecteurs de précision `−` et `+` sur les coordonnées.
+5. Garantir les cibles tactiles 44px (WCAG AA), le feedback tactile et le focus visible.
+
+### Résultats de Validation
+- Oracle G119 (Structure sémantique et dimensionnement 44px) : Validé par G56.
+- Oracle G120 (Intégrité des cartes et filtres sans jargon proscrit) : Validé par G58 et G60.
+- Oracle G121 (Compilation de production Vite) : Validé avec code de sortie 0 (117 modules).
+

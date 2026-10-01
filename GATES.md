@@ -911,5 +911,25 @@ Scope: Éradiquer le ton corporate classique des IA, le lexique policier et les 
   EXPECT: built in
   EVIDENCE: npm run build avec code de sortie 0 (117 modules transformés en 1.06s, assets dist/ générés sans erreur le 2026-10-01)
 
+---
 
+# Gates: Humanisation, Structure Sémantique et Accessibilité du Dialogue des Lieux
 
+OWNS: src/views/manager/LocationsView.vue, GATES.md, .agents/plan.md
+
+Scope: Aligner la boîte de dialogue de gestion des lieux de travail sur la grammaire moderne DaisyUI v5 (fieldset, fieldset-legend, fieldset-label) et la tonalité humaine et claire établie sur Collaborateurs et Équipes. Supprimer le jargon technique de capteur (« Rayon de détection ») au profit d'un vocabulaire d'usage (« Périmètre de pointage autorisé »), contextualiser l'en-tête, expliciter les trois méthodes de localisation (adresse postale, position actuelle, repère cartographique) et guider l'utilisation des sélecteurs de précision sans compromettre l'accessibilité WCAG AA ni les oracles G56/G58/G60.
+
+- [x] G119: Conformité structurelle, sémantique fieldset et dimensionnement 44px du dialogue des lieux
+  CHECK: node scripts/verify-gates.mjs --locations-form
+  EXPECT: G56 passed: the locations dialog fields and search fill their containers at 44px
+  EVIDENCE: G56 passed: the locations dialog fields and search fill their containers at 44px (vérifié par node scripts/verify-gates.mjs --locations-form le 2026-10-01)
+
+- [x] G120: Respect du lexique positif, absence de jargon proscrit et intégrité des cartes et filtres
+  CHECK: node scripts/verify-gates.mjs --locations-cards && node scripts/verify-gates.mjs --locations-filters
+  EXPECT: G58 passed: site cards show a readable perimeter, position and map link
+  EVIDENCE: G58 passed: site cards show a readable perimeter, position and map link & G60 passed: active/inactive display and data predicate are consistent end to end (vérifié par node scripts/verify-gates.mjs --locations-cards && node scripts/verify-gates.mjs --locations-filters le 2026-10-01)
+
+- [x] G121: Validation de la compilation Vite en production sans régression
+  CHECK: npm run build
+  EXPECT: built in
+  EVIDENCE: npm run build avec code de sortie 0 (117 modules transformés en 1.33s, assets dist/ générés sans erreur le 2026-10-01)

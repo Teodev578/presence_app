@@ -71,7 +71,7 @@ const locationCounts = computed(() => {
 const emptyState = computed(() => {
   if (locationCounts.value.all === 0) {
     return {
-      title: 'Aucun lieu enregistré',
+      title: 'Aucun site enregistré',
       message: 'Ajoutez un premier lieu de travail pour permettre le pointage de l’équipe.',
       action: 'create',
       actionLabel: 'Ajouter un lieu',
@@ -87,14 +87,14 @@ const emptyState = computed(() => {
   }
   if (filterStatus.value === 'active') {
     return {
-      title: 'Aucun lieu actif',
+      title: 'Aucun site actif',
       message: 'Tous vos lieux sont inactifs. Activez-en un pour permettre le pointage.',
       action: 'show-all',
       actionLabel: 'Voir tous les lieux',
     }
   }
   return {
-    title: 'Aucun lieu inactif',
+    title: 'Aucun site inactif',
     message: 'Tous les lieux sont actifs et ouverts au pointage.',
     action: 'show-all',
     actionLabel: 'Voir tous les lieux',
@@ -185,6 +185,18 @@ const useCurrentLocation = () => {
     },
     { enableHighAccuracy: true, timeout: 10000 }
   )
+}
+
+const adjustCoordinate = (field, delta) => {
+  const current = typeof form.value[field] === 'number' && !Number.isNaN(form.value[field])
+    ? form.value[field]
+    : 0
+  const next = Number((current + delta).toFixed(6))
+  if (field === 'latitude') {
+    form.value.latitude = Math.max(-90, Math.min(90, next))
+  } else if (field === 'longitude') {
+    form.value.longitude = Math.max(-180, Math.min(180, next))
+  }
 }
 
 // Recherche d'adresse via api-adresse.data.gouv.fr
@@ -303,15 +315,15 @@ const handleSubmit = async () => {
   formError.value = ''
 
   if (!form.value.name.trim()) {
-    formError.value = 'Renseignez un nom pour ce lieu.'
+    formError.value = 'Indiquez un nom pour ce lieu.'
     return
   }
   if (form.value.latitude === '' || isNaN(Number(form.value.latitude))) {
-    formError.value = 'Renseignez une latitude valide.'
+    formError.value = 'Indiquez une latitude valide.'
     return
   }
   if (form.value.longitude === '' || isNaN(Number(form.value.longitude))) {
-    formError.value = 'Renseignez une longitude valide.'
+    formError.value = 'Indiquez une longitude valide.'
     return
   }
 
@@ -325,6 +337,7 @@ const handleSubmit = async () => {
         radius_meters: form.value.radius_meters,
         is_active: form.value.is_active,
       })
+      success(`Le lieu « ${form.value.name} » a été mis à jour.`)
     } else {
       await createLocation({
         name: form.value.name,
@@ -333,7 +346,7 @@ const handleSubmit = async () => {
         radius_meters: form.value.radius_meters,
         is_active: form.value.is_active,
       })
-      success(`Le lieu « ${form.value.name} » a été ajouté.`)
+      success(`Le lieu « ${form.value.name} » a été ajouté avec succès.`)
     }
     closeModal()
   } catch (err) {
@@ -373,9 +386,9 @@ const toggleStatus = async (loc) => {
   const next = !isLocationActive(loc)
   try {
     await updateLocation(loc.id, { is_active: next })
-    success(`Le lieu « ${loc.name} » est maintenant ${next ? 'actif' : 'inactif'}.`)
+    success(`Le lieu « ${loc.name} » est maintenant ${next ? 'ouvert au pointage' : 'fermé au pointage'}.`)
   } catch (err) {
-    toastError(`Impossible de changer l’état de « ${loc.name} » : ${err.message}`)
+    toastError(`Impossible de modifier l’état de « ${loc.name} » : ${err.message}`)
   }
 }
 
@@ -588,21 +601,26 @@ const toggleStatus = async (loc) => {
     <!-- Modal d'Ajout / Édition -->
     <dialog class="modal" :class="{ 'modal-open': isModalOpen }">
       <div class="modal-box max-w-xl rounded-m3-xl p-5 sm:p-6 bg-base-100 border border-base-300 shadow-sm">
-        <div class="flex items-center justify-between mb-4 pb-2 border-b border-base-200">
-          <h3 class="font-black text-xl text-base-content flex items-center gap-2">
-            <svg v-if="isEditing" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-            </svg>
-            <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-              <circle cx="12" cy="10" r="3"></circle>
-            </svg>
-            <span>{{ isEditing ? 'Modifier le lieu' : 'Ajouter un lieu de travail' }}</span>
-          </h3>
+        <div class="flex items-start justify-between mb-4 pb-3 border-b border-base-200">
+          <div class="flex flex-col gap-1 min-w-0 pr-2">
+            <h3 class="font-black text-xl text-base-content flex items-center gap-2">
+              <svg v-if="isEditing" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              </svg>
+              <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+              </svg>
+              <span>{{ isEditing ? 'Modifier ce lieu' : 'Ajouter un lieu de travail' }}</span>
+            </h3>
+            <p class="text-xs text-base-content/70">
+              Définissez l'adresse et le périmètre où vos équipes pourront badger.
+            </p>
+          </div>
           <button
             type="button"
-            class="btn btn-circle btn-ghost min-w-11 min-h-11 active:scale-95 transition-transform duration-150 motion-reduce:transform-none focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+            class="btn btn-circle btn-ghost min-w-11 min-h-11 shrink-0 active:scale-95 transition-transform duration-150 motion-reduce:transform-none focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
             aria-label="Fermer le dialogue"
             @click="closeModal"
           >
@@ -623,26 +641,59 @@ const toggleStatus = async (loc) => {
           <span>{{ formError }}</span>
         </div>
 
-        <form class="flex flex-col gap-5" @submit.prevent="handleSubmit">
-          <!-- Nom du site -->
-          <div class="form-control">
-            <label class="label py-1">
-              <span class="label-text font-bold text-sm">Nom du lieu *</span>
-            </label>
+        <form class="flex flex-col gap-4" @submit.prevent="handleSubmit">
+          <!-- Nom du lieu -->
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs font-semibold text-base-content/80">Nom du lieu *</legend>
             <input
               v-model="form.name"
               type="text"
               class="input input-bordered w-full min-h-11 rounded-m3-md text-sm"
-              placeholder="ex. Siège, Atelier, Dépôt, Chantier..."
+              placeholder="Exemple : Siège social, Atelier Nord, Dépôt logistique..."
               required
             />
-          </div>
+            <span class="fieldset-label text-xs text-base-content/60">Le nom que l'équipe verra s'afficher sur son écran au moment de pointer.</span>
+          </fieldset>
 
           <!-- Assistant de localisation rapide -->
           <div class="bg-base-200/60 p-4 rounded-m3-lg flex flex-col gap-3">
-            <span class="text-sm font-bold text-base-content/70">Positionner le lieu</span>
+            <div>
+              <span class="text-sm font-bold text-base-content/80">Trouver l'emplacement</span>
+              <p class="text-xs text-base-content/60 mt-0.5">
+                Renseignez l'adresse ou votre position, les coordonnées se calculeront automatiquement.
+              </p>
+            </div>
 
-            <!-- Bouton GPS actuel -->
+            <!-- Option 1 : Recherche d'adresse postale -->
+            <fieldset class="fieldset relative">
+              <legend class="fieldset-legend text-xs font-semibold text-base-content/80">Adresse postale</legend>
+              <input
+                v-model="addressQuery"
+                type="text"
+                class="input input-bordered w-full min-h-11 rounded-m3-md text-sm"
+                placeholder="Rechercher une adresse postale (numéro, rue, ville)..."
+                @input="onAddressInput"
+              />
+
+              <!-- Liste déroulante des suggestions -->
+              <ul
+                v-if="addressSuggestions.length > 0"
+                class="menu absolute z-50 bg-base-100 border border-base-300 rounded-m3-md shadow-xs w-full mt-1 p-1 text-xs"
+              >
+                <li v-for="(sug, idx) in addressSuggestions" :key="idx">
+                  <button
+                    type="button"
+                    class="py-2 flex flex-col items-start min-h-11 active:scale-95 transition-transform duration-150 motion-reduce:transform-none focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                    @click="selectAddress(sug)"
+                  >
+                    <span class="font-bold text-base-content">{{ sug.label }}</span>
+                    <span class="text-base-content/50 text-xs">{{ sug.city }}</span>
+                  </button>
+                </li>
+              </ul>
+            </fieldset>
+
+            <!-- Option 2 : Bouton GPS actuel -->
             <button
               type="button"
               class="btn btn-outline btn-primary min-h-11 w-full rounded-m3-sm font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform duration-150 motion-reduce:transform-none focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
@@ -653,17 +704,18 @@ const toggleStatus = async (loc) => {
               <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
               </svg>
-              <span>Prendre ma position actuelle</span>
+              <span>Utiliser ma position actuelle (si vous êtes sur place)</span>
             </button>
 
-            <!-- Saisie lien cartographique ou coordonnées -->
-            <div class="flex flex-col gap-1">
+            <!-- Option 3 : Saisie lien cartographique ou coordonnées -->
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend text-xs font-semibold text-base-content/80">Repère cartographique alternatif</legend>
               <div class="relative flex items-center">
                 <input
                   v-model="mapUrlInput"
                   type="text"
                   class="input input-bordered w-full min-h-11 rounded-m3-md text-sm pl-9"
-                  placeholder="Coller un lien cartographique ou des coordonnées..."
+                  placeholder="Ou coller un lien de repérage (Google Maps, Waze, coordonnées)..."
                   @input="handleMapInput"
                   @paste="handleMapPaste"
                 />
@@ -676,6 +728,7 @@ const toggleStatus = async (loc) => {
                   stroke-width="2"
                   stroke-linecap="round"
                   stroke-linejoin="round"
+                  aria-hidden="true"
                 >
                   <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
                   <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
@@ -683,6 +736,7 @@ const toggleStatus = async (loc) => {
                 <span
                   v-if="isResolvingMapUrl"
                   class="loading loading-spinner loading-xs absolute right-2.5 text-primary"
+                  aria-hidden="true"
                 ></span>
               </div>
 
@@ -691,7 +745,7 @@ const toggleStatus = async (loc) => {
                 v-if="mapUrlFeedback.status === 'info'"
                 class="text-xs text-primary font-medium flex items-center gap-1.5 px-1 mt-0.5"
               >
-                <span class="loading loading-spinner loading-xs text-primary"></span>
+                <span class="loading loading-spinner loading-xs text-primary" aria-hidden="true"></span>
                 <span>{{ mapUrlFeedback.message }}</span>
               </div>
               <div
@@ -725,73 +779,99 @@ const toggleStatus = async (loc) => {
                 </svg>
                 <span>{{ mapUrlFeedback.message }}</span>
               </div>
-            </div>
+            </fieldset>
+          </div>
 
-            <!-- Recherche d'adresse postale -->
-            <div class="relative">
-              <div class="form-control">
-                <input
-                  v-model="addressQuery"
-                  type="text"
-                  class="input input-bordered w-full min-h-11 rounded-m3-md text-sm"
-                  placeholder="Rechercher une adresse (France)..."
-                  @input="onAddressInput"
-                />
-              </div>
-
-              <!-- Liste déroulante des suggestions -->
-              <ul
-                v-if="addressSuggestions.length > 0"
-                class="menu absolute z-50 bg-base-100 border border-base-300 rounded-m3-md shadow-xs w-full mt-1 p-1 text-xs"
-              >
-                <li v-for="(sug, idx) in addressSuggestions" :key="idx">
+          <!-- Coordonnées GPS avec pickers d'ajustement fin -->
+          <div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend text-xs font-semibold text-base-content/80">Latitude *</legend>
+                <div class="join w-full">
                   <button
                     type="button"
-                    class="py-2 flex flex-col items-start"
-                    @click="selectAddress(sug)"
+                    class="btn join-item border border-base-300 min-h-11 min-w-11 px-2.5 active:scale-95 transition-transform duration-150 motion-reduce:transform-none focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+                    aria-label="Diminuer la latitude de 0.0001 degré"
+                    :disabled="form.latitude <= -90"
+                    @click="adjustCoordinate('latitude', -0.0001)"
                   >
-                    <span class="font-bold text-base-content">{{ sug.label }}</span>
-                    <span class="text-base-content/50 text-xs">{{ sug.city }}</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
                   </button>
-                </li>
-              </ul>
+                  <input
+                    v-model.number="form.latitude"
+                    type="number"
+                    step="0.000001"
+                    min="-90"
+                    max="90"
+                    class="input input-bordered join-item w-full min-h-11 text-center text-sm font-mono"
+                    placeholder="48.8566"
+                    required
+                  />
+                  <button
+                    type="button"
+                    class="btn join-item border border-base-300 min-h-11 min-w-11 px-2.5 active:scale-95 transition-transform duration-150 motion-reduce:transform-none focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+                    aria-label="Augmenter la latitude de 0.0001 degré"
+                    :disabled="form.latitude >= 90"
+                    @click="adjustCoordinate('latitude', 0.0001)"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <line x1="12" y1="5" x2="12" y2="19"></line>
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                  </button>
+                </div>
+              </fieldset>
+
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend text-xs font-semibold text-base-content/80">Longitude *</legend>
+                <div class="join w-full">
+                  <button
+                    type="button"
+                    class="btn join-item border border-base-300 min-h-11 min-w-11 px-2.5 active:scale-95 transition-transform duration-150 motion-reduce:transform-none focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+                    aria-label="Diminuer la longitude de 0.0001 degré"
+                    :disabled="form.longitude <= -180"
+                    @click="adjustCoordinate('longitude', -0.0001)"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                  </button>
+                  <input
+                    v-model.number="form.longitude"
+                    type="number"
+                    step="0.000001"
+                    min="-180"
+                    max="180"
+                    class="input input-bordered join-item w-full min-h-11 text-center text-sm font-mono"
+                    placeholder="2.3522"
+                    required
+                  />
+                  <button
+                    type="button"
+                    class="btn join-item border border-base-300 min-h-11 min-w-11 px-2.5 active:scale-95 transition-transform duration-150 motion-reduce:transform-none focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+                    aria-label="Augmenter la longitude de 0.0001 degré"
+                    :disabled="form.longitude >= 180"
+                    @click="adjustCoordinate('longitude', 0.0001)"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <line x1="12" y1="5" x2="12" y2="19"></line>
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                  </button>
+                </div>
+              </fieldset>
             </div>
+            <p class="text-xs text-base-content/60 mt-1.5">
+              Coordonnées calculées. Utilisez les touches − et + pour ajuster le repère au besoin.
+            </p>
           </div>
 
-          <!-- Coordonnées GPS -->
-          <div class="grid grid-cols-2 gap-3">
-            <div class="form-control">
-              <label class="label py-1">
-                <span class="label-text font-bold text-sm">Latitude *</span>
-              </label>
-              <input
-                v-model.number="form.latitude"
-                type="number"
-                step="0.000001"
-                class="input input-bordered w-full min-h-11 rounded-m3-md text-sm font-mono"
-                placeholder="48.8566"
-                required
-              />
-            </div>
-            <div class="form-control">
-              <label class="label py-1">
-                <span class="label-text font-bold text-sm">Longitude *</span>
-              </label>
-              <input
-                v-model.number="form.longitude"
-                type="number"
-                step="0.000001"
-                class="input input-bordered w-full min-h-11 rounded-m3-md text-sm font-mono"
-                placeholder="2.3522"
-                required
-              />
-            </div>
-          </div>
-
-          <!-- Rayon de détection en mètres -->
-          <div class="form-control">
+          <!-- Périmètre de pointage autorisé -->
+          <fieldset class="fieldset">
             <div class="flex items-center justify-between py-1">
-              <span class="label-text font-bold text-sm">Rayon de détection</span>
+              <legend class="fieldset-legend text-xs font-semibold text-base-content/80">Périmètre de pointage autorisé</legend>
               <span class="badge badge-primary font-bold text-xs">{{ form.radius_meters }} mètres</span>
             </div>
 
@@ -817,7 +897,7 @@ const toggleStatus = async (loc) => {
                   max="500"
                   step="10"
                   class="range range-primary w-full focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
-                  aria-label="Rayon de détection en mètres"
+                  aria-label="Périmètre de pointage autorisé en mètres"
                   :aria-valuenow="form.radius_meters"
                   aria-valuemin="20"
                   aria-valuemax="500"
@@ -843,7 +923,7 @@ const toggleStatus = async (loc) => {
             </div>
 
             <!-- Raccourcis de sélection rapide (presets) -->
-            <div class="flex items-center gap-2 mt-3" role="group" aria-label="Valeurs courantes de rayon">
+            <div class="flex items-center gap-2 mt-3" role="group" aria-label="Valeurs courantes de périmètre">
               <button
                 type="button"
                 class="btn min-h-11 flex-1 text-sm font-bold rounded-m3-sm transition-all active:scale-95 duration-150 motion-reduce:transform-none focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
@@ -874,24 +954,29 @@ const toggleStatus = async (loc) => {
             </div>
 
             <!-- Texte contextuel et humain -->
-            <p class="text-xs text-base-content/70 mt-2.5 leading-relaxed">
-              Le pointage sera autorisé dans un cercle de <strong class="text-base-content font-bold">{{ form.radius_meters }} mètres</strong> autour de cette adresse.
-            </p>
-          </div>
+            <span class="fieldset-label text-xs text-base-content/70 mt-2.5 leading-relaxed">
+              L'équipe pourra valider son arrivée tant qu'elle se trouve dans ce périmètre de <strong class="text-base-content font-bold">{{ form.radius_meters }} mètres</strong>.
+            </span>
+          </fieldset>
 
           <!-- Statut actif -->
-          <div class="form-control mt-1">
+          <fieldset class="fieldset mt-1">
             <label class="label cursor-pointer justify-start gap-3 py-1 min-h-11">
               <input
                 v-model="form.is_active"
                 type="checkbox"
-                class="checkbox checkbox-primary rounded-m3-xs"
+                class="checkbox checkbox-primary rounded-m3-xs shrink-0"
               />
-              <span class="label-text font-semibold text-sm text-base-content">
-                Lieu ouvert au pointage
-              </span>
+              <div class="flex flex-col">
+                <span class="label-text font-semibold text-sm text-base-content">
+                  Rendre ce lieu actif immédiatement
+                </span>
+                <span class="text-xs text-base-content/60 font-normal">
+                  Ce site sera sélectionnable par l'équipe dès son enregistrement.
+                </span>
+              </div>
             </label>
-          </div>
+          </fieldset>
 
           <!-- Boutons de validation -->
           <div class="modal-action mt-2 pt-4 border-t border-base-200 flex items-center gap-2">
@@ -909,7 +994,7 @@ const toggleStatus = async (loc) => {
               :disabled="isSubmitting"
             >
               <span v-if="isSubmitting" class="loading loading-spinner loading-xs" aria-hidden="true"></span>
-              <span v-else>{{ isEditing ? 'Enregistrer les modifications' : 'Ajouter ce lieu' }}</span>
+              <span v-else>{{ isEditing ? 'Enregistrer les modifications' : 'Créer ce lieu de travail' }}</span>
             </button>
           </div>
         </form>
