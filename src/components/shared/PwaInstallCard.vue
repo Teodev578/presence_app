@@ -53,9 +53,9 @@ const desktopButtonLabel = computed(() => {
 <template>
   <section class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg p-4 sm:p-5 flex flex-col gap-4 md:col-span-2">
     <div class="flex flex-col gap-1">
-      <h2 class="text-base font-semibold text-base-content">Application sur l'appareil</h2>
+      <h2 class="text-base font-semibold text-base-content">Installer l'application</h2>
       <p class="text-xs text-base-content/60">
-        Installez PresenceApp pour un lancement rapide et un fonctionnement hors ligne optimal.
+        Ajoutez PresenceApp à votre écran d'accueil pour y accéder en un geste, même sans connexion.
       </p>
     </div>
 
@@ -273,7 +273,7 @@ const desktopButtonLabel = computed(() => {
     <button
       v-if="installStatus === 'ready'"
       type="button"
-      class="btn btn-primary rounded-m3-sm font-bold shadow-xs min-h-11 w-full sm:w-auto sm:min-w-64 gap-2 mt-auto self-start focus-visible:outline-2 focus-visible:outline-primary"
+      class="btn btn-primary rounded-m3-sm font-bold shadow-xs min-h-11 w-full gap-2 mt-auto focus-visible:outline-2 focus-visible:outline-primary"
       :disabled="isInstalling"
       @click="promptInstall"
     >
@@ -301,7 +301,7 @@ const desktopButtonLabel = computed(() => {
     <button
       v-else-if="installStatus === 'desktop'"
       type="button"
-      class="btn btn-primary rounded-m3-sm font-bold shadow-xs min-h-11 w-full sm:w-auto sm:min-w-64 gap-2 mt-auto self-start focus-visible:outline-2 focus-visible:outline-primary"
+      class="btn btn-primary rounded-m3-sm font-bold shadow-xs min-h-11 w-full gap-2 mt-auto focus-visible:outline-2 focus-visible:outline-primary"
       :disabled="isInstalling"
       @click="canPromptDirectly ? promptInstall() : toggleDesktopGuide()"
     >
@@ -331,7 +331,7 @@ const desktopButtonLabel = computed(() => {
     <button
       v-else-if="installStatus === 'ios'"
       type="button"
-      class="btn btn-primary btn-outline rounded-m3-sm font-semibold min-h-11 w-full sm:w-auto sm:min-w-64 gap-2 mt-auto self-start focus-visible:outline-2 focus-visible:outline-primary"
+      class="btn btn-primary btn-outline rounded-m3-sm font-semibold min-h-11 w-full gap-2 mt-auto focus-visible:outline-2 focus-visible:outline-primary"
       @click="toggleIosGuide"
     >
       <svg

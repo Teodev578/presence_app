@@ -347,7 +347,7 @@ const handleLogout = async () => {
                 <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path>
                 <circle cx="12" cy="10" r="3"></circle>
               </svg>
-              <span class="text-sm font-semibold text-base-content">Position géographique</span>
+              <span class="text-sm font-semibold text-base-content">Votre position</span>
             </div>
             <span class="badge badge-sm font-semibold" :class="geoBadgeClass">
               {{ geoLabel }}
@@ -356,23 +356,23 @@ const handleLogout = async () => {
 
           <p class="text-xs text-base-content/60">
             <template v-if="geoStatus === 'granted'">
-              Position accessible pour détecter les sites de pointage.
+              Votre position est partagée pour détecter automatiquement votre lieu de pointage.
             </template>
             <template v-else-if="geoStatus === 'denied'">
-              Accès refusé par le navigateur. Réactivez la position via l'icône de réglages du site dans la barre d'adresse.
+              Accès bloqué. Pour réactiver, touchez l'icône de site dans la barre d'adresse du navigateur.
             </template>
             <template v-else-if="geoStatus === 'unsupported'">
-              La géolocalisation n'est pas prise en charge sur cet appareil.
+              Votre appareil ne prend pas en charge la géolocalisation.
             </template>
             <template v-else>
-              Nécessaire pour situer votre chantier ou dépôt lors du pointage.
+              Utilisée pour vous situer automatiquement lors du pointage.
             </template>
           </p>
 
           <button
             v-if="geoStatus === 'prompt'"
             type="button"
-            class="btn btn-primary rounded-m3-sm font-bold min-h-11 gap-2 w-full mt-1 active:scale-95 transition-transform duration-150 focus-visible:outline-2 focus-visible:outline-primary"
+            class="btn btn-primary rounded-m3-sm font-bold min-h-11 gap-2 w-full active:scale-95 transition-transform duration-150 focus-visible:outline-2 focus-visible:outline-primary"
             :disabled="isRequestingGeo"
             @click="requestGeoPermission"
           >
@@ -381,7 +381,7 @@ const handleLogout = async () => {
               <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path>
               <circle cx="12" cy="10" r="3"></circle>
             </svg>
-            <span>Autoriser la position</span>
+            <span>Partager ma position</span>
           </button>
         </div>
 
@@ -394,24 +394,24 @@ const handleLogout = async () => {
                 <path d="M3 5V19A9 3 0 0 0 21 19V5"></path>
                 <path d="M3 12A9 3 0 0 0 21 12"></path>
               </svg>
-              <span class="text-sm font-semibold text-base-content">Stockage hors-ligne</span>
+              <span class="text-sm font-semibold text-base-content">Données hors connexion</span>
             </div>
             <span
               class="badge badge-sm font-semibold"
               :class="storagePersisted ? 'badge-success' : 'badge-neutral'"
             >
-              {{ storagePersisted ? 'Garanti' : 'Standard' }}
+              {{ storagePersisted ? 'Protégé' : 'Basique' }}
             </span>
           </div>
 
           <p class="text-xs text-base-content/60">
-            {{ storagePersisted ? 'Données locales protégées contre le nettoyage automatique.' : 'Données locales gérées par le navigateur.' }}
+            {{ storagePersisted ? 'Vos données restent sur l\'appareil même sans connexion prolongée.' : 'Le navigateur peut libérer de l\'espace si nécessaire.' }}
           </p>
 
           <button
             v-if="storagePersisted === false && canPersistStorage"
             type="button"
-            class="btn btn-neutral btn-outline rounded-m3-sm font-semibold min-h-11 gap-2 w-full mt-1 active:scale-95 transition-transform duration-150 focus-visible:outline-2 focus-visible:outline-neutral"
+            class="btn btn-neutral btn-outline rounded-m3-sm font-semibold min-h-11 gap-2 w-full active:scale-95 transition-transform duration-150 focus-visible:outline-2 focus-visible:outline-neutral"
             :disabled="isRequestingStorage"
             @click="requestStoragePersistence"
           >
@@ -421,7 +421,7 @@ const handleLogout = async () => {
               <path d="M3 5V19A9 3 0 0 0 21 19V5"></path>
               <path d="M3 12A9 3 0 0 0 21 12"></path>
             </svg>
-            <span>Garantir le stockage</span>
+            <span>Protéger mes données</span>
           </button>
         </div>
       </div>
@@ -433,7 +433,7 @@ const handleLogout = async () => {
         <h2 class="text-base font-semibold text-base-content">Apparence</h2>
         <p class="text-xs text-base-content/60 mt-0.5">Suivez le réglage du système ou forcez un thème clair ou sombre.</p>
       </div>
-      <div class="w-full max-w-md md:max-w-none flex-1 flex flex-col">
+      <div class="flex-1">
         <ThemeToggle inline />
       </div>
     </section>
@@ -446,7 +446,7 @@ const handleLogout = async () => {
       <p class="text-xs text-base-content/60">Vous devrez saisir vos identifiants pour revenir.</p>
       <button
         type="button"
-        class="btn btn-error btn-outline rounded-m3-sm font-bold min-h-11 gap-2 w-full sm:max-w-64 active:scale-95 transition-transform duration-150 focus-visible:outline-2 focus-visible:outline-error"
+        class="btn btn-error btn-outline rounded-m3-sm font-bold min-h-11 gap-2 w-full active:scale-95 transition-transform duration-150 focus-visible:outline-2 focus-visible:outline-error"
         :disabled="isSigningOut"
         @click="handleLogout"
       >
