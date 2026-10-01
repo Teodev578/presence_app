@@ -86,3 +86,24 @@ Statut : Terminé et Validé (Portes G119 à G121 validées, build conforme)
 - Oracle G120 (Intégrité des cartes et filtres sans jargon proscrit) : Validé par G58 et G60.
 - Oracle G121 (Compilation de production Vite) : Validé avec code de sortie 0 (117 modules).
 
+---
+
+## 5. Intégration de l'Heure de Départ Individuelle (`expected_departure_time`)
+
+Date : 2026-10-01  
+Déclencheur : Demande utilisateur (personnalisation de l'heure de départ comme pour l'arrivée)  
+Statut : Terminé et Validé (Portes G122 à G125)
+
+### Objectifs
+1. **Migration Supabase** : Ajouter `expected_departure_time TIME NOT NULL DEFAULT '18:00:00'::TIME` à la table `profiles`.
+2. **Types TypeScript** : Mettre à jour `src/types/database.types.d.ts` avec le nouveau champ.
+3. **UI Gestionnaire (`EmployeesView.vue`)** :
+   - Afficher l'heure de départ dans la liste (ex. "Arrivée 09:00 - Départ 18:00").
+   - Ajouter le champ d'édition dans la modale d'édition.
+4. **UI Collaborateur (`CheckOutView.vue` / `HomeView.vue`)** : Exploiter `expected_departure_time` (qui remplace le "18h" théorique, bien qu'il ne soit pas trouvé explicitement en dur) ou le cas échéant afficher la bonne métrique.
+
+### Résultats de Validation
+- [x] G122 (Migration Supabase valide)
+- [x] G123 (Types TS synchronisés)
+- [x] G124 (Interface gestionnaire affiche et édite les deux horaires)
+- [x] G125 (Compilation Vite)

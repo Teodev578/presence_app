@@ -74,7 +74,7 @@ const SORTABLE_COLUMNS = [
   { key: 'email', label: 'Email' },
   { key: 'team', label: 'Équipe' },
   { key: 'role', label: 'Rôle' },
-  { key: 'time', label: 'Heure attendue' },
+  { key: 'time', label: 'Horaires attendus' },
 ]
 
 const SORT_ACCESSORS = {
@@ -82,7 +82,7 @@ const SORT_ACCESSORS = {
   email: (e) => e.email || '',
   team: (e) => e.teams?.name || '',
   role: (e) => e.role || '',
-  time: (e) => e.expected_arrival_time || '',
+  time: (e) => (e.expected_arrival_time || '') + (e.expected_departure_time || ''),
 }
 
 const sortKey = ref('name')
@@ -182,6 +182,7 @@ const editForm = ref({
   role: 'employee',
   team_id: '',
   expected_arrival_time: '09:00:00',
+  expected_departure_time: '18:00:00',
 })
 const isSaving = ref(false)
 const editError = ref('')
@@ -194,6 +195,7 @@ const openEditModal = (emp) => {
     role: emp.role || 'employee',
     team_id: emp.team_id || '',
     expected_arrival_time: emp.expected_arrival_time || '09:00:00',
+    expected_departure_time: emp.expected_departure_time || '18:00:00',
   }
 }
 
@@ -211,6 +213,7 @@ const saveEmployee = async () => {
       role: editForm.value.role,
       team_id: editForm.value.team_id || null,
       expected_arrival_time: editForm.value.expected_arrival_time,
+      expected_departure_time: editForm.value.expected_departure_time,
       updated_at: now,
     }
     const clientMutationId = generateUUIDv7()
@@ -393,7 +396,9 @@ const confirmArchive = async () => {
             <div class="flex flex-wrap items-center gap-2">
               <span class="badge badge-sm font-semibold capitalize rounded-m3-xs" :class="roleClass(emp.role)">{{ roleLabel(emp.role) }}</span>
               <span class="badge badge-soft badge-sm rounded-m3-xs">{{ emp.teams?.name || 'Non assigné' }}</span>
-              <span class="font-mono text-xs font-semibold text-base-content/80">Arrivée {{ emp.expected_arrival_time?.slice(0, 5) || '—' }}</span>
+              <span class="font-mono text-xs font-semibold text-base-content/80">
+                Arrivée {{ emp.expected_arrival_time?.slice(0, 5) || '—' }} - Départ {{ emp.expected_departure_time?.slice(0, 5) || '—' }}
+              </span>
             </div>
 
             <div class="flex items-center justify-end gap-2 pt-3 border-t border-base-300/60">
@@ -452,7 +457,7 @@ const confirmArchive = async () => {
                   <span class="badge badge-sm font-semibold capitalize rounded-m3-xs" :class="roleClass(emp.role)">{{ roleLabel(emp.role) }}</span>
                 </td>
                 <td class="font-mono text-xs font-semibold text-base-content/80">
-                  {{ emp.expected_arrival_time?.slice(0, 5) || '—' }}
+                  {{ emp.expected_arrival_time?.slice(0, 5) || '—' }} - {{ emp.expected_departure_time?.slice(0, 5) || '—' }}
                 </td>
                 <td class="text-right">
                   <div class="inline-flex items-center gap-1">
@@ -511,17 +516,31 @@ const confirmArchive = async () => {
             </fieldset>
           </div>
 
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend text-xs font-semibold text-base-content/80">Heure d'arrivée habituelle</legend>
-            <input
-              v-model="editForm.expected_arrival_time"
-              type="time"
-              step="60"
-              class="input input-bordered w-full rounded-m3-md min-h-11 text-sm"
-              required
-            />
-            <span class="fieldset-label text-xs text-base-content/60">Sert de repère pour signaler les arrivées après l'horaire.</span>
-          </fieldset>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend text-xs font-semibold text-base-content/80">Heure d'arrivée habituelle</legend>
+              <input
+                v-model="editForm.expected_arrival_time"
+                type="time"
+                step="60"
+                class="input input-bordered w-full rounded-m3-md min-h-11 text-sm"
+                required
+              />
+              <span class="fieldset-label text-xs text-base-content/60">Sert de repère pour signaler les arrivées après l'horaire.</span>
+            </fieldset>
+
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend text-xs font-semibold text-base-content/80">Heure de départ habituelle</legend>
+              <input
+                v-model="editForm.expected_departure_time"
+                type="time"
+                step="60"
+                class="input input-bordered w-full rounded-m3-md min-h-11 text-sm"
+                required
+              />
+              <span class="fieldset-label text-xs text-base-content/60">Sert de repère pour la fin de journée.</span>
+            </fieldset>
+          </div>
 
           <div v-if="editError" class="alert alert-error text-xs rounded-m3-md py-2">
             {{ editError }}

@@ -42,6 +42,7 @@ const displayName = computed(() => {
         <DayCard
           :presence="todayPresence"
           :expected-arrival-time="profile?.expected_arrival_time || '09:00:00'"
+          :expected-departure-time="profile?.expected_departure_time || '18:00:00'"
           @check-in="navigate('/employee/check-in')"
           @check-out="navigate('/employee/check-out')"
           @open-availabilities="navigate('/employee/availabilities')"

@@ -933,3 +933,31 @@ Scope: Aligner la boîte de dialogue de gestion des lieux de travail sur la gram
   CHECK: npm run build
   EXPECT: built in
   EVIDENCE: npm run build avec code de sortie 0 (117 modules transformés en 1.33s, assets dist/ générés sans erreur le 2026-10-01)
+
+---
+
+# Gates: Intégration de l'Heure de Départ Individuelle (`expected_departure_time`)
+
+OWNS: supabase/migrations/20261001000000_add_expected_departure_time_to_profiles.sql, src/types/database.types.d.ts, src/views/manager/EmployeesView.vue, src/views/employee/HomeView.vue, src/views/employee/CheckInView.vue, GATES.md, .agents/plan.md
+
+Scope: Permettre la personnalisation de l'heure de départ (`expected_departure_time`) au même titre que l'heure d'arrivée. Le schéma Supabase est enrichi, les types TypeScript sont mis à jour, l'interface du gestionnaire (EmployeesView) permet la visualisation et l'édition de cette nouvelle donnée. Les écrans employés intègrent cette donnée si nécessaire.
+
+- [x] G122: Migration Supabase créée pour ajouter `expected_departure_time` (TIME, NOT NULL, DEFAULT '18:00:00')
+  CHECK: node -e "const fs = require('fs'); const files = fs.readdirSync('supabase/migrations'); if(!files.some(f => f.includes('add_expected_departure_time'))) { console.error('FAILURE: Migration not found'); process.exit(1); } console.log('G122 passed: Migration found');"
+  EXPECT: G122 passed: Migration found
+  EVIDENCE: G122 passed: Migration found
+
+- [x] G123: Types TypeScript de `profiles` mis à jour avec `expected_departure_time`
+  CHECK: node -e "const fs = require('fs'); const c = fs.readFileSync('src/types/database.types.d.ts', 'utf8'); if(!c.includes('expected_departure_time: string')) { console.error('FAILURE: expected_departure_time missing in types'); process.exit(1); } console.log('G123 passed: Types updated');"
+  EXPECT: G123 passed: Types updated
+  EVIDENCE: G123 passed: Types updated
+
+- [x] G124: Interface EmployeesView.vue permet d'éditer `expected_departure_time`
+  CHECK: node -e "const fs = require('fs'); const c = fs.readFileSync('src/views/manager/EmployeesView.vue', 'utf8'); if(!c.includes('v-model=\"editForm.expected_departure_time\"')) { console.error('FAILURE: expected_departure_time input missing'); process.exit(1); } console.log('G124 passed: EmployeesView updated');"
+  EXPECT: G124 passed: EmployeesView updated
+  EVIDENCE: G124 passed: EmployeesView updated
+
+- [x] G125: Validation de la compilation Vite en production sans régression
+  CHECK: npm run build
+  EXPECT: built in
+  EVIDENCE: npm run build avec code de sortie 0 (117 modules transformés en 1.05s, assets dist/ générés sans erreur le 2026-10-01)

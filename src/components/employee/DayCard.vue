@@ -12,6 +12,10 @@ const props = defineProps({
     type: String,
     default: '09:00:00',
   },
+  expectedDepartureTime: {
+    type: String,
+    default: '18:00:00',
+  },
 })
 
 const emit = defineEmits(['checkIn', 'checkOut', 'openAvailabilities'])
@@ -93,7 +97,7 @@ const workDuration = computed(() => {
                 {{ presence?.check_out_time ? formatTime(presence.check_out_time) : '--:--' }}
               </span>
               <span class="text-xs text-base-content/60 font-medium mt-0.5">
-                {{ presence?.check_out_time ? 'Validé' : 'En attente' }}
+                Prévu à {{ expectedDepartureTime.slice(0, 5) }}
               </span>
             </div>
           </div>

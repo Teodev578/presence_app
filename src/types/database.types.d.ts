@@ -179,6 +179,7 @@ export type Database = {
           deleted_at: string | null
           email: string
           expected_arrival_time: string
+          expected_departure_time: string
           full_name: string
           id: string
           is_active: boolean
@@ -191,6 +192,7 @@ export type Database = {
           deleted_at?: string | null
           email: string
           expected_arrival_time?: string
+          expected_departure_time?: string
           full_name: string
           id: string
           is_active?: boolean
@@ -203,6 +205,7 @@ export type Database = {
           deleted_at?: string | null
           email?: string
           expected_arrival_time?: string
+          expected_departure_time?: string
           full_name?: string
           id?: string
           is_active?: boolean
