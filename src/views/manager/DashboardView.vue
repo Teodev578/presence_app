@@ -59,7 +59,7 @@ const activeLocationsCount = computed(() => {
   return (locations.value || []).filter(isLocationActive).length
 })
 
-// Sémantique alignée sur le Contrôle des Présences : les pointages effectifs portent une arrivée,
+// Sémantique alignée sur la vue des pointages : les pointages effectifs portent une arrivée,
 // l'absence déclarée est un statut à part, et le reste de l'effectif n'a simplement pas pointé.
 const presenceStats = computed(() => {
   const list = presencesToday.value || []
@@ -98,8 +98,8 @@ const goToPresences = () => navigate('/manager/presences')
 <template>
   <div class="flex flex-col gap-6">
     <ManagerPageHeader
-      title="Tableau de bord de l'activité"
-      :subtitle="`Activité du ${todayLabel}`"
+      title="Tableau de bord"
+      :subtitle="`Pointages du ${todayLabel}`"
     >
       <template #icon>
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -121,7 +121,7 @@ const goToPresences = () => navigate('/manager/presences')
               <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
               <circle cx="12" cy="10" r="3"></circle>
             </svg>
-            <span class="truncate">Mes sites ({{ activeLocationsCount }})</span>
+            <span class="truncate">Lieux de travail ({{ activeLocationsCount }})</span>
           </button>
           <button
             type="button"
@@ -139,13 +139,13 @@ const goToPresences = () => navigate('/manager/presences')
       <ManagerKpiCard
         label="Équipe"
         :value="totalEmployees"
-        caption="Membres actifs"
+        caption="Personnes inscrites"
         tone="primary"
       />
       <ManagerKpiCard
         label="Pointés"
         :value="presenceStats.pointed"
-        caption="Présents et journées terminées"
+        caption="Sur site ou journée finie"
         tone="success"
         clickable
         @select="goToPresences"
@@ -165,7 +165,7 @@ const goToPresences = () => navigate('/manager/presences')
           ? `${presenceStats.declaredAbsent} absences déclarées comprises`
           : presenceStats.declaredAbsent === 1
             ? '1 absence déclarée comprise'
-            : 'Sans pointage ni absence déclarée'"
+            : 'Sans pointage ni absence prévue'"
         tone="error"
         clickable
         @select="goToPresences"
@@ -175,7 +175,7 @@ const goToPresences = () => navigate('/manager/presences')
     <!-- Activité récente : fiches sous 640px, tableau d'audit au-delà -->
     <div class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg overflow-hidden">
       <div class="p-4 sm:p-5 border-b border-base-300/60 flex items-center justify-between gap-3">
-        <h3 class="text-sm font-bold text-base-content">Derniers pointages enregistrés aujourd'hui</h3>
+        <h3 class="text-sm font-bold text-base-content">Derniers pointages aujourd'hui</h3>
         <span class="badge badge-primary badge-sm font-semibold shrink-0">{{ presencesToday.length === 1 ? '1 pointage' : `${presencesToday.length} pointages` }}</span>
       </div>
 

@@ -62,10 +62,10 @@ const emptyState = computed(() => {
   if (!(teams.value || []).length) {
     return {
       title: 'Aucune équipe',
-      message: 'Créez votre première équipe pour regrouper les collaborateurs par pôle.',
+      message: 'Ajoutez une première équipe pour regrouper les personnes par atelier ou chantier.',
       icon: 'team',
       action: 'create',
-      actionLabel: 'Créer une équipe',
+      actionLabel: 'Ajouter une équipe',
     }
   }
   return {
@@ -119,7 +119,7 @@ const closeModal = () => {
 const saveTeam = async () => {
   const name = formName.value.trim()
   if (!name) {
-    formError.value = 'Un nom d\u2019équipe est requis.'
+    formError.value = 'Renseignez un nom pour cette équipe.'
     return
   }
   isSaving.value = true
@@ -240,8 +240,8 @@ const confirmArchive = async () => {
 <template>
   <div class="flex flex-col gap-6">
     <ManagerPageHeader
-      title="Gestion des Équipes"
-      subtitle="Structurez vos pôles et regroupez vos collaborateurs"
+      title="Équipes"
+      subtitle="Regroupez les personnes par pôle, atelier ou chantier"
     >
       <template #icon>
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -261,7 +261,7 @@ const confirmArchive = async () => {
           <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 5v14M5 12h14"></path>
           </svg>
-          <span>Nouvelle équipe</span>
+          <span>Ajouter une équipe</span>
         </button>
       </template>
     </ManagerPageHeader>
@@ -310,7 +310,7 @@ const confirmArchive = async () => {
             </svg>
             <h3 class="font-bold text-base text-base-content truncate">{{ team.name }}</h3>
           </div>
-          <span class="badge badge-soft badge-sm font-semibold shrink-0">{{ team.profiles?.length || 0 }} membre{{ (team.profiles?.length || 0) > 1 ? 's' : '' }}</span>
+          <span class="badge badge-soft badge-sm font-semibold shrink-0">{{ team.profiles?.length || 0 }} personne{{ (team.profiles?.length || 0) > 1 ? 's' : '' }}</span>
         </div>
 
         <div class="flex-1">
@@ -320,20 +320,20 @@ const confirmArchive = async () => {
               {{ m.full_name || m.email }}
             </span>
           </div>
-          <p v-else class="text-xs text-base-content/50 italic py-2">Aucun collaborateur affecté à cette équipe.</p>
+          <p v-else class="text-xs text-base-content/50 italic py-2">Aucune personne dans cette équipe.</p>
         </div>
 
         <div class="flex items-center justify-end gap-2 pt-2 border-t border-base-300/60">
           <button
             type="button"
-            class="btn btn-ghost btn-sm min-h-11 rounded-m3-sm text-xs font-semibold px-3"
+            class="btn btn-ghost min-h-11 rounded-m3-sm text-xs font-semibold px-3"
             @click="openRenameModal(team)"
           >
             Renommer
           </button>
           <button
             type="button"
-            class="btn btn-ghost btn-sm min-h-11 rounded-m3-sm text-xs font-semibold text-error px-3 hover:bg-error/10"
+            class="btn btn-ghost min-h-11 rounded-m3-sm text-xs font-semibold text-error px-3 hover:bg-error/10"
             @click="requestArchive(team)"
           >
             Désactiver
@@ -346,10 +346,10 @@ const confirmArchive = async () => {
     <dialog class="modal" :class="{ 'modal-open': isModalOpen }">
       <div class="modal-box rounded-m3-xl max-w-md border border-base-300 bg-base-100 p-6 flex flex-col gap-4">
         <h3 class="font-bold text-lg text-base-content">
-          {{ editingTeam ? `Renommer l'équipe « ${editingTeam.name} »` : 'Créer une nouvelle équipe' }}
+          {{ editingTeam ? `Renommer l'équipe « ${editingTeam.name} »` : 'Ajouter une équipe' }}
         </h3>
         <p class="text-xs text-base-content/70">
-          {{ editingTeam ? 'Modifiez le libellé de l’équipe. Le changement est instantané et synchronisé en arrière-plan.' : 'Renseignez le nom du pôle pour regrouper les collaborateurs.' }}
+          {{ editingTeam ? 'Modifiez le nom de l’équipe.' : 'Donnez un nom clair pour identifier cette équipe.' }}
         </p>
 
         <form @submit.prevent="saveTeam" class="flex flex-col gap-4">
@@ -384,7 +384,7 @@ const confirmArchive = async () => {
               :disabled="isSaving"
             >
               <span v-if="isSaving" class="loading loading-spinner loading-xs"></span>
-              <span>{{ editingTeam ? 'Enregistrer' : 'Créer' }}</span>
+              <span>{{ editingTeam ? 'Enregistrer' : 'Ajouter' }}</span>
             </button>
           </div>
         </form>
@@ -398,7 +398,7 @@ const confirmArchive = async () => {
     <ConfirmModal
       :open="!!teamToArchive"
       title="Désactiver cette équipe ?"
-      :message="`L'équipe « ${teamToArchive?.name || ''} » ne sera plus proposée pour de nouvelles affectations. Les collaborateurs qui en faisaient partie conserveront leur historique.`"
+      :message="`L'équipe « ${teamToArchive?.name || ''} » ne sera plus proposée pour de nouvelles personnes. L'historique des pointages reste conservé.`"
       confirm-label="Désactiver l'équipe"
       confirm-variant="error"
       :loading="isArchiving"

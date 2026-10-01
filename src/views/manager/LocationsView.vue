@@ -71,33 +71,33 @@ const locationCounts = computed(() => {
 const emptyState = computed(() => {
   if (locationCounts.value.all === 0) {
     return {
-      title: 'Aucun site enregistré',
-      message: 'Créez votre premier site pour autoriser le pointage géolocalisé.',
+      title: 'Aucun lieu enregistré',
+      message: 'Ajoutez un premier lieu de travail pour permettre le pointage de l’équipe.',
       action: 'create',
-      actionLabel: 'Créer un site',
+      actionLabel: 'Ajouter un lieu',
     }
   }
   if (searchQuery.value.trim()) {
     return {
       title: 'Aucun résultat',
-      message: `Aucun site ne correspond à « ${searchQuery.value.trim()} ».`,
+      message: `Aucun lieu ne correspond à « ${searchQuery.value.trim()} ».`,
       action: 'clear-search',
       actionLabel: 'Effacer la recherche',
     }
   }
   if (filterStatus.value === 'active') {
     return {
-      title: 'Aucun site actif',
-      message: 'Tous vos sites sont désactivés. Activez-en un pour autoriser le pointage.',
+      title: 'Aucun lieu actif',
+      message: 'Tous vos lieux sont inactifs. Activez-en un pour permettre le pointage.',
       action: 'show-all',
-      actionLabel: 'Voir tous les sites',
+      actionLabel: 'Voir tous les lieux',
     }
   }
   return {
-    title: 'Aucun site inactif',
-    message: 'Tous vos sites sont actifs et autorisés au pointage.',
+    title: 'Aucun lieu inactif',
+    message: 'Tous les lieux sont actifs et ouverts au pointage.',
     action: 'show-all',
-    actionLabel: 'Voir tous les sites',
+    actionLabel: 'Voir tous les lieux',
   }
 })
 
@@ -303,15 +303,15 @@ const handleSubmit = async () => {
   formError.value = ''
 
   if (!form.value.name.trim()) {
-    formError.value = 'Veuillez saisir un nom pour ce site.'
+    formError.value = 'Renseignez un nom pour ce lieu.'
     return
   }
   if (form.value.latitude === '' || isNaN(Number(form.value.latitude))) {
-    formError.value = 'Veuillez renseigner une latitude valide.'
+    formError.value = 'Renseignez une latitude valide.'
     return
   }
   if (form.value.longitude === '' || isNaN(Number(form.value.longitude))) {
-    formError.value = 'Veuillez renseigner une longitude valide.'
+    formError.value = 'Renseignez une longitude valide.'
     return
   }
 
@@ -333,7 +333,7 @@ const handleSubmit = async () => {
         radius_meters: form.value.radius_meters,
         is_active: form.value.is_active,
       })
-      success(`Le site « ${form.value.name} » a été créé avec succès.`)
+      success(`Le lieu « ${form.value.name} » a été ajouté.`)
     }
     closeModal()
   } catch (err) {
@@ -358,7 +358,7 @@ const confirmDelete = async () => {
   const target = locationToDelete.value
   try {
     await deleteLocation(target.id)
-    success(`Le site « ${target.name} » a été supprimé.`)
+    success(`Le lieu « ${target.name} » a été supprimé.`)
     locationToDelete.value = null
   } catch (err) {
     toastError(`Erreur de suppression : ${err.message}`)
@@ -373,7 +373,7 @@ const toggleStatus = async (loc) => {
   const next = !isLocationActive(loc)
   try {
     await updateLocation(loc.id, { is_active: next })
-    success(`Le site « ${loc.name} » est maintenant ${next ? 'actif' : 'inactif'}.`)
+    success(`Le lieu « ${loc.name} » est maintenant ${next ? 'actif' : 'inactif'}.`)
   } catch (err) {
     toastError(`Impossible de changer l’état de « ${loc.name} » : ${err.message}`)
   }
@@ -386,8 +386,8 @@ const toggleStatus = async (loc) => {
   <div class="flex flex-col gap-6">
     <!-- En-tête -->
     <ManagerPageHeader
-      title="Gestion des Sites"
-      subtitle="Définissez les périmètres autorisés pour le pointage des collaborateurs"
+      title="Lieux de travail"
+      subtitle="Adresses et zones où l'équipe peut valider son arrivée"
     >
       <template #icon>
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -405,7 +405,7 @@ const toggleStatus = async (loc) => {
           <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 5v14M5 12h14"></path>
           </svg>
-          <span>Nouveau Site</span>
+          <span>Ajouter un lieu</span>
         </button>
       </template>
     </ManagerPageHeader>
@@ -423,7 +423,7 @@ const toggleStatus = async (loc) => {
             v-model="searchQuery"
             type="text"
             class="grow text-sm"
-            placeholder="Rechercher un site par nom..."
+            placeholder="Rechercher un lieu par nom..."
           />
         </label>
       </div>
@@ -500,7 +500,7 @@ const toggleStatus = async (loc) => {
           </div>
           <label
             class="flex min-h-11 shrink-0 cursor-pointer select-none items-center gap-2"
-            :title="isLocationActive(loc) ? 'Désactiver ce site pour le pointage' : 'Activer ce site pour le pointage'"
+            :title="isLocationActive(loc) ? 'Désactiver ce lieu pour le pointage' : 'Activer ce lieu pour le pointage'"
           >
             <span
               class="text-xs font-bold"
@@ -563,7 +563,7 @@ const toggleStatus = async (loc) => {
             type="button"
             class="btn btn-ghost text-error font-medium rounded-m3-sm min-h-11 px-3"
             @click="requestDelete(loc)"
-            title="Supprimer ce site"
+            title="Supprimer ce lieu"
           >
             Supprimer
           </button>
@@ -595,7 +595,7 @@ const toggleStatus = async (loc) => {
               <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
               <circle cx="12" cy="10" r="3"></circle>
             </svg>
-            <span>{{ isEditing ? 'Modifier le site' : 'Ajouter un nouveau site' }}</span>
+            <span>{{ isEditing ? 'Modifier le lieu' : 'Ajouter un lieu de travail' }}</span>
           </h3>
           <button
             type="button"
@@ -624,20 +624,20 @@ const toggleStatus = async (loc) => {
           <!-- Nom du site -->
           <div class="form-control">
             <label class="label py-1">
-              <span class="label-text font-bold text-sm">Nom du site *</span>
+              <span class="label-text font-bold text-sm">Nom du lieu *</span>
             </label>
             <input
               v-model="form.name"
               type="text"
               class="input input-bordered w-full min-h-11 rounded-m3-md text-sm"
-              placeholder="ex: Siège social, Chantier Alpha, Dépôt..."
+              placeholder="ex. Siège, Atelier, Dépôt, Chantier..."
               required
             />
           </div>
 
           <!-- Assistant de localisation rapide -->
           <div class="bg-base-200/60 p-4 rounded-m3-lg flex flex-col gap-3">
-            <span class="text-sm font-bold text-base-content/70">Assistant de localisation</span>
+            <span class="text-sm font-bold text-base-content/70">Positionner le lieu</span>
 
             <!-- Bouton GPS actuel -->
             <button
@@ -650,7 +650,7 @@ const toggleStatus = async (loc) => {
               <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
               </svg>
-              <span>Détecter ma position actuelle</span>
+              <span>Prendre ma position actuelle</span>
             </button>
 
             <!-- Saisie lien cartographique ou coordonnées -->
@@ -660,7 +660,7 @@ const toggleStatus = async (loc) => {
                   v-model="mapUrlInput"
                   type="text"
                   class="input input-bordered w-full min-h-11 rounded-m3-md text-sm pl-9"
-                  placeholder="Coller un lien (Google Maps, Apple Maps) ou coordonnées..."
+                  placeholder="Coller un lien cartographique ou des coordonnées..."
                   @input="handleMapInput"
                   @paste="handleMapPaste"
                 />
@@ -785,10 +785,10 @@ const toggleStatus = async (loc) => {
             </div>
           </div>
 
-          <!-- Rayon de tolérance en mètres -->
+          <!-- Rayon de détection en mètres -->
           <div class="form-control">
             <div class="flex items-center justify-between py-1">
-              <span class="label-text font-bold text-sm">Rayon de tolérance</span>
+              <span class="label-text font-bold text-sm">Rayon de détection</span>
               <span class="badge badge-primary badge-sm font-bold">{{ form.radius_meters }} mètres</span>
             </div>
             <input
@@ -816,7 +816,7 @@ const toggleStatus = async (loc) => {
                 class="checkbox checkbox-primary rounded-m3-xs"
               />
               <span class="label-text font-semibold text-sm text-base-content">
-                Site actif pour le pointage
+                Lieu ouvert au pointage
               </span>
             </label>
           </div>
@@ -837,7 +837,7 @@ const toggleStatus = async (loc) => {
               :disabled="isSubmitting"
             >
               <span v-if="isSubmitting" class="loading loading-spinner loading-xs"></span>
-              <span v-else>{{ isEditing ? 'Mettre à jour' : 'Enregistrer le site' }}</span>
+              <span v-else>{{ isEditing ? 'Enregistrer les modifications' : 'Ajouter ce lieu' }}</span>
             </button>
           </div>
         </form>
@@ -850,8 +850,8 @@ const toggleStatus = async (loc) => {
     <!-- Modale de confirmation de suppression Material 3 -->
     <ConfirmModal
       :open="!!locationToDelete"
-      title="Supprimer le site"
-      :message="`Confirmez-vous la suppression définitive du site « ${locationToDelete?.name} » ? Cette action est irréversible.`"
+      title="Supprimer le lieu"
+      :message="`Confirmez-vous la suppression du lieu « ${locationToDelete?.name} » ? Cette action est définitive.`"
       confirm-text="Supprimer"
       confirm-class="btn-error"
       :loading="isDeleting"

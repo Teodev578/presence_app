@@ -1,68 +1,67 @@
-# Plan : Éradication des Temps de Chargement & Alignement Local-First Intégral
+# Plan : Refonte Éditoriale Stop-Slop de l'Espace Gestionnaire
 
-Date : 2026-10-01
-Déclencheur : Présence d'indicateurs et de temps de chargement bloquants dans une application architecturée en Local-First
-Statut : Terminé (Validé par les portes G111 à G115 et npm run build)
+Date : 2026-10-01  
+Déclencheur : Audit stop-slop pour éradiquer le ton corporate classique des IA et adopter une tonalité sobre, humaine et naturelle  
+Statut : Terminé et Validé (Portes G116 à G118 validées, build de production conforme)  
+Artifact Antigravity : `audit_stop_slop_manager.md`
 
 ## 1. Périmètre
 
-### Fichiers lus
-- `src/views/manager/TeamsView.vue`
-- `src/views/manager/EmployeesView.vue`
+### Fichiers cibles
+- `src/layouts/ManagerLayout.vue`
 - `src/views/manager/DashboardView.vue`
 - `src/views/manager/PresencesView.vue`
 - `src/views/manager/AvailabilitiesView.vue`
-- `src/views/employee/CheckInView.vue`
-- `src/views/employee/CheckOutView.vue`
-- `src/composables/useSyncEngine.js`
-- `src/composables/useLocations.js`
-- `src/lib/db.js`
+- `src/views/manager/LocationsView.vue`
+- `src/views/manager/EmployeesView.vue`
+- `src/views/manager/TeamsView.vue`
+- `src/views/manager/ExportView.vue`
 - `GATES.md`
 
-### Fichiers à modifier
-1. `src/views/manager/TeamsView.vue` :
-   - Élimination des requêtes réseau distantes `supabase.from('teams')`.
-   - Lecture réactive locale via `useLiveQuery` sur `db.teams` et `db.profiles`.
-   - Écritures locales atomiques (création, renommage, archivage) via `db.transaction('rw', db.teams, db.sync_outbox, ...)` avec UUIDv7.
-   - Suppression de l'état bloquant `loading = ref(true)` et du squelette d'attente.
+### Référentiels
+- Skill `stop-slop` : suppression du remplissage, des constructions passives, des fausses antithèses et des métaphores managériales creuses.
+- Directive locale `.agents/rules/09-ui-copy-and-tone.md` : parler à une personne et non à un dossier, nommer le fait constaté plutôt que le verdict disciplinaire, accorder le pluriel en toutes lettres.
 
-2. `src/views/manager/EmployeesView.vue` :
-   - Élimination des requêtes réseau distantes `supabase.from('profiles')` et `supabase.from('teams')`.
-   - Lecture réactive locale via `useLiveQuery` sur `db.profiles` et `db.teams`.
-   - Écritures locales atomiques (édition, archivage) via `db.transaction('rw', db.profiles, db.sync_outbox, ...)` avec UUIDv7.
-   - Suppression de l'état bloquant `loading = ref(true)` et du squelette d'attente.
+---
 
-3. `src/views/manager/DashboardView.vue` :
-   - Amorçage des `useLiveQuery` avec un tableau vide par défaut `[]` au lieu de `null`.
-   - Suppression du flash visuel de squelette (`v-if="loading"`) pour un rendu instantané.
+## 2. Synthèse des Reformulations Appliquées
 
-4. `src/views/manager/PresencesView.vue` :
-   - Amorçage de `presenceRows` avec un tableau vide par défaut `[]` au lieu de `null`.
-   - Rendu immédiat des fiches et statistiques sans flash de spinner.
+1. **Navigation et tiroir (`ManagerLayout.vue`)** :
+   - Entrées : « Lieux de travail », « Pointages », « Équipe » (au lieu de « Sites », « Présences », « Collaborateurs »).
 
-5. `src/views/manager/AvailabilitiesView.vue` :
-   - Amorçage des requêtes `useLiveQuery` avec `[]` par défaut au lieu de `null`.
-   - Suppression du bloc d'ossature clignotante à chaque navigation.
+2. **Tableau de bord (`DashboardView.vue`)** :
+   - Titre / sous-titre : « Tableau de bord » / « Pointages du [date] ».
+   - Boutons et KPI : « Lieux de travail », « Personnes inscrites », « Sur site ou journée finie », « Sans pointage ni absence prévue », « Derniers pointages aujourd'hui ».
 
-6. `src/views/employee/CheckInView.vue` & `src/views/employee/CheckOutView.vue` :
-   - Remplacement de l'initialisation bloquante des sites par `useLocations()` réactif.
-   - Suppression de `isLoadingLocations` et `isLoading` bloquants au montage.
+3. **Pointages (`PresencesView.vue`)** :
+   - Titre / sous-titre : « Pointages » / « Arrivées, départs et heures constatées sur le terrain ».
+   - Action modale : « Enregistrer la modification » (au lieu de « Valider la correction »).
 
-7. `GATES.md` :
-   - Inscription des portes d'acceptation G111 à G115.
+4. **Disponibilités (`AvailabilitiesView.vue`)** :
+   - Titre / sous-titre : « Disponibilités » / « Présences prévues par l'équipe pour la semaine ».
+   - KPI : « Jours passés », « Journées pointées », « Présence constatée » / « Sur les jours prévus ».
+   - Légendes & Modale : « Pointé », « Absence signalée », « Prévu », « Jour férié », « Note laissée par le collaborateur », « Consulter les pointages → ».
 
-### Hors périmètre
-- Modification des versions de paquets ou du `package.json` (règle absolue de non-altération sans accord).
-- Altération de la logique sous-jacente du moteur de réplication `useSyncEngine.js`.
+5. **Lieux de travail (`LocationsView.vue`)** :
+   - Titre / sous-titre : « Lieux de travail » / « Adresses et zones où l'équipe peut valider son arrivée ».
+   - Bouton & Formulaire : « Ajouter un lieu », « Rayon de détection », « Prendre ma position actuelle », « Lieu ouvert au pointage ».
 
-## 2. Étapes ordonnées
+6. **Équipes (`TeamsView.vue`)** :
+   - Titre / sous-titre : « Équipes » / « Regroupez les personnes par pôle, atelier ou chantier ».
+   - Modale & Listes : « Ajouter une équipe », « Donnez un nom clair pour identifier cette équipe », suppression de `btn-sm`.
 
-1. **Formalisation des portes dans `GATES.md`** (G111 à G115).
-2. **Refonte Local-First de `TeamsView.vue`** (lecture Dexie + outbox).
-3. **Refonte Local-First de `EmployeesView.vue`** (lecture Dexie + outbox).
-4. **Suppression du Flash of Loading dans `DashboardView.vue`, `PresencesView.vue` et `AvailabilitiesView.vue`**.
-5. **Assainissement réactif de `CheckInView.vue` et `CheckOutView.vue`**.
-6. **Vérification déterministe des oracles et compilation de production Vite**.
+7. **Membres de l'équipe (`EmployeesView.vue`)** :
+   - Titre / sous-titre : « Membres de l'équipe » / « Rôles, équipes et heures habituelles d'arrivée ».
+   - Aide & Modale : « Heure d'arrivée habituelle » / « Sert de repère pour signaler les arrivées après l'horaire », suppression de `btn-sm` et de `table-zebra`.
 
-## 3. Critère d'arrêt
-Toutes les portes G111 à G115 validées avec succès, absence totale d'appels `supabase.from()` dans les vues gestionnaire, navigation instantanée sans aucun spinner/squelette intempestif, et compilation Vite sans erreur.
+8. **Export (`ExportView.vue`)** :
+   - Titre / sous-titre : « Export des pointages » / « Téléchargez un fichier CSV pour votre tableur ou vos fiches de paie ».
+   - Toast & Téléchargement : accord grammatical explicite sans parenthèse (`${count > 1 ? `${count} pointages exportés en CSV.` : '1 pointage exporté en CSV.'}`), « Télécharger le fichier CSV ».
+
+---
+
+## 3. Résultats de Validation
+
+- Oracle G116 (Éradication du jargon policier/corporate) : Validé (0 violation).
+- Oracle G117 (Rigueur grammaticale et pluriels en clair) : Validé (0 parenthèse résiduelle).
+- Oracle G118 (Compilation de production Vite) : Validé (code de sortie 0, 117 modules transformés).

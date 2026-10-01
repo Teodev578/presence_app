@@ -289,8 +289,8 @@ const goToPresences = (dateStr) => {
 <template>
   <div class="flex flex-col gap-6">
     <ManagerPageHeader
-      title="Disponibilités de l'Équipe"
-      subtitle="Planning hebdomadaire prévisionnel et suivi des pointages"
+      title="Disponibilités"
+      subtitle="Présences prévues par l'équipe pour la semaine"
     >
       <template #icon>
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -304,12 +304,12 @@ const goToPresences = (dateStr) => {
 
     <!-- Synthèse de la semaine -->
     <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 min-w-0">
-      <ManagerKpiCard label="Présences attendues" :value="stats.declared" caption="Jours ouvrés révolus" />
-      <ManagerKpiCard label="Pointés" :value="stats.pointed" caption="Présences effectives" tone="success" />
+      <ManagerKpiCard label="Présences attendues" :value="stats.declared" caption="Jours passés" />
+      <ManagerKpiCard label="Pointés" :value="stats.pointed" caption="Journées pointées" tone="success" />
       <ManagerKpiCard
-        label="Taux de tenue"
+        label="Présence constatée"
         :value="stats.rate === null ? 'Aucun' : stats.rate + '%'"
-        :caption="stats.rate === null ? 'Aucun jour révolu' : 'Sur les présences attendues'"
+        :caption="stats.rate === null ? 'Aucun jour passé' : 'Sur les jours prévus'"
         tone="info"
       />
     </div>
@@ -362,7 +362,7 @@ const goToPresences = (dateStr) => {
               <polyline points="20 6 9 17 4 12"></polyline>
             </svg>
           </span>
-          Présent (heure d'arrivée)
+          Pointé
         </span>
         <span class="inline-flex items-center gap-1.5 font-medium">
           <span class="badge badge-xs badge-warning text-warning-content p-0.5 rounded-m3-xs inline-flex items-center justify-center">
@@ -372,7 +372,7 @@ const goToPresences = (dateStr) => {
               <line x1="12" y1="17" x2="12.01" y2="17"/>
             </svg>
           </span>
-          Non pointé (attendu)
+          Non pointé
         </span>
         <span class="inline-flex items-center gap-1.5 font-medium">
           <span class="badge badge-xs bg-orange-500/20 text-orange-400 border border-orange-500/40 p-0.5 rounded-m3-xs inline-flex items-center justify-center">
@@ -381,7 +381,7 @@ const goToPresences = (dateStr) => {
               <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
           </span>
-          Non dispo / Absent (déclaré)
+          Absence signalée
         </span>
         <span class="inline-flex items-center gap-1.5 font-medium">
           <span class="badge badge-xs badge-outline border-base-content/30 text-base-content/60 p-0.5 rounded-m3-xs inline-flex items-center justify-center">
@@ -389,18 +389,18 @@ const goToPresences = (dateStr) => {
               <polyline points="20 6 9 17 4 12"></polyline>
             </svg>
           </span>
-          Prévu (jour ouvré futur)
+          Prévu
         </span>
         <span class="inline-flex items-center gap-1.5 font-medium">
           <span class="badge badge-xs badge-info/20 text-info border border-info/30 p-0.5 rounded-m3-xs inline-flex items-center justify-center">
-            <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
               <line x1="16" y1="2" x2="16" y2="6"/>
               <line x1="8" y1="2" x2="8" y2="6"/>
               <line x1="3" y1="10" x2="21" y2="10"/>
             </svg>
           </span>
-          Férié (chômé)
+          Jour férié
         </span>
         <span class="inline-flex items-center gap-1.5 text-base-content/50 ml-auto">
           <svg class="w-3.5 h-3.5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -408,7 +408,7 @@ const goToPresences = (dateStr) => {
             <line x1="12" y1="16" x2="12" y2="12"/>
             <line x1="12" y1="8" x2="12.01" y2="8"/>
           </svg>
-          <span>Cliquez sur une cellule pour afficher son détail</span>
+          <span>Cliquez sur une case pour afficher le détail</span>
         </span>
       </div>
     </div>
@@ -738,25 +738,25 @@ const goToPresences = (dateStr) => {
                 <span class="font-medium text-base-content">{{ selectedCell.locationName }}</span>
               </div>
               <div v-if="selectedCell.state.isHoliday" class="flex items-center justify-between text-info font-medium pt-1 border-t border-base-300/40">
-                <span>Jour férié légal :</span>
+                <span>Jour férié :</span>
                 <span>{{ selectedCell.state.holidayName }} (travaillé)</span>
               </div>
             </div>
             <div v-else class="text-base-content/60 italic">
               <template v-if="selectedCell.state.type === 'holiday'">
-                Jour férié chômé légal ({{ selectedCell.state.holidayName }}).
+                Jour férié ({{ selectedCell.state.holidayName }}).
               </template>
               <template v-else-if="selectedCell.state.type === 'missing'">
-                Aucun pointage enregistré pour cette journée travaillée révolue.
+                Aucun pointage enregistré pour cette journée.
               </template>
               <template v-else-if="selectedCell.state.type === 'absent' || selectedCell.state.type === 'future_absent'">
-                Absence déclarée par le collaborateur (journée décochée).
+                Absence signalée par le collaborateur.
               </template>
               <template v-else-if="selectedCell.state.type === 'today_waiting'">
-                Journée en cours : en attente du pointage d'arrivée.
+                En attente du pointage aujourd'hui.
               </template>
               <template v-else>
-                Journée future : pointage attendu selon le planning normal.
+                Journée à venir.
               </template>
             </div>
           </div>
@@ -767,7 +767,7 @@ const goToPresences = (dateStr) => {
               <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
               </svg>
-              <span>Précision renseignée par le collaborateur</span>
+              <span>Note laissée par le collaborateur</span>
             </span>
             <p class="text-xs text-base-content/80 italic bg-base-100/60 p-2 rounded-m3-xs border border-primary/10">
               « {{ selectedCell.note }} »
@@ -785,7 +785,7 @@ const goToPresences = (dateStr) => {
             class="btn btn-primary rounded-m3-sm font-semibold"
             @click="goToPresences(selectedCell.dateStr)"
           >
-            Consulter dans Présences →
+            Consulter les pointages →
           </button>
         </div>
       </div>

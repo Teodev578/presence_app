@@ -10,7 +10,7 @@ const { success, error: toastError, warning } = useToast()
 
 const todayStr = getLocalDateString()
 
-// Filtre de période : mêmes presets que le Contrôle des Présences, pour une seule grammaire de dates.
+// Filtre de période : mêmes presets que la vue des pointages, pour une seule grammaire de dates.
 const filterPeriod = ref('month') // 'day' | 'week' | 'month' | 'custom'
 const filterDate = ref(getLocalDateString())
 const customStart = ref(getLocalDateString())
@@ -160,7 +160,7 @@ const generateCSV = async () => {
     link.click()
     document.body.removeChild(link)
 
-    success(`${data.length} pointage(s) exporté(s) en CSV.`)
+    success(data.length > 1 ? `${data.length} pointages exportés en CSV.` : '1 pointage exporté en CSV.')
 
     setTimeout(() => {
       exportCount.value = null
@@ -176,8 +176,8 @@ const generateCSV = async () => {
 <template>
   <div class="flex flex-col gap-6">
     <ManagerPageHeader
-      title="Export des Données de Présence"
-      subtitle="Générez un fichier CSV prêt pour le traitement RH ou comptable"
+      title="Export des pointages"
+      subtitle="Téléchargez un fichier CSV pour votre tableur ou vos fiches de paie"
     >
       <template #icon>
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -281,12 +281,12 @@ const generateCSV = async () => {
         @click="generateCSV"
       >
         <span v-if="isExporting" class="loading loading-spinner loading-sm"></span>
-        <span v-if="isExporting">Génération en cours...</span>
+        <span v-if="isExporting">Génération du fichier CSV...</span>
         <template v-else-if="exportCount !== null">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="20 6 9 17 4 12"></polyline>
           </svg>
-          <span>Export réussi ({{ exportCount }} ligne{{ exportCount > 1 ? 's' : '' }})</span>
+          <span>Export terminé ({{ exportCount > 1 ? `${exportCount} pointages` : '1 pointage' }})</span>
         </template>
         <template v-else>
           <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -294,7 +294,7 @@ const generateCSV = async () => {
             <polyline points="7 10 12 15 17 10"></polyline>
             <line x1="12" y1="15" x2="12" y2="3"></line>
           </svg>
-          <span>Télécharger l'export CSV</span>
+          <span>Télécharger le fichier CSV</span>
         </template>
       </button>
     </div>

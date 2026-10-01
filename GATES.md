@@ -888,5 +888,28 @@ Scope: Supprimer définitivement les appels réseau directs `supabase.from()` da
   EXPECT: built in
   EVIDENCE: npm run build avec code de sortie 0 (117 modules transformés en 927ms, assets dist/ générés sans erreur le 2026-10-01)
 
+---
+
+# Gates: Refonte Éditoriale et Harmonisation Vocale Stop-Slop de l'Espace Gestionnaire
+
+OWNS: src/layouts/ManagerLayout.vue, src/views/manager/DashboardView.vue, src/views/manager/PresencesView.vue, src/views/manager/AvailabilitiesView.vue, src/views/manager/LocationsView.vue, src/views/manager/TeamsView.vue, src/views/manager/EmployeesView.vue, src/views/manager/ExportView.vue, .agents/plan.md, GATES.md
+
+Scope: Éradiquer le ton corporate classique des IA, le lexique policier et les métaphores industrielles creuses dans l'espace gestionnaire au profit d'une tonalité sobre, humaine, naturelle et précise (conformément au skill `stop-slop` et à la règle permanente `.agents/rules/09-ui-copy-and-tone.md`). Remplacer les formulations disciplinaires (« Contrôle des Présences », « Périmètres autorisés », « Qualifiez les retards », « Structurez vos pôles ») par des termes clairs et factuels (« Pointages », « Lieux de travail », « Heures habituelles d'arrivée », « Équipes »). Accorder les pluriels en toutes lettres sans parenthèses et éliminer les classes rétrécies (`btn-sm`) et rayures (`table-zebra`) pour la cohérence M3.
+
+- [x] G116: Éradication du jargon policier et corporate dans l'ensemble des écrans gestionnaires
+  CHECK: node -e "const fs = require('fs'); const files = ['src/layouts/ManagerLayout.vue', 'src/views/manager/DashboardView.vue', 'src/views/manager/PresencesView.vue', 'src/views/manager/AvailabilitiesView.vue', 'src/views/manager/LocationsView.vue', 'src/views/manager/TeamsView.vue', 'src/views/manager/EmployeesView.vue', 'src/views/manager/ExportView.vue']; const banned = ['Contrôle des Présences', 'Gestion des Collaborateurs', 'Gestion des Sites', 'Gestion des Équipes', 'Périmètres autorisés pour le pointage', 'Taux de tenue', 'Structurez vos pôles', 'Données brutes de présence', 'qualifier les retards', 'Veuillez']; const found = []; for (const f of files) { const c = fs.readFileSync(f, 'utf8'); for (const b of banned) { if (c.toLowerCase().includes(b.toLowerCase())) found.push(f + ' -> ' + b); } } if (found.length) { console.error('FAILURE G116: Jargon proscrit détecté :', found); process.exit(1); } console.log('G116 passed: corporate slop and policing jargon eradicated from manager space');"
+  EXPECT: G116 passed: corporate slop and policing jargon eradicated from manager space
+  EVIDENCE: G116 passed: corporate slop and policing jargon eradicated from manager space (vérifié par oracle node le 2026-10-01)
+
+- [x] G117: Rigueur typographique et pluriels accordés en clair sans parenthèses
+  CHECK: node -e "const fs = require('fs'); const files = ['src/views/manager/ExportView.vue', 'src/views/manager/TeamsView.vue', 'src/views/manager/DashboardView.vue']; for (const f of files) { const c = fs.readFileSync(f, 'utf8'); if (/\(s\)|\(es\)/.test(c)) { console.error('FAILURE G117: Pluriel entre parenthèses trouvé dans ' + f); process.exit(1); } } console.log('G117 passed: clear grammatical plurals without lazy parentheses');"
+  EXPECT: G117 passed: clear grammatical plurals without lazy parentheses
+  EVIDENCE: G117 passed: clear grammatical plurals without lazy parentheses (vérifié par oracle node le 2026-10-01)
+
+- [x] G118: Validation de la compilation Vite en production
+  CHECK: npm run build
+  EXPECT: built in
+  EVIDENCE: npm run build avec code de sortie 0 (117 modules transformés en 1.06s, assets dist/ générés sans erreur le 2026-10-01)
+
 
 

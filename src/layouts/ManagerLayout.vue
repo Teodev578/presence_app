@@ -41,7 +41,7 @@ const navItems = [
   },
   {
     path: '/manager/locations',
-    label: 'Sites',
+    label: 'Lieux de travail',
     icon: createIcon([
       ['path', { d: 'M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z' }],
       ['circle', { cx: '12', cy: '10', r: '3' }],
@@ -49,7 +49,7 @@ const navItems = [
   },
   {
     path: '/manager/presences',
-    label: 'Présences',
+    label: 'Pointages',
     icon: createIcon([
       ['circle', { cx: '12', cy: '12', r: '10' }],
       ['polyline', { points: '12 6 12 12 16 14' }],
@@ -67,7 +67,7 @@ const navItems = [
   },
   {
     path: '/manager/employees',
-    label: 'Collaborateurs',
+    label: 'Équipe',
     icon: createIcon([
       ['path', { d: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2' }],
       ['circle', { cx: '9', cy: '7', r: '4' }],
@@ -100,10 +100,10 @@ const navItems = [
 // retour. Les destinations du tiroir n'affichent le retour qu'une fois le tiroir masqué (mobile).
 const MANAGER_ROUTES = {
   '/manager': { title: 'Tableau de bord', back: null, sub: false },
-  '/manager/locations': { title: 'Sites', back: '/manager', sub: false },
-  '/manager/presences': { title: 'Présences', back: '/manager', sub: false },
+  '/manager/locations': { title: 'Lieux de travail', back: '/manager', sub: false },
+  '/manager/presences': { title: 'Pointages', back: '/manager', sub: false },
   '/manager/availabilities': { title: 'Disponibilités', back: '/manager', sub: false },
-  '/manager/employees': { title: 'Collaborateurs', back: '/manager', sub: false },
+  '/manager/employees': { title: 'Équipe', back: '/manager', sub: false },
   '/manager/teams': { title: 'Équipes', back: '/manager', sub: false },
   '/manager/export': { title: 'Export CSV', back: '/manager', sub: false },
   '/manager/settings': { title: 'Paramètres', back: '/manager', sub: true },

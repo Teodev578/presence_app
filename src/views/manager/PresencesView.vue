@@ -354,8 +354,8 @@ const saveEdit = async () => {
   <div class="flex flex-col gap-6">
     <!-- En-tête -->
     <ManagerPageHeader
-      title="Contrôle des Présences"
-      subtitle="Suivi de l'assiduité, précision GPS et audit des temps de travail"
+      title="Pointages"
+      subtitle="Arrivées, départs et heures constatées sur le terrain"
     >
       <template #icon>
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -851,7 +851,7 @@ const saveEdit = async () => {
             @click="saveEdit"
           >
             <span v-if="isSavingEdit" class="loading loading-spinner loading-xs"></span>
-            <span v-else>Valider la correction</span>
+            <span v-else>Enregistrer la modification</span>
           </button>
         </div>
       </div>

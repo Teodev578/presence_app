@@ -126,8 +126,8 @@ const sortIconPath = (key) => {
 const emptyState = computed(() => {
   if (!(employees.value || []).length) {
     return {
-      title: 'Aucun collaborateur',
-      message: 'Aucun profil actif pour le moment. Les comptes apparaissent ici après leur création.',
+      title: 'Aucun membre d’équipe',
+      message: 'Aucune personne enregistrée pour le moment. Les profils apparaîtront ici après leur inscription.',
       icon: 'users',
       action: null,
       actionLabel: '',
@@ -136,18 +136,18 @@ const emptyState = computed(() => {
   if (searchQuery.value.trim()) {
     return {
       title: 'Aucun résultat',
-      message: `Aucun collaborateur ne correspond à « ${searchQuery.value.trim()} ».`,
+      message: `Aucun membre ne correspond à « ${searchQuery.value.trim()} ».`,
       icon: 'search',
       action: 'clear-search',
       actionLabel: 'Effacer la recherche',
     }
   }
   return {
-    title: 'Aucun collaborateur pour ce filtre',
-    message: 'Aucun profil ne correspond au rôle ou à l\u2019équipe sélectionnés.',
+    title: 'Aucun membre pour ce filtre',
+    message: 'Aucune personne ne correspond au rôle ou à l’équipe sélectionnés.',
     icon: 'filter',
     action: 'show-all',
-    actionLabel: 'Voir tous les collaborateurs',
+    actionLabel: 'Voir toute l’équipe',
   }
 })
 
@@ -279,14 +279,14 @@ const confirmArchive = async () => {
       })
     })
 
-    success(`Le collaborateur « ${target.full_name} » a été archivé.`)
+    success(`Le profil de « ${target.full_name} » a été désactivé.`)
     employeeToArchive.value = null
     await refreshPendingCount()
     if (user.value?.id) {
       syncNow(user.value.id)
     }
   } catch (err) {
-    toastError(`Erreur d'archivage : ${err.message}`)
+    toastError(`Erreur : ${err.message}`)
   } finally {
     isArchiving.value = false
   }
@@ -296,8 +296,8 @@ const confirmArchive = async () => {
 <template>
   <div class="flex flex-col gap-6">
     <ManagerPageHeader
-      title="Gestion des Collaborateurs"
-      subtitle="Affectation d'équipes, horaires attendus et rôles d'accès"
+      title="Membres de l'équipe"
+      subtitle="Rôles, équipes et heures habituelles d'arrivée"
     >
       <template #icon>
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -315,7 +315,7 @@ const confirmArchive = async () => {
       <div class="flex flex-wrap items-center gap-2">
         <button
           type="button"
-          class="btn btn-sm rounded-m3-sm font-semibold min-h-11 px-3"
+          class="btn rounded-m3-sm font-semibold min-h-11 px-3"
           :class="filterRole === 'all' ? 'btn-primary' : 'btn-ghost'"
           @click="filterRole = 'all'"
         >
@@ -323,7 +323,7 @@ const confirmArchive = async () => {
         </button>
         <button
           type="button"
-          class="btn btn-sm rounded-m3-sm font-semibold min-h-11 px-3"
+          class="btn rounded-m3-sm font-semibold min-h-11 px-3"
           :class="filterRole === 'employee' ? 'btn-primary' : 'btn-ghost'"
           @click="filterRole = 'employee'"
         >
@@ -331,7 +331,7 @@ const confirmArchive = async () => {
         </button>
         <button
           type="button"
-          class="btn btn-sm rounded-m3-sm font-semibold min-h-11 px-3"
+          class="btn rounded-m3-sm font-semibold min-h-11 px-3"
           :class="filterRole === 'manager' ? 'btn-primary' : 'btn-ghost'"
           @click="filterRole = 'manager'"
         >
@@ -339,7 +339,7 @@ const confirmArchive = async () => {
         </button>
         <button
           type="button"
-          class="btn btn-sm rounded-m3-sm font-semibold min-h-11 px-3"
+          class="btn rounded-m3-sm font-semibold min-h-11 px-3"
           :class="filterRole === 'admin' ? 'btn-primary' : 'btn-ghost'"
           @click="filterRole = 'admin'"
         >
@@ -405,7 +405,7 @@ const confirmArchive = async () => {
                 <span>Modifier</span>
               </button>
               <button type="button" class="btn btn-ghost font-semibold text-error rounded-m3-sm min-h-11 px-3 hover:bg-error/10" @click="requestArchive(emp)">
-                Archiver
+                Désactiver
               </button>
             </div>
           </li>
@@ -413,7 +413,7 @@ const confirmArchive = async () => {
 
         <!-- Tableau complet à partir de 640px -->
         <div class="hidden sm:block overflow-x-auto">
-          <table class="table table-zebra table-sm">
+          <table class="table table-sm">
             <thead>
               <tr class="bg-base-300/40 text-base-content/70">
                 <th
@@ -456,11 +456,11 @@ const confirmArchive = async () => {
                 </td>
                 <td class="text-right">
                   <div class="inline-flex items-center gap-1">
-                    <button type="button" class="btn btn-ghost btn-sm min-h-11 rounded-m3-sm font-semibold px-2.5" @click="openEditModal(emp)">
+                    <button type="button" class="btn btn-ghost min-h-11 rounded-m3-sm font-semibold px-2.5" @click="openEditModal(emp)">
                       Modifier
                     </button>
-                    <button type="button" class="btn btn-ghost btn-sm min-h-11 rounded-m3-sm font-semibold text-error px-2.5 hover:bg-error/10" @click="requestArchive(emp)">
-                      Archiver
+                    <button type="button" class="btn btn-ghost min-h-11 rounded-m3-sm font-semibold text-error px-2.5 hover:bg-error/10" @click="requestArchive(emp)">
+                      Désactiver
                     </button>
                   </div>
                 </td>
@@ -512,7 +512,7 @@ const confirmArchive = async () => {
           </div>
 
           <fieldset class="fieldset">
-            <legend class="fieldset-legend text-xs font-semibold text-base-content/80">Heure d'arrivée attendue</legend>
+            <legend class="fieldset-legend text-xs font-semibold text-base-content/80">Heure d'arrivée habituelle</legend>
             <input
               v-model="editForm.expected_arrival_time"
               type="time"
@@ -520,7 +520,7 @@ const confirmArchive = async () => {
               class="input input-bordered w-full rounded-m3-md min-h-11 text-sm"
               required
             />
-            <span class="fieldset-label text-xs text-base-content/60">Utilisée pour qualifier les retards lors des pointages.</span>
+            <span class="fieldset-label text-xs text-base-content/60">Sert de repère pour signaler les arrivées après l'horaire.</span>
           </fieldset>
 
           <div v-if="editError" class="alert alert-error text-xs rounded-m3-md py-2">
@@ -552,12 +552,12 @@ const confirmArchive = async () => {
       </form>
     </dialog>
 
-    <!-- Modal de confirmation d'archivage -->
+    <!-- Modal de confirmation de désactivation -->
     <ConfirmModal
       :open="!!employeeToArchive"
-      title="Archiver ce collaborateur ?"
-      :message="`Le collaborateur « ${employeeToArchive?.full_name || ''} » ne pourra plus se connecter ni pointer. Son historique de présence sera conservé.`"
-      confirm-label="Archiver le collaborateur"
+      title="Désactiver ce compte ?"
+      :message="`Le compte de « ${employeeToArchive?.full_name || ''} » ne pourra plus se connecter ni pointer. L'historique des pointages reste conservé.`"
+      confirm-label="Désactiver"
       confirm-variant="error"
       :loading="isArchiving"
       @confirm="confirmArchive"
