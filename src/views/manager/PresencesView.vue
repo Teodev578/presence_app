@@ -21,7 +21,7 @@ import ManagerKpiCard from '../../components/manager/ManagerKpiCard.vue'
 
 const { user } = useAuth()
 const { profile } = useProfile()
-const { syncNow, isSyncing } = useSyncEngine()
+const { syncNow } = useSyncEngine()
 const { success: toastSuccess, error: toastError } = useToast()
 
 // Filtre de période : presets journalier / semaine / mois, puis plage personnalisée.
@@ -365,20 +365,6 @@ const saveEdit = async () => {
           <path d="M9 11l3 3L22 4"></path>
           <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
         </svg>
-      </template>
-
-      <template #actions>
-        <button
-          type="button"
-          class="btn btn-outline rounded-m3-sm font-bold min-h-11 flex items-center gap-2 px-3"
-          :disabled="isSyncing"
-          @click="syncNow(user?.id)"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
-          </svg>
-          <span>Actualiser</span>
-        </button>
       </template>
     </ManagerPageHeader>
 
