@@ -490,17 +490,34 @@ const goToPresences = (dateStr) => {
     <!-- Filtres & Légende épurée -->
     <div class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg p-4 flex flex-col gap-3.5">
       <div class="flex flex-col sm:flex-row sm:items-end gap-3">
-        <fieldset class="fieldset sm:w-auto">
+        <fieldset class="fieldset w-full sm:w-auto max-w-full">
           <legend class="fieldset-legend text-xs font-semibold text-base-content/70">Semaine</legend>
-          <div class="inline-flex items-center rounded-m3-md border border-base-300 bg-base-300/50">
-            <button type="button" class="btn btn-ghost min-h-11 min-w-11 p-0 rounded-l-m3-md" aria-label="Semaine précédente" @click="prevWeek">
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <div class="flex w-full sm:w-auto items-center justify-between sm:justify-start rounded-m3-md border border-base-300 bg-base-300/50 min-h-11 max-w-full">
+            <button
+              type="button"
+              class="btn btn-ghost min-h-11 min-w-11 shrink-0 p-0 rounded-l-m3-md active:scale-95 transition-transform duration-150 motion-reduce:transform-none focus-visible:outline-2 focus-visible:outline-primary"
+              aria-label="Semaine précédente"
+              @click="prevWeek"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M15 18l-6-6 6-6"></path>
               </svg>
             </button>
-            <span class="px-3 min-h-11 flex items-center text-sm font-semibold text-base-content whitespace-nowrap">{{ formatWeekLabel(selectedWeekStart) }}</span>
-            <button type="button" class="btn btn-ghost min-h-11 min-w-11 p-0 rounded-r-m3-md" aria-label="Semaine suivante" @click="nextWeek">
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <div class="flex-1 sm:flex-initial min-w-0 px-2 sm:px-3 min-h-11 flex items-center justify-center text-center">
+              <span class="sm:hidden text-xs sm:text-sm font-semibold text-base-content truncate">
+                {{ formatWeekLabel(selectedWeekStart, { short: true }) }}
+              </span>
+              <span class="hidden sm:inline text-sm font-semibold text-base-content whitespace-nowrap">
+                {{ formatWeekLabel(selectedWeekStart) }}
+              </span>
+            </div>
+            <button
+              type="button"
+              class="btn btn-ghost min-h-11 min-w-11 shrink-0 p-0 rounded-r-m3-md active:scale-95 transition-transform duration-150 motion-reduce:transform-none focus-visible:outline-2 focus-visible:outline-primary"
+              aria-label="Semaine suivante"
+              @click="nextWeek"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M9 18l6-6-6-6"></path>
               </svg>
             </button>

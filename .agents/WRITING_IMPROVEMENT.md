@@ -120,6 +120,26 @@ Ce fichier enregistre le raisonnement derrière les décisions non triviales : h
 - Implémenté ? O (2026-10-02)
 - Leçon tirée : Les oracles de non-régression ne doivent pas imposer la présence de contrôles impératifs superflus lorsqu'un écran bascule en local-first réactif complet.
 
+### Tâche : Responsivité et débordement du sélecteur de semaine (Disponibilités)
+**Date** : 2026-10-02
+**Complexité** : Moyen
+**Proposant** : Fabien
+**Story liée** : —
+
+#### Pre-flight (10 min)
+1. Problème réel : Débordement horizontal du champ Semaine sur mobile (< 640px) causé par le libellé textuel long (ex: « Semaine du 28 septembre au 2 octobre 2026 ») figé en `whitespace-nowrap` dans un `inline-flex` sans contrainte de largeur, expulsant le chevron droit hors du cadre de la carte.
+2. Contrainte principale : Préserver les cibles tactiles minimales de 44×44px sur les deux boutons de navigation (`shrink-0 min-h-11 min-w-11`), tout en garantissant un affichage complet sur desktop et compact sans débordement sur smartphone.
+3. Alternatives envisagées :
+   - Tronquage pur `truncate` de la chaîne longue — rejetée car l'utilisateur perd la date de fin de la semaine.
+   - Passage sur deux lignes avec augmentation de la hauteur du champ — rejetée car elle rompt l'alignement à 44px (`min-h-11`) avec les champs adjacents (Recherche, Équipe).
+   - Format court sur mobile (`28 sept. – 2 oct. 2026`) et format complet sur grand écran (`Semaine du 28 septembre au 2 octobre 2026`) — **retenue** car sobre, lisible et naturellement adaptée à la largeur utile disponible.
+4. Signal de fin : Sélecteur occupant la pleine largeur utile sur mobile avec chevrons protégés à gauche et à droite, texte compact centré, format long conservé sur desktop, build Vite réussi et suite déterministe verte.
+5. Déclencheur KI : N
+
+#### Résultat
+- Implémenté ? O (2026-10-02)
+- Leçon tirée : Les sélecteurs de dates hebdomadaires doivent disposer d'une variante courte pour les viewports étroits (< 640px) afin d'éviter d'imposer des chaînes de plus de 40 caractères dans des conteneurs mono-lignes.
+
 ---
 
 ## Archives
