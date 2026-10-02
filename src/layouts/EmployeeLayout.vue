@@ -4,6 +4,7 @@ import { useRouter } from '../router'
 import { useProfile } from '../composables/useProfile'
 import { useSidebarNav } from '../composables/useSidebarNav'
 import SyncAlert from '../components/shared/SyncAlert.vue'
+import NotificationBell from '../components/shared/NotificationBell.vue'
 
 const { currentPath, navigate } = useRouter()
 const { profile } = useProfile()
@@ -126,8 +127,9 @@ const handleNav = (path) => {
 
         <div class="flex-1"></div>
 
-        <!-- Alerte réseau uniquement : le raccourci gestionnaire vit dans le tiroir, avec les autres entrées -->
+        <!-- Actions supérieures : notifications, alerte réseau et accès paramètres -->
         <div class="flex items-center gap-2">
+          <NotificationBell />
           <SyncAlert />
           <button
             v-if="!onSettings"

@@ -3,6 +3,7 @@ import { ref, computed, h } from 'vue'
 import { useRouter } from '../router'
 import { useSidebarNav } from '../composables/useSidebarNav'
 import SyncAlert from '../components/shared/SyncAlert.vue'
+import NotificationBell from '../components/shared/NotificationBell.vue'
 
 const { currentPath, navigate } = useRouter()
 const { isRail, isDocked, toggleRail } = useSidebarNav()
@@ -162,9 +163,11 @@ const handleNav = (path) => {
           <span class="text-base sm:text-lg font-bold text-base-content truncate">{{ barTitle }}</span>
         </div>
 
-        <!-- Alerte réseau uniquement : silencieuse tant que tout est synchronisé, la consultation permanente vit dans le tiroir -->
+        <!-- Actions supérieures : notifications, alerte réseau et accès paramètres -->
         <div class="flex items-center gap-2 sm:gap-3">
           <SyncAlert />
+          <NotificationBell />
+          
           <button
             v-if="!onSettings"
             type="button"

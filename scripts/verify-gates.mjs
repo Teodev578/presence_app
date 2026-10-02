@@ -3320,6 +3320,60 @@ export function checkBackNavigation() {
   return true;
 }
 
+export function checkNotificationBell() {
+  const bellPath = path.join(SRC_DIR, 'components', 'shared', 'NotificationBell.vue');
+  if (!fs.existsSync(bellPath)) {
+    console.error('FAILURE G147: NotificationBell.vue introuvable');
+    return false;
+  }
+
+  const bellContent = fs.readFileSync(bellPath, 'utf8');
+  if (!bellContent.includes('role="dialog"') || !bellContent.includes('aria-modal="true"')) {
+    console.error('FAILURE G147: NotificationBell.vue ne déclare pas de dialog accessible (role="dialog", aria-modal="true")');
+    return false;
+  }
+  if (!bellContent.includes('min-h-11') || !bellContent.includes('min-w-11')) {
+    console.error('FAILURE G147: NotificationBell.vue ne garantit pas la cible tactile de 44px');
+    return false;
+  }
+  if (!bellContent.includes('Aucune notification')) {
+    console.error('FAILURE G147: NotificationBell.vue ne présente pas l\'état vide soigné attendu');
+    return false;
+  }
+
+  const layouts = ['ManagerLayout.vue', 'EmployeeLayout.vue'];
+  for (const layoutName of layouts) {
+    const layoutPath = path.join(SRC_DIR, 'layouts', layoutName);
+    if (!fs.existsSync(layoutPath)) {
+      console.error(`FAILURE G148: ${layoutName} introuvable`);
+      return false;
+    }
+    const layoutContent = fs.readFileSync(layoutPath, 'utf8');
+    if (!layoutContent.includes('<NotificationBell') || !layoutContent.includes('import NotificationBell')) {
+      console.error(`FAILURE G148: ${layoutName} n'importe pas ou n'utilise pas NotificationBell`);
+      return false;
+    }
+
+    const headerMatch = layoutContent.match(/<header[^>]*>([\s\S]*?)<\/header>/i);
+    const header = headerMatch ? headerMatch[1] : '';
+    const bellIndex = header.indexOf('<NotificationBell');
+    const syncIndex = header.indexOf('<SyncAlert');
+
+    if (bellIndex === -1 || syncIndex === -1) {
+      console.error(`FAILURE G148: ${layoutName} n'expose pas NotificationBell et SyncAlert dans son en-tête`);
+      return false;
+    }
+
+    if (bellIndex > syncIndex) {
+      console.error(`FAILURE G148: Dans ${layoutName}, l'icône de notification doit être placée DEVANT l'icône de synchronisation`);
+      return false;
+    }
+  }
+
+  console.log('G147-G148 passed: NotificationBell implemented with accessible dialog, empty state, and positioned before SyncAlert in both headers');
+  return true;
+}
+
 // Exécution CLI
 const arg = process.argv[2] || '--all';let success = true;
 
@@ -3447,6 +3501,8 @@ if (arg === '--emojis') {
   success = checkBuild('G48', 'production build succeeds with exit code 0');
 } else if (arg === '--manager-build') {
   success = checkBuild('G39', 'production build succeeds with exit code 0');
+} else if (arg === '--notification-bell') {
+  success = checkNotificationBell();
 } else if (arg === '--all') {
   const r1 = checkEmojis();
   const r2 = checkRadii();
@@ -3506,10 +3562,11 @@ if (arg === '--emojis') {
   const r95 = checkSettingsPage();
   const r96 = checkCrossSpaceGateways();
   const r97 = checkBackNavigation();
+  const r147 = checkNotificationBell();
   const r48 = r39; // Une seule compilation sert les portes de build G39 et G48
-  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60 && r63 && r64 && r65 && r66 && r72 && r73 && r74 && r75 && r88 && r89 && r92 && r93 && r94 && r95 && r96 && r97;
+  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60 && r63 && r64 && r65 && r66 && r72 && r73 && r74 && r75 && r88 && r89 && r92 && r93 && r94 && r95 && r96 && r97 && r147;
 } else {
-  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--presences-ui|--presences-period|--presences-table|--presences-sort|--presences-localfirst|--sync-scope|--livequery-deps|--manager-dexie|--manager-grammar|--manager-responsive|--manager-nav-icons|--manager-finish|--employee-finish|--settings-page|--cross-space-gateways|--back-navigation|--manager-build|--sidebar-build|--build|--all]`);
+  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--presences-ui|--presences-period|--presences-table|--presences-sort|--presences-localfirst|--sync-scope|--livequery-deps|--manager-dexie|--manager-grammar|--manager-responsive|--manager-nav-icons|--manager-finish|--employee-finish|--settings-page|--cross-space-gateways|--back-navigation|--notification-bell|--manager-build|--sidebar-build|--build|--all]`);
   process.exit(1);
 }
 

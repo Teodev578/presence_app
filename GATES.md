@@ -1097,7 +1097,28 @@ Scope: Centralisation exclusive du statut réseau dans le bandeau supérieur (he
 - [x] G146: Validation intégrale de la suite déterministe et compilation Vite en production
   CHECK: node scripts/verify-gates.mjs --all && npm run build
   EXPECT: G97 passed: the back command lives in the app bar and no content duplicates it && built in
-  EVIDENCE: node scripts/verify-gates.mjs --all validé avec 100% de succès sur toutes les portes et npm run build avec code de sortie 0 (115 modules transformés en 974ms)
+  ---
+
+# Gates: Déclencheur et Dialogue des Notifications dans le Bandeau Supérieur
+
+OWNS: src/components/shared/NotificationBell.vue, src/layouts/ManagerLayout.vue, src/layouts/EmployeeLayout.vue, scripts/verify-gates.mjs, GATES.md, .agents/WRITING_IMPROVEMENT.md
+
+Scope: Ajout d'une icône de notification (cloche standard SVG avec cible tactile 44px min-h-11 min-w-11) immédiatement devant l'indicateur de synchronisation dans l'en-tête supérieur des espaces Gestionnaire et Employé. Ouverture d'une boîte de dialogue modale classique DaisyUI / Material 3 (dialog role="dialog" aria-modal="true") présentant un état vide soigné (« Aucune notification », message d'information sobre, bouton de fermeture accessible). Vérification déterministe via l'oracle checkNotificationBell intégré à la suite scripts/verify-gates.mjs.
+
+- [x] G147: Composant NotificationBell.vue avec dialogue modal accessible, état vide sobre et ergonomie tactile 44px
+  CHECK: node scripts/verify-gates.mjs --notification-bell
+  EXPECT: G147-G148 passed: NotificationBell implemented with accessible dialog, empty state, and positioned before SyncAlert in both headers
+  EVIDENCE: G147-G148 passed: NotificationBell implemented with accessible dialog, empty state, and positioned before SyncAlert in both headers (vérifié par node scripts/verify-gates.mjs --notification-bell, dialogue avec titre, icône Feather, état vide sans distraction, fermeture Échap / backdrop / bouton 44px)
+
+- [x] G148: Intégration de NotificationBell immédiatement devant SyncAlert dans les bandeaux supérieurs ManagerLayout et EmployeeLayout
+  CHECK: node scripts/verify-gates.mjs --notification-bell
+  EXPECT: G147-G148 passed: NotificationBell implemented with accessible dialog, empty state, and positioned before SyncAlert in both headers
+  EVIDENCE: G147-G148 passed: NotificationBell implemented with accessible dialog, empty state, and positioned before SyncAlert in both headers (ordre vérifié par oracle dans les deux layouts : NotificationBell précède strictement SyncAlert)
+
+- [x] G149: Intégrité globale de la suite de tests oracles et compilation de production Vite
+  CHECK: node scripts/verify-gates.mjs --all && npm run build
+  EXPECT: G147-G148 passed: NotificationBell implemented with accessible dialog, empty state, and positioned before SyncAlert in both headers && built in
+  EVIDENCE: node scripts/verify-gates.mjs --all validé à 100% (code sortie 0) et npm run build achevé avec succès (code sortie 0, bundle dist/ sain)
 
 
 

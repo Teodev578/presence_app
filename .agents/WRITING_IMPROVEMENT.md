@@ -247,6 +247,25 @@ Ce fichier enregistre le raisonnement derrière les décisions non triviales : h
 - Implémenté ? O (2026-10-02)
 - Leçon tirée : Le statut de synchronisation et de connectivité gagne à être unifié en un point d'accès canonique unique (le bandeau supérieur d'application). Déporter le statut dans un pied de barre latérale crée des frictions sur les formats intermédiaires (rails d'icônes) et une redondance cognitive dès lors que le volet reste déployé.
 
+### Tâche : Déclencheur et Boîte de Dialogue de Notifications dans le Bandeau
+**Date** : 2026-10-02
+**Complexité** : Moyen
+**Proposant** : Fabien / next-level-ui
+**Story liée** : —
+
+#### Pre-flight (10 min)
+1. Problème réel : Absence de point d'entrée pour les notifications système dans le bandeau supérieur d'application. L'utilisateur souhaite disposer d'une icône cloche placée immédiatement devant l'indicateur de synchronisation, ouvrant une boîte de dialogue modale classique avec un état vide propre en attendant l'implémentation du flux de notifications.
+2. Contrainte principale : Respect des standards d'ergonomie et d'accessibilité (M3 dialog, cible tactile 44×44px `min-h-11 min-w-11`, focus visible, fermeture par Échap et clic extérieur), zéro régression sur les oracles du bandeau (G5, G17, G20), et composant partagé réutilisable entre ManagerLayout et EmployeeLayout.
+3. Alternatives envisagées :
+   - Implémentation inline dans chaque layout : rejetée car duplique la structure modale et la logique réactive dans deux fichiers.
+   - Menu déroulant (dropdown) sous la cloche : rejetée car problématique sur smartphone étroit où les dropdowns débordent hors de l'écran.
+   - Composant dédié `NotificationBell.vue` encapsulant le déclencheur 44px et la boîte de dialogue modale M3 avec état vide : **retenue (recommandée)** car modulaire, accessible et parfaitement intégrée au design system.
+4. Signal de fin : Bouton cloche présent devant l'icône de synchronisation dans ManagerLayout et EmployeeLayout, dialogue modal accessible s'ouvrant au clic et affichant l'état vide soigné, 100% de réussite sur `node scripts/verify-gates.mjs --all` et build de production réussi.
+5. Déclencheur KI : N
+
+#### Résultat
+- Implémenté ? O (2026-10-02)
+- Leçon tirée : Les contrôles d'en-tête combinant un déclencheur iconique et une boîte modale gagnent à être encapsulés dans un composant partagé unique (`NotificationBell.vue`), garantissant une gestion autonome de l'état d'ouverture et une accessibilité native sans alourdir les layouts.
 
 ---
 
