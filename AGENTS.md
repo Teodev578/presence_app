@@ -34,7 +34,8 @@ Le répertoire `.agents/` héberge les directives et compétences modulaires pou
   - `07-design-system.md` : synergie Material 3 & DaisyUI v5, tokens et hiérarchie de formes.
   - `08-skills-activation.md` : matrice déterministe d'activation des compétences selon la tâche.
   - `09-ui-copy-and-tone.md` : ton des textes d'interface, lexique proscrit et étiquette des libellés d'état.
-  - `10-planification-taches-fastidieuses.md` : plan écrit obligatoire avant toute tâche longue, répétitive ou mécanique, consigné dans `.agents/plan.md`.
+  - `10-planification-taches-fastidieuses.md` : deux niveaux de protocole selon la complexité — pre-flight de 10 min (5 questions, dans `WRITING_IMPROVEMENT.md`) pour les tâches « Moyen » ; plan écrit complet dans `.agents/plan.md` pour les tâches longues, répétitives ou mécaniques de complexité « Élevée ». Escalade automatique vers `unlazy` si un troisième fichier ou une dépendance non anticipée est découvert en cours d'exécution.
+
 - `.agents/skills/` : Protocoles procéduraux déclenchés sur demande ou selon le besoin technique. Le périmètre des compétences actives et inactives est consigné dans [`.agents/skills-scope.md`](.agents/skills-scope.md).
   - Déclencheur discipline & grand livre (`unlazy`) : invoquer obligatoirement avant toute intervention substantielle, refactoring transverse ou correctif multi-fichiers pour établir et prouver les gates d'acceptation dans `GATES.md`.
   - Déclencheur communication & prose (`stop-slop`) : invoquer pour tout texte rédigé, commentaire de code, documentation ou réponse utilisateur afin de bannir le jargon artificiel, les adverbes superflus et les tirets cadratins.
@@ -57,9 +58,43 @@ Deux ensembles d'agents cohabitent sur le dépôt avec une répartition stricte 
 | **Sprint Planning & Suivi** | **BMAD** | Équipe BMAD au complet | `sprint-status.yaml`, backlog d'itération |
 | **Audit, Chaos Testing & Hygiène** | **presence-stack** | Victor (Chaos & Resilience Auditor) + `unlazy` + `code-hygiene` | Rapports d'audit, simulation de panne réseau, contrôle YAGNI, validation de build |
 
+## Liaison BMAD → Stack (convention de passage de relais)
+
+La transition entre la phase de cadrage (BMAD) et la phase d'implémentation (presence-stack) suit ces règles pour éviter les dérives silencieuses.
+
+### Lecture obligatoire avant implémentation
+
+Avant d'ouvrir un fichier source, tout agent d'implémentation vérifie :
+
+1. La story ou la fiche issue (`.scratch/<feature>/`) existe et porte le statut `ready-for-agent`.
+2. Les critères d'acceptance sont présents et non ambigus.
+3. Les dépendances inter-stories sont listées (autre story bloquante ou bloquée).
+
+Si l'un des trois points manque, l'agent passe le statut en `needs-info` et remonte vers Fabien — il n'improvise pas.
+
+### Traces des trade-offs refusés
+
+Toute alternative technique examinée et rejetée pendant l'implémentation (pas seulement pendant le cadrage) est consignée dans `.agents/WRITING_IMPROVEMENT.md` sous la section "Tâches actives", champ "Alternatives envisagées". La raison du rejet doit être explicite.
+
+Ce n'est pas optionnel pour les tâches de complexité ≥ « Moyen ».
+
+### Signaux remontant vers BMAD (feedback loop)
+
+Un agent d'implémentation remonte un signal vers BMAD (John ou Winston) dans les cas suivants :
+
+| Situation | Signal à remonter | Moyen |
+|---|---|---|
+| Estimation initiale dépassée de > 50 % | Révision d'estimation + cause | Commentaire dans la fiche issue |
+| Contrainte technique non anticipée au cadrage | Risk flag + mitigation | `.agents/WRITING_IMPROVEMENT.md` + statut `needs-info` |
+| Scope creep détecté pendant l'implémentation | Description de la dérive | Statut `needs-info`, ne pas implémenter sans accord |
+| Décision architecturale impliquant un invariant | ADR à créer | `docs/adr/` via `domain-modeling` |
+
+Un agent ne prend pas de décision de périmètre seul. La règle est : si ça change ce qui a été validé, ça se remonte.
+
 ## Mémoire d'apprentissage & Knowledge Items (KI)
 
 Pour éviter la perte de contexte entre sessions de travail :
+
 - La mémoire des agents vit dans le dépôt : `.agents/knowledge/` pour l'équipe (commitée, revue en diff) et `.agents/knowledge.local/` pour le personnel (ignorée par git). Le protocole fait foi dans `.agents/knowledge/README.md`, les règles permanentes dans `.agents/rules/11-apprentissage-et-memoire.md`.
 - **Acte unique** : le moment où une correction atterrit, l'agent écrit la fiche KI datée et signée. Déclencheurs obligatoires : même erreur deux fois, même commentaire de revue deux fois, correction utilisateur répétée, bug ayant coûté plus d'une heure.
 - Toute fiche candidate ou active figure dans `.agents/knowledge/INDEX.md`, lu en tête de session avant toute conception. Rien de dérivable du code ne s'y consigne.

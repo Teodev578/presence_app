@@ -46,3 +46,53 @@ Le plan contient au minimum :
 Le plan et le grand livre ne se remplacent pas. Le plan ordonne le travail et suit son avancement ; les clauses `CHECK:`, `EXPECT:` et `EVIDENCE:` de `GATES.md` apportent la preuve déterministe de complétion. Une tâche fastidieuse qui touche du code substantiel ou plusieurs fichiers réclame les deux.
 
 La tenue du plan n'est pas couverte par un oracle : `node scripts/verify-gates.mjs --all` vérifie le code, pas le suivi du plan. Le contrôle reste la relecture du plan avant l'annonce d'achèvement.
+
+---
+
+## 6. Protocole léger — Complexité « Moyen »
+
+Les tâches de complexité « Moyen » n'atteignent pas le seuil de `unlazy` (GATES.md + plan.md), mais elles sont trop exposées pour démarrer sans réflexion. Elles passent par un **pre-flight de 10 minutes** : cinq questions auxquelles l'agent répond en prose, directement dans `.agents/WRITING_IMPROVEMENT.md` sous "Tâches actives", avant d'ouvrir un seul fichier.
+
+### Critères d'application
+
+Une tâche est de complexité « Moyen » si elle remplit au moins une de ces conditions **sans** atteindre les seuils de `unlazy` :
+- 2 fichiers modifiés (≥ 3 = `unlazy`)
+- 1 composable ou type partagé touché (mais pas d'API publique modifiée, sinon → `unlazy`)
+- Dépendance à une autre story en cours
+- Estimation entre 30 min et 2 h
+
+### Les cinq questions du pre-flight
+
+Répondre en prose, de façon concise — pas de tableau, pas de liste à puces systématique.
+
+1. **Quel est le problème réel ?** (reformuler l'objectif en une phrase, pas paraphraser l'intitulé)
+2. **Quelle est la contrainte la plus probable ?** (technique, temporelle, dépendance)
+3. **Quelle alternative ai-je envisagée et pourquoi je ne la prends pas ?** (au moins une, rejetée explicitement)
+4. **Quel est le signal qui me dira que c'est terminé ?** (observable, pas "le code marche")
+5. **Y a-t-il un déclencheur KI ?** (même motif vu deux fois → fiche à écrire au moment de la correction)
+
+### Format dans WRITING_IMPROVEMENT.md
+
+```markdown
+### Tâche : [Nom court]
+**Date** : AAAA-MM-JJ
+**Complexité** : Moyen
+**Proposant** : [Agent ou Fabien]
+**Story liée** : [référence ou —]
+
+#### Pre-flight (10 min)
+1. Problème réel : …
+2. Contrainte principale : …
+3. Alternative rejetée : … — rejetée parce que …
+4. Signal de fin : …
+5. Déclencheur KI : O/N
+
+#### Résultat
+- Implémenté ? O/N — [date si oui]
+- Leçon tirée : …
+```
+
+### Ce que ce protocole ne remplace pas
+
+Il ne produit ni `GATES.md`, ni `plan.md`, ni oracle exécutable. Si en cours d'exécution la tâche révèle un troisième fichier à modifier ou une dépendance non anticipée, elle bascule immédiatement en complexité « Élevée » et déclenche `unlazy`.
+

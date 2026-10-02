@@ -27,6 +27,8 @@ Ce document cartographie les compétences agentiques (skills) autorisées et mob
 - `bmad-review` : inspection multicouche approfondie (critique adversariale, cas limites, trous de vérification).
 - `diagnosing-bugs` : protocole d'investigation méthodique pour anomalies de synchronisation Outbox ou de persistance Dexie.
 - `bmad-walkthrough` : explication pédagogique des modifications apportées lors d'un jalon.
+- `next-level-ui` : audit UI/UX complet en 6 phases — 6 axes visuels (tokens M3, WCAG AA, états vides/erreur/chargement, responsive, copy/tone, cohérence inter-vues) + 3 axes comportementaux (parcours employé/manager, architecture d'information & navigation, feedback & micro-interactions). Rapport trié par sévérité dans `WRITING_IMPROVEMENT.md` avant tout correctif. Correctifs UX impliquant la navigation remontent à Sally (BMAD) si le flux validé est modifié.
+
 
 ### 4. Cadrage Produit, Challenge & Spécifications (Équipe BMAD)
 - `bmad-prd` : structuration des exigences produit et définition des cas d'usage.
