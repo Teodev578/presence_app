@@ -227,6 +227,27 @@ Ce fichier enregistre le raisonnement derrière les décisions non triviales : h
 - Implémenté ? O (2026-10-02)
 - Leçon tirée : La gestion d'un horaire général dans une architecture Local-First gagne à être traitée comme un singleton d'organisation (`company_settings`) synchronisé via l'Outbox avec repli déterministe par cascade (`COALESCE` disponibilité > profil > organisation > défaut canonique). Son accès direct dans le module Disponibilités fluidifie le flux de planification sans dégrader la séparation des responsabilités.
 
+### Tâche : Visibilité du Statut Réseau dans le Bandeau (Tablette et Bureau)
+**Date** : 2026-10-02
+**Complexité** : Moyen
+**Proposant** : Fabien / next-level-ui
+**Story liée** : —
+
+#### Pre-flight (10 min)
+1. Problème réel : En format tablette et bureau (≥ 840px), le statut réseau n'apparaissait pas dans le bandeau supérieur en état sain, tandis que le pied du volet latéral hébergeait un indicateur permanent rogné en mode rail (840px–1024px). L'utilisateur a identifié que doubler les indicateurs sur grand écran était redondant, alors que sur mobile le tiroir fermé laissait l'utilisateur sans aucune information.
+2. Contrainte principale : Maintien d'un indicateur de statut unique, universel et accessible (cible tactile 44px `min-h-11`), préservation de la navigation pure dans les tiroirs, absence totale de modification de versions de dépendances, et alignement rigoureux des oracles `scripts/verify-gates.mjs`.
+3. Alternatives envisagées :
+   - Statut dans le bandeau uniquement sur desktop/tablette et maintien du tiroir : rejetée car génère deux indicateurs simultanés dans le champ de vision sur grand écran.
+   - Statut masqué par CSS dans le tiroir sans mise à jour des tests : rejetée car introduit du code mort et contourne artificiellement les oracles.
+   - Centralisation exclusive dans le bandeau supérieur à toutes les résolutions (Option 1 validée par Fabien), avec retrait du pied de volet latéral et actualisation des oracles : **retenue** car elle élimine toute duplication, offre la visibilité immédiate sur mobile, épure le mode rail et rationalise l'architecture d'information.
+4. Signal de fin : `SyncAlert.vue` réactif et permanent dans le bandeau (vert « À jour », orange « Hors ligne », bleu en attente/sync), pied de tiroir retiré dans `ManagerLayout.vue` et `EmployeeLayout.vue`, oracles G5, G17, G20, G22, G35, G45 et G143-G146 validés à 100% sur `verify-gates.mjs --all`, build Vite réussi.
+5. Déclencheur KI : N
+
+#### Résultat
+- Implémenté ? O (2026-10-02)
+- Leçon tirée : Le statut de synchronisation et de connectivité gagne à être unifié en un point d'accès canonique unique (le bandeau supérieur d'application). Déporter le statut dans un pied de barre latérale crée des frictions sur les formats intermédiaires (rails d'icônes) et une redondance cognitive dès lors que le volet reste déployé.
+
+
 ---
 
 ## Archives

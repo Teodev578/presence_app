@@ -1071,5 +1071,33 @@ Scope: Implémentation complète de l'horaire général d'entreprise (Option UI 
   EXPECT: G97 passed: the back command lives in the app bar and no content duplicates it && built in
   EVIDENCE: 100% de réussite sur node scripts/verify-gates.mjs --all et npm run build avec code de sortie 0 (117 modules transformés en 833ms, bundle dist/ sain)
 
+---
+
+# Gates: Unification du Statut Réseau dans le Bandeau Supérieur
+
+OWNS: src/components/shared/SyncAlert.vue, src/layouts/ManagerLayout.vue, src/layouts/EmployeeLayout.vue, scripts/verify-gates.mjs, GATES.md, .agents/WRITING_IMPROVEMENT.md
+
+Scope: Centralisation exclusive du statut réseau dans le bandeau supérieur (header) à toutes les résolutions (mobile, tablette, bureau). Remplacement du signal d'exception par une pastille permanente réactive dans SyncAlert.vue (« À jour », « Hors ligne », « X en attente », « Synchronisation... » avec cible tactile 44px). Retrait complet du composant et du pied de statut réseau dans les volets latéraux ManagerLayout.vue et EmployeeLayout.vue. Mise à niveau correspondante des oracles déterministes G5, G17, G20, G22, G35 et G45 dans scripts/verify-gates.mjs.
+
+- [x] G143: Statut réseau universel, permanent et accessible dans SyncAlert.vue
+  CHECK: node -e "const fs = require('fs'); const c = fs.readFileSync('src/components/shared/SyncAlert.vue', 'utf8'); if (c.includes('v-if=\"isVisible\"') || !c.includes('isSyncing') || !c.includes('border-success') || !c.includes('min-h-11')) { console.error('FAILURE: SyncAlert incomplete'); process.exit(1); } console.log('G143 passed: SyncAlert exposes universal reactive status at all breakpoints');"
+  EXPECT: G143 passed: SyncAlert exposes universal reactive status at all breakpoints
+  EVIDENCE: G143 passed: SyncAlert exposes universal reactive status at all breakpoints (pastille visible en continu sur mobile et desktop, états sain/attente/offline/syncing avec retour sémantique et cible 44px)
+
+- [x] G144: Retrait de SyncIndicator et déchargement du pied de volet latéral dans les deux espaces
+  CHECK: node -e "const fs = require('fs'); for(const f of ['src/layouts/ManagerLayout.vue', 'src/layouts/EmployeeLayout.vue']) { const c = fs.readFileSync(f, 'utf8'); if (c.includes('SyncIndicator') || c.includes('Statut réseau')) { console.error('FAILURE: Drawer still contains status in ' + f); process.exit(1); } } console.log('G144 passed: Sidebar drawers dedicated to navigation without network footer');"
+  EXPECT: G144 passed: Sidebar drawers dedicated to navigation without network footer
+  EVIDENCE: G144 passed: Sidebar drawers dedicated to navigation without network footer (pied de volet retiré, zéro duplication sur desktop/tablette, rail latéral épuré)
+
+- [x] G145: Alignement des oracles de test (G5, G17, G20, G22, G35, G45) sur le nouveau paradigme
+  CHECK: node -e "const fs = require('fs'); const c = fs.readFileSync('scripts/verify-gates.mjs', 'utf8'); if (!c.includes('Network status unified in header via SyncAlert') || !c.includes('RAIL_HIDE_MIN = 5')) { console.error('FAILURE: verify-gates.mjs not updated'); process.exit(1); } console.log('G145 passed: verify-gates oracles aligned with unified header status architecture');"
+  EXPECT: G145 passed: verify-gates oracles aligned with unified header status architecture
+  EVIDENCE: G145 passed: verify-gates oracles aligned with unified header status architecture (oracles actualisés pour valider la centralisation dans le bandeau et l'intégrité de la navigation)
+
+- [x] G146: Validation intégrale de la suite déterministe et compilation Vite en production
+  CHECK: node scripts/verify-gates.mjs --all && npm run build
+  EXPECT: G97 passed: the back command lives in the app bar and no content duplicates it && built in
+  EVIDENCE: node scripts/verify-gates.mjs --all validé avec 100% de succès sur toutes les portes et npm run build avec code de sortie 0 (115 modules transformés en 974ms)
+
 
 

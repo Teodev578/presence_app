@@ -2,7 +2,6 @@
 import { ref, computed, h } from 'vue'
 import { useRouter } from '../router'
 import { useSidebarNav } from '../composables/useSidebarNav'
-import SyncIndicator from '../components/shared/SyncIndicator.vue'
 import SyncAlert from '../components/shared/SyncAlert.vue'
 
 const { currentPath, navigate } = useRouter()
@@ -290,14 +289,6 @@ const handleNav = (path) => {
               </li>
             </ul>
           </nav>
-        </div>
-
-        <!-- Pied de volet : statut réseau seul. Les réglages (apparence, compte, sortie) vivent sur la page Paramètres. -->
-        <div class="pt-4 border-t border-base-300/60">
-          <div class="rail-center flex items-center justify-between gap-2 min-w-0 px-1">
-            <span class="rail-hide text-xs text-base-content/60 font-medium shrink-0">Statut réseau</span>
-            <SyncIndicator class="rail-network" />
-          </div>
         </div>
       </aside>
     </div>

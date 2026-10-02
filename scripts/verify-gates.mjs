@@ -275,22 +275,22 @@ export function checkLayout() {
     const headerContent = headerMatch ? headerMatch[1] : '';
     const asideContent = asideMatch ? asideMatch[1] : '';
 
-    const syncInHeader = /<SyncIndicator\b|<sync-indicator\b/i.test(headerContent);
+    const syncInHeader = /<SyncAlert\b|<sync-alert\b/i.test(headerContent);
     const syncInAside = /<SyncIndicator\b|<sync-indicator\b/i.test(asideContent);
 
-    if (syncInHeader) {
-      console.error(`FAILURE G5: ${layoutName} contains SyncIndicator in <header>`);
+    if (!syncInHeader) {
+      console.error(`FAILURE G5: ${layoutName} is missing SyncAlert in <header>`);
       allPassed = false;
     }
 
-    if (!syncInAside) {
-      console.error(`FAILURE G5: ${layoutName} is missing SyncIndicator in <aside>`);
+    if (syncInAside) {
+      console.error(`FAILURE G5: ${layoutName} still contains SyncIndicator in <aside>`);
       allPassed = false;
     }
   }
 
   if (allPassed) {
-    console.log('G5 passed: SyncIndicator correctly placed in sidebar drawers and removed from headers');
+    console.log('G5 passed: Network status unified in header via SyncAlert and removed from sidebar drawers');
     return true;
   }
   return false;
@@ -359,16 +359,22 @@ export function checkSyncIndicatorPreserved() {
 
   for (const relativePath of layoutFiles) {
     const current = fs.readFileSync(relativePath, 'utf8');
+    const headerMatch = current.match(/<header[^>]*>([\s\S]*?)<\/header>/i);
+    const headerContent = headerMatch ? headerMatch[1] : '';
+    if (!/<SyncAlert\b/i.test(headerContent)) {
+      console.error(`FAILURE G17: ${relativePath} n'expose pas le statut réseau unifié dans son en-tête`);
+      ok = false;
+    }
     const asideMatch = current.match(/<aside[^>]*>([\s\S]*?)<\/aside>/i);
     const asideContent = asideMatch ? asideMatch[1] : '';
-    if (!/<SyncIndicator\b/i.test(asideContent)) {
-      console.error(`FAILURE G17: ${relativePath} n'a plus d'indicateur de synchronisation dans son tiroir`);
+    if (/<SyncIndicator\b/i.test(asideContent)) {
+      console.error(`FAILURE G17: ${relativePath} conserve l'ancien indicateur dans son tiroir`);
       ok = false;
     }
   }
 
   if (!ok) return false;
-  console.log('G17 passed: each drawer keeps its sync indicator');
+  console.log('G17 passed: each space unifies network status in header via SyncAlert and cleans drawer');
   return true;
 }
 
@@ -702,13 +708,17 @@ export function checkHeaderDeduplication() {
     const header = headerMatch ? headerMatch[1] : '';
     const aside = asideMatch ? asideMatch[1] : '';
 
-    const indicators = countOccurrences(content, '<SyncIndicator');
-    if (indicators !== 1) {
-      console.error(`FAILURE G20: ${name} doit exposer un seul indicateur de synchronisation (${indicators})`);
+    const syncAlerts = countOccurrences(content, '<SyncAlert');
+    if (syncAlerts !== 1) {
+      console.error(`FAILURE G20: ${name} doit exposer un seul statut réseau unifié (${syncAlerts})`);
       ok = false;
     }
-    if (header.includes('<SyncIndicator')) {
-      console.error(`FAILURE G20: ${name} garde l'indicateur permanent dans son en-tête`);
+    if (!header.includes('<SyncAlert')) {
+      console.error(`FAILURE G20: ${name} n'expose pas le statut réseau unifié dans son en-tête`);
+      ok = false;
+    }
+    if (aside.includes('<SyncIndicator') || aside.includes('<SyncAlert')) {
+      console.error(`FAILURE G20: ${name} conserve un indicateur réseau dans son tiroir`);
       ok = false;
     }
 
@@ -724,11 +734,6 @@ export function checkHeaderDeduplication() {
       ok = false;
     } else if (!aside.includes(gateway)) {
       console.error(`FAILURE G20: ${name} n'expose pas sa passerelle inter-espace dans le tiroir`);
-      ok = false;
-    }
-
-    if (!/<SyncAlert\b/.test(header)) {
-      console.error(`FAILURE G20: ${name} n'expose pas l'alerte réseau dans son en-tête`);
       ok = false;
     }
   }
@@ -828,30 +833,14 @@ export function checkDrawerSettingsLayout() {
       ok = false;
     }
 
-    const statusRow = enclosingDiv(aside, 'Statut réseau');
-    if (!statusRow) {
-      console.error(`FAILURE G22: ${layoutName} n'expose pas de rangée « Statut réseau »`);
-      ok = false;
-      continue;
-    }
-
-    const row = statusRow.markup;
-    if (!/<SyncIndicator\b/.test(row)) {
-      console.error(`FAILURE G22: ${layoutName} ne place pas le badge de synchronisation dans sa rangée de statut`);
-      ok = false;
-    }
-    if (!/min-w-0/.test(row)) {
-      console.error(`FAILURE G22: ${layoutName} n'autorise pas sa rangée de statut à se comprimer (min-w-0 absent)`);
-      ok = false;
-    }
-    if (!/shrink-0/.test(row)) {
-      console.error(`FAILURE G22: ${layoutName} laisse son libellé de statut se comprimer (shrink-0 absent)`);
+    if (/<SyncIndicator\b/.test(aside)) {
+      console.error(`FAILURE G22: ${layoutName} conserve le badge réseau dans son tiroir`);
       ok = false;
     }
   }
 
   if (!ok) return false;
-  console.log('G22 passed: drawer settings split network status and appearance control');
+  console.log('G22 passed: drawer is dedicated to navigation with appearance and network offloaded');
   return true;
 }
 
@@ -1610,25 +1599,10 @@ export function checkManagerNavTargets() {
 }
 
 /**
- * Le pied des deux tiroirs ne porte plus que le statut réseau. L'apparence, l'identité et la
- * déconnexion ont quitté le tiroir pour la page Paramètres.
+ * Le tiroir est dédié à la navigation pure. L'apparence, l'identité et la déconnexion
+ * vivent sur la page Paramètres, et le statut réseau vit dans le bandeau supérieur.
  */
 export function checkDrawerFooter() {
-  const footerOnlyStatus = (aside) => {
-    const status = aside.indexOf('Statut réseau');
-    if (status === -1) return false;
-    if (aside.includes('userInitial')) return false;
-    if (aside.includes('aria-label="Se déconnecter"')) return false;
-    if (aside.includes('handleLogout')) return false;
-    if (aside.includes('<ThemeToggle')) return false;
-    return aside.slice(status).includes('<SyncIndicator');
-  };
-
-  if (footerOnlyStatus('<span>Statut réseau</span><SyncIndicator/>{{ userInitial }}<ThemeToggle/>aria-label="Se déconnecter"')) {
-    console.error('FAILURE G35: le détecteur de pied vidé est aveugle, oracle invalide');
-    return false;
-  }
-
   let ok = true;
   for (const layoutName of ['ManagerLayout.vue', 'EmployeeLayout.vue']) {
     const content = readLayout(layoutName);
@@ -1641,9 +1615,11 @@ export function checkDrawerFooter() {
     const aside = extractAside(content);
     const header = aside.slice(0, aside.indexOf('<nav'));
 
-    if (!footerOnlyStatus(aside)) {
-      console.error(`FAILURE G35: le pied de ${layoutName} ne se réduit pas au statut réseau`);
-      ok = false;
+    for (const prohibited of ['userInitial', 'aria-label="Se déconnecter"', 'handleLogout', '<ThemeToggle', '<SyncIndicator']) {
+      if (aside.includes(prohibited)) {
+        console.error(`FAILURE G35: ${layoutName} conserve « ${prohibited} » dans son tiroir`);
+        ok = false;
+      }
     }
     if (!header.includes('PresenceApp')) {
       console.error(`FAILURE G35: l'en-tête de ${layoutName} ne porte plus la marque`);
@@ -1668,7 +1644,7 @@ export function checkDrawerFooter() {
   }
 
   if (!ok) return false;
-  console.log('G35 passed: the drawer footer keeps only the network status, settings live on the page');
+  console.log('G35 passed: the drawer is dedicated to navigation, network status unified in app bar, settings live on the page');
   return true;
 }
 
@@ -1998,7 +1974,7 @@ export function checkSidebarRail() {
     return false;
   }
 
-  const RAIL_HIDE_MIN = 6;
+  const RAIL_HIDE_MIN = 5;
   const RAIL_ENTRY_MIN = 2;
   let ok = true;
   for (const { name, space } of [
