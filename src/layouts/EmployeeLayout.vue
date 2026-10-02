@@ -127,10 +127,10 @@ const handleNav = (path) => {
 
         <div class="flex-1"></div>
 
-        <!-- Actions supérieures : notifications, alerte réseau et accès paramètres -->
+        <!-- Actions supérieures : statut réseau, notifications et accès paramètres -->
         <div class="flex items-center gap-2">
-          <NotificationBell />
-          <SyncAlert />
+          <SyncAlert v-if="!onSettings" />
+          <NotificationBell v-if="!onSettings" />
           <button
             v-if="!onSettings"
             type="button"

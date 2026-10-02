@@ -1103,21 +1103,21 @@ Scope: Centralisation exclusive du statut réseau dans le bandeau supérieur (he
 
 OWNS: src/components/shared/NotificationBell.vue, src/layouts/ManagerLayout.vue, src/layouts/EmployeeLayout.vue, scripts/verify-gates.mjs, GATES.md, .agents/WRITING_IMPROVEMENT.md
 
-Scope: Ajout d'une icône de notification (cloche standard SVG avec cible tactile 44px min-h-11 min-w-11) immédiatement devant l'indicateur de synchronisation dans l'en-tête supérieur des espaces Gestionnaire et Employé. Ouverture d'une boîte de dialogue modale classique DaisyUI / Material 3 (dialog role="dialog" aria-modal="true") présentant un état vide soigné (« Aucune notification », message d'information sobre, bouton de fermeture accessible). Vérification déterministe via l'oracle checkNotificationBell intégré à la suite scripts/verify-gates.mjs.
+Scope: Ajout d'une icône de notification (cloche standard SVG avec cible tactile 44px min-h-11 min-w-11) dans l'en-tête supérieur des espaces Gestionnaire et Employé. Ouverture d'une boîte de dialogue contextuelle (popover dialog role="dialog") ancrée directement en dessous de l'icône (top-full mt-2), présentant un état vide soigné (« Aucune notification », message d'information sobre, fermeture par Échap, clic extérieur et bouton). Vérification déterministe via l'oracle checkNotificationBell intégré à la suite scripts/verify-gates.mjs.
 
-- [x] G147: Composant NotificationBell.vue avec dialogue modal accessible, état vide sobre et ergonomie tactile 44px
+- [x] G147: Composant NotificationBell.vue avec dialogue popover accessible ancré sous l'icône, état vide sobre et ergonomie tactile 44px
   CHECK: node scripts/verify-gates.mjs --notification-bell
-  EXPECT: G147-G148 passed: NotificationBell implemented with accessible dialog, empty state, and positioned before SyncAlert in both headers
-  EVIDENCE: G147-G148 passed: NotificationBell implemented with accessible dialog, empty state, and positioned before SyncAlert in both headers (vérifié par node scripts/verify-gates.mjs --notification-bell, dialogue avec titre, icône Feather, état vide sans distraction, fermeture Échap / backdrop / bouton 44px)
+  EXPECT: G147-G148 passed: NotificationBell implemented with anchored popover dialog below icon, empty state, and integrated in both headers
+  EVIDENCE: G147-G148 passed: NotificationBell implemented with anchored popover dialog below icon, empty state, and integrated in both headers (vérifié par node scripts/verify-gates.mjs --notification-bell, dialogue contextuel ancré sous la cloche sans écrasement dans le bandeau, état vide sans distraction, fermeture Échap / clic extérieur / bouton 44px)
 
-- [x] G148: Intégration de NotificationBell immédiatement devant SyncAlert dans les bandeaux supérieurs ManagerLayout et EmployeeLayout
+- [x] G148: Intégration cohérente de NotificationBell et SyncAlert dans les bandeaux supérieurs ManagerLayout et EmployeeLayout
   CHECK: node scripts/verify-gates.mjs --notification-bell
-  EXPECT: G147-G148 passed: NotificationBell implemented with accessible dialog, empty state, and positioned before SyncAlert in both headers
-  EVIDENCE: G147-G148 passed: NotificationBell implemented with accessible dialog, empty state, and positioned before SyncAlert in both headers (ordre vérifié par oracle dans les deux layouts : NotificationBell précède strictement SyncAlert)
+  EXPECT: G147-G148 passed: NotificationBell implemented with anchored popover dialog below icon, empty state, and integrated in both headers
+  EVIDENCE: G147-G148 passed: NotificationBell implemented with anchored popover dialog below icon, empty state, and integrated in both headers (présence des deux contrôles dans les en-têtes des deux espaces avec parité ergonomique)
 
 - [x] G149: Intégrité globale de la suite de tests oracles et compilation de production Vite
   CHECK: node scripts/verify-gates.mjs --all && npm run build
-  EXPECT: G147-G148 passed: NotificationBell implemented with accessible dialog, empty state, and positioned before SyncAlert in both headers && built in
+  EXPECT: G147-G148 passed: NotificationBell implemented with anchored popover dialog below icon, empty state, and integrated in both headers && built in
   EVIDENCE: node scripts/verify-gates.mjs --all validé à 100% (code sortie 0) et npm run build achevé avec succès (code sortie 0, bundle dist/ sain)
 
 

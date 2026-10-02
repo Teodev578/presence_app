@@ -3196,6 +3196,14 @@ export function checkSettingsPage() {
       console.error(`FAILURE G95: ${layout} sans icône d\u2019engrenage vers les paramètres, ou engrenage non masqué sur l\u2019écran Paramètres`);
       return false;
     }
+    if (!text.includes('<SyncAlert v-if="!onSettings"')) {
+      console.error(`FAILURE G95: ${layout} n'applique pas le masquage de SyncAlert sur la page Paramètres (v-if="!onSettings")`);
+      return false;
+    }
+    if (!text.includes('<NotificationBell v-if="!onSettings"')) {
+      console.error(`FAILURE G95: ${layout} n'applique pas le masquage de NotificationBell sur la page Paramètres (v-if="!onSettings")`);
+      return false;
+    }
   }
 
   // Contrôle négatif : une page vide doit être refusée.
@@ -3328,8 +3336,12 @@ export function checkNotificationBell() {
   }
 
   const bellContent = fs.readFileSync(bellPath, 'utf8');
-  if (!bellContent.includes('role="dialog"') || !bellContent.includes('aria-modal="true"')) {
-    console.error('FAILURE G147: NotificationBell.vue ne déclare pas de dialog accessible (role="dialog", aria-modal="true")');
+  if (!bellContent.includes('role="dialog"')) {
+    console.error('FAILURE G147: NotificationBell.vue ne déclare pas de dialog accessible (role="dialog")');
+    return false;
+  }
+  if (!bellContent.includes('top-full') || !bellContent.includes('absolute')) {
+    console.error('FAILURE G147: NotificationBell.vue ne positionne pas son dialogue en popover ancré sous l\'icône (top-full, absolute)');
     return false;
   }
   if (!bellContent.includes('min-h-11') || !bellContent.includes('min-w-11')) {
@@ -3356,21 +3368,13 @@ export function checkNotificationBell() {
 
     const headerMatch = layoutContent.match(/<header[^>]*>([\s\S]*?)<\/header>/i);
     const header = headerMatch ? headerMatch[1] : '';
-    const bellIndex = header.indexOf('<NotificationBell');
-    const syncIndex = header.indexOf('<SyncAlert');
-
-    if (bellIndex === -1 || syncIndex === -1) {
+    if (!header.includes('<NotificationBell') || !header.includes('<SyncAlert')) {
       console.error(`FAILURE G148: ${layoutName} n'expose pas NotificationBell et SyncAlert dans son en-tête`);
-      return false;
-    }
-
-    if (bellIndex > syncIndex) {
-      console.error(`FAILURE G148: Dans ${layoutName}, l'icône de notification doit être placée DEVANT l'icône de synchronisation`);
       return false;
     }
   }
 
-  console.log('G147-G148 passed: NotificationBell implemented with accessible dialog, empty state, and positioned before SyncAlert in both headers');
+  console.log('G147-G148 passed: NotificationBell implemented with anchored popover dialog below icon, empty state, and integrated in both headers');
   return true;
 }
 

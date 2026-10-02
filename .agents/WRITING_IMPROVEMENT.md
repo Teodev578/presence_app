@@ -265,7 +265,26 @@ Ce fichier enregistre le raisonnement derrière les décisions non triviales : h
 
 #### Résultat
 - Implémenté ? O (2026-10-02)
-- Leçon tirée : Les contrôles d'en-tête combinant un déclencheur iconique et une boîte modale gagnent à être encapsulés dans un composant partagé unique (`NotificationBell.vue`), garantissant une gestion autonome de l'état d'ouverture et une accessibilité native sans alourdir les layouts.
+- Leçon tirée : Les contrôles d'en-tête combinant un déclencheur iconique et un dialogue contextuel gagnent à être encapsulés sous forme de popover ancré (`NotificationBell.vue`), évitant le piège du stacking context CSS causé par `backdrop-filter` sur la barre de navigation.
+
+### Tâche : Masquage des Actions d'En-tête (Réseau et Notifications) sur la Vue Paramètres
+**Date** : 2026-10-02
+**Complexité** : Moyen
+**Proposant** : Fabien / next-level-ui
+**Story liée** : —
+
+#### Pre-flight (10 min)
+1. Problème réel : Sur la page des paramètres (`/#/manager/settings` et `/#/employee/settings`), la vue est un écran de configuration focalisé. Conserver l'icône de synchronisation et l'icône de notification dans le bandeau supérieur provoquait un encombrement visuel et une duplication par rapport aux sections dédiées de la page.
+2. Contrainte principale : Masquer sélectivement `SyncAlert` et `NotificationBell` sur la vue des paramètres (`v-if="!onSettings"`), laissant le bandeau supérieur dédié au bouton retour et au titre de la page, tout en maintenant la stricte parité entre `ManagerLayout` et `EmployeeLayout` et la réussite des oracles.
+3. Alternatives envisagées :
+   - Masquer uniquement la synchronisation et conserver la cloche : rejetée suite à l'arbitrage utilisateur de focaliser l'écran des paramètres.
+   - Masquer l'ensemble des actions d'en-tête (synchronisation, notifications et bouton paramètres) via `v-if="!onSettings"` (Option retenue) : **recommandée** car elle offre une interface épurée propice aux réglages.
+4. Signal de fin : `SyncAlert v-if="!onSettings"` et `NotificationBell v-if="!onSettings"` dans `ManagerLayout.vue` et `EmployeeLayout.vue`, oracle `checkSettingsPage` actualisé et passant à 100% sur `verify-gates.mjs --all`, build Vite réussi.
+5. Déclencheur KI : N
+
+#### Résultat
+- Implémenté ? O (2026-10-02)
+- Leçon tirée : Les écrans de configuration secondaire (comme les Paramètres) gagnent à libérer entièrement la zone d'actions droite du bandeau pour renforcer la lisibilité et la concentration sur le formulaire de réglages.
 
 ---
 

@@ -165,8 +165,8 @@ const handleNav = (path) => {
 
         <!-- Actions supérieures : notifications, alerte réseau et accès paramètres -->
         <div class="flex items-center gap-2 sm:gap-3">
-          <SyncAlert />
-          <NotificationBell />
+          <SyncAlert v-if="!onSettings" />
+          <NotificationBell v-if="!onSettings" />
           
           <button
             v-if="!onSettings"
