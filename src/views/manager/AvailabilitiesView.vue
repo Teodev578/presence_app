@@ -236,19 +236,46 @@ const dayState = (empId, dayNumber) => {
   }
 }
 
-// Synthèse : sur les créneaux ouvrés révolus où le collaborateur est attendu, combien ont donné un pointage.
-const stats = computed(() => {
-  let expectedCount = 0
-  let pointedCount = 0
+// Analyse temporelle de la semaine affichée
+const isCurrentWeek = computed(() => {
+  const start = getDateForDay(1)
+  const end = getDateForDay(7)
+  return start <= todayStr && todayStr <= end
+})
 
-  const pastDays = daysHeader.filter((d) => getDateForDay(d.id) <= todayStr)
+const isFutureWeek = computed(() => {
+  const start = getDateForDay(1)
+  return todayStr < start
+})
+
+const isPastWeek = computed(() => {
+  const end = getDateForDay(7)
+  return end < todayStr
+})
+
+// Synthèse humaine de l'équipe : planification, pointages confirmés et présence réelle
+const stats = computed(() => {
+  let expectedElapsed = 0
+  let totalPlanned = 0
+  let pointedCount = 0
+  let absentCount = 0
+
+  const allWeekDays = daysHeader
+  const pastOrTodayDays = allWeekDays.filter((d) => getDateForDay(d.id) <= todayStr)
 
   for (const emp of filteredEmployees.value) {
-    for (const d of pastDays) {
+    for (const d of allWeekDays) {
       const state = dayState(emp.id, d.id)
-      // Un jour férié chômé n'est pas une présence attendue
+      if (state.type === 'absent' || state.type === 'future_absent') {
+        absentCount++
+      } else if (state.type !== 'holiday') {
+        totalPlanned++
+      }
+    }
+    for (const d of pastOrTodayDays) {
+      const state = dayState(emp.id, d.id)
       if (state.type !== 'absent' && state.type !== 'holiday') {
-        expectedCount++
+        expectedElapsed++
         if (state.presence) {
           pointedCount++
         }
@@ -256,8 +283,69 @@ const stats = computed(() => {
     }
   }
 
-  const rate = expectedCount > 0 ? Math.round((pointedCount / expectedCount) * 100) : null
-  return { declared: expectedCount, pointed: pointedCount, rate }
+  const rate = expectedElapsed > 0 ? Math.round((pointedCount / expectedElapsed) * 100) : null
+
+  // Semaine future : focus sur la préparation et la disponibilité de l'équipe
+  if (isFutureWeek.value) {
+    return {
+      declared: totalPlanned,
+      pointed: 0,
+      rate: null,
+      card1: {
+        label: "Planning de l'équipe",
+        value: totalPlanned,
+        caption: 'Journées prévues la semaine prochaine',
+        tone: 'neutral',
+      },
+      card2: {
+        label: 'Pointages',
+        value: 'À venir',
+        caption: 'Semaine pas encore entamée',
+        tone: 'neutral',
+      },
+      card3: {
+        label: 'Absences signalées',
+        value: absentCount,
+        caption: absentCount > 1
+          ? `${absentCount} absences déclarées`
+          : absentCount === 1
+            ? '1 absence déclarée'
+            : "Toute l'équipe est disponible",
+        tone: absentCount > 0 ? 'warning' : 'success',
+      },
+    }
+  }
+
+  // Semaine en cours ou passée : suivi concret et transparent
+  return {
+    declared: expectedElapsed,
+    pointed: pointedCount,
+    rate,
+    card1: {
+      label: "Planning de l'équipe",
+      value: expectedElapsed,
+      caption: isCurrentWeek.value ? "Jusqu'à aujourd'hui" : 'Sur l’ensemble de la semaine',
+      tone: 'neutral',
+    },
+    card2: {
+      label: 'Pointages confirmés',
+      value: pointedCount,
+      caption: pointedCount > 1
+        ? `${pointedCount} journées enregistrées`
+        : pointedCount === 1
+          ? '1 journée enregistrée'
+          : 'Aucun pointage pour l’instant',
+      tone: pointedCount > 0 ? 'success' : 'neutral',
+    },
+    card3: {
+      label: 'Présence réelle',
+      value: rate === null ? '0 %' : `${rate} %`,
+      caption: expectedElapsed > 0
+        ? `${pointedCount} sur ${expectedElapsed} ${expectedElapsed > 1 ? 'journées prévues' : 'journée prévue'}`
+        : 'Aucune journée écoulée',
+      tone: 'info',
+    },
+  }
 })
 
 // Gestion de la modale de détail et d'ajustement d'horaires
@@ -477,13 +565,23 @@ const goToPresences = (dateStr) => {
 
     <!-- Synthèse de la semaine -->
     <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 min-w-0">
-      <ManagerKpiCard label="Présences attendues" :value="stats.declared" caption="Jours passés" />
-      <ManagerKpiCard label="Pointés" :value="stats.pointed" caption="Journées pointées" tone="success" />
       <ManagerKpiCard
-        label="Présence constatée"
-        :value="stats.rate === null ? 'Aucun' : stats.rate + '%'"
-        :caption="stats.rate === null ? 'Aucun jour passé' : 'Sur les jours prévus'"
-        tone="info"
+        :label="stats.card1.label"
+        :value="stats.card1.value"
+        :caption="stats.card1.caption"
+        :tone="stats.card1.tone"
+      />
+      <ManagerKpiCard
+        :label="stats.card2.label"
+        :value="stats.card2.value"
+        :caption="stats.card2.caption"
+        :tone="stats.card2.tone"
+      />
+      <ManagerKpiCard
+        :label="stats.card3.label"
+        :value="stats.card3.value"
+        :caption="stats.card3.caption"
+        :tone="stats.card3.tone"
       />
     </div>
 

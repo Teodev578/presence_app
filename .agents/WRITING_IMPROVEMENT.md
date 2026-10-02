@@ -179,6 +179,26 @@ Ce fichier enregistre le raisonnement derrière les décisions non triviales : h
 - Implémenté ? O (2026-10-02)
 - Leçon tirée : Les indicateurs d'état disséminés sur différentes surfaces (tiroir permanent et bandeau contextuel) doivent partager une grammaire de composant uniforme (fond transparent, bordure fine sémantique et puce `bg-current`) pour éviter toute dissonance cognitive lors des transitions de connexion.
 
+### Tâche : Refonte humaine du ton des cartes KPI (Disponibilités)
+**Date** : 2026-10-02
+**Complexité** : Moyen
+**Proposant** : Fabien
+**Story liée** : —
+
+#### Pre-flight (10 min)
+1. Problème réel : Libellés des 3 cartes KPI de synthèse dans `AvailabilitiesView.vue` impersonnels, froids et confus (« 15 Présences attendues • Jours passés », « 1 Pointés • Journées pointées », « Présence constatée • Sur les jours prévus »). La formulation administrative masquait le sens concret des métriques et affichait des zéros stériles sur les semaines futures.
+2. Contrainte principale : Maintien de la grille M3 réactive (`grid-cols-2 sm:grid-cols-3`), respect des critères de non-régression (G88, G89, G93), absence de tout jargon répressif ou d'injonction, et contextualisation dynamique selon la temporalité (semaine passée, en cours, ou future).
+3. Alternatives envisagées :
+   - Formulations managériales orientées mission (« Journées au planning », « Journées assurées », « Réalisation ») — rejetée car encore trop instrumentale.
+   - Formulations télégraphiques (« Prévu », « Réalisé », « Taux ») — rejetée car froide et déconnectée du quotidien de l'équipe.
+   - Direction « Vie d'équipe » bienveillante (« Planning de l'équipe », « Pointages confirmés », « Présence réelle » avec ratio concret « X sur Y journées prévues » et bascule proactive sur « Absences signalées » pour les semaines futures) — **retenue** conformément au choix de l'utilisateur.
+4. Signal de fin : Cartes adaptées et limpides, ratio explicite en sous-titre, 100% de succès sur `node scripts/verify-gates.mjs --all`, build Vite réussi et validation visuelle mobile/desktop.
+5. Déclencheur KI : N
+
+#### Résultat
+- Implémenté ? O (2026-10-02)
+- Leçon tirée : Les métriques de planification gagnent en lisibilité quand elles sont traduites en concepts concrets d'équipe plutôt qu'en compteurs administratifs abstraits, notamment en explicitant le dénominateur (« 1 sur 15 journées prévues ») et en adaptant la métrique à la temporalité consultée.
+
 ---
 
 ## Archives
