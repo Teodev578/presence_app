@@ -399,8 +399,8 @@ const toggleStatus = async (loc) => {
   <div class="flex flex-col gap-6">
     <!-- En-tête -->
     <ManagerPageHeader
-      title="Lieux de travail"
-      subtitle="Adresses et zones où l'équipe peut valider son arrivée"
+      title="Gestion des Sites"
+      subtitle="Adresses et zones où l'équipe peut enregistrer son arrivée"
     >
       <template #icon>
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -507,10 +507,8 @@ const toggleStatus = async (loc) => {
         <div class="flex items-center justify-between gap-3">
           <div class="flex items-center gap-2 min-w-0">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
-              <line x1="9" y1="22" x2="9" y2="2"></line>
-              <line x1="15" y1="22" x2="15" y2="2"></line>
-              <line x1="4" y1="12" x2="20" y2="12"></line>
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+              <circle cx="12" cy="10" r="3"></circle>
             </svg>
             <h3 class="font-bold text-base text-base-content truncate">{{ loc.name }}</h3>
           </div>
@@ -955,7 +953,7 @@ const toggleStatus = async (loc) => {
 
             <!-- Texte contextuel et humain -->
             <span class="fieldset-label text-xs text-base-content/70 mt-2.5 leading-relaxed">
-              L'équipe pourra valider son arrivée tant qu'elle se trouve dans ce périmètre de <strong class="text-base-content font-bold">{{ form.radius_meters }} mètres</strong>.
+              L'équipe pourra enregistrer son arrivée tant qu'elle se trouve dans ce périmètre de <strong class="text-base-content font-bold">{{ form.radius_meters }} mètres</strong>.
             </span>
           </fieldset>
 

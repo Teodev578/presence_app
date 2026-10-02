@@ -100,7 +100,7 @@ const handleNav = (path) => {
           <label
             v-if="!showBack"
             for="employee-drawer"
-            class="btn btn-ghost btn-circle btn-sm min-h-12 min-w-12 sm:min-h-10 sm:min-w-10 text-base-content inline-flex cursor-pointer docked:hidden"
+            class="btn btn-ghost btn-circle min-h-11 min-w-11 text-base-content inline-flex cursor-pointer docked:hidden"
             aria-label="Ouvrir le menu de navigation"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

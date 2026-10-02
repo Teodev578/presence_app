@@ -137,3 +137,127 @@ Statut : Terminé et Validé (Portes G126 à G130 validées, build de production
 - [x] G129 (Affichage des horaires dans la grille du planning manager)
 - [x] G130 (Compilation Vite en production sans régression)
 
+---
+
+## 7. Plan d'Exécution : Résolution Intégrale de l'Audit Next-Level-UI
+
+Date : 2026-10-02  
+Déclencheur : Demande utilisateur (« Ecrit un plan pour mettre en place toutes tes recommandations ») suite à l'audit `/next-level-ui`  
+Statut : Terminé et Validé (Portes G131 à G136 validées, 100% de succès sur verify-gates.mjs --all, build de production conforme)  
+Complexité : Élevée (15 findings, 15 fichiers impactés, discipline `unlazy`, portes de vérification G1 à G136 + build)
+
+### 1. Périmètre
+
+#### Fichiers en écriture :
+- `src/components/shared/ToastContainer.vue` (Finding 1)
+- `src/views/SettingsView.vue` (Findings 2, 8)
+- `src/layouts/ManagerLayout.vue` (Findings 3, 6)
+- `src/layouts/EmployeeLayout.vue` (Finding 3)
+- `src/views/employee/CheckInView.vue` (Finding 4)
+- `src/views/employee/CheckOutView.vue` (Finding 4)
+- `src/views/manager/DashboardView.vue` (Finding 5)
+- `src/views/manager/EmployeesView.vue` (Finding 5)
+- `src/views/manager/TeamsView.vue` (Finding 5)
+- `src/views/manager/PresencesView.vue` (Finding 7)
+- `src/views/manager/LocationsView.vue` (Findings 11, 15)
+- `src/views/employee/HomeView.vue` (Finding 14)
+- `src/views/manager/AvailabilitiesView.vue` (Findings 9, 10, 12)
+- `src/components/shared/SyncIndicator.vue` (Findings 10, 11, 13)
+- `src/components/shared/SyncAlert.vue` (Findings 10, 11)
+- `GATES.md` (consignation des preuves d'exécution)
+
+#### Fichiers en lecture seule (référence / oracles) :
+- `scripts/verify-gates.mjs`
+- `.agents/rules/07-design-system.md`
+- `.agents/rules/09-ui-copy-and-tone.md`
+- `.agents/rules/06-animation-standards.md`
+- `.agents/rules/02-frontend-conventions.md`
+
+#### Hors périmètre explicite :
+- Aucune modification de dépendance externe (`package.json` intact, règle inviolable).
+- Aucune migration SQL / schéma de données Supabase (structures existantes préservées).
+
+---
+
+### 2. Décomposition en Lots Séquentiels
+
+#### Lot 1 : Cibles d'Accessibilité WCAG AA, Toast & Sécurité Destructive (🔴 Critique)
+1. **Étape 1.1 — Refonte accessible du Toast (`ToastContainer.vue`)** :
+   - Agrandir la cible tactile de fermeture à 44×44 px (`min-h-11 min-w-11` ou padding tactile conforme WCAG AA).
+   - Remplacer le glyphe brut `✕` par une icône vectorielle SVG (`aria-hidden="true"`).
+   - Remplacer `shadow-md` par une bordure/surface M3 (`border border-base-300 shadow-sm`).
+   - Restreindre l'animation CSS à `opacity` et `transform` (GPU composited only, éradication de `transition: all`).
+   - *Vérification* : `node scripts/verify-gates.mjs --emojis`, `node scripts/verify-gates.mjs --shadows`, `node scripts/verify-gates.mjs --targets`.
+2. **Étape 1.2 — Sécurisation de la Déconnexion (`SettingsView.vue`)** :
+   - Encapsuler l'action "Se déconnecter" dans `ConfirmModal` (`openConfirmLogout`, confirmation explicite requise).
+   - Restreindre la largeur du bouton à `w-full sm:max-w-64` conformément à la règle `10` (§ Largeur selon cardinalité).
+   - *Vérification* : Relecture ciblée et test de non-déconnexion accidentelle.
+3. **Étape 1.3 — Normalisation des Cibles de Tiroir (`ManagerLayout.vue` & `EmployeeLayout.vue`)** :
+   - Retirer la classe `btn-sm` et supprimer `sm:min-h-10 sm:min-w-10` sur les boutons hamburger.
+   - Fixer `class="btn btn-ghost btn-circle min-h-11 min-w-11 ..."` stable sur tous les écrans tactiles (< 840px).
+   - *Vérification* : `node scripts/verify-gates.mjs --targets`, `node scripts/verify-gates.mjs --nav-docking`.
+
+#### Lot 2 : Alignement des Oracles et Finitions Visuelles (🟡 Moyen / 🟢 Mineur)
+4. **Étape 2.1 — En-tête et Synchronisation des Pointages (`PresencesView.vue`)** :
+   - Ajouter le bouton « Actualiser » dans le slot `#actions` de `ManagerPageHeader` avec son icône de rafraîchissement et son spinner conditionnel.
+   - Ajuster l'appel `syncNow(user?.id)` pour concorder avec l'oracle G72.
+   - *Vérification* : `node scripts/verify-gates.mjs --presences-ui`, `node scripts/verify-gates.mjs --presences-localfirst`.
+5. **Étape 2.2 — Titre canonique de la Gestion des Sites (`LocationsView.vue`)** :
+   - Aligner l'en-tête sur `title="Gestion des Sites"` pour satisfaire G93.
+   - Remplacer les formulations « valider son arrivée » par « enregistrer son arrivée » (règle `09`).
+   - *Vérification* : `node scripts/verify-gates.mjs --manager-finish`, `node scripts/verify-gates.mjs --voice-conformance`.
+6. **Étape 2.3 — Ordre Responsive de la Page d'Accueil Employé (`HomeView.vue`)** :
+   - Appliquer les classes d'inversion croisée `order-2 md:order-1` / `order-1 md:order-2` sur DayCard et WeekSummaryCard.
+   - *Vérification* : `node scripts/verify-gates.mjs --responsive`.
+7. **Étape 2.4 — En-tête de la Page des Paramètres (`SettingsView.vue`)** :
+   - Ajouter l'en-tête de page `h1` ("Paramètres") avec sous-titre contextuel ("Compte, préférences et options de l'appareil").
+   - *Vérification* : `node scripts/verify-gates.mjs --settings-page`.
+
+#### Lot 3 : Fluidité Comportementale : Anti-FOUC Dexie & Réassurance Hors-Ligne (🟡 Moyen)
+8. **Étape 3.1 — Élimination du sursaut d'état vide (`DashboardView.vue`, `EmployeesView.vue`, `TeamsView.vue`)** :
+   - Distinguer l'état initial non chargé (`raw === null` ou `raw === undefined`) de l'état vide confirmé (`raw.length === 0`).
+   - Afficher un skeleton élégant (`animate-pulse`) ou un état de chargement léger tant que la première émission Dexie n'a pas été reçue.
+   - Ne rendre `ManagerEmptyState` que lorsque les données ont été interrogées et confirmées vides.
+   - *Vérification* : Relecture du cycle de vie et absence de flash au rafraîchissement.
+9. **Étape 3.2 — Réassurance Hors-Ligne sur le Pointage (`CheckInView.vue`, `CheckOutView.vue`)** :
+   - Afficher un encart d'information contextuel en cas de déconnexion réseau (`!navigator.onLine`), notifiant que le pointage est enregistré localement sur l'appareil et sera synchronisé automatiquement au retour de la connexion.
+   - Remplacer `transition-all` par `transition-transform duration-150 motion-reduce:transform-none` sur les boutons de validation.
+   - *Vérification* : `node scripts/verify-gates.mjs --voice-conformance`, `node scripts/verify-gates.mjs --motion-conformance`.
+10. **Étape 3.3 — Désambiguïsation de Navigation (`ManagerLayout.vue`)** :
+    - Renommer l'item de menu `/manager/employees` de « Équipe » en « Collaborateurs » (ou « Membres ») pour supprimer l'homonymie avec « Équipes ».
+    - *Vérification* : `node scripts/verify-gates.mjs --manager-nav-icons`, `node scripts/verify-gates.mjs --drawer-parity`.
+
+#### Lot 4 : Rigueur des Tokens M3 & Règle Éditoriale 09 (🟢 Mineur)
+11. **Étape 4.1 — Normalisation M3 de la Modale de Créneau (`AvailabilitiesView.vue`)** :
+    - Remplacer `shadow-lg` par `border border-base-300 shadow-sm`.
+    - Remplacer les 4 occurrences de `text-[11px]` par `text-xs`.
+    - Calibrer les boutons de pied de modale avec `min-h-11`, `active:scale-95 transition-transform duration-150` et icône SVG.
+    - *Vérification* : `node scripts/verify-gates.mjs --manager-grammar`.
+12. **Étape 4.2 — Nettoyage Typographique & Pluriels (`SyncIndicator.vue`, `SyncAlert.vue`)** :
+    - Supprimer `shadow-2xs` sur `SyncIndicator.vue`.
+    - Remplacer `text-[11px]` par `text-xs`.
+    - Corriger les parenthèses de pluriel `mutation(s)` en formulant en clair selon la règle `09` §3.
+    - Supprimer le couplage `btn-sm min-h-11` dans `SyncAlert.vue`.
+    - *Vérification* : `node scripts/verify-gates.mjs --shadows`, `node scripts/verify-gates.mjs --tone-rule-registered`.
+
+---
+
+### 3. Critères d'Arrêt & Validation Globale
+
+La tâche sera déclarée achevée lorsque :
+1. `node scripts/verify-gates.mjs --all` passera avec **100 % de succès** (0 échec sur les 50+ portes, notamment G1, G3, G4, G8, G63, G72, G88, G93).
+2. `npm run build` compilera sans erreur ni avertissement.
+3. Toutes les cibles tactiles critiques respecteront 44×44 px minimum.
+4. L'action de déconnexion sera protégée par `ConfirmModal`.
+5. Le clignotement d'état vide (FOUC) sur les vues de gestion sera éradiqué.
+
+### 4. Résultats d'Exécution
+- [x] Oracle G131 (WCAG AA Toast, SVG et ombres) : Validé par G1, G3, G4.
+- [x] Oracle G132 (Protection déconnexion et friction desktop) : Validé dans SettingsView.vue.
+- [x] Oracle G133 (Cibles tactiles hamburger 44px) : Validé sur ManagerLayout.vue et EmployeeLayout.vue.
+- [x] Oracle G134 (Oracles gestionnaire G63, G72, G93) : Validés à 100%.
+- [x] Oracle G135 (Skeletons anti-FOUC) : Validé sur DashboardView.vue, EmployeesView.vue et TeamsView.vue.
+- [x] Oracle G136 (Vérification intégrale et build) : Validé avec 100% de succès sur verify-gates.mjs --all et exit code 0 sur npm run build (117 modules).
+- [x] Cohérence des icônes : Lieux/sites harmonisés avec MapPin, équipes harmonisées avec tracé de groupe, séparation claire Collaborateurs (individuel) vs Équipes (collectif).
+
+

@@ -37,14 +37,24 @@ const checkInLocation = computed(() => {
 const isSubmitting = ref(false)
 const isSuccess = ref(false)
 const errorMessage = ref('')
+const isOnline = ref(typeof navigator !== 'undefined' ? navigator.onLine : true)
+const setOnline = () => { isOnline.value = navigator.onLine }
 
 onMounted(() => {
   startWatching()
   ensureLoaded()
+  if (typeof window !== 'undefined') {
+    window.addEventListener('online', setOnline)
+    window.addEventListener('offline', setOnline)
+  }
 })
 
 onUnmounted(() => {
   stopWatching()
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('online', setOnline)
+    window.removeEventListener('offline', setOnline)
+  }
 })
 
 // Détection automatique : vérifie si l'employé est sur le site de départ ou un site de l'entreprise
@@ -258,9 +268,22 @@ const handleConfirmCheckOut = async () => {
               <span>{{ errorMessage }}</span>
             </div>
 
+            <div
+              v-if="!isOnline"
+              class="flex items-center gap-2 p-2.5 rounded-m3-md bg-warning/10 border border-warning/30 text-xs text-warning-content"
+              role="status"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0 text-warning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <span>Hors ligne : votre pointage sera enregistré sur l'appareil et synchronisé au retour de la connexion.</span>
+            </div>
+
             <button
               type="button"
-              class="btn w-full text-sm sm:text-base font-bold min-h-12 sm:min-h-13 shadow-xs rounded-m3-md active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-offset-2"
+              class="btn w-full text-sm sm:text-base font-bold min-h-12 sm:min-h-13 shadow-xs rounded-m3-md active:scale-95 transition-transform duration-150 motion-reduce:transform-none focus-visible:ring-2 focus-visible:ring-offset-2"
               :class="[
                 isSuccess
                   ? 'btn-success text-success-content focus-visible:ring-success'

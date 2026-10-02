@@ -7,6 +7,7 @@ import { useSyncEngine } from '../composables/useSyncEngine'
 import { useToast } from '../composables/useToast'
 import ThemeToggle from '../components/shared/ThemeToggle.vue'
 import PwaInstallCard from '../components/shared/PwaInstallCard.vue'
+import ConfirmModal from '../components/shared/ConfirmModal.vue'
 import { useDevicePermissions } from '../composables/useDevicePermissions'
 
 const { navigate } = useRouter()
@@ -134,6 +135,12 @@ const handlePasswordSubmit = async () => {
   }
 }
 
+const isConfirmLogoutOpen = ref(false)
+
+const confirmLogout = async () => {
+  await handleLogout()
+}
+
 const handleLogout = async () => {
   isSigningOut.value = true
   try {
@@ -141,6 +148,7 @@ const handleLogout = async () => {
     navigate('/login')
   } finally {
     isSigningOut.value = false
+    isConfirmLogoutOpen.value = false
   }
 }
 </script>
@@ -446,9 +454,9 @@ const handleLogout = async () => {
       <p class="text-xs text-base-content/60">Vous devrez saisir vos identifiants pour revenir.</p>
       <button
         type="button"
-        class="btn btn-error btn-outline rounded-m3-sm font-bold min-h-11 gap-2 w-full active:scale-95 transition-transform duration-150 focus-visible:outline-2 focus-visible:outline-error"
+        class="btn btn-error btn-outline rounded-m3-sm font-bold min-h-11 gap-2 w-full sm:max-w-64 active:scale-95 transition-transform duration-150 focus-visible:outline-2 focus-visible:outline-error"
         :disabled="isSigningOut"
-        @click="handleLogout"
+        @click="isConfirmLogoutOpen = true"
       >
         <span v-if="isSigningOut" class="loading loading-spinner loading-xs"></span>
         <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -458,6 +466,19 @@ const handleLogout = async () => {
         </svg>
         <span>Se déconnecter</span>
       </button>
+
+      <ConfirmModal
+        :open="isConfirmLogoutOpen"
+        title="Déconnexion"
+        message="Êtes-vous certain de vouloir vous déconnecter de votre session sur cet appareil ?"
+        confirm-text="Se déconnecter"
+        cancel-text="Annuler"
+        confirm-class="btn-error"
+        :loading="isSigningOut"
+        @confirm="confirmLogout"
+        @cancel="isConfirmLogoutOpen = false"
+        @update:open="isConfirmLogoutOpen = $event"
+      />
     </section>
   </div>
 </template>

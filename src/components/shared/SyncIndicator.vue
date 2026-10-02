@@ -55,8 +55,8 @@ const statusText = computed(() => {
   <button
     v-if="compact"
     type="button"
-    class="inline-flex items-center gap-1.5 h-7 min-h-7 px-2.5 rounded-full border border-base-300/70 bg-base-100/75 hover:bg-base-200/70 active:scale-95 transition-all text-base-content/75 hover:text-base-content cursor-pointer shadow-2xs select-none"
-    :title="!isOnline ? 'Terminal déconnecté d\'Internet (stockage local actif)' : pendingCount > 0 ? `${pendingCount} mutation(s) en attente de synchronisation (cliquer pour forcer)` : 'Données synchronisées avec le serveur'"
+    class="inline-flex items-center gap-1.5 h-7 min-h-7 px-2.5 rounded-full border border-base-300/70 bg-base-100/75 hover:bg-base-200/70 active:scale-95 transition-all text-base-content/75 hover:text-base-content cursor-pointer select-none"
+    :title="!isOnline ? 'Terminal déconnecté d\'Internet (stockage local actif)' : pendingCount > 0 ? (pendingCount > 1 ? `${pendingCount} modifications en attente de synchronisation (cliquer pour forcer)` : '1 modification en attente de synchronisation (cliquer pour forcer)') : 'Données synchronisées avec le serveur'"
     :aria-label="`Statut réseau : ${statusText}`"
     @click="triggerSync"
   >
@@ -72,7 +72,7 @@ const statusText = computed(() => {
     ></span>
 
     <Transition name="fade-fast" mode="out-in">
-      <span :key="statusText" class="text-[11px] font-medium leading-none">{{ statusText }}</span>
+      <span :key="statusText" class="text-xs font-medium leading-none">{{ statusText }}</span>
     </Transition>
   </button>
 
@@ -87,7 +87,7 @@ const statusText = computed(() => {
       'badge-success border-success/40 bg-success/10 text-success': isOnline && pendingCount === 0 && !isSyncing,
       'badge-info border-info/40 bg-info/10 text-info': isOnline && isSyncing
     }"
-    :title="!isOnline ? 'Terminal hors ligne' : pendingCount > 0 ? `${pendingCount} mutation(s) en attente` : 'Données synchronisées (cliquer pour forcer)'"
+    :title="!isOnline ? 'Terminal hors ligne' : pendingCount > 0 ? (pendingCount > 1 ? `${pendingCount} modifications en attente` : '1 modification en attente') : 'Données synchronisées (cliquer pour forcer)'"
     aria-label="État de synchronisation"
     @click="triggerSync"
   >

@@ -18,13 +18,15 @@ const rawEmployees = useLiveQuery(async () => {
   return await db.profiles
     .filter((p) => !p.deleted_at)
     .toArray()
-}, [])
+})
 
 const rawTeams = useLiveQuery(async () => {
   return await db.teams
     .filter((t) => !t.deleted_at)
     .toArray()
-}, [])
+})
+
+const isLoading = computed(() => rawEmployees.value === undefined || rawTeams.value === undefined)
 
 // Recherche et filtres : la liste complète peut être longue, le gestionnaire doit y entrer par le nom.
 const searchQuery = ref('')
@@ -369,8 +371,22 @@ const confirmArchive = async () => {
       </div>
     </div>
 
+    <!-- Skeleton de chargement anti-FOUC -->
+    <div v-if="isLoading" class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg p-5 animate-pulse flex flex-col gap-4" aria-busy="true" aria-label="Chargement des collaborateurs">
+      <div v-for="i in 4" :key="i" class="flex items-center justify-between py-2 border-b border-base-300/40 last:border-b-0">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-full bg-base-300 skeleton"></div>
+          <div class="flex flex-col gap-1.5">
+            <div class="h-4 bg-base-300 rounded-m3-xs w-36 skeleton"></div>
+            <div class="h-3 bg-base-300 rounded-m3-xs w-24 skeleton"></div>
+          </div>
+        </div>
+        <div class="h-6 bg-base-300 rounded-m3-xs w-20 skeleton"></div>
+      </div>
+    </div>
+
     <ManagerEmptyState
-      v-if="!filteredEmployees.length"
+      v-else-if="!filteredEmployees.length"
       :icon="emptyState.icon"
       :title="emptyState.title"
       :message="emptyState.message"

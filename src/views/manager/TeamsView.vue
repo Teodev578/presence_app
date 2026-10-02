@@ -21,13 +21,15 @@ const rawTeams = useLiveQuery(async () => {
   return await db.teams
     .filter((t) => !t.deleted_at)
     .toArray()
-}, [])
+})
 
 const rawProfiles = useLiveQuery(async () => {
   return await db.profiles
     .filter((p) => !p.deleted_at && p.is_active !== false)
     .toArray()
-}, [])
+})
+
+const isLoading = computed(() => rawTeams.value === undefined || rawProfiles.value === undefined)
 
 // Jointure locale réactive entre équipes et profils
 const teams = computed(() => {
@@ -244,11 +246,11 @@ const confirmArchive = async () => {
       subtitle="Regroupez les personnes par pôle, atelier ou chantier"
     >
       <template #icon>
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
-          <line x1="9" y1="22" x2="9" y2="2"></line>
-          <line x1="15" y1="22" x2="15" y2="2"></line>
-          <line x1="4" y1="12" x2="20" y2="12"></line>
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+          <circle cx="9" cy="7" r="4"></circle>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
         </svg>
       </template>
 
@@ -285,8 +287,25 @@ const confirmArchive = async () => {
       </fieldset>
     </div>
 
+    <!-- Skeleton de chargement anti-FOUC -->
+    <div v-if="isLoading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4" aria-busy="true" aria-label="Chargement des équipes">
+      <div v-for="i in 3" :key="i" class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg p-5 flex flex-col gap-3 animate-pulse">
+        <div class="flex items-center justify-between pb-3 border-b border-base-300/40">
+          <div class="h-5 bg-base-300 rounded-m3-xs w-32"></div>
+          <div class="h-4 bg-base-300 rounded-full w-20"></div>
+        </div>
+        <div class="flex gap-2 py-2">
+          <div class="h-6 bg-base-300 rounded-m3-xs w-24"></div>
+          <div class="h-6 bg-base-300 rounded-m3-xs w-20"></div>
+        </div>
+        <div class="flex justify-end gap-2 pt-2 border-t border-base-300/40">
+          <div class="h-8 bg-base-300 rounded-m3-xs w-20"></div>
+        </div>
+      </div>
+    </div>
+
     <ManagerEmptyState
-      v-if="!sortedTeams.length"
+      v-else-if="!sortedTeams.length"
       :icon="emptyState.icon"
       :title="emptyState.title"
       :message="emptyState.message"
@@ -302,11 +321,11 @@ const confirmArchive = async () => {
       >
         <div class="flex items-center justify-between gap-2 border-b border-base-300/60 pb-3">
           <div class="flex items-center gap-2 min-w-0">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
-              <line x1="9" y1="22" x2="9" y2="2"></line>
-              <line x1="15" y1="22" x2="15" y2="2"></line>
-              <line x1="4" y1="12" x2="20" y2="12"></line>
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
             </svg>
             <h3 class="font-bold text-base text-base-content truncate">{{ team.name }}</h3>
           </div>

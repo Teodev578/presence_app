@@ -46,7 +46,7 @@ const label = computed(() => (state.value === 'offline' ? 'Hors ligne' : `${pend
 const title = computed(() =>
   state.value === 'offline'
     ? 'Terminal déconnecté d\u2019Internet, stockage local actif'
-    : `${pendingCount.value} mutation(s) en attente, cliquer pour forcer la synchronisation`
+    : `${pendingCount.value > 1 ? `${pendingCount.value} modifications en attente` : '1 modification en attente'}, cliquer pour forcer la synchronisation`
 )
 
 const triggerSync = () => {
@@ -67,6 +67,6 @@ const triggerSync = () => {
     @click="triggerSync"
   >
     <span class="inline-block w-1.5 h-1.5 rounded-full bg-current shrink-0"></span>
-    <span class="text-[11px] sm:text-xs font-medium leading-none">{{ label }}</span>
+    <span class="text-xs font-medium leading-none">{{ label }}</span>
   </button>
 </template>

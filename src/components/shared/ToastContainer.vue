@@ -14,7 +14,7 @@ const { toasts, dismissToast } = useToast()
         v-for="t in toasts"
         :key="t.id"
         role="alert"
-        class="alert text-xs sm:text-sm py-2.5 px-3.5 rounded-m3-md shadow-md border pointer-events-auto flex items-center justify-between gap-3 backdrop-blur-md"
+        class="alert text-xs sm:text-sm py-2.5 px-3.5 rounded-m3-md border border-base-300 shadow-sm pointer-events-auto flex items-center justify-between gap-3 backdrop-blur-md"
         :class="{
           'alert-success text-success-content border-success/40 bg-success/90': t.type === 'success',
           'alert-error text-error-content border-error/40 bg-error/90': t.type === 'error',
@@ -25,11 +25,24 @@ const { toasts, dismissToast } = useToast()
         <span class="flex-1 font-medium leading-snug">{{ t.message }}</span>
         <button
           type="button"
-          class="btn btn-ghost btn-circle btn-xs shrink-0 opacity-80 hover:opacity-100 hover:bg-black/15 text-current"
+          class="btn btn-ghost btn-circle min-h-11 min-w-11 shrink-0 opacity-80 hover:opacity-100 hover:bg-black/15 text-current focus-visible:outline-2 focus-visible:outline-primary"
           aria-label="Fermer la notification"
           @click="dismissToast(t.id)"
         >
-          ✕
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="w-4 h-4 shrink-0"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <line x1="18" y1="6" x2="18" y2="6"></line>
+            <line x1="6" y1="18" x2="18" y2="18"></line>
+          </svg>
         </button>
       </div>
     </TransitionGroup>
@@ -39,7 +52,7 @@ const { toasts, dismissToast } = useToast()
 <style scoped>
 .toast-slide-enter-active,
 .toast-slide-leave-active {
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .toast-slide-enter-from {
   opacity: 0;

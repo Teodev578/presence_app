@@ -23,15 +23,17 @@ const todayLabel = computed(() => {
 
 // Lecture réactive depuis Dexie. L'écran ne tire rien du réseau : l'engine rapatrie,
 // Dexie expose, la vue se rafraîchit seule sans flash de chargement.
-const profileRows = useLiveQuery(async () => db.profiles.toArray(), [])
+const profileRows = useLiveQuery(async () => db.profiles.toArray())
 const presenceRows = useLiveQuery(async () =>
   db.presences
     .where('work_date')
     .equals(todayStr)
     .filter((p) => !p.deleted_at)
-    .toArray(),
-[])
-const localLocations = useLiveQuery(async () => db.locations.toArray(), [])
+    .toArray()
+)
+const localLocations = useLiveQuery(async () => db.locations.toArray())
+
+const isLoading = computed(() => presenceRows.value === undefined || profileRows.value === undefined)
 
 const totalEmployees = computed(() =>
   (profileRows.value || []).filter((p) => p.is_active !== false && !p.deleted_at).length
@@ -179,8 +181,22 @@ const goToPresences = () => navigate('/manager/presences')
         <span class="badge badge-primary badge-sm font-semibold shrink-0">{{ presencesToday.length === 1 ? '1 pointage' : `${presencesToday.length} pointages` }}</span>
       </div>
 
+      <!-- Skeleton de chargement anti-FOUC -->
+      <div v-if="isLoading" class="p-6 flex flex-col gap-3 animate-pulse" aria-busy="true" aria-label="Chargement des pointages">
+        <div v-for="i in 3" :key="i" class="flex items-center justify-between py-2 border-b border-base-300/40 last:border-b-0">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-base-300 skeleton"></div>
+            <div class="flex flex-col gap-1.5">
+              <div class="h-4 bg-base-300 rounded-m3-xs w-32 skeleton"></div>
+              <div class="h-3 bg-base-300 rounded-m3-xs w-20 skeleton"></div>
+            </div>
+          </div>
+          <div class="h-6 bg-base-300 rounded-m3-xs w-16 skeleton"></div>
+        </div>
+      </div>
+
       <ManagerEmptyState
-        v-if="!presencesToday.length"
+        v-else-if="!presencesToday.length"
         bare
         icon="calendar"
         title="Aucun pointage aujourd'hui"

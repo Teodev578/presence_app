@@ -812,7 +812,7 @@ const goToPresences = (dateStr) => {
                         <span>Non pointé</span>
                       </span>
                       <span
-                        class="text-[11px] font-mono leading-tight"
+                        class="text-xs font-mono leading-tight"
                         :class="getScheduledHours(emp, d.id).isCustom ? 'text-primary font-bold' : 'text-warning/80 font-medium'"
                         :title="getScheduledHours(emp, d.id).isCustom ? 'Horaires aménagés pour cette journée' : 'Horaires habituels'"
                       >
@@ -838,7 +838,7 @@ const goToPresences = (dateStr) => {
                         ○ En attente
                       </span>
                       <span
-                        class="text-[11px] font-mono leading-tight"
+                        class="text-xs font-mono leading-tight"
                         :class="getScheduledHours(emp, d.id).isCustom ? 'text-primary font-bold' : 'text-primary font-medium'"
                         :title="getScheduledHours(emp, d.id).isCustom ? 'Horaires aménagés pour cette journée' : 'Horaires habituels'"
                       >
@@ -867,7 +867,7 @@ const goToPresences = (dateStr) => {
                         <span>Prévu</span>
                       </span>
                       <span
-                        class="text-[11px] font-mono leading-tight"
+                        class="text-xs font-mono leading-tight"
                         :class="getScheduledHours(emp, d.id).isCustom ? 'text-primary font-bold' : 'text-base-content/60'"
                         :title="getScheduledHours(emp, d.id).isCustom ? 'Horaires aménagés pour cette journée' : 'Horaires habituels'"
                       >
@@ -885,7 +885,7 @@ const goToPresences = (dateStr) => {
 
     <!-- Modale de détail interactive d'un créneau -->
     <div v-if="selectedCell" class="modal modal-open bg-black/40 backdrop-blur-xs z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
-      <div class="modal-box bg-base-100 border border-base-300/60 rounded-m3-lg p-5 max-w-md w-full shadow-lg flex flex-col gap-4">
+      <div class="modal-box bg-base-100 border border-base-300/60 rounded-m3-lg p-5 max-w-md w-full shadow-sm flex flex-col gap-4">
         <!-- En-tête de la modale -->
         <div class="flex items-start justify-between gap-3 border-b border-base-300/40 pb-3">
           <div>
@@ -978,7 +978,7 @@ const goToPresences = (dateStr) => {
               <span v-if="getActiveAvailability(selectedCell.employee.id, selectedCell.dayNumber)?.start_time || getActiveAvailability(selectedCell.employee.id, selectedCell.dayNumber)?.end_time" class="badge badge-primary badge-xs rounded-m3-xs font-semibold">
                 Aménagé
               </span>
-              <span v-else class="text-[11px] text-base-content/50 italic">
+              <span v-else class="text-xs text-base-content/50 italic">
                 Horaire habituel
               </span>
             </div>
@@ -1037,15 +1037,19 @@ const goToPresences = (dateStr) => {
 
         <!-- Pied d'action -->
         <div class="flex items-center justify-end gap-2 pt-2 border-t border-base-300/40">
-          <button type="button" class="btn btn-ghost rounded-m3-sm" @click="closeCellDetail">
+          <button type="button" class="btn btn-ghost rounded-m3-sm min-h-11 active:scale-95 transition-transform duration-150 motion-reduce:transform-none" @click="closeCellDetail">
             Fermer
           </button>
           <button
             type="button"
-            class="btn btn-primary rounded-m3-sm font-semibold"
+            class="btn btn-primary rounded-m3-sm font-semibold min-h-11 flex items-center gap-1.5 active:scale-95 transition-transform duration-150 motion-reduce:transform-none"
             @click="goToPresences(selectedCell.dateStr)"
           >
-            Consulter les pointages →
+            <span>Consulter les pointages</span>
+            <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
           </button>
         </div>
       </div>
