@@ -18,6 +18,7 @@ import CheckInView from './views/employee/CheckInView.vue'
 import CheckOutView from './views/employee/CheckOutView.vue'
 import EmployeeAvailabilitiesView from './views/employee/AvailabilitiesView.vue'
 import PendingApprovalView from './views/employee/PendingApprovalView.vue'
+import ArchivedAccountView from './views/employee/ArchivedAccountView.vue'
 
 import DashboardView from './views/manager/DashboardView.vue'
 import LocationsView from './views/manager/LocationsView.vue'
@@ -59,6 +60,9 @@ const isManager = computed(() => {
 })
 const isManagerRoute = computed(() => route.value.path.startsWith('/manager') && isManager.value)
 const isAuthenticated = computed(() => !!session.value)
+const isArchived = computed(() => {
+  return profile.value?.status === 'archived' || profile.value?.status === 'disabled'
+})
 const isPendingApproval = computed(() => {
   if (isManager.value) return false
   return profile.value?.status === 'pending_validation'
@@ -92,7 +96,13 @@ watch([() => route.value.path, isManager, () => profile.value, profileLoading], 
   <!-- Cas 1 : Non authentifié ou page de login explicite -->
   <LoginView v-else-if="!isAuthenticated || route.path === '/login'" />
 
-  <!-- Cas 2 : Espace Manager / Admin -->
+  <!-- Cas 2 : Compte archivé ou désactivé (accès opérationnel hermétiquement suspendu) -->
+  <ArchivedAccountView v-else-if="isArchived" />
+
+  <!-- Cas 3 : Collaborateur en attente de validation de compte -->
+  <PendingApprovalView v-else-if="isPendingApproval" />
+
+  <!-- Cas 4 : Espace Manager / Admin actif -->
   <ManagerLayout v-else-if="isManagerRoute">
     <Transition name="fade-slide" mode="out-in">
       <DashboardView v-if="route.path === '/manager'" />
@@ -107,10 +117,7 @@ watch([() => route.value.path, isManager, () => profile.value, profileLoading], 
     </Transition>
   </ManagerLayout>
 
-  <!-- Cas 3 : Collaborateur en attente de validation de compte -->
-  <PendingApprovalView v-else-if="isPendingApproval" />
-
-  <!-- Cas 4 : Espace Employé Mobile PWA validé -->
+  <!-- Cas 5 : Espace Collaborateur Mobile PWA validé et actif -->
   <EmployeeLayout v-else>
     <Transition name="fade-slide" mode="out-in">
       <HomeView v-if="route.path === '/employee' || route.path === '/'" />

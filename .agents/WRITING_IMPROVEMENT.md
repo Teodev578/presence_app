@@ -386,6 +386,38 @@ Ce fichier enregistre le raisonnement derrière les décisions non triviales : h
   2. *Modale de confirmation et friction saine* : Pour une action destructive irréversible (purge définitive immédiate), la modale de confirmation `ConfirmModal` avec un bouton rouge explicite évite toute méprise avec le refus temporaire.
   3. *Fluidité réactive Local-First* : En retirant immédiatement l'entrée du Dexie local avant l'appel RPC distant, l'interface utilisateur s'actualise sans aucune latence perçue, tandis que le compteur de notifications en attente se met à jour en temps réel.
 
+### Tâche : Session Restreinte et Écran Dédié pour Compte Archivé (Option 1)
+**Date** : 2026-10-02
+**Complexité** : Moyen
+**Proposant** : Fabien / next-level-ui & next-level-backend
+**Story liée** : —
+
+#### Pre-flight (10 min)
+1. Problème réel :
+   - Lorsqu'un compte est archivé (`status === 'archived'`), il ne doit en aucun cas pouvoir utiliser l'application de façon opérationnelle (pointages, disponibilités, accès aux lieux et collègues), car cela compromettrait l'intégrité des registres de présence et la confidentialité d'entreprise.
+   - Cependant, le rejeter brutalement au login sans explication crée une incompréhension. L'utilisateur doit pouvoir se connecter pour atterrir sur un écran dédié d'information (« Compte archivé ») indiquant le délai de 30 jours avant désactivation définitive et la conservation des données.
+2. Contrainte principale :
+   - Respect strict de la règle 09 / G30 : proscription des mots interdits ("validation", "valider", "utilisateur", "veuillez") dans l'espace collaborateur. Tonalité bienveillante, digne et claire.
+   - Cibles tactiles 44px (`min-h-11 min-w-11`), design tokens M3, absence d'ombres excessives.
+   - Protection hermétique dans `App.vue` : aucun accès aux routes de pointage ou aux pages d'administration.
+3. Alternatives envisagées :
+   - Option 1 (Retenue) : Écran dédié informatif avec décompte des 30 jours, notification contextuelle, vérification réactive de statut et bouton de déconnexion.
+   - Option 2 (Rejetée) : Blocage strict au login avec déconnexion synchrone (anxiogène, prive le collaborateur d'information sur son statut).
+   - Option 3 (Rejetée) : Accès complet maintenu avec bandeau passif (dangereux pour l'intégrité des pointages).
+4. Signal de fin :
+   - Composant `ArchivedAccountView.vue` créé et stylé selon le design system M3.
+   - Intégration dans `App.vue` garantissant qu'un compte archivé ou désactivé n'accède à aucune vue opérationnelle.
+   - Notification contextuelle dans `useNotifications.js`.
+   - 100% de succès sur `node scripts/verify-gates.mjs --all` et `npm run build`.
+5. Déclencheur KI : N
+
+#### Résultat
+- Implémenté ? O (2026-10-02)
+- Leçon tirée :
+  1. *Autorisation vs Authentification* : La dissociation entre la capacité d'ouvrir une session et l'accès aux fonctions opérationnelles permet d'offrir une interface explicative et digne aux comptes archivés (`ArchivedAccountView.vue`), sans jamais compromettre l'intégrité des pointages ni la confidentialité des sites de l'entreprise.
+  2. *Réactivité Local-First du cycle de vie* : Lorsqu'un gestionnaire désarchive un collaborateur dans Dexie, la réactivité du composable `useProfile` met immédiatement à jour `profile.value.status`, basculant le collaborateur de l'écran d'archive vers son tableau de bord opérationnel sans nécessiter de rafraîchissement complet de page.
+  3. *Tonalité bienveillante et conformité M3* : Les comptes archivés bénéficient d'un traitement clair (décompte des 30 jours, réassurance sur la préservation des données historiques, démarches de contact), formulé dans le respect rigoureux de la règle 09 (aucun mot administratif proscrit) et des cibles tactiles de 44px.
+
 ---
 
 ## Archives

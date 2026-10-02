@@ -76,6 +76,38 @@ export function useNotifications() {
           createdAt: d,
           unread: !dismissedNotificationIds.value.has(notifId),
         })
+      } else if (profile.value?.status === 'archived') {
+        const d = profile.value?.archived_at || Date.now()
+        const archivedTime = new Date(d).getTime()
+        const expiryTime = archivedTime + 30 * 24 * 60 * 60 * 1000
+        const diffDays = Math.ceil((expiryTime - Date.now()) / (24 * 60 * 60 * 1000))
+        const daysRemaining = Math.max(0, diffDays)
+
+        const notifId = `archived-self-${profile.value.id || user.value?.id}`
+        items.push({
+          id: notifId,
+          type: 'account_archived',
+          title: 'Compte archivé',
+          subtitle: 'Période de rétractation (30 jours)',
+          message: `Votre compte a été archivé. Il sera désactivé dans ${daysRemaining} jour${daysRemaining > 1 ? 's' : ''}. Vos données historiques restent conservées.`,
+          daysRemaining,
+          actionLabel: null,
+          createdAt: d,
+          unread: !dismissedNotificationIds.value.has(notifId),
+        })
+      } else if (profile.value?.status === 'disabled') {
+        const notifId = `disabled-self-${profile.value.id || user.value?.id}`
+        items.push({
+          id: notifId,
+          type: 'account_disabled',
+          title: 'Compte désactivé',
+          subtitle: 'Accès clos',
+          message: 'La période d’archivage est arrivée à échéance. Votre compte est désactivé et vos données historiques sont scrupuleusement conservées.',
+          daysRemaining: 0,
+          actionLabel: null,
+          createdAt: profile.value?.updated_at || Date.now(),
+          unread: !dismissedNotificationIds.value.has(notifId),
+        })
       }
     }
 
