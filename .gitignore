@@ -30,3 +30,4 @@ dist-ssr
 # Variables d'environnement locales (credentials)
 .env.local
 .env.*.local
+.agents/mcp.json
