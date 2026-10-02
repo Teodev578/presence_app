@@ -1,5 +1,6 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
+import { useRouter } from '../../router'
 import { db, useLiveQuery } from '../../lib/db'
 import { generateUUIDv7 } from '../../lib/uuidv7'
 import { useAuth } from '../../composables/useAuth'
@@ -9,6 +10,7 @@ import ManagerPageHeader from '../../components/manager/ManagerPageHeader.vue'
 import ManagerEmptyState from '../../components/manager/ManagerEmptyState.vue'
 import { useToast } from '../../composables/useToast'
 
+const { route } = useRouter()
 const { user } = useAuth()
 const { refreshPendingCount, syncNow } = useSyncEngine()
 const { success, error: toastError } = useToast()
@@ -31,8 +33,17 @@ const isLoading = computed(() => rawEmployees.value === undefined || rawTeams.va
 // Recherche et filtres
 const searchQuery = ref('')
 const filterRole = ref('all') // 'all', 'employee', 'manager', 'admin'
-const filterStatus = ref('all') // 'all', 'active', 'pending_validation', 'archived', 'disabled'
+const filterStatus = ref(route.value.query.status || 'all') // 'all', 'active', 'pending_validation', 'archived', 'disabled'
 const filterTeam = ref('')
+
+watch(
+  () => route.value.query.status,
+  (newStatus) => {
+    if (newStatus) {
+      filterStatus.value = newStatus
+    }
+  }
+)
 
 // Jointure locale réactive entre profils et équipes
 const employees = computed(() => {

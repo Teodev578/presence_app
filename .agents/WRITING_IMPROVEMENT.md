@@ -322,6 +322,39 @@ Ce fichier enregistre le raisonnement derrière les décisions non triviales : h
   3. *Local-First et Dexie* : L'évolution du schéma local vers `version(3)` avec index `status` et hook `.upgrade()` rétroactif assure la continuité de service pour les comptes préexistants sans perturber la file d'outbox.
   4. *Règle 09 côté collaborateur* : L'expérience d'attente d'intégration gagne en qualité lorsqu'elle bannit le lexique administratif ("validation") au profit de termes clairs et orientés accompagnement ("confirmation", "activation").
 
+### Tâche : Notifications de Cycle de Vie (Comptes en Attente pour Managers et Collaborateurs)
+**Date** : 2026-10-02
+**Complexité** : Moyen
+**Proposant** : Fabien / next-level-ui & next-level-backend
+**Story liée** : —
+
+#### Pre-flight (10 min)
+1. Problème réel :
+   - Les managers et administrateurs ne sont pas informés activement dans l'interface de l'existence de nouveaux comptes en attente de validation (`status === 'pending_validation'`), ce qui risque de laisser expirer le délai des 7 jours sans action.
+   - Les collaborateurs ayant créé leur compte n'ont pas d'alerte dans leurs notifications précisant que le compte n'est pas encore actif, qu'il expirera dans 7 jours, et les invitant à solliciter leurs supérieurs pour activer leur profil.
+2. Contrainte principale :
+   - Dynamisme et réactivité locale (Local-First via Dexie `useLiveQuery` pour les managers).
+   - Règle 09 / G30 stricte côté collaborateur : bannissement des termes « validation », « valider », « utilisateur » et « veuillez » dans l'espace collaborateur.
+   - Respect strict des cibles tactiles 44px (`min-h-11 min-w-11`), des tokens M3 et de l'accessibilité dans `NotificationBell.vue`.
+3. Alternatives envisagées :
+   - Option A : Notification par bandeau toast éphémère à chaque connexion. Rejetée car intrusive, non persistante et perturbante pour le flux utilisateur.
+   - Option B : Table SQL dédiée `notifications` avec polling distant. Rejetée (déconseillée) car surdimensionnée pour ce besoin : les états sont déjà déductibles de manière réactive dans Dexie (`status === 'pending_validation'`) sans alourdir le schéma ni consommer de bande passante.
+   - Option C : Composable `useNotifications.js` dérivant dynamiquement les alertes depuis Dexie pour les managers et depuis le profil courant pour les collaborateurs, couplé à un badge interactif et à des fiches d'action dans `NotificationBell.vue`. **Option retenue (Recommandée)** car réactive, 100% Local-First et sans latence.
+4. Signal de fin :
+   - `NotificationBell.vue` affiche une pastille rouge avec le compteur de comptes en attente pour les managers.
+   - La boîte de dialogue détaille chaque compte en attente (nom, email, jours restants) et propose un bouton d'action directe « Examiner dans l'équipe ».
+   - Pour l'employé, la cloche (présente sur `PendingApprovalView` et `EmployeeLayout`) affiche une notification d'activation invitant à solliciter ses supérieurs avant l'échéance des 7 jours.
+   - 100% de réussite sur `verify-gates.mjs --all` et `npm run build`.
+5. Déclencheur KI : N
+
+#### Résultat
+- Implémenté ? O (2026-10-02)
+- Leçon tirée :
+  1. *Réactivité Local-First* : Dériver dynamiquement les alertes dans `useNotifications.js` via `useLiveQuery` sur `db.profiles` évite d'ajouter une table distante `notifications`, assurant une mise à jour instantanée sans polling ni surcharge réseau.
+  2. *Synergie Navigation-Filtres* : L'écoute réactive de `route.query.status` dans `EmployeesView.vue` permet aux notifications de router directement vers le bon filtre contextuel (`pending_validation`) avec une transition fluide.
+  3. *Cohérence des cibles tactiles M3* : Les dialogues popover d'en-tête exigent une vigilance sur chaque bouton d'action secondaire (tel que "Tout marquer lu") pour préserver la cible minimale de 44px (`min-h-11`).
+  4. *Conformité éditoriale G30* : Les notifications destinées aux collaborateurs doivent formuler le rappel des délais et la sollicitation de la hiérarchie avec une tonalité sobre et constructive, sans jamais employer le lexique administratif proscrit ("validation", "veuillez").
+
 ---
 
 ## Archives

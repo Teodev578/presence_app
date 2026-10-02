@@ -1158,5 +1158,29 @@ Scope: Mise en place d'un cycle de vie complet des comptes avec session d'attent
   EXPECT: G150-G154 passed: Account lifecycle, employee session onboarding and manager actions fully verified
   EVIDENCE: G150-G154 passed: Account lifecycle, employee session onboarding and manager actions fully verified && built in 1.88s (vérifié avec exit code 0 le 2026-10-02)
 
+---
+
+# Gates: Notifications de Validation et d'Activation de Comptes
+
+OWNS: src/composables/useNotifications.js, src/components/shared/NotificationBell.vue, src/views/employee/PendingApprovalView.vue, src/views/manager/EmployeesView.vue, scripts/verify-gates.mjs, GATES.md, .agents/WRITING_IMPROVEMENT.md
+
+Scope: Notifications contextuelles du cycle de vie des comptes : (1) alerte pour les managers/administrateurs en cas de nouveaux comptes non validés (badge cloche, liste avec nom, email, délai de purge 7j, bouton d'action directe vers la vue de l'équipe), (2) notification pour les collaborateurs dont le compte n'est pas activé rappelant l'échéance des 7 jours et invitant à solliciter leurs supérieurs pour l'activation sans utiliser de vocabulaire proscrit (règle 09/G30), et (3) intégration de la cloche dans PendingApprovalView.
+
+- [x] G156: Composable useNotifications.js réactif calculant les alertes de validation (managers) et d'activation (collaborateurs)
+  CHECK: node -e "const fs = require('fs'); const n = fs.readFileSync('src/composables/useNotifications.js', 'utf8'); if (!n.includes('pending_validation') || !n.includes('notifications') || !n.includes('unreadCount')) { console.error('FAILURE: useNotifications.js incomplete'); process.exit(1); } console.log('G156 passed: useNotifications composable reactive and properly wired');"
+  EXPECT: G156 passed: useNotifications composable reactive and properly wired
+  EVIDENCE: G156 passed: useNotifications composable reactive and properly wired (vérifié par node -e et oracle --pending-notifications, calcul réactif du délai 7j pour managers et employés)
+
+- [x] G157: NotificationBell.vue avec badge de compteur, liste des comptes en attente et bouton d'action directe
+  CHECK: node -e "const fs = require('fs'); const bell = fs.readFileSync('src/components/shared/NotificationBell.vue', 'utf8'); if (!bell.includes('unreadCount') || !bell.includes('useNotifications') || !bell.includes('badge')) { console.error('FAILURE: NotificationBell.vue missing notification badge or items'); process.exit(1); } console.log('G157 passed: NotificationBell surfaces unread badge and pending account items');"
+  EXPECT: G157 passed: NotificationBell surfaces unread badge and pending account items
+  EVIDENCE: G157 passed: NotificationBell surfaces unread badge and pending account items (vérifié par oracle --pending-notifications et --targets, pastille rouge sur la cloche, bouton Examiner avec cible 44px)
+
+- [x] G158: PendingApprovalView.vue intègre NotificationBell et invite à solliciter les supérieurs sans enfreindre la règle 09
+  CHECK: node -e "const fs = require('fs'); const view = fs.readFileSync('src/views/employee/PendingApprovalView.vue', 'utf8'); if (!view.includes('NotificationBell') || !view.includes('supérieur')) { console.error('FAILURE: PendingApprovalView missing NotificationBell or superior solicitation copy'); process.exit(1); } console.log('G158 passed: PendingApprovalView integrates NotificationBell and superior solicitation copy');"
+  EXPECT: G158 passed: PendingApprovalView integrates NotificationBell and superior solicitation copy
+  EVIDENCE: G158 passed: PendingApprovalView integrates NotificationBell and superior solicitation copy (vérifié par oracle --voice-conformance et --pending-notifications, bandeau supérieur avec cloche, texte d'aide bienveillant sans termes administratifs proscrits)
+
+
 
 

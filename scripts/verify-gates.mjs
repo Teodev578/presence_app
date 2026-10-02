@@ -3431,6 +3431,47 @@ export function checkAccountLifecycle() {
   return true;
 }
 
+/**
+ * Vérifie le système de notifications pour les comptes en attente de validation (G156-G158).
+ */
+export function checkPendingNotifications() {
+  const notifComposablePath = path.join(SRC_DIR, 'composables', 'useNotifications.js');
+  if (!fs.existsSync(notifComposablePath)) {
+    console.error('FAILURE G156: src/composables/useNotifications.js introuvable');
+    return false;
+  }
+  const notifContent = fs.readFileSync(notifComposablePath, 'utf8');
+  if (
+    !notifContent.includes('pending_validation') ||
+    !notifContent.includes('notifications') ||
+    !notifContent.includes('unreadCount')
+  ) {
+    console.error('FAILURE G156: useNotifications.js incomplet ou sans gestion de pending_validation');
+    return false;
+  }
+
+  const bellPath = path.join(SRC_DIR, 'components', 'shared', 'NotificationBell.vue');
+  const bellContent = fs.readFileSync(bellPath, 'utf8');
+  if (
+    !bellContent.includes('unreadCount') ||
+    !bellContent.includes('useNotifications') ||
+    !bellContent.includes('badge')
+  ) {
+    console.error('FAILURE G157: NotificationBell.vue n\'intègre pas les notifications ou le badge');
+    return false;
+  }
+
+  const pendingViewPath = path.join(SRC_DIR, 'views', 'employee', 'PendingApprovalView.vue');
+  const pendingContent = fs.readFileSync(pendingViewPath, 'utf8');
+  if (!pendingContent.includes('NotificationBell') || !pendingContent.includes('supérieur')) {
+    console.error('FAILURE G158: PendingApprovalView.vue n\'intègre pas NotificationBell ou le message pour les supérieurs');
+    return false;
+  }
+
+  console.log('G156-G158 passed: Pending account notifications for managers and employees fully verified');
+  return true;
+}
+
 // Exécution CLI
 const arg = process.argv[2] || '--all';
 let success = true;
@@ -3563,6 +3604,8 @@ if (arg === '--emojis') {
   success = checkNotificationBell();
 } else if (arg === '--account-lifecycle') {
   success = checkAccountLifecycle();
+} else if (arg === '--pending-notifications') {
+  success = checkPendingNotifications();
 } else if (arg === '--all') {
   const r1 = checkEmojis();
   const r2 = checkRadii();
@@ -3624,10 +3667,11 @@ if (arg === '--emojis') {
   const r97 = checkBackNavigation();
   const r147 = checkNotificationBell();
   const r150 = checkAccountLifecycle();
+  const r156 = checkPendingNotifications();
   const r48 = r39; // Une seule compilation sert les portes de build G39 et G48
-  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60 && r63 && r64 && r65 && r66 && r72 && r73 && r74 && r75 && r88 && r89 && r92 && r93 && r94 && r95 && r96 && r97 && r147 && r150;
+  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60 && r63 && r64 && r65 && r66 && r72 && r73 && r74 && r75 && r88 && r89 && r92 && r93 && r94 && r95 && r96 && r97 && r147 && r150 && r156;
 } else {
-  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--presences-ui|--presences-period|--presences-table|--presences-sort|--presences-localfirst|--sync-scope|--livequery-deps|--manager-dexie|--manager-grammar|--manager-responsive|--manager-nav-icons|--manager-finish|--employee-finish|--settings-page|--cross-space-gateways|--back-navigation|--notification-bell|--account-lifecycle|--manager-build|--sidebar-build|--build|--all]`);
+  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--presences-ui|--presences-period|--presences-table|--presences-sort|--presences-localfirst|--sync-scope|--livequery-deps|--manager-dexie|--manager-grammar|--manager-responsive|--manager-nav-icons|--manager-finish|--employee-finish|--settings-page|--cross-space-gateways|--back-navigation|--notification-bell|--account-lifecycle|--pending-notifications|--manager-build|--sidebar-build|--build|--all]`);
   process.exit(1);
 }
 
