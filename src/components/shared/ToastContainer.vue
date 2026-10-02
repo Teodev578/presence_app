@@ -6,7 +6,7 @@ const { toasts, dismissToast } = useToast()
 
 <template>
   <div
-    class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-3 sm:px-0 pt-[var(--safe-top,0px)]"
+    class="fixed top-16 lg:top-20 right-4 sm:right-6 z-50 flex flex-col gap-2 max-w-[calc(100vw-2rem)] sm:max-w-sm w-full pointer-events-none pt-[var(--safe-top,0px)]"
     aria-live="polite"
   >
     <TransitionGroup name="toast-slide">
@@ -40,8 +40,8 @@ const { toasts, dismissToast } = useToast()
             stroke-linejoin="round"
             aria-hidden="true"
           >
-            <line x1="18" y1="6" x2="18" y2="6"></line>
-            <line x1="6" y1="18" x2="18" y2="18"></line>
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>
         </button>
       </div>

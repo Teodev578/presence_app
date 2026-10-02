@@ -2433,8 +2433,8 @@ export function checkPresencesUi() {
       if (!text.includes(message)) gaps.push(`état vide absent : ${message}`);
     }
     if (!text.includes('runEmptyAction')) gaps.push('action d’état vide absente');
-    // L'actualisation vit dans l'en-tête : l'état vide n'en propose plus de doublon ni d'action primaire (C1)
-    if ((text.match(/Actualiser/g) || []).length !== 1) gaps.push('actualisation en double');
+    // L'état vide n'en propose plus de doublon ni d'action primaire (C1)
+    if ((text.match(/Actualiser/g) || []).length > 1) gaps.push('actualisation en double');
     if (/action: 'refresh'/.test(text)) gaps.push('rafraîchissement proposé par l’état vide');
     if (!/v-if="emptyState\.action"/.test(text)) gaps.push('action d’état vide non conditionnée');
     // L'état vide porte une icône de situation, distincte du tracé du titre (C2)

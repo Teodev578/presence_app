@@ -103,6 +103,23 @@ Ce fichier enregistre le raisonnement derrière les décisions non triviales : h
 #### Résultat
 - Implémenté ? O (Portes G131 à G136 validées, 100% de succès sur node scripts/verify-gates.mjs --all, compilation Vite sans erreur)
 
+### Tâche : Retrait du bouton Actualiser dans Contrôle des Présences
+**Date** : 2026-10-02
+**Complexité** : Moyen
+**Proposant** : Fabien
+**Story liée** : —
+
+#### Pre-flight (10 min)
+1. Problème réel : Présence d'un bouton « Actualiser » manuel redondant et encombrant dans l'en-tête de `PresencesView.vue`, alors que la réactivité des requêtes Dexie (`useLiveQuery`) et la synchronisation en arrière-plan maintiennent les données à jour en continu.
+2. Contrainte principale : L'oracle G63 vérifiait auparavant `(match(/Actualiser/g) || []).length !== 1` ; il doit vérifier l'absence de doublon (`> 1`) sans forcer la présence d'un bouton impératif sur un écran local-first.
+3. Alternative rejetée : Conserver le bouton en variante discrète `btn-ghost` ou `btn-circle` — rejetée car la philosophie de l'application est réactive locale, tout bouton d'actualisation impératif suggère faussement que les données ne sont pas à jour.
+4. Signal de fin : Bouton retiré de l'en-tête, compilation sans erreur, suite `verify-gates.mjs --all` verte (G63 et G72 validés).
+5. Déclencheur KI : N
+
+#### Résultat
+- Implémenté ? O (2026-10-02)
+- Leçon tirée : Les oracles de non-régression ne doivent pas imposer la présence de contrôles impératifs superflus lorsqu'un écran bascule en local-first réactif complet.
+
 ---
 
 ## Archives
