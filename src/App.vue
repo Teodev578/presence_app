@@ -17,6 +17,7 @@ import HomeView from './views/employee/HomeView.vue'
 import CheckInView from './views/employee/CheckInView.vue'
 import CheckOutView from './views/employee/CheckOutView.vue'
 import EmployeeAvailabilitiesView from './views/employee/AvailabilitiesView.vue'
+import PendingApprovalView from './views/employee/PendingApprovalView.vue'
 
 import DashboardView from './views/manager/DashboardView.vue'
 import LocationsView from './views/manager/LocationsView.vue'
@@ -58,6 +59,10 @@ const isManager = computed(() => {
 })
 const isManagerRoute = computed(() => route.value.path.startsWith('/manager') && isManager.value)
 const isAuthenticated = computed(() => !!session.value)
+const isPendingApproval = computed(() => {
+  if (isManager.value) return false
+  return profile.value?.status === 'pending_validation'
+})
 
 // Garde de navigation : interdit l'accès manager/dashboard aux employés seulement après confirmation du profil
 watch([() => route.value.path, isManager, () => profile.value, profileLoading], () => {
@@ -102,7 +107,10 @@ watch([() => route.value.path, isManager, () => profile.value, profileLoading], 
     </Transition>
   </ManagerLayout>
 
-  <!-- Cas 3 : Espace Employé Mobile PWA -->
+  <!-- Cas 3 : Collaborateur en attente de validation de compte -->
+  <PendingApprovalView v-else-if="isPendingApproval" />
+
+  <!-- Cas 4 : Espace Employé Mobile PWA validé -->
   <EmployeeLayout v-else>
     <Transition name="fade-slide" mode="out-in">
       <HomeView v-if="route.path === '/employee' || route.path === '/'" />

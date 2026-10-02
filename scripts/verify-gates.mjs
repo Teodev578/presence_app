@@ -3378,8 +3378,62 @@ export function checkNotificationBell() {
   return true;
 }
 
+export function checkAccountLifecycle() {
+  const upMigration = 'supabase/migrations/20261002220000_account_lifecycle_and_session_confirmation.sql';
+  const downMigration = 'supabase/migrations/20261002220000_account_lifecycle_and_session_confirmation_down.sql';
+  if (!fs.existsSync(upMigration) || !fs.existsSync(downMigration)) {
+    console.error('FAILURE G150: Migrations Supabase introuvables');
+    return false;
+  }
+  const upContent = fs.readFileSync(upMigration, 'utf8');
+  if (!upContent.includes('pending_validation') || !upContent.includes('cleanup_expired_profiles') || !upContent.includes('pg_cron')) {
+    console.error('FAILURE G150: Migration UP incomplète');
+    return false;
+  }
+
+  const dbPath = path.join(SRC_DIR, 'lib', 'db.js');
+  const tsPath = path.join(SRC_DIR, 'types', 'database.types.d.ts');
+  const dbContent = fs.readFileSync(dbPath, 'utf8');
+  const tsContent = fs.readFileSync(tsPath, 'utf8');
+  if (!dbContent.includes('this.version(3).stores') || !dbContent.includes('status') || !tsContent.includes('pending_validation')) {
+    console.error('FAILURE G151: Dexie version(3) ou types TypeScript incomplets');
+    return false;
+  }
+
+  const pendingViewPath = path.join(SRC_DIR, 'views', 'employee', 'PendingApprovalView.vue');
+  const appPath = path.join(SRC_DIR, 'App.vue');
+  if (!fs.existsSync(pendingViewPath)) {
+    console.error('FAILURE G152: PendingApprovalView.vue introuvable');
+    return false;
+  }
+  const pendingContent = fs.readFileSync(pendingViewPath, 'utf8');
+  const appContent = fs.readFileSync(appPath, 'utf8');
+  if (!pendingContent.includes('confirmation') || !pendingContent.includes('signOut') || !appContent.includes('PendingApprovalView')) {
+    console.error('FAILURE G152: PendingApprovalView ou câblage App.vue incomplets');
+    return false;
+  }
+
+  const empViewPath = path.join(SRC_DIR, 'views', 'manager', 'EmployeesView.vue');
+  const empContent = fs.readFileSync(empViewPath, 'utf8');
+  if (!empContent.includes('pending_validation') || !empContent.includes('confirmValidate') || !empContent.includes('confirmArchive') || !empContent.includes('confirmUnarchive')) {
+    console.error('FAILURE G153: EmployeesView.vue n\'intègre pas les actions de cycle de vie');
+    return false;
+  }
+
+  const profilePath = path.join(SRC_DIR, 'composables', 'useProfile.js');
+  const profileContent = fs.readFileSync(profilePath, 'utf8');
+  if (!profileContent.includes('isPendingApproval') || !profileContent.includes('isArchived') || !profileContent.includes('isDisabled')) {
+    console.error('FAILURE G154: useProfile.js n\'expose pas les helpers de cycle de vie');
+    return false;
+  }
+
+  console.log('G150-G154 passed: Account lifecycle, employee session onboarding and manager actions fully verified');
+  return true;
+}
+
 // Exécution CLI
-const arg = process.argv[2] || '--all';let success = true;
+const arg = process.argv[2] || '--all';
+let success = true;
 
 if (arg === '--emojis') {
   success = checkEmojis();
@@ -3507,6 +3561,8 @@ if (arg === '--emojis') {
   success = checkBuild('G39', 'production build succeeds with exit code 0');
 } else if (arg === '--notification-bell') {
   success = checkNotificationBell();
+} else if (arg === '--account-lifecycle') {
+  success = checkAccountLifecycle();
 } else if (arg === '--all') {
   const r1 = checkEmojis();
   const r2 = checkRadii();
@@ -3567,10 +3623,11 @@ if (arg === '--emojis') {
   const r96 = checkCrossSpaceGateways();
   const r97 = checkBackNavigation();
   const r147 = checkNotificationBell();
+  const r150 = checkAccountLifecycle();
   const r48 = r39; // Une seule compilation sert les portes de build G39 et G48
-  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60 && r63 && r64 && r65 && r66 && r72 && r73 && r74 && r75 && r88 && r89 && r92 && r93 && r94 && r95 && r96 && r97 && r147;
+  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60 && r63 && r64 && r65 && r66 && r72 && r73 && r74 && r75 && r88 && r89 && r92 && r93 && r94 && r95 && r96 && r97 && r147 && r150;
 } else {
-  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--presences-ui|--presences-period|--presences-table|--presences-sort|--presences-localfirst|--sync-scope|--livequery-deps|--manager-dexie|--manager-grammar|--manager-responsive|--manager-nav-icons|--manager-finish|--employee-finish|--settings-page|--cross-space-gateways|--back-navigation|--notification-bell|--manager-build|--sidebar-build|--build|--all]`);
+  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--presences-ui|--presences-period|--presences-table|--presences-sort|--presences-localfirst|--sync-scope|--livequery-deps|--manager-dexie|--manager-grammar|--manager-responsive|--manager-nav-icons|--manager-finish|--employee-finish|--settings-page|--cross-space-gateways|--back-navigation|--notification-bell|--account-lifecycle|--manager-build|--sidebar-build|--build|--all]`);
   process.exit(1);
 }
 

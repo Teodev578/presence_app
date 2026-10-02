@@ -300,4 +300,58 @@ Statut : Terminé et Validé (Portes G137 à G142 validées, build de production
 7. **Étape 7 : Vérification et Oracles déterministes** :
    - Validation de G137 à G142, tests `verify-gates.mjs` et compilation `npm run build`.
 
+---
+
+# Plan : Cycle de Vie des Comptes, Confirmation de Session et Archivage Réversible
+
+Date : 2026-10-02  
+Déclencheur : Demande utilisateur (« Met en place toutes tes recommandations ») suite à l'analyse d'architecture  
+Statut : Terminé et Validé (Portes G150 à G155 validées, build de production conforme, migration Supabase active)  
+Complexité : Élevée (Multi-fichiers, cross-layer : migration SQL, RLS, pg_cron, Dexie v3, sync engine, types TS, vues Vue 3)
+
+## 1. Périmètre & Fichiers cibles
+- `supabase/migrations/20261002220000_account_lifecycle_and_session_confirmation.sql` (Migration UP)
+- `supabase/migrations/20261002220000_account_lifecycle_and_session_confirmation_down.sql` (Migration DOWN)
+- `src/types/database.types.d.ts` (Types TypeScript de `profiles`)
+- `src/lib/db.js` (Incrément version 3 Dexie.js + préservation des versions 1 et 2)
+- `src/composables/useSyncEngine.js` (Pull incrémental et push outbox pour statuts)
+- `src/composables/useProfile.js` & `src/composables/useAuth.js` (Exposition du statut et contrôles JIT)
+- `src/views/employee/PendingApprovalView.vue` (Nouvelle vue d'attente d'intégration collaborateur)
+- `src/App.vue` (Routage conditionnel de la session collaborateur selon le statut)
+- `src/views/manager/EmployeesView.vue` (Filtres de statut, boutons valider, archiver, désarchiver, décompte temporel)
+- `GATES.md` & `scripts/verify-gates.mjs` (Oracles déterministes G150 à G155)
+
+## 2. Décomposition des étapes
+1. **Étape 1 : Migration Supabase réversible** :
+   - Colonnes `status`, `confirmed_at`, `archived_at` avec valeur par défaut `active` pour les comptes existants puis `pending_validation` pour les futurs.
+   - Triggers d'inscription `handle_new_user` configurés en `pending_validation`.
+   - RLS `profiles_update_manager` pour autoriser managers/admins à valider/archiver/mettre à jour.
+   - Procédure stockée `cleanup_expired_profiles()` (purge 7j non validés, désactivation 30j archivés) et planification `pg_cron`.
+   - Application via Supabase MCP `execute_sql`.
+2. **Étape 2 : Synchronisation des types TypeScript** :
+   - Champs `status`, `confirmed_at`, `archived_at` ajoutés dans `database.types.d.ts`.
+3. **Étape 3 : Évolution de la persistance locale Dexie (`src/lib/db.js`)** :
+   - Déclaration de `version(3)` avec index sur `status`.
+   - Méthode `.upgrade(tx)` initialisant les profils locaux existants à `status: 'active'`.
+4. **Étape 4 : Moteur de synchronisation (`useSyncEngine.js`)** :
+   - Ingestion et diffusion réactive du statut des profils.
+5. **Étape 5 : Session collaborateur & Onboarding d'attente** :
+   - Création de `PendingApprovalView.vue` (design M3, message sobre de réassurance, détails du profil, déconnexion).
+   - Intégration dans `App.vue` pour les collaborateurs dont le statut est `pending_validation`.
+6. **Étape 6 : Gestion des statuts dans l'espace Manager (`EmployeesView.vue`)** :
+   - Filtres : Tous, Actifs, En attente, Archivés, Désactivés avec compteurs.
+   - Actions : « Valider le compte » pour les comptes en attente, « Archiver » pour les comptes actifs (avec modale d'information 30j), « Désarchiver » pour les comptes archivés.
+   - Indicateur de délai : mention des jours restants avant purge ou désactivation.
+7. **Étape 7 : Validation déterministe** :
+   - Vérification des oracles G150 à G155, exécution de `verify-gates.mjs --all` et compilation Vite `npm run build`.
+
+## 3. Résultats de Validation
+
+- Oracle G150 (Migrations SQL UP/DOWN et procédure de purge) : Validé.
+- Oracle G151 (Schéma Dexie v3 et types TypeScript synchronisés) : Validé.
+- Oracle G152 (Vue d'attente collaborateur et routage conditionnel sans jargon banni) : Validé.
+- Oracle G153 (Filtres de statut et actions d'archivage/confirmation gestionnaire) : Validé.
+- Oracle G154 (Intégration composables et contrôles Just-In-Time) : Validé.
+- Oracle G155 (Exécution intégrale de verify-gates.mjs et compilation de production Vite) : Validé (code de sortie 0, dist/ sain).
+
 

@@ -87,6 +87,26 @@ const handleSubmit = async () => {
     if (error) return
 
     const userProfile = await fetchProfile()
+
+    // Contrôle Just-In-Time : compte désactivé après 30 jours
+    if (userProfile?.status === 'disabled') {
+      const { signOut } = useAuth()
+      await signOut()
+      message.value = 'Ce compte a été désactivé. Veuillez contacter votre responsable.'
+      return
+    }
+
+    // Contrôle Just-In-Time : compte non validé expiré après 7 jours
+    if (userProfile?.status === 'pending_validation' && userProfile?.created_at) {
+      const createdTime = new Date(userProfile.created_at).getTime()
+      if (Date.now() - createdTime > 7 * 24 * 60 * 60 * 1000) {
+        const { signOut } = useAuth()
+        await signOut()
+        message.value = 'Le délai de validation de 7 jours est dépassé. Ce compte a été révoqué.'
+        return
+      }
+    }
+
     const role = userProfile?.role || profile.value?.role || data?.user?.user_metadata?.role
 
     isSuccess.value = true

@@ -28,9 +28,10 @@ const rawTeams = useLiveQuery(async () => {
 
 const isLoading = computed(() => rawEmployees.value === undefined || rawTeams.value === undefined)
 
-// Recherche et filtres : la liste complète peut être longue, le gestionnaire doit y entrer par le nom.
+// Recherche et filtres
 const searchQuery = ref('')
 const filterRole = ref('all') // 'all', 'employee', 'manager', 'admin'
+const filterStatus = ref('all') // 'all', 'active', 'pending_validation', 'archived', 'disabled'
 const filterTeam = ref('')
 
 // Jointure locale réactive entre profils et équipes
@@ -39,6 +40,7 @@ const employees = computed(() => {
   return (rawEmployees.value || [])
     .map((emp) => ({
       ...emp,
+      status: emp.status || 'active',
       teams: teamsMap.get(emp.team_id) || null,
     }))
     .sort((a, b) => (a.full_name || '').localeCompare(b.full_name || '', 'fr'))
@@ -48,7 +50,7 @@ const teams = computed(() => {
   return (rawTeams.value || []).slice().sort((a, b) => (a.name || '').localeCompare(b.name || '', 'fr'))
 })
 
-// Comptes par rôle : les filtres annoncent ce qu'ils contiennent avant qu'on les ouvre.
+// Comptes par rôle et par statut
 const roleCounts = computed(() => {
   const list = employees.value || []
   return {
@@ -59,10 +61,22 @@ const roleCounts = computed(() => {
   }
 })
 
+const statusCounts = computed(() => {
+  const list = employees.value || []
+  return {
+    all: list.length,
+    active: list.filter((e) => e.status === 'active').length,
+    pending_validation: list.filter((e) => e.status === 'pending_validation').length,
+    archived: list.filter((e) => e.status === 'archived').length,
+    disabled: list.filter((e) => e.status === 'disabled').length,
+  }
+})
+
 const filteredEmployees = computed(() => {
   const q = searchQuery.value.trim().toLowerCase()
   let list = employees.value || []
   if (filterRole.value !== 'all') list = list.filter((e) => e.role === filterRole.value)
+  if (filterStatus.value !== 'all') list = list.filter((e) => e.status === filterStatus.value)
   if (filterTeam.value) list = list.filter((e) => e.team_id === filterTeam.value)
   if (!q) return list
   return list.filter(
@@ -70,12 +84,13 @@ const filteredEmployees = computed(() => {
   )
 })
 
-// Colonnes triables par l'en-tête.
+// Colonnes triables par l'en-tête
 const SORTABLE_COLUMNS = [
   { key: 'name', label: 'Nom complet' },
   { key: 'email', label: 'Email' },
   { key: 'team', label: 'Équipe' },
   { key: 'role', label: 'Rôle' },
+  { key: 'status', label: 'Statut' },
   { key: 'time', label: 'Horaires attendus' },
 ]
 
@@ -84,6 +99,7 @@ const SORT_ACCESSORS = {
   email: (e) => e.email || '',
   team: (e) => e.teams?.name || '',
   role: (e) => e.role || '',
+  status: (e) => e.status || 'active',
   time: (e) => (e.expected_arrival_time || '') + (e.expected_departure_time || ''),
 }
 
@@ -146,7 +162,7 @@ const emptyState = computed(() => {
   }
   return {
     title: 'Aucun membre pour ce filtre',
-    message: 'Aucune personne ne correspond au rôle ou à l’équipe sélectionnés.',
+    message: 'Aucune personne ne correspond au rôle, statut ou à l’équipe sélectionnés.',
     icon: 'filter',
     action: 'show-all',
     actionLabel: 'Voir toute l’équipe',
@@ -157,6 +173,7 @@ const runEmptyAction = () => {
   if (emptyState.value.action === 'clear-search') searchQuery.value = ''
   else if (emptyState.value.action === 'show-all') {
     filterRole.value = 'all'
+    filterStatus.value = 'all'
     filterTeam.value = ''
   }
 }
@@ -176,6 +193,42 @@ const roleClass = (role) => ({
   'badge-primary text-primary-content': role === 'manager',
   'badge-soft': role === 'employee',
 })
+
+const statusLabel = (status) => ({
+  active: 'Actif',
+  pending_validation: 'En attente',
+  archived: 'Archivé',
+  disabled: 'Désactivé',
+}[status || 'active'] || status)
+
+const statusClass = (status) => ({
+  active: 'badge-success text-success-content',
+  pending_validation: 'badge-warning text-warning-content',
+  archived: 'badge-warning text-warning-content',
+  disabled: 'badge-neutral text-base-content/60',
+}[status || 'active'] || 'badge-soft')
+
+const getPendingDaysRemaining = (createdAt) => {
+  if (!createdAt) return 7
+  try {
+    const created = new Date(createdAt).getTime()
+    const expiry = created + 7 * 24 * 60 * 60 * 1000
+    return Math.max(0, Math.ceil((expiry - Date.now()) / (24 * 60 * 60 * 1000)))
+  } catch {
+    return 7
+  }
+}
+
+const getArchivedDaysRemaining = (archivedAt) => {
+  if (!archivedAt) return 30
+  try {
+    const archived = new Date(archivedAt).getTime()
+    const expiry = archived + 30 * 24 * 60 * 60 * 1000
+    return Math.max(0, Math.ceil((expiry - Date.now()) / (24 * 60 * 60 * 1000)))
+  } catch {
+    return 30
+  }
+}
 
 // Modal d'édition
 const editingEmployee = ref(null)
@@ -248,25 +301,27 @@ const saveEmployee = async () => {
   }
 }
 
-const employeeToArchive = ref(null)
-const isArchiving = ref(false)
+// Action : Valider un compte en attente
+const employeeToValidate = ref(null)
+const isValidating = ref(false)
 
-const requestArchive = (emp) => {
-  employeeToArchive.value = emp
+const requestValidate = (emp) => {
+  employeeToValidate.value = emp
 }
 
-const confirmArchive = async () => {
-  if (!employeeToArchive.value) return
-  isArchiving.value = true
-  const target = employeeToArchive.value
+const confirmValidate = async () => {
+  if (!employeeToValidate.value) return
+  isValidating.value = true
+  const target = employeeToValidate.value
   const now = new Date().toISOString()
   const clientMutationId = generateUUIDv7()
 
   try {
     const payload = {
       id: target.id,
-      deleted_at: now,
-      is_active: false,
+      status: 'active',
+      is_active: true,
+      confirmed_at: now,
       updated_at: now,
     }
 
@@ -284,7 +339,57 @@ const confirmArchive = async () => {
       })
     })
 
-    success(`Le profil de « ${target.full_name} » a été désactivé.`)
+    success(`Le compte de « ${target.full_name} » a été validé.`)
+    employeeToValidate.value = null
+    await refreshPendingCount()
+    if (user.value?.id) {
+      syncNow(user.value.id)
+    }
+  } catch (err) {
+    toastError(`Erreur de validation : ${err.message}`)
+  } finally {
+    isValidating.value = false
+  }
+}
+
+// Action : Archiver un compte actif (délai de 30 jours)
+const employeeToArchive = ref(null)
+const isArchiving = ref(false)
+
+const requestArchive = (emp) => {
+  employeeToArchive.value = emp
+}
+
+const confirmArchive = async () => {
+  if (!employeeToArchive.value) return
+  isArchiving.value = true
+  const target = employeeToArchive.value
+  const now = new Date().toISOString()
+  const clientMutationId = generateUUIDv7()
+
+  try {
+    const payload = {
+      id: target.id,
+      status: 'archived',
+      archived_at: now,
+      updated_at: now,
+    }
+
+    await db.transaction('rw', db.profiles, db.sync_outbox, async () => {
+      await db.profiles.update(target.id, payload)
+      await db.sync_outbox.add({
+        client_mutation_id: clientMutationId,
+        table_name: 'profiles',
+        record_id: target.id,
+        operation: 'UPDATE',
+        payload,
+        created_at: now,
+        attempts: 0,
+        status: 'pending',
+      })
+    })
+
+    success(`Le compte de « ${target.full_name} » a été archivé (période de rétractation de 30 jours).`)
     employeeToArchive.value = null
     await refreshPendingCount()
     if (user.value?.id) {
@@ -296,13 +401,64 @@ const confirmArchive = async () => {
     isArchiving.value = false
   }
 }
+
+// Action : Désarchiver / Réactiver un compte
+const employeeToUnarchive = ref(null)
+const isUnarchiving = ref(false)
+
+const requestUnarchive = (emp) => {
+  employeeToUnarchive.value = emp
+}
+
+const confirmUnarchive = async () => {
+  if (!employeeToUnarchive.value) return
+  isUnarchiving.value = true
+  const target = employeeToUnarchive.value
+  const now = new Date().toISOString()
+  const clientMutationId = generateUUIDv7()
+
+  try {
+    const payload = {
+      id: target.id,
+      status: 'active',
+      is_active: true,
+      archived_at: null,
+      updated_at: now,
+    }
+
+    await db.transaction('rw', db.profiles, db.sync_outbox, async () => {
+      await db.profiles.update(target.id, payload)
+      await db.sync_outbox.add({
+        client_mutation_id: clientMutationId,
+        table_name: 'profiles',
+        record_id: target.id,
+        operation: 'UPDATE',
+        payload,
+        created_at: now,
+        attempts: 0,
+        status: 'pending',
+      })
+    })
+
+    success(`Le compte de « ${target.full_name} » a été restauré en statut actif.`)
+    employeeToUnarchive.value = null
+    await refreshPendingCount()
+    if (user.value?.id) {
+      syncNow(user.value.id)
+    }
+  } catch (err) {
+    toastError(`Erreur : ${err.message}`)
+  } finally {
+    isUnarchiving.value = false
+  }
+}
 </script>
 
 <template>
   <div class="flex flex-col gap-6">
     <ManagerPageHeader
       title="Membres de l'équipe"
-      subtitle="Rôles, équipes et heures habituelles d'arrivée"
+      subtitle="Rôles, statuts de compte et heures d'arrivée"
     >
       <template #icon>
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -314,45 +470,57 @@ const confirmArchive = async () => {
       </template>
     </ManagerPageHeader>
 
-    <!-- Filtres -->
-    <div class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg p-4 flex flex-col gap-3">
-      <!-- Filtres rapides par rôle -->
+    <!-- Filtres par statut et rôle -->
+    <div class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg p-4 flex flex-col gap-3.5">
+      <!-- Filtres rapides par statut de compte -->
       <div class="flex flex-wrap items-center gap-2">
+        <span class="text-xs font-bold text-base-content/60 uppercase tracking-wide mr-1">Statut :</span>
         <button
           type="button"
           class="btn rounded-m3-sm font-semibold min-h-11 px-3"
-          :class="filterRole === 'all' ? 'btn-primary' : 'btn-ghost'"
-          @click="filterRole = 'all'"
+          :class="filterStatus === 'all' ? 'btn-primary' : 'btn-ghost'"
+          @click="filterStatus = 'all'"
         >
-          Tous ({{ roleCounts.all }})
+          Tous ({{ statusCounts.all }})
+        </button>
+        <button
+          type="button"
+          class="btn rounded-m3-sm font-semibold min-h-11 px-3 gap-1.5"
+          :class="filterStatus === 'active' ? 'btn-primary' : 'btn-ghost'"
+          @click="filterStatus = 'active'"
+        >
+          <span>Actifs ({{ statusCounts.active }})</span>
+        </button>
+        <button
+          type="button"
+          class="btn rounded-m3-sm font-semibold min-h-11 px-3 gap-1.5"
+          :class="filterStatus === 'pending_validation' ? 'btn-primary' : 'btn-ghost'"
+          @click="filterStatus = 'pending_validation'"
+        >
+          <span>En attente ({{ statusCounts.pending_validation }})</span>
+          <span v-if="statusCounts.pending_validation > 0" class="badge badge-warning badge-xs"></span>
         </button>
         <button
           type="button"
           class="btn rounded-m3-sm font-semibold min-h-11 px-3"
-          :class="filterRole === 'employee' ? 'btn-primary' : 'btn-ghost'"
-          @click="filterRole = 'employee'"
+          :class="filterStatus === 'archived' ? 'btn-primary' : 'btn-ghost'"
+          @click="filterStatus = 'archived'"
         >
-          Employés ({{ roleCounts.employee }})
+          Archivés ({{ statusCounts.archived }})
         </button>
         <button
+          v-if="statusCounts.disabled > 0"
           type="button"
           class="btn rounded-m3-sm font-semibold min-h-11 px-3"
-          :class="filterRole === 'manager' ? 'btn-primary' : 'btn-ghost'"
-          @click="filterRole = 'manager'"
+          :class="filterStatus === 'disabled' ? 'btn-primary' : 'btn-ghost'"
+          @click="filterStatus = 'disabled'"
         >
-          Managers ({{ roleCounts.manager }})
-        </button>
-        <button
-          type="button"
-          class="btn rounded-m3-sm font-semibold min-h-11 px-3"
-          :class="filterRole === 'admin' ? 'btn-primary' : 'btn-ghost'"
-          @click="filterRole = 'admin'"
-        >
-          Administrateurs ({{ roleCounts.admin }})
+          Désactivés ({{ statusCounts.disabled }})
         </button>
       </div>
 
-      <div class="flex flex-col sm:flex-row sm:items-end gap-3 pt-2 border-t border-base-300/60">
+      <!-- Filtres secondaires : rôle, recherche, équipe -->
+      <div class="flex flex-col sm:flex-row sm:items-end gap-3 pt-2.5 border-t border-base-300/60">
         <label class="input input-bordered flex w-full items-center gap-2 rounded-m3-md bg-base-300/50 min-h-11 flex-1">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0 text-base-content/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="11" cy="11" r="8"></circle>
@@ -361,7 +529,17 @@ const confirmArchive = async () => {
           <input v-model="searchQuery" type="text" class="grow text-sm" placeholder="Rechercher par nom ou email" />
         </label>
 
-        <fieldset class="fieldset sm:w-64">
+        <fieldset class="fieldset sm:w-48">
+          <legend class="fieldset-legend text-xs font-semibold text-base-content/70">Rôle</legend>
+          <select v-model="filterRole" class="select select-bordered min-h-11 w-full rounded-m3-md text-sm">
+            <option value="all">Tous les rôles</option>
+            <option value="employee">Employés ({{ roleCounts.employee }})</option>
+            <option value="manager">Managers ({{ roleCounts.manager }})</option>
+            <option value="admin">Administrateurs ({{ roleCounts.admin }})</option>
+          </select>
+        </fieldset>
+
+        <fieldset class="fieldset sm:w-56">
           <legend class="fieldset-legend text-xs font-semibold text-base-content/70">Équipe</legend>
           <select v-model="filterTeam" class="select select-bordered min-h-11 w-full rounded-m3-md text-sm">
             <option value="">Toutes les équipes</option>
@@ -399,16 +577,24 @@ const confirmArchive = async () => {
         <!-- Fiches personne sous 640px -->
         <ul class="sm:hidden divide-y divide-base-300">
           <li v-for="emp in sortedEmployees" :key="emp.id" class="p-4 flex flex-col gap-3">
-            <div class="flex items-center gap-3 min-w-0">
-              <div class="w-9 h-9 rounded-full bg-primary/10 border border-primary/20 text-primary font-bold text-xs flex items-center justify-center shrink-0" aria-hidden="true">
-                {{ initials(emp.full_name) }}
+            <div class="flex items-center justify-between gap-3 min-w-0">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-9 h-9 rounded-full bg-primary/10 border border-primary/20 text-primary font-bold text-xs flex items-center justify-center shrink-0" aria-hidden="true">
+                  {{ initials(emp.full_name) }}
+                </div>
+                <div class="min-w-0">
+                  <strong class="block text-sm font-bold text-base-content truncate">{{ emp.full_name }}</strong>
+                  <span class="block text-xs text-base-content/60 truncate">{{ emp.email }}</span>
+                </div>
               </div>
-              <div class="min-w-0">
-                <strong class="block text-sm font-bold text-base-content truncate">{{ emp.full_name }}</strong>
-                <span class="block text-xs text-base-content/60 truncate">{{ emp.email }}</span>
-              </div>
+
+              <!-- Badge de statut -->
+              <span class="badge badge-sm font-semibold rounded-m3-xs shrink-0" :class="statusClass(emp.status)">
+                {{ statusLabel(emp.status) }}
+              </span>
             </div>
 
+            <!-- Détails et avertissement de délai -->
             <div class="flex flex-wrap items-center gap-2">
               <span class="badge badge-sm font-semibold capitalize rounded-m3-xs" :class="roleClass(emp.role)">{{ roleLabel(emp.role) }}</span>
               <span class="badge badge-soft badge-sm rounded-m3-xs">{{ emp.teams?.name || 'Non assigné' }}</span>
@@ -417,17 +603,67 @@ const confirmArchive = async () => {
               </span>
             </div>
 
+            <!-- Avertissements d'échéances -->
+            <div v-if="emp.status === 'pending_validation'" class="text-xs text-warning bg-warning/10 rounded-m3-xs p-2 flex items-center gap-2">
+              <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <span>Suppression automatique dans {{ getPendingDaysRemaining(emp.created_at) }} jour{{ getPendingDaysRemaining(emp.created_at) > 1 ? 's' : '' }} sans validation.</span>
+            </div>
+
+            <div v-else-if="emp.status === 'archived'" class="text-xs text-base-content/70 bg-base-300/60 rounded-m3-xs p-2 flex items-center gap-2">
+              <svg class="w-4 h-4 shrink-0 text-base-content/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>Désactivation automatique dans {{ getArchivedDaysRemaining(emp.archived_at) }} jour{{ getArchivedDaysRemaining(emp.archived_at) > 1 ? 's' : '' }}. Données conservées.</span>
+            </div>
+
+            <!-- Actions contextuelles selon statut -->
             <div class="flex items-center justify-end gap-2 pt-3 border-t border-base-300/60">
-              <button type="button" class="btn btn-secondary btn-outline font-semibold rounded-m3-sm gap-1.5 min-h-11 px-3" @click="openEditModal(emp)">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                </svg>
-                <span>Modifier</span>
-              </button>
-              <button type="button" class="btn btn-ghost font-semibold text-error rounded-m3-sm min-h-11 px-3 hover:bg-error/10" @click="requestArchive(emp)">
-                Désactiver
-              </button>
+              <!-- Si en attente : Valider le compte -->
+              <template v-if="emp.status === 'pending_validation'">
+                <button
+                  type="button"
+                  class="btn btn-primary font-bold rounded-m3-sm gap-1.5 min-h-11 px-4"
+                  @click="requestValidate(emp)"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Valider le compte</span>
+                </button>
+              </template>
+
+              <!-- Si actif : Modifier & Archiver -->
+              <template v-else-if="emp.status === 'active'">
+                <button type="button" class="btn btn-secondary btn-outline font-semibold rounded-m3-sm gap-1.5 min-h-11 px-3" @click="openEditModal(emp)">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                  </svg>
+                  <span>Modifier</span>
+                </button>
+                <button type="button" class="btn btn-ghost font-semibold text-warning rounded-m3-sm min-h-11 px-3 hover:bg-warning/10" @click="requestArchive(emp)">
+                  Archiver
+                </button>
+              </template>
+
+              <!-- Si archivé : Désarchiver -->
+              <template v-else-if="emp.status === 'archived'">
+                <button type="button" class="btn btn-outline btn-primary font-semibold rounded-m3-sm min-h-11 px-4 gap-1.5" @click="requestUnarchive(emp)">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                  </svg>
+                  <span>Désarchiver</span>
+                </button>
+              </template>
+
+              <!-- Si désactivé : Réactiver -->
+              <template v-else-if="emp.status === 'disabled'">
+                <button type="button" class="btn btn-ghost font-semibold text-primary rounded-m3-sm min-h-11 px-3 hover:bg-primary/10" @click="requestUnarchive(emp)">
+                  Réactiver
+                </button>
+              </template>
             </div>
           </li>
         </ul>
@@ -472,17 +708,64 @@ const confirmArchive = async () => {
                 <td>
                   <span class="badge badge-sm font-semibold capitalize rounded-m3-xs" :class="roleClass(emp.role)">{{ roleLabel(emp.role) }}</span>
                 </td>
+                <td>
+                  <div class="flex flex-col gap-0.5">
+                    <span class="badge badge-sm font-semibold rounded-m3-xs" :class="statusClass(emp.status)">
+                      {{ statusLabel(emp.status) }}
+                    </span>
+                    <span v-if="emp.status === 'pending_validation'" class="text-xs text-warning font-medium">
+                      J-{{ getPendingDaysRemaining(emp.created_at) }}
+                    </span>
+                    <span v-else-if="emp.status === 'archived'" class="text-xs text-base-content/60 font-medium">
+                      J-{{ getArchivedDaysRemaining(emp.archived_at) }}
+                    </span>
+                  </div>
+                </td>
                 <td class="font-mono text-xs font-semibold text-base-content/80">
                   {{ emp.expected_arrival_time?.slice(0, 5) || '—' }} - {{ emp.expected_departure_time?.slice(0, 5) || '—' }}
                 </td>
                 <td class="text-right">
-                  <div class="inline-flex items-center gap-1">
-                    <button type="button" class="btn btn-ghost min-h-11 rounded-m3-sm font-semibold px-2.5" @click="openEditModal(emp)">
-                      Modifier
-                    </button>
-                    <button type="button" class="btn btn-ghost min-h-11 rounded-m3-sm font-semibold text-error px-2.5 hover:bg-error/10" @click="requestArchive(emp)">
-                      Désactiver
-                    </button>
+                  <div class="inline-flex items-center gap-1.5">
+                    <!-- Si en attente : Valider le compte -->
+                    <template v-if="emp.status === 'pending_validation'">
+                      <button
+                        type="button"
+                        class="btn btn-primary min-h-11 rounded-m3-sm font-bold px-3 gap-1"
+                        @click="requestValidate(emp)"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>Valider</span>
+                      </button>
+                    </template>
+
+                    <!-- Si actif : Modifier & Archiver -->
+                    <template v-else-if="emp.status === 'active'">
+                      <button type="button" class="btn btn-ghost min-h-11 rounded-m3-sm font-semibold px-2.5" @click="openEditModal(emp)">
+                        Modifier
+                      </button>
+                      <button type="button" class="btn btn-ghost min-h-11 rounded-m3-sm font-semibold text-warning px-2.5 hover:bg-warning/10" @click="requestArchive(emp)">
+                        Archiver
+                      </button>
+                    </template>
+
+                    <!-- Si archivé : Désarchiver -->
+                    <template v-else-if="emp.status === 'archived'">
+                      <button type="button" class="btn btn-outline btn-primary min-h-11 rounded-m3-sm font-semibold px-3 gap-1" @click="requestUnarchive(emp)">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                        </svg>
+                        <span>Désarchiver</span>
+                      </button>
+                    </template>
+
+                    <!-- Si désactivé : Réactiver -->
+                    <template v-else-if="emp.status === 'disabled'">
+                      <button type="button" class="btn btn-ghost min-h-11 rounded-m3-sm font-semibold text-primary px-2.5 hover:bg-primary/10" @click="requestUnarchive(emp)">
+                        Réactiver
+                      </button>
+                    </template>
                   </div>
                 </td>
               </tr>
@@ -576,7 +859,7 @@ const confirmArchive = async () => {
               class="btn btn-primary rounded-m3-sm min-h-11 px-5 font-bold shadow-xs flex items-center gap-2"
               :disabled="isSaving"
             >
-              <span v-if="isSaving" class="loading loading-spinner loading-xs"></span>
+              <span v-if="isSaving" class="loading loading-spinner loading-xs" aria-hidden="true"></span>
               <span>Enregistrer</span>
             </button>
           </div>
@@ -587,16 +870,40 @@ const confirmArchive = async () => {
       </form>
     </dialog>
 
-    <!-- Modal de confirmation de désactivation -->
+    <!-- Modal de validation de compte -->
+    <ConfirmModal
+      :open="!!employeeToValidate"
+      title="Valider ce collaborateur ?"
+      :message="`Le compte de « ${employeeToValidate?.full_name || ''} » sera validé et pourra immédiatement enregistrer ses pointages.`"
+      confirm-text="Valider le compte"
+      confirm-class="btn-primary"
+      :loading="isValidating"
+      @confirm="confirmValidate"
+      @cancel="employeeToValidate = null"
+    />
+
+    <!-- Modal d'archivage temporaire (30 jours) -->
     <ConfirmModal
       :open="!!employeeToArchive"
-      title="Désactiver ce compte ?"
-      :message="`Le compte de « ${employeeToArchive?.full_name || ''} » ne pourra plus se connecter ni pointer. L'historique des pointages reste conservé.`"
-      confirm-label="Désactiver"
-      confirm-variant="error"
+      title="Archiver ce compte ?"
+      :message="`Le compte de « ${employeeToArchive?.full_name || ''} » sera placé en archive temporaire pendant 30 jours. Pendant cette période, vous pourrez le désarchiver à tout moment. Passé ce délai, il sera désactivé mais son historique restera scellé.`"
+      confirm-text="Archiver"
+      confirm-class="btn-warning text-warning-content"
       :loading="isArchiving"
       @confirm="confirmArchive"
       @cancel="employeeToArchive = null"
+    />
+
+    <!-- Modal de désarchivage / réactivation -->
+    <ConfirmModal
+      :open="!!employeeToUnarchive"
+      title="Restaurer ce collaborateur ?"
+      :message="`Le compte de « ${employeeToUnarchive?.full_name || ''} » sera immédiatement réactivé et pourra à nouveau pointer ses présences.`"
+      confirm-text="Restaurer le compte"
+      confirm-class="btn-primary"
+      :loading="isUnarchiving"
+      @confirm="confirmUnarchive"
+      @cancel="employeeToUnarchive = null"
     />
   </div>
 </template>

@@ -1120,5 +1120,43 @@ Scope: Ajout d'une icône de notification (cloche standard SVG avec cible tactil
   EXPECT: G147-G148 passed: NotificationBell implemented with anchored popover dialog below icon, empty state, and integrated in both headers && built in
   EVIDENCE: node scripts/verify-gates.mjs --all validé à 100% (code sortie 0) et npm run build achevé avec succès (code sortie 0, bundle dist/ sain)
 
+---
+
+# Gates: Cycle de Vie des Comptes, Confirmation de Session et Archivage Réversible
+
+OWNS: supabase/migrations/*account_lifecycle*, src/types/database.types.d.ts, src/lib/db.js, src/views/employee/PendingApprovalView.vue, src/App.vue, src/views/manager/EmployeesView.vue, src/composables/useProfile.js, src/composables/useSyncEngine.js, scripts/verify-gates.mjs, GATES.md, .agents/WRITING_IMPROVEMENT.md
+
+Scope: Mise en place d'un cycle de vie complet des comptes avec session d'attente d'intégration pour les employés en attente de validation, validation par les managers, suppression automatique au bout de 7 jours sans validation (procédure stockée / pg_cron), archivage réversible avec bouton "Archiver" et rétractation "Désarchiver", et bascule automatique en désactivation au terme de 30 jours avec préservation des données historiques.
+
+- [x] G150: Migrations Supabase UP et DOWN pour le cycle de vie des comptes et la procédure de purge
+  CHECK: node -e "const fs = require('fs'); const up = fs.readFileSync('supabase/migrations/20261002220000_account_lifecycle_and_session_confirmation.sql', 'utf8'); const down = fs.readFileSync('supabase/migrations/20261002220000_account_lifecycle_and_session_confirmation_down.sql', 'utf8'); if (!up.includes('pending_validation') || !up.includes('cleanup_expired_profiles') || !down.includes('DROP FUNCTION')) { console.error('FAILURE: Migration files incomplete'); process.exit(1); } console.log('G150 passed: Supabase account lifecycle migrations valid');"
+  EXPECT: G150 passed: Supabase account lifecycle migrations valid
+  EVIDENCE: G150 passed: Supabase account lifecycle migrations valid (vérifié, migration appliquée avec succès sur pvquzkpfdjrequbwnhur, job pg_cron ID 1 actif à 03:00 UTC)
+
+- [x] G151: Dexie version(3) avec index status et synchronisation des types TypeScript
+  CHECK: node -e "const fs = require('fs'); const db = fs.readFileSync('src/lib/db.js', 'utf8'); const ts = fs.readFileSync('src/types/database.types.d.ts', 'utf8'); if (!db.includes('this.version(3).stores') || !db.includes('status') || !ts.includes('pending_validation')) { console.error('FAILURE: Dexie version(3) or TS types incomplete'); process.exit(1); } console.log('G151 passed: Dexie version(3) and TypeScript database types synchronized');"
+  EXPECT: G151 passed: Dexie version(3) and TypeScript database types synchronized
+  EVIDENCE: G151 passed: Dexie version(3) and TypeScript database types synchronized (vérifié, store profiles avec index status et rétro-migration vers 'active' pour les comptes existants)
+
+- [x] G152: Écran d'attente de confirmation employé PendingApprovalView.vue et routage conditionnel dans App.vue
+  CHECK: node -e "const fs = require('fs'); const view = fs.readFileSync('src/views/employee/PendingApprovalView.vue', 'utf8'); const app = fs.readFileSync('src/App.vue', 'utf8'); if ((!view.includes('confirmation') && !view.includes('pending_validation')) || !view.includes('signOut') || !app.includes('PendingApprovalView')) { console.error('FAILURE: PendingApprovalView or App.vue routing missing'); process.exit(1); } console.log('G152 passed: Employee pending approval view and routing wired');"
+  EXPECT: G152 passed: Employee pending approval view and routing wired
+  EVIDENCE: G152 passed: Employee pending approval view and routing wired (vérifié, respect strict de la règle 09 / G30 bannissant le terme administratif 'validation' côté collaborateur, réactivité temps réel à la confirmation)
+
+- [x] G153: Module gestionnaire EmployeesView étendu avec filtres de statut, validation de compte et archivage réversible
+  CHECK: node -e "const fs = require('fs'); const emp = fs.readFileSync('src/views/manager/EmployeesView.vue', 'utf8'); if (!emp.includes('pending_validation') || !emp.includes('confirmValidate') || !emp.includes('requestUnarchive') || !emp.includes('filterStatus')) { console.error('FAILURE: EmployeesView status management incomplete'); process.exit(1); } console.log('G153 passed: Manager EmployeesView exposes status filters and lifecycle actions');"
+  EXPECT: G153 passed: Manager EmployeesView exposes status filters and lifecycle actions
+  EVIDENCE: G153 passed: Manager EmployeesView exposes status filters and lifecycle actions (vérifié, filtres par onglets avec compteurs, modale de confirmation d'archivage 30 jours, cibles tactiles 44px min-h-11)
+
+- [x] G154: Intégration useProfile, useSyncEngine et contrôle Just-In-Time d'expiration
+  CHECK: node -e "const fs = require('fs'); const p = fs.readFileSync('src/composables/useProfile.js', 'utf8'); const s = fs.readFileSync('src/composables/useSyncEngine.js', 'utf8'); if (!p.includes('status') || !s.includes('profiles')) { console.error('FAILURE: useProfile or useSyncEngine missing status support'); process.exit(1); } console.log('G154 passed: useProfile and useSyncEngine wired with status lifecycle');"
+  EXPECT: G154 passed: useProfile and useSyncEngine wired with status lifecycle
+  EVIDENCE: G154 passed: useProfile and useSyncEngine wired with status lifecycle (vérifié, prédicats réactifs isPendingApproval/isArchived/isDisabled, contrôle JIT lors du login bloquant les comptes non confirmés > 7j)
+
+- [x] G155: Validation intégrale de la suite déterministe et compilation de production
+  CHECK: node scripts/verify-gates.mjs --all && npm run build
+  EXPECT: G150-G154 passed: Account lifecycle, employee session onboarding and manager actions fully verified
+  EVIDENCE: G150-G154 passed: Account lifecycle, employee session onboarding and manager actions fully verified && built in 1.88s (vérifié avec exit code 0 le 2026-10-02)
+
 
 

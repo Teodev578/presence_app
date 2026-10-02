@@ -35,6 +35,17 @@ class PresenceDatabase extends Dexie {
         })
       }
     })
+
+    this.version(3).stores({
+      profiles: 'id, team_id, email, role, status, updated_at, deleted_at',
+    }).upgrade(async (tx) => {
+      // Rétrocompatibilité : assigner le statut 'active' par défaut aux profils locaux existants
+      await tx.table('profiles').toCollection().modify((profile) => {
+        if (!profile.status) {
+          profile.status = 'active'
+        }
+      })
+    })
   }
 }
 

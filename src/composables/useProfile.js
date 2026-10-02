@@ -1,4 +1,4 @@
-import { ref, shallowRef, watch } from 'vue'
+import { ref, shallowRef, computed, watch } from 'vue'
 import { supabase } from '../lib/supabase'
 import { db } from '../lib/db'
 import { useAuth } from './useAuth'
@@ -19,11 +19,13 @@ export function useProfile() {
 
     // Fallback immédiat et synchrone depuis les métadonnées utilisateur pour éviter toute condition de course
     if (!currentProfile.value) {
+      const initialRole = user.value.user_metadata?.role || 'employee'
       currentProfile.value = {
         id: userId,
         email: user.value.email || '',
-        role: user.value.user_metadata?.role || 'employee',
+        role: initialRole,
         full_name: user.value.user_metadata?.full_name || '',
+        status: initialRole === 'admin' ? 'active' : 'pending_validation',
       }
     }
 
@@ -70,9 +72,21 @@ export function useProfile() {
     { immediate: true }
   )
 
+  const isPendingApproval = computed(() => currentProfile.value?.status === 'pending_validation')
+  const isArchived = computed(() => currentProfile.value?.status === 'archived')
+  const isDisabled = computed(() => currentProfile.value?.status === 'disabled')
+  const isActive = computed(() => {
+    if (!currentProfile.value) return false
+    return currentProfile.value.status === 'active' || (!currentProfile.value.status && currentProfile.value.is_active !== false)
+  })
+
   return {
     profile: currentProfile,
     profileLoading,
     fetchProfile,
+    isPendingApproval,
+    isArchived,
+    isDisabled,
+    isActive,
   }
 }

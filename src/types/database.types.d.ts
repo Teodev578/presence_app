@@ -175,6 +175,8 @@ export type Database = {
       }
       profiles: {
         Row: {
+          archived_at: string | null
+          confirmed_at: string | null
           created_at: string
           deleted_at: string | null
           email: string
@@ -184,10 +186,13 @@ export type Database = {
           id: string
           is_active: boolean
           role: 'employee' | 'manager' | 'admin'
+          status: 'pending_validation' | 'active' | 'archived' | 'disabled'
           team_id: string | null
           updated_at: string
         }
         Insert: {
+          archived_at?: string | null
+          confirmed_at?: string | null
           created_at?: string
           deleted_at?: string | null
           email: string
@@ -197,10 +202,13 @@ export type Database = {
           id: string
           is_active?: boolean
           role: 'employee' | 'manager' | 'admin'
+          status?: 'pending_validation' | 'active' | 'archived' | 'disabled'
           team_id?: string | null
           updated_at?: string
         }
         Update: {
+          archived_at?: string | null
+          confirmed_at?: string | null
           created_at?: string
           deleted_at?: string | null
           email?: string
@@ -210,6 +218,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           role?: 'employee' | 'manager' | 'admin'
+          status?: 'pending_validation' | 'active' | 'archived' | 'disabled'
           team_id?: string | null
           updated_at?: string
         }

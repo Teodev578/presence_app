@@ -286,6 +286,42 @@ Ce fichier enregistre le raisonnement derrière les décisions non triviales : h
 - Implémenté ? O (2026-10-02)
 - Leçon tirée : Les écrans de configuration secondaire (comme les Paramètres) gagnent à libérer entièrement la zone d'actions droite du bandeau pour renforcer la lisibilité et la concentration sur le formulaire de réglages.
 
+### Tâche : Cycle de Vie des Comptes, Confirmation de Session et Archivage Réversible
+**Date** : 2026-10-02
+**Complexité** : Élevée
+**Proposant** : Fabien / next-level-backend & next-level-ui
+**Story liée** : —
+
+#### Analyse
+- **Hypothèse initiale** : L'inscription d'un employé donne un accès immédiat au pointage sans validation de compte par un manager. L'archivage manager est en réalité un soft-delete destructeur pour l'affichage (`deleted_at: now`), sans possibilité de désarchivage. Aucun mécanisme d'expiration (7j pour compte non validé, 30j pour compte archivé) n'existe.
+- **Contraintes identifiées** :
+  - Un client web PWA ne peut pas exécuter de manière autonome des tâches différées à 7 et 30 jours lorsque l'application est fermée ou hors-ligne.
+  - La suppression définitive d'un compte exige d'intervenir dans `auth.users`, ce qui nécessite les prérogatives `service_role` ou des fonctions PostgreSQL `SECURITY DEFINER`.
+  - Intégrité de la persistance locale Dexie : préservation absolue des versions 1 et 2, incrément vers `version(3)` avec initialisation rétroactive des profils locaux existants à `status = 'active'`.
+  - Préservation des données historiques : un compte archivé ou désactivé au bout de 30 jours ne doit pas subir de suppression physique de ses pointages ni de ses disponibilités pour respecter les obligations d'audit et d'export.
+  - Respect strict des standards UI M3, cibles 44px, et oracles `verify-gates.mjs`.
+- **Alternatives envisagées** :
+  - Purge déléguée au front-end du manager lors de sa connexion : rejetée car fragile, dépendante de la présence en ligne d'un tiers et non déterministe.
+  - Edge Function Deno planifiée : rejetée en première intention car PostgreSQL gère nativement la purge via `pg_cron` et procédure stockée sans dépendance serveur supplémentaire.
+  - Blocage brut de connexion pour compte non validé : rejetée car anxiogène et dénuée de feedback collaborateur.
+
+#### Décision
+**Choix retenu** : 
+1. Migration Supabase étendant `profiles` avec `status` (`pending_validation`, `active`, `archived`, `disabled`), `confirmed_at`, `archived_at`, trigger d'inscription mis à jour, politiques RLS `profiles_update_manager` et procédure `cleanup_expired_profiles` couplée à `pg_cron`.
+2. Incrément Dexie `version(3)` dans `src/lib/db.js` avec index sur `status`.
+3. Session collaborateur restreinte : vue `PendingApprovalView.vue` affichée dans `EmployeeLayout` quand `status === 'pending_validation'`, avec écoute réactive de la validation sans reconnexion.
+4. Refonte de `EmployeesView.vue` : filtres de statut segmentés, action « Valider le compte », action « Archiver » avec délai de 30 jours, action « Désarchiver » immédiate, et décompte des jours restants.
+**Trade-offs acceptés** : Les comptes existants sont tous initialisés à `status = 'active'` pour garantir une continuité de service totale sans verrouillage intempestif des utilisateurs actifs.
+**Engagement KI** : N
+
+#### Résultat
+- Implémenté ? O (2026-10-02)
+- Leçon tirée : 
+  1. *Sécurité RLS et récursion* : Ne jamais invoquer une fonction SQL interrogeant `profiles` dans une politique RLS appliquée sur `profiles` elle-même sous peine de provoquer une récursion infinie (timeout SQL) ; privilégier `EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND ...)`.
+  2. *Automatisation temporelle* : Les délais d'expiration (7j pour purge des inscriptions non confirmées, 30j pour désactivation des profils archivés) doivent être gérés côté SGBD via `pg_cron` et procédure `SECURITY DEFINER`, complétés d'un contrôle Just-In-Time lors de l'authentification.
+  3. *Local-First et Dexie* : L'évolution du schéma local vers `version(3)` avec index `status` et hook `.upgrade()` rétroactif assure la continuité de service pour les comptes préexistants sans perturber la file d'outbox.
+  4. *Règle 09 côté collaborateur* : L'expérience d'attente d'intégration gagne en qualité lorsqu'elle bannit le lexique administratif ("validation") au profit de termes clairs et orientés accompagnement ("confirmation", "activation").
+
 ---
 
 ## Archives
