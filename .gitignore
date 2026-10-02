@@ -26,3 +26,7 @@ dist-ssr
 *.sln
 *.sw?
 .agents/mcp.json
+
+# Variables d'environnement locales (credentials)
+.env.local
+.env.*.local
