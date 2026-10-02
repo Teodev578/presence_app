@@ -70,18 +70,73 @@ const triggerSync = () => {
 <template>
   <button
     type="button"
-    class="btn btn-ghost btn-sm min-h-11 gap-1.5 rounded-full border px-2.5 select-none shrink-0 inline-flex items-center transition-colors cursor-pointer"
+    class="btn btn-ghost btn-sm min-h-11 min-w-11 gap-2 rounded-full border-0 px-2 sm:px-2.5 select-none shrink-0 inline-flex items-center transition-colors cursor-pointer"
     :class="{
-      'border-warning/40 text-warning hover:bg-warning/5': state === 'offline',
-      'border-info/40 text-info hover:bg-info/5': state === 'pending' || state === 'syncing',
-      'border-success/40 text-success hover:bg-success/5': state === 'healthy'
+      'text-warning hover:bg-warning/10': state === 'offline',
+      'text-info hover:bg-info/10': state === 'pending' || state === 'syncing',
+      'text-success hover:bg-success/10': state === 'healthy'
     }"
     :title="title"
     :aria-label="`Statut réseau : ${label}. ${title}`"
     @click="triggerSync"
   >
-    <span v-if="state === 'syncing'" class="loading loading-spinner loading-xs text-info shrink-0"></span>
-    <span v-else class="inline-block w-1.5 h-1.5 rounded-full bg-current shrink-0"></span>
-    <span class="text-xs font-medium leading-none">{{ label }}</span>
+    <!-- Indicateur coloré rond devant -->
+    <span class="inline-block w-2 h-2 rounded-full bg-current shrink-0"></span>
+
+    <!-- Icône habituelle selon l'état (Wi-Fi & Synchronisation, sans outline) -->
+    <!-- En cours de synchronisation ou en attente : flèches circulaires -->
+    <template v-if="state === 'syncing' || state === 'pending'">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="w-4 h-4 shrink-0"
+        :class="{ 'animate-spin': state === 'syncing' }"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <polyline points="23 4 23 10 17 10" />
+        <polyline points="1 20 1 14 7 14" />
+        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+      </svg>
+      <span v-if="state === 'pending' && pendingCount > 0" class="text-xs font-semibold leading-none">
+        {{ pendingCount }}
+      </span>
+    </template>
+
+    <!-- Hors ligne : nuage barré -->
+    <svg
+      v-else-if="state === 'offline'"
+      xmlns="http://www.w3.org/2000/svg"
+      class="w-4 h-4 shrink-0"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M22.61 16.95A5 5 0 0 0 18 10h-1.26a8 8 0 0 0-7.05-6M5 5a8 8 0 0 0-4 7h1.74a5 5 0 0 0 9.21 2M1 1l22 22" />
+    </svg>
+
+    <!-- À jour / connecté : nuage classique épuré sans coche -->
+    <svg
+      v-else
+      xmlns="http://www.w3.org/2000/svg"
+      class="w-4 h-4 shrink-0"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
+    </svg>
   </button>
 </template>
