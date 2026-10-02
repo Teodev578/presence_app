@@ -3472,6 +3472,36 @@ export function checkPendingNotifications() {
   return true;
 }
 
+/**
+ * Vérifie l'action manuelle de refus et purge immédiate d'un compte non validé (G159-G160).
+ */
+export function checkImmediateReject() {
+  const upFile = path.resolve('supabase/migrations/20261002223000_reject_pending_profile_rpc.sql');
+  const downFile = path.resolve('supabase/migrations/20261002223000_reject_pending_profile_rpc_down.sql');
+
+  if (!fs.existsSync(upFile) || !fs.existsSync(downFile)) {
+    console.error('FAILURE G159: Fichiers de migration RPC reject introuvables');
+    return false;
+  }
+
+  const upContent = fs.readFileSync(upFile, 'utf8');
+  const downContent = fs.readFileSync(downFile, 'utf8');
+  if (!upContent.includes('admin_reject_unverified_account') || !upContent.includes('pending_validation') || !downContent.includes('DROP FUNCTION')) {
+    console.error('FAILURE G159: Fichiers de migration RPC reject incomplets');
+    return false;
+  }
+
+  const empViewPath = path.join(SRC_DIR, 'views', 'manager', 'EmployeesView.vue');
+  const empContent = fs.readFileSync(empViewPath, 'utf8');
+  if (!empContent.includes('requestReject') || !empContent.includes('confirmReject') || !empContent.includes('admin_reject_unverified_account') || !empContent.includes('Refuser')) {
+    console.error('FAILURE G160: EmployeesView.vue n\'intègre pas l\'action de refus ou la modale');
+    return false;
+  }
+
+  console.log('G159-G160 passed: Immediate reject action and RPC purge fully verified');
+  return true;
+}
+
 // Exécution CLI
 const arg = process.argv[2] || '--all';
 let success = true;
@@ -3606,6 +3636,8 @@ if (arg === '--emojis') {
   success = checkAccountLifecycle();
 } else if (arg === '--pending-notifications') {
   success = checkPendingNotifications();
+} else if (arg === '--immediate-reject') {
+  success = checkImmediateReject();
 } else if (arg === '--all') {
   const r1 = checkEmojis();
   const r2 = checkRadii();
@@ -3668,10 +3700,11 @@ if (arg === '--emojis') {
   const r147 = checkNotificationBell();
   const r150 = checkAccountLifecycle();
   const r156 = checkPendingNotifications();
+  const r159 = checkImmediateReject();
   const r48 = r39; // Une seule compilation sert les portes de build G39 et G48
-  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60 && r63 && r64 && r65 && r66 && r72 && r73 && r74 && r75 && r88 && r89 && r92 && r93 && r94 && r95 && r96 && r97 && r147 && r150 && r156;
+  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60 && r63 && r64 && r65 && r66 && r72 && r73 && r74 && r75 && r88 && r89 && r92 && r93 && r94 && r95 && r96 && r97 && r147 && r150 && r156 && r159;
 } else {
-  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--presences-ui|--presences-period|--presences-table|--presences-sort|--presences-localfirst|--sync-scope|--livequery-deps|--manager-dexie|--manager-grammar|--manager-responsive|--manager-nav-icons|--manager-finish|--employee-finish|--settings-page|--cross-space-gateways|--back-navigation|--notification-bell|--account-lifecycle|--pending-notifications|--manager-build|--sidebar-build|--build|--all]`);
+  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--presences-ui|--presences-period|--presences-table|--presences-sort|--presences-localfirst|--sync-scope|--livequery-deps|--manager-dexie|--manager-grammar|--manager-responsive|--manager-nav-icons|--manager-finish|--employee-finish|--settings-page|--cross-space-gateways|--back-navigation|--notification-bell|--account-lifecycle|--pending-notifications|--immediate-reject|--manager-build|--sidebar-build|--build|--all]`);
   process.exit(1);
 }
 

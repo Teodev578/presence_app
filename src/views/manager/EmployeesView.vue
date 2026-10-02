@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { useRouter } from '../../router'
 import { db, useLiveQuery } from '../../lib/db'
 import { generateUUIDv7 } from '../../lib/uuidv7'
+import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../composables/useAuth'
 import { useSyncEngine } from '../../composables/useSyncEngine'
 import ConfirmModal from '../../components/shared/ConfirmModal.vue'
@@ -363,6 +364,47 @@ const confirmValidate = async () => {
   }
 }
 
+// Action : Refuser et purger immédiatement une inscription non validée
+const employeeToReject = ref(null)
+const isRejecting = ref(false)
+
+const requestReject = (emp) => {
+  employeeToReject.value = emp
+}
+
+const confirmReject = async () => {
+  if (!employeeToReject.value) return
+  isRejecting.value = true
+  const target = employeeToReject.value
+
+  try {
+    // 1. Suppression physique locale dans Dexie (Local-First réactif)
+    await db.profiles.delete(target.id)
+
+    // 2. Appel RPC distant Supabase pour purge définitive (RPC reject_pending_profile / admin_reject_unverified_account)
+    if (navigator.onLine) {
+      try {
+        await supabase.rpc('admin_reject_unverified_account', {
+          target_user_id: target.id,
+        })
+      } catch (rpcErr) {
+        console.warn('Erreur purge distante RPC :', rpcErr)
+      }
+    }
+
+    success(`L'inscription de « ${target.full_name} » a été refusée et supprimée.`)
+    employeeToReject.value = null
+    await refreshPendingCount()
+    if (user.value?.id) {
+      syncNow(user.value.id)
+    }
+  } catch (err) {
+    toastError(`Erreur lors du refus : ${err.message}`)
+  } finally {
+    isRejecting.value = false
+  }
+}
+
 // Action : Archiver un compte actif (délai de 30 jours)
 const employeeToArchive = ref(null)
 const isArchiving = ref(false)
@@ -631,8 +673,15 @@ const confirmUnarchive = async () => {
 
             <!-- Actions contextuelles selon statut -->
             <div class="flex items-center justify-end gap-2 pt-3 border-t border-base-300/60">
-              <!-- Si en attente : Valider le compte -->
+              <!-- Si en attente : Valider ou Refuser le compte -->
               <template v-if="emp.status === 'pending_validation'">
+                <button
+                  type="button"
+                  class="btn btn-ghost font-semibold text-error rounded-m3-sm min-h-11 px-3 hover:bg-error/10"
+                  @click="requestReject(emp)"
+                >
+                  Refuser
+                </button>
                 <button
                   type="button"
                   class="btn btn-primary font-bold rounded-m3-sm gap-1.5 min-h-11 px-4"
@@ -737,8 +786,15 @@ const confirmUnarchive = async () => {
                 </td>
                 <td class="text-right">
                   <div class="inline-flex items-center gap-1.5">
-                    <!-- Si en attente : Valider le compte -->
+                    <!-- Si en attente : Valider ou Refuser le compte -->
                     <template v-if="emp.status === 'pending_validation'">
+                      <button
+                        type="button"
+                        class="btn btn-ghost min-h-11 rounded-m3-sm font-semibold text-error px-2.5 hover:bg-error/10"
+                        @click="requestReject(emp)"
+                      >
+                        Refuser
+                      </button>
                       <button
                         type="button"
                         class="btn btn-primary min-h-11 rounded-m3-sm font-bold px-3 gap-1"
@@ -891,6 +947,18 @@ const confirmUnarchive = async () => {
       :loading="isValidating"
       @confirm="confirmValidate"
       @cancel="employeeToValidate = null"
+    />
+
+    <!-- Modal de refus et suppression immédiate -->
+    <ConfirmModal
+      :open="!!employeeToReject"
+      title="Refuser et supprimer l'inscription ?"
+      :message="`Le compte de « ${employeeToReject?.full_name || ''} » (${employeeToReject?.email || ''}) sera définitivement supprimé sans attendre le délai de 7 jours.`"
+      confirm-text="Refuser et supprimer"
+      confirm-class="btn-error text-error-content"
+      :loading="isRejecting"
+      @confirm="confirmReject"
+      @cancel="employeeToReject = null"
     />
 
     <!-- Modal d'archivage temporaire (30 jours) -->

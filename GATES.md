@@ -1181,6 +1181,40 @@ Scope: Notifications contextuelles du cycle de vie des comptes : (1) alerte pour
   EXPECT: G158 passed: PendingApprovalView integrates NotificationBell and superior solicitation copy
   EVIDENCE: G158 passed: PendingApprovalView integrates NotificationBell and superior solicitation copy (vérifié par oracle --voice-conformance et --pending-notifications, bandeau supérieur avec cloche, texte d'aide bienveillant sans termes administratifs proscrits)
 
+---
+
+# Gates: Action Manuelle Refuser et Purge Immédiate
+
+OWNS: supabase/migrations/*reject_pending_profile*, src/views/manager/EmployeesView.vue, scripts/verify-gates.mjs, GATES.md, .agents/WRITING_IMPROVEMENT.md
+
+Scope: Ajout d'une commande explicite « Refuser » dans l'espace manager pour purger immédiatement et définitivement un compte non validé (dans auth.users et public.profiles via RPC PostgreSQL SECURITY DEFINER reject_pending_profile), avec modale de confirmation ConfirmModal, cibles tactiles 44px, et rafraîchissement réactif local-first.
+
+- [x] G159: Migration Supabase RPC admin_reject_unverified_account UP et DOWN avec vérification de statut pending_validation
+  CHECK: node -e "const fs = require('fs'); const up = fs.readFileSync('supabase/migrations/20261002223000_reject_pending_profile_rpc.sql', 'utf8'); const down = fs.readFileSync('supabase/migrations/20261002223000_reject_pending_profile_rpc_down.sql', 'utf8'); if (!up.includes('admin_reject_unverified_account') || !up.includes('SECURITY DEFINER') || !down.includes('DROP FUNCTION')) { console.error('FAILURE: RPC migration files incomplete'); process.exit(1); } console.log('G159 passed: RPC admin_reject_unverified_account migrations valid');"
+  EXPECT: G159 passed: RPC admin_reject_unverified_account migrations valid
+  EVIDENCE:
+    $ node -e "const fs = require('fs'); const up = fs.readFileSync('supabase/migrations/20261002223000_reject_pending_profile_rpc.sql', 'utf8'); const down = fs.readFileSync('supabase/migrations/20261002223000_reject_pending_profile_rpc_down.sql', 'utf8'); if (!up.includes('admin_reject_unverified_account') || !up.includes('SECURITY DEFINER') || !down.includes('DROP FUNCTION')) { console.error('FAILURE: RPC migration files incomplete'); process.exit(1); } console.log('G159 passed: RPC admin_reject_unverified_account migrations valid');"
+    G159 passed: RPC admin_reject_unverified_account migrations valid
+
+- [x] G160: Commande « Refuser » intégrée dans EmployeesView.vue avec modale de confirmation ConfirmModal et appel RPC
+  CHECK: node -e "const fs = require('fs'); const emp = fs.readFileSync('src/views/manager/EmployeesView.vue', 'utf8'); if (!emp.includes('requestReject') || !emp.includes('confirmReject') || !emp.includes('admin_reject_unverified_account') || !emp.includes('Refuser')) { console.error('FAILURE: EmployeesView missing reject action or modal'); process.exit(1); } console.log('G160 passed: EmployeesView includes reject action with confirmation and RPC call');"
+  EXPECT: G160 passed: EmployeesView includes reject action with confirmation and RPC call
+  EVIDENCE:
+    $ node -e "const fs = require('fs'); const emp = fs.readFileSync('src/views/manager/EmployeesView.vue', 'utf8'); if (!emp.includes('requestReject') || !emp.includes('confirmReject') || !emp.includes('admin_reject_unverified_account') || !emp.includes('Refuser')) { console.error('FAILURE: EmployeesView missing reject action or modal'); process.exit(1); } console.log('G160 passed: EmployeesView includes reject action with confirmation and RPC call');"
+    G160 passed: EmployeesView includes reject action with confirmation and RPC call
+
+- [x] G161: Validation intégrale de la suite déterministe et compilation de production
+  CHECK: node scripts/verify-gates.mjs --all && npm run build
+  EXPECT: G159-G160 passed: Immediate reject action and RPC purge fully verified
+  EVIDENCE:
+    $ node scripts/verify-gates.mjs --all && npm run build
+    ...
+    G159-G160 passed: Immediate reject action and RPC purge fully verified
+    vite v8.3.0 building client environment for production...
+    ✓ built in 1.10s
+    (exit code: 0)
+
+
 
 
 

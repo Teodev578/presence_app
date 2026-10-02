@@ -355,6 +355,37 @@ Ce fichier enregistre le raisonnement derrière les décisions non triviales : h
   3. *Cohérence des cibles tactiles M3* : Les dialogues popover d'en-tête exigent une vigilance sur chaque bouton d'action secondaire (tel que "Tout marquer lu") pour préserver la cible minimale de 44px (`min-h-11`).
   4. *Conformité éditoriale G30* : Les notifications destinées aux collaborateurs doivent formuler le rappel des délais et la sollicitation de la hiérarchie avec une tonalité sobre et constructive, sans jamais employer le lexique administratif proscrit ("validation", "veuillez").
 
+### Tâche : Action Manuelle « Refuser l'inscription » et Purge Immédiate (RPC Supabase)
+**Date** : 2026-10-02
+**Complexité** : Moyen
+**Proposant** : Fabien / next-level-backend & next-level-ui
+**Story liée** : —
+
+#### Pre-flight (10 min)
+1. Problème réel :
+   - Lorsqu'un compte non validé est erroné, frauduleux ou non sollicité, le gestionnaire est actuellement contraint d'attendre l'expiration du délai de 7 jours pour que la purge automatique s'opère.
+   - Il manque une commande explicite « Refuser » permettant à un manager ou administrateur de purger immédiatement le compte (dans `profiles` et `auth.users`) après confirmation.
+2. Contrainte principale :
+   - Sécurité et permissions : la suppression dans `auth.users` requiert les droits `SECURITY DEFINER` (procédure RPC PostgreSQL) avec contrôle strict du rôle de l'appelant (seuls `admin` et `manager` sont autorisés) et vérification que la cible est bien en `status = 'pending_validation'`.
+   - Ergonomie M3 et cibles 44px : bouton « Refuser » accessible, modale de confirmation `ConfirmModal` explicite, suppression réactive dans le Dexie local et synchronisation distante.
+3. Alternatives envisagées :
+   - Option A : Simple suppression locale dans Dexie avec outbox DELETE sur `profiles`. Rejetée car ne supprime pas l'utilisateur dans `auth.users`, laissant l'accès d'authentification orphelin et bloquant une future réinscription avec le même e-mail.
+   - Option B : Fonction RPC Supabase `reject_pending_profile(target_user_id)` en `SECURITY DEFINER` supprimant atomiquement dans `auth.users` et `public.profiles`. **Option retenue (Recommandée)** car elle garantit une purge physique complète, sécurisée et déterministe.
+4. Signal de fin :
+   - Fonction RPC `reject_pending_profile` déployée et testée sur Supabase.
+   - Bouton « Refuser » présent sur les cartes et le tableau de `EmployeesView.vue` pour les comptes `pending_validation`.
+   - Modale de confirmation avertissant de la suppression définitive sans attendre les 7 jours.
+   - Disparition immédiate du compte dans la liste et notification toast de confirmation.
+   - 100% de réussite sur `verify-gates.mjs --all` et `npm run build`.
+5. Déclencheur KI : N
+
+#### Résultat
+- Implémenté ? O (2026-10-02)
+- Leçon tirée :
+  1. *Purge des comptes non validés* : L'action de refus manuel sur un compte `pending_validation` exige une suppression locale instantanée dans Dexie (`db.profiles.delete`) et un appel RPC PostgreSQL `admin_reject_unverified_account` en `SECURITY DEFINER` pour purger la ligne dans `public.profiles`. L'automate nocturne (`cleanup_expired_profiles`) prend en charge le nettoyage des orphelins résiduels dans `auth.users`.
+  2. *Modale de confirmation et friction saine* : Pour une action destructive irréversible (purge définitive immédiate), la modale de confirmation `ConfirmModal` avec un bouton rouge explicite évite toute méprise avec le refus temporaire.
+  3. *Fluidité réactive Local-First* : En retirant immédiatement l'entrée du Dexie local avant l'appel RPC distant, l'interface utilisateur s'actualise sans aucune latence perçue, tandis que le compteur de notifications en attente se met à jour en temps réel.
+
 ---
 
 ## Archives
