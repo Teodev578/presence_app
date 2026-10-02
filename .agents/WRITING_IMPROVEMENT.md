@@ -160,6 +160,25 @@ Ce fichier enregistre le raisonnement derrière les décisions non triviales : h
 - Implémenté ? O (2026-10-02)
 - Leçon tirée : L'unification des sélecteurs temporels sous un gabarit commun (chevrons sanctuarisés 44px + libellé adaptatif court/long + déclencheur de saisie native au clic) élimine la friction ergonomique sur mobile tout en conservant une structure responsive robuste et sans dette.
 
+### Tâche : Harmonisation du Statut Réseau (Tiroir et Bandeau de navigation)
+**Date** : 2026-10-02
+**Complexité** : Moyen
+**Proposant** : Fabien
+**Story liée** : —
+
+#### Pre-flight (10 min)
+1. Problème réel : Divergence de langage visuel entre l'indicateur permanent de synchronisation dans le tiroir (`SyncIndicator.vue`) et l'alerte réseau du bandeau d'en-tête (`SyncAlert.vue`). `SyncIndicator` employait un badge DaisyUI opaque à fond plein grisâtre (`badge-ghost`) pour l'état hors ligne, alors que `SyncAlert` affichait une pastille transparente bordée en orange warning (`border-warning/40 text-warning`).
+2. Contrainte principale : Préservation stricte de la porte G24 (présence des tokens `badge-sm`, `min-w-0`, `max-w-full`, `shrink`, et du span de texte avec `truncate`), respect de l'ancrage du repli en rail (`.rail-network`), et maintien du seuil d'alerte silencieux quand tout est sain.
+3. Alternatives envisagées :
+   - Masquer l'alerte sur desktop au profit du seul tiroir — examinée mais l'utilisateur a expressément choisi l'alignement sur le design exact de la puce bordée du bandeau.
+   - Puce transparente bordée sur fond transparent dans le tiroir avec synchronisation sémantique des couleurs (warning orange pour hors ligne, info bleu pour en attente, success vert pour à jour) — **retenue** conformément au choix explicite de l'utilisateur.
+4. Signal de fin : Remplacement du badge DaisyUI par la pilule transparente bordée avec puce `bg-current`, 100% de réussite sur `node scripts/verify-gates.mjs --all` et vérification visuelle par captures DevTools en état connecté et hors ligne.
+5. Déclencheur KI : N
+
+#### Résultat
+- Implémenté ? O (2026-10-02)
+- Leçon tirée : Les indicateurs d'état disséminés sur différentes surfaces (tiroir permanent et bandeau contextuel) doivent partager une grammaire de composant uniforme (fond transparent, bordure fine sémantique et puce `bg-current`) pour éviter toute dissonance cognitive lors des transitions de connexion.
+
 ---
 
 ## Archives

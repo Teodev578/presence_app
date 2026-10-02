@@ -55,7 +55,12 @@ const statusText = computed(() => {
   <button
     v-if="compact"
     type="button"
-    class="inline-flex items-center gap-1.5 h-7 min-h-7 px-2.5 rounded-full border border-base-300/70 bg-base-100/75 hover:bg-base-200/70 active:scale-95 transition-all text-base-content/75 hover:text-base-content cursor-pointer select-none"
+    class="inline-flex items-center gap-1.5 h-7 min-h-7 px-2.5 rounded-full border bg-transparent active:scale-95 transition-all cursor-pointer select-none"
+    :class="{
+      'border-warning/40 text-warning hover:bg-warning/5': !isOnline,
+      'border-info/40 text-info hover:bg-info/5': isOnline && (pendingCount > 0 || isSyncing),
+      'border-success/40 text-success hover:bg-success/5': isOnline && pendingCount === 0 && !isSyncing
+    }"
     :title="!isOnline ? 'Terminal déconnecté d\'Internet (stockage local actif)' : pendingCount > 0 ? (pendingCount > 1 ? `${pendingCount} modifications en attente de synchronisation (cliquer pour forcer)` : '1 modification en attente de synchronisation (cliquer pour forcer)') : 'Données synchronisées avec le serveur'"
     :aria-label="`Statut réseau : ${statusText}`"
     @click="triggerSync"
@@ -63,12 +68,7 @@ const statusText = computed(() => {
     <span v-if="isSyncing" class="loading loading-spinner loading-xs text-info shrink-0"></span>
     <span
       v-else
-      class="inline-block w-1.5 h-1.5 rounded-full shrink-0"
-      :class="{
-        'bg-base-content/40': !isOnline,
-        'bg-warning animate-pulse': isOnline && pendingCount > 0,
-        'bg-success': isOnline && pendingCount === 0
-      }"
+      class="inline-block w-1.5 h-1.5 rounded-full bg-current shrink-0"
     ></span>
 
     <Transition name="fade-fast" mode="out-in">
@@ -80,12 +80,11 @@ const statusText = computed(() => {
   <button
     v-else
     type="button"
-    class="badge badge-sm shrink min-w-0 max-w-full py-2.5 px-3 gap-1.5 font-medium cursor-pointer transition-all duration-200 select-none hover:opacity-85 active:scale-95"
+    class="badge badge-sm shrink min-w-0 max-w-full py-2 px-2.5 gap-1.5 font-medium cursor-pointer transition-all duration-200 select-none hover:opacity-85 active:scale-95 rounded-full border bg-transparent"
     :class="{
-      'badge-ghost border-base-300 bg-base-200 text-base-content/60': !isOnline,
-      'badge-warning border-warning/40 bg-warning/10 text-warning-content': isOnline && pendingCount > 0 && !isSyncing,
-      'badge-success border-success/40 bg-success/10 text-success': isOnline && pendingCount === 0 && !isSyncing,
-      'badge-info border-info/40 bg-info/10 text-info': isOnline && isSyncing
+      'border-warning/40 text-warning hover:bg-warning/5': !isOnline,
+      'border-info/40 text-info hover:bg-info/5': isOnline && (pendingCount > 0 || isSyncing),
+      'border-success/40 text-success hover:bg-success/5': isOnline && pendingCount === 0 && !isSyncing
     }"
     :title="!isOnline ? 'Terminal hors ligne' : pendingCount > 0 ? (pendingCount > 1 ? `${pendingCount} modifications en attente` : '1 modification en attente') : 'Données synchronisées (cliquer pour forcer)'"
     aria-label="État de synchronisation"
@@ -94,18 +93,13 @@ const statusText = computed(() => {
     <span v-if="isSyncing" class="loading loading-spinner loading-xs text-info shrink-0"></span>
     <span
       v-else
-      class="inline-block w-1.5 h-1.5 rounded-full shrink-0"
-      :class="{
-        'bg-base-content/40': !isOnline,
-        'bg-warning animate-pulse': isOnline && pendingCount > 0,
-        'bg-success': isOnline && pendingCount === 0
-      }"
+      class="inline-block w-1.5 h-1.5 rounded-full bg-current shrink-0"
     ></span>
 
     <Transition name="fade-fast" mode="out-in">
       <!-- Troncature d'abord : le badge cède sa largeur au lieu de pousser le contrôle d'apparence.
            min-w-0 est requis, un élément flex ne descendant jamais sous sa largeur de contenu -->
-      <span :key="statusText" class="text-xs truncate min-w-0">{{ statusText }}</span>
+      <span :key="statusText" class="text-xs truncate min-w-0 font-medium leading-none">{{ statusText }}</span>
     </Transition>
   </button>
 </template>
