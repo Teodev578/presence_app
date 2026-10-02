@@ -15,6 +15,7 @@ import {
   resolveSessionState,
   resolveSessionMinutes,
 } from '../../lib/dateUtils'
+import { formatWeekLabel } from '../../composables/useAvailabilities'
 import StatusBadge from '../../components/shared/StatusBadge.vue'
 import ManagerPageHeader from '../../components/manager/ManagerPageHeader.vue'
 import ManagerKpiCard from '../../components/manager/ManagerKpiCard.vue'
@@ -40,10 +41,14 @@ const addDays = (dateStr, days) => {
   return getLocalDateString(d)
 }
 
-// Navigation de l'ancre par les flèches : la semaine avance de 7 jours, le mois d'un mois.
+// Navigation de l'ancre par les flèches : jour avance d'un jour, la semaine de 7 jours, le mois d'un mois.
 // Seule la saisie de l'ancre change, la logique `dateRange` reste intacte.
 const shiftAnchor = (unit, direction) => {
   const anchor = filterDate.value || getLocalDateString()
+  if (unit === 'day') {
+    filterDate.value = addDays(anchor, direction)
+    return
+  }
   if (unit === 'month') {
     const d = new Date(`${anchor}T12:00:00`)
     d.setDate(1)
@@ -77,17 +82,45 @@ const dateRange = computed(() => {
   return { start: anchor, end: anchor }
 })
 
+// Formats de dates unifiés pour les sélecteurs et l'en-tête de période
+const dayLabelLong = computed(() => {
+  const d = new Date(`${filterDate.value || getLocalDateString()}T12:00:00`)
+  if (isNaN(d.getTime())) return filterDate.value
+  const str = d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  return str.charAt(0).toUpperCase() + str.slice(1)
+})
+
+const dayLabelShort = computed(() => {
+  const d = new Date(`${filterDate.value || getLocalDateString()}T12:00:00`)
+  if (isNaN(d.getTime())) return filterDate.value
+  const str = d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
+  return str.charAt(0).toUpperCase() + str.slice(1)
+})
+
+const weekLabelLong = computed(() => {
+  return formatWeekLabel(dateRange.value.start, { includeWeekend: true })
+})
+
+const weekLabelShort = computed(() => {
+  return formatWeekLabel(dateRange.value.start, { includeWeekend: true, short: true })
+})
+
+const monthLabel = computed(() => {
+  const { start } = dateRange.value
+  const d = new Date(`${start}T12:00:00`)
+  if (isNaN(d.getTime())) return start
+  const label = d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+  return label.charAt(0).toUpperCase() + label.slice(1)
+})
+
 // Libellé de la plage, pour situer la période sans ambiguïté : le jour se lit en toutes lettres,
 // la semaine annonce sa plage, le mois son nom et son année.
 const periodLabel = computed(() => {
   const { start, end } = dateRange.value
   if (filterPeriod.value === 'day') return formatWorkDate(start, { long: true }) || start
-  if (filterPeriod.value === 'month') {
-    const d = new Date(`${start}T12:00:00`)
-    const label = d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
-    return label.charAt(0).toUpperCase() + label.slice(1)
-  }
-  return `${formatWorkDate(start) || start} → ${formatWorkDate(end) || end}`
+  if (filterPeriod.value === 'month') return monthLabel.value
+  if (filterPeriod.value === 'week') return weekLabelLong.value
+  return `${formatWorkDate(start) || start} – ${formatWorkDate(end) || end}`
 })
 
 // Modal d'édition/correction manuelle (admin)
@@ -447,34 +480,77 @@ const saveEdit = async () => {
         </div>
       </fieldset>
 
-      <!-- Jour : date d'ancrage -->
-      <fieldset v-if="filterPeriod === 'day'" class="fieldset sm:w-auto">
+      <!-- Jour : date d'ancrage avec chevrons et ouverture native au clic -->
+      <fieldset v-if="filterPeriod === 'day'" class="fieldset w-full sm:w-auto max-w-full">
         <legend class="fieldset-legend text-xs font-semibold text-base-content/70">Date</legend>
-        <input id="f-date" v-model="filterDate" type="date" class="input input-bordered min-h-11 rounded-m3-sm w-full sm:w-auto" />
-      </fieldset>
-
-      <!-- Semaine : ancre parcourue par flèches, plage lisible -->
-      <fieldset v-else-if="filterPeriod === 'week'" class="fieldset">
-        <legend class="fieldset-legend text-xs font-semibold text-base-content/70">Semaine</legend>
-        <div class="inline-flex items-center rounded-m3-md border border-base-300 bg-base-300/50">
+        <div class="relative flex w-full sm:w-auto items-center justify-between sm:justify-start rounded-m3-md border border-base-300 bg-base-300/50 min-h-11 max-w-full">
           <button
             type="button"
-            class="btn btn-ghost min-h-11 min-w-11 p-0 rounded-l-m3-md"
-            aria-label="Semaine précédente"
-            @click="shiftAnchor('week', -1)"
+            class="btn btn-ghost min-h-11 min-w-11 shrink-0 p-0 rounded-l-m3-md active:scale-95 transition-transform duration-150 motion-reduce:transform-none focus-visible:outline-2 focus-visible:outline-primary"
+            aria-label="Jour précédent"
+            @click="shiftAnchor('day', -1)"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M15 18l-6-6 6-6"></path>
             </svg>
           </button>
-          <span class="px-3 min-h-11 flex items-center text-sm font-semibold text-base-content tabular-nums">{{ periodLabel }}</span>
+          <label for="f-date" class="relative flex-1 sm:flex-initial min-w-0 px-2 sm:px-3 min-h-11 flex items-center justify-center text-center cursor-pointer hover:bg-base-content/5 transition-colors">
+            <input
+              id="f-date"
+              v-model="filterDate"
+              type="date"
+              class="absolute inset-0 w-full h-full opacity-0 cursor-pointer pointer-events-auto"
+              aria-label="Sélectionner une date"
+            />
+            <span class="sm:hidden text-xs sm:text-sm font-semibold text-base-content truncate pointer-events-none">
+              {{ dayLabelShort }}
+            </span>
+            <span class="hidden sm:inline text-sm font-semibold text-base-content whitespace-nowrap pointer-events-none">
+              {{ dayLabelLong }}
+            </span>
+          </label>
           <button
             type="button"
-            class="btn btn-ghost min-h-11 min-w-11 p-0 rounded-r-m3-md"
+            class="btn btn-ghost min-h-11 min-w-11 shrink-0 p-0 rounded-r-m3-md active:scale-95 transition-transform duration-150 motion-reduce:transform-none focus-visible:outline-2 focus-visible:outline-primary"
+            aria-label="Jour suivant"
+            @click="shiftAnchor('day', 1)"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M9 18l6-6-6-6"></path>
+            </svg>
+          </button>
+        </div>
+      </fieldset>
+
+      <!-- Semaine : ancre parcourue par flèches, format adaptatif responsive -->
+      <fieldset v-else-if="filterPeriod === 'week'" class="fieldset w-full sm:w-auto max-w-full">
+        <legend class="fieldset-legend text-xs font-semibold text-base-content/70">Semaine</legend>
+        <div class="flex w-full sm:w-auto items-center justify-between sm:justify-start rounded-m3-md border border-base-300 bg-base-300/50 min-h-11 max-w-full">
+          <button
+            type="button"
+            class="btn btn-ghost min-h-11 min-w-11 shrink-0 p-0 rounded-l-m3-md active:scale-95 transition-transform duration-150 motion-reduce:transform-none focus-visible:outline-2 focus-visible:outline-primary"
+            aria-label="Semaine précédente"
+            @click="shiftAnchor('week', -1)"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M15 18l-6-6 6-6"></path>
+            </svg>
+          </button>
+          <div class="flex-1 sm:flex-initial min-w-0 px-2 sm:px-3 min-h-11 flex items-center justify-center text-center">
+            <span class="sm:hidden text-xs sm:text-sm font-semibold text-base-content truncate">
+              {{ weekLabelShort }}
+            </span>
+            <span class="hidden sm:inline text-sm font-semibold text-base-content whitespace-nowrap">
+              {{ weekLabelLong }}
+            </span>
+          </div>
+          <button
+            type="button"
+            class="btn btn-ghost min-h-11 min-w-11 shrink-0 p-0 rounded-r-m3-md active:scale-95 transition-transform duration-150 motion-reduce:transform-none focus-visible:outline-2 focus-visible:outline-primary"
             aria-label="Semaine suivante"
             @click="shiftAnchor('week', 1)"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M9 18l6-6-6-6"></path>
             </svg>
           </button>
@@ -482,27 +558,31 @@ const saveEdit = async () => {
       </fieldset>
 
       <!-- Mois : ancre parcourue par flèches, mois lisible -->
-      <fieldset v-else-if="filterPeriod === 'month'" class="fieldset">
+      <fieldset v-else-if="filterPeriod === 'month'" class="fieldset w-full sm:w-auto max-w-full">
         <legend class="fieldset-legend text-xs font-semibold text-base-content/70">Mois</legend>
-        <div class="inline-flex items-center rounded-m3-md border border-base-300 bg-base-300/50">
+        <div class="flex w-full sm:w-auto items-center justify-between sm:justify-start rounded-m3-md border border-base-300 bg-base-300/50 min-h-11 max-w-full">
           <button
             type="button"
-            class="btn btn-ghost min-h-11 min-w-11 p-0 rounded-l-m3-md"
+            class="btn btn-ghost min-h-11 min-w-11 shrink-0 p-0 rounded-l-m3-md active:scale-95 transition-transform duration-150 motion-reduce:transform-none focus-visible:outline-2 focus-visible:outline-primary"
             aria-label="Mois précédent"
             @click="shiftAnchor('month', -1)"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M15 18l-6-6 6-6"></path>
             </svg>
           </button>
-          <span class="px-3 min-h-11 flex items-center text-sm font-semibold text-base-content">{{ periodLabel }}</span>
+          <div class="flex-1 sm:flex-initial min-w-0 px-2 sm:px-3 min-h-11 flex items-center justify-center text-center">
+            <span class="text-sm font-semibold text-base-content whitespace-nowrap">
+              {{ monthLabel }}
+            </span>
+          </div>
           <button
             type="button"
-            class="btn btn-ghost min-h-11 min-w-11 p-0 rounded-r-m3-md"
+            class="btn btn-ghost min-h-11 min-w-11 shrink-0 p-0 rounded-r-m3-md active:scale-95 transition-transform duration-150 motion-reduce:transform-none focus-visible:outline-2 focus-visible:outline-primary"
             aria-label="Mois suivant"
             @click="shiftAnchor('month', 1)"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M9 18l6-6-6-6"></path>
             </svg>
           </button>

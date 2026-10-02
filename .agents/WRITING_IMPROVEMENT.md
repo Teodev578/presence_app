@@ -140,6 +140,26 @@ Ce fichier enregistre le raisonnement derrière les décisions non triviales : h
 - Implémenté ? O (2026-10-02)
 - Leçon tirée : Les sélecteurs de dates hebdomadaires doivent disposer d'une variante courte pour les viewports étroits (< 640px) afin d'éviter d'imposer des chaînes de plus de 40 caractères dans des conteneurs mono-lignes.
 
+### Tâche : Harmonisation des formats de dates et responsivité des filtres (Pointages et Exports)
+**Date** : 2026-10-02
+**Complexité** : Moyen
+**Proposant** : Fabien
+**Story liée** : —
+
+#### Pre-flight (10 min)
+1. Problème réel : Divergences de gabarit et de formatage calendaire entre les modules Contrôle des présences (`PresencesView.vue`), Disponibilités (`AvailabilitiesView.vue`) et Exports (`ExportView.vue`). Le sélecteur journalier était un simple champ de saisie brut sans navigation par chevrons, la semaine utilisait une flèche brute `→` au lieu du tiret demi-cadratin `–`, et les gabarits n'offraient pas d'adaptation compacte sur mobile.
+2. Contrainte principale : Respect strict des assertions de `scripts/verify-gates.mjs` (G64 pour le filtre de période, G88 pour la grammaire gestionnaire, G89 pour le responsive, G72/G75 pour Dexie), maintien des cibles tactiles de 44×44px (`shrink-0 min-h-11 min-w-11`), et absence totale de dépendances externes nouvelles.
+3. Alternatives envisagées :
+   - Conserver l'input date natif apparent sur mobile pour le mode Jour — rejetée car visuellement hétérogène avec les modes Semaine et Mois.
+   - Sélecteur avec chevrons `<` `>` et libellé stylé intégrant un input date natif invisible au clic — **retenue (recommandée)** car elle offre simultanément la navigation rapide pas à pas et le sélecteur calendrier natif sans rupture esthétique.
+   - Flèches `→` textuelles pour les plages — rejetée (déconseillée) car typographiquement inférieure au tiret demi-cadratin `–`.
+4. Signal de fin : Gabarits unifiés sur `PresencesView.vue` et `ExportView.vue`, formats de date adaptatifs (court sur mobile, long sur desktop), 100% de succès sur `node scripts/verify-gates.mjs --all`, build Vite validé et vérification visuelle par captures d'écran DevTools sur mobile et desktop.
+5. Déclencheur KI : N
+
+#### Résultat
+- Implémenté ? O (2026-10-02)
+- Leçon tirée : L'unification des sélecteurs temporels sous un gabarit commun (chevrons sanctuarisés 44px + libellé adaptatif court/long + déclencheur de saisie native au clic) élimine la friction ergonomique sur mobile tout en conservant une structure responsive robuste et sans dette.
+
 ---
 
 ## Archives
