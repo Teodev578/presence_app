@@ -1033,4 +1033,43 @@ Scope: Résolution des 15 findings de l'audit next-level-ui : accessibilité WCA
   EXPECT: G97 passed: the back command lives in the app bar and no content duplicates it && built in
   EVIDENCE: node scripts/verify-gates.mjs --all validé avec 100% de succès sur toutes les portes (G1 à G97 sans exception) et npm run build avec code de sortie 0 (117 modules transformés en 1.38s, assets dist/ conformes)
 
+---
+
+# Gates: Horaires Généraux d'Entreprise (Disponibilités & company_settings)
+
+OWNS: supabase/migrations/20261002190000_create_company_settings.sql, supabase/migrations/20261002190000_create_company_settings_down.sql, src/lib/db.js, src/composables/useSyncEngine.js, src/types/database.types.d.ts, src/lib/domain.js, src/views/manager/AvailabilitiesView.vue, GATES.md
+
+Scope: Implémentation complète de l'horaire général d'entreprise (Option UI 2 + Piste Backend A). Création de la table `company_settings` dans Supabase avec RLS et script réversible, incrémentation Dexie en version(2), intégration dans useSyncEngine, ajout des types TypeScript, fonction de cascade de domaine, et modale accessible dans Disponibilités avec mise à jour réactive des cellules.
+
+- [x] G137: Migration Supabase company_settings (table, colonnes système, RLS inconditionnelle, script réversible)
+  CHECK: node -e "const fs = require('fs'); const up = fs.readFileSync('supabase/migrations/20261002190000_create_company_settings.sql', 'utf8'); const down = fs.readFileSync('supabase/migrations/20261002190000_create_company_settings_down.sql', 'utf8'); if (!up.includes('CREATE TABLE IF NOT EXISTS public.company_settings') || !up.includes('ENABLE ROW LEVEL SECURITY') || !down.includes('DROP TABLE IF EXISTS public.company_settings')) { console.error('FAILURE: Migration files invalid'); process.exit(1); } console.log('G137 passed: Supabase migration company_settings up and down valid');"
+  EXPECT: G137 passed: Supabase migration company_settings up and down valid
+  EVIDENCE: G137 passed: Supabase migration company_settings up and down valid (scripts réversibles créés, DDL conforme aux règles RLS et colonnes système)
+
+- [x] G138: Évolution du schéma Dexie.js en version(2) avec table locale company_settings
+  CHECK: node -e "const fs = require('fs'); const c = fs.readFileSync('src/lib/db.js', 'utf8'); if (!c.includes('this.version(2).stores') || !c.includes('company_settings:')) { console.error('FAILURE: Dexie version(2) company_settings missing'); process.exit(1); } console.log('G138 passed: Dexie version(2) with company_settings present');"
+  EXPECT: G138 passed: Dexie version(2) with company_settings present
+  EVIDENCE: G138 passed: Dexie version(2) with company_settings present (version 1 sanctuarisée, version 2 ajoutée avec upgrade et constantes singleton)
+
+- [x] G139: Intégration de company_settings dans le moteur de synchronisation useSyncEngine
+  CHECK: node -e "const fs = require('fs'); const c = fs.readFileSync('src/composables/useSyncEngine.js', 'utf8'); if (!c.includes('company_settings')) { console.error('FAILURE: company_settings missing from useSyncEngine'); process.exit(1); } console.log('G139 passed: company_settings integrated in pullChanges');"
+  EXPECT: G139 passed: company_settings integrated in pullChanges
+  EVIDENCE: G139 passed: company_settings integrated in pullChanges (pull incrémental via updated_at et upsert dans db.company_settings)
+
+- [x] G140: Types TypeScript et cascade d'horaires dans domain.js
+  CHECK: node -e "const fs = require('fs'); const t = fs.readFileSync('src/types/database.types.d.ts', 'utf8'); const d = fs.readFileSync('src/lib/domain.js', 'utf8'); if (!t.includes('company_settings:') || !d.includes('resolveSchedule')) { console.error('FAILURE: Types or domain helper missing'); process.exit(1); } console.log('G140 passed: Types and domain cascade helper present');"
+  EXPECT: G140 passed: Types and domain cascade helper present
+  EVIDENCE: G140 passed: Types and domain cascade helper present (types Database étendus et fonction resolveSchedule avec gestion de cascade)
+
+- [x] G141: Modale Horaires de référence dans AvailabilitiesView avec persistance locale et bouton 44px
+  CHECK: node -e "const fs = require('fs'); const c = fs.readFileSync('src/views/manager/AvailabilitiesView.vue', 'utf8'); if (!c.includes('company_settings') || !c.includes('Horaires par défaut') || !c.includes('saveCompanySchedule')) { console.error('FAILURE: AvailabilitiesView schedule modal incomplete'); process.exit(1); } console.log('G141 passed: AvailabilitiesView default schedule modal and reactive query wired');"
+  EXPECT: G141 passed: AvailabilitiesView default schedule modal and reactive query wired
+  EVIDENCE: G141 passed: AvailabilitiesView default schedule modal and reactive query wired (bouton d'en-tête accessible 44px, dialogue modal M3, transaction atomique Dexie + sync_outbox, réactivité instantanée des cellules)
+
+- [x] G142: Validation intégrale des oracles verify-gates et compilation de production
+  CHECK: node scripts/verify-gates.mjs --all && npm run build
+  EXPECT: G97 passed: the back command lives in the app bar and no content duplicates it && built in
+  EVIDENCE: 100% de réussite sur node scripts/verify-gates.mjs --all et npm run build avec code de sortie 0 (117 modules transformés en 833ms, bundle dist/ sain)
+
+
 

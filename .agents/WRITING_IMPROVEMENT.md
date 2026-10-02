@@ -199,6 +199,34 @@ Ce fichier enregistre le raisonnement derrière les décisions non triviales : h
 - Implémenté ? O (2026-10-02)
 - Leçon tirée : Les métriques de planification gagnent en lisibilité quand elles sont traduites en concepts concrets d'équipe plutôt qu'en compteurs administratifs abstraits, notamment en explicitant le dénominateur (« 1 sur 15 journées prévues ») et en adaptant la métrique à la temporalité consultée.
 
+### Tâche : Configuration des Horaires Généraux d'Entreprise (Disponibilités & company_settings)
+**Date** : 2026-10-02
+**Complexité** : Élevée
+**Proposant** : Fabien / next-level-backend & next-level-ui
+**Story liée** : —
+
+#### Analyse
+- **Hypothèse initiale** : L'application ne disposait d'aucun horaire général dynamique ; seuls des horaires individuels figuraient dans `profiles` et `availabilities`, avec des valeurs par défaut figées (`09:00:00` / `18:00:00`). L'utilisateur a choisi l'Option UI 2 (module Disponibilités) et la Piste Backend A (`company_settings` en singleton).
+- **Contraintes identifiées** :
+  - Respect de l'architecture Local-First et de la frontière Dexie (version 2 incrémentale, version 1 sanctuarisée, singleton local).
+  - RLS Supabase inconditionnelle avec lecture `authenticated` et écriture réservée aux managers/admins.
+  - Transactional Outbox avec idempotence sur clé primaire fixe `'00000000-0000-0000-0000-000000000001'`.
+  - Maintien strict de la conformité aux oracles `verify-gates.mjs` (cibles 44px, tokens M3, absence d'ombres agressives, compilation sans erreur).
+- **Alternatives envisagées** :
+  - Option UI 1 (Paramètres `/manager/settings`) : rejetée par l'utilisateur au profit d'une action directe dans Disponibilités (`/manager/availabilities`), au plus près de la planification.
+  - Option UI 4 (Pointages `/manager/presences`) : rejetée car elle mélangeait audit opérationnel temps réel et paramétrage d'entreprise.
+  - Piste Backend B (`teams.expected_arrival_time`) : rejetée comme solution unique car elle ne couvrait pas les collaborateurs transverses sans équipe.
+  - Piste Backend C (Mise à jour en masse des profils) : rejetée car destructive pour les aménagements individuels et génératrice de bruit outbox.
+
+#### Décision
+**Choix retenu** : Table `company_settings` (Singleton d'organisation) avec migration SQL réversible, incrément Dexie `version(2)`, intégration dans `useSyncEngine.js`, et dialogue d'édition accessible dans l'en-tête de `AvailabilitiesView.vue` (Option UI 2) avec option d'harmonisation des collaborateurs.
+**Trade-offs acceptés** : Les collaborateurs conservent la possibilité d'avoir un horaire individuel contractuel distinct ; l'horaire d'entreprise agit comme le socle de référence par défaut.
+**Engagement KI** : N
+
+#### Résultat
+- Implémenté ? O (2026-10-02)
+- Leçon tirée : La gestion d'un horaire général dans une architecture Local-First gagne à être traitée comme un singleton d'organisation (`company_settings`) synchronisé via l'Outbox avec repli déterministe par cascade (`COALESCE` disponibilité > profil > organisation > défaut canonique). Son accès direct dans le module Disponibilités fluidifie le flux de planification sans dégrader la séparation des responsabilités.
+
 ---
 
 ## Archives

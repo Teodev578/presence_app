@@ -213,3 +213,41 @@ export function createOutboxEntry({
     status: 'pending',
   }
 }
+
+/**
+ * Résout déterministement les heures théoriques d'un collaborateur selon la cascade :
+ * 1. Créneau spécifique du jour dans les disponibilités (start_time, end_time)
+ * 2. Horaire individuel personnalisé de l'employé (s'il est spécifiquement défini)
+ * 3. Horaire de référence général de l'entreprise (companySettings)
+ * 4. Repli canonique de secours ('09:00' - '18:00')
+ *
+ * @param {Object} [params]
+ * @param {Object|null} [params.availability] - Disponibilité éventuelle du jour
+ * @param {Object|null} [params.profile] - Profil du collaborateur
+ * @param {Object|null} [params.companySettings] - Paramètres généraux d'organisation
+ * @returns {{ start: string, end: string, isCustom: boolean, source: 'slot' | 'profile' | 'company' | 'default' }}
+ */
+export function resolveSchedule({ availability = null, profile = null, companySettings = null } = {}) {
+  if (availability?.start_time || availability?.end_time) {
+    const fallbackStart = profile?.expected_arrival_time?.slice(0, 5) || companySettings?.expected_arrival_time?.slice(0, 5) || '09:00'
+    const fallbackEnd = profile?.expected_departure_time?.slice(0, 5) || companySettings?.expected_departure_time?.slice(0, 5) || '18:00'
+    const start = availability.start_time ? availability.start_time.slice(0, 5) : fallbackStart
+    const end = availability.end_time ? availability.end_time.slice(0, 5) : fallbackEnd
+    return { start, end, isCustom: true, source: 'slot' }
+  }
+
+  if (profile?.expected_arrival_time || profile?.expected_departure_time) {
+    const start = profile.expected_arrival_time?.slice(0, 5) || companySettings?.expected_arrival_time?.slice(0, 5) || '09:00'
+    const end = profile.expected_departure_time?.slice(0, 5) || companySettings?.expected_departure_time?.slice(0, 5) || '18:00'
+    return { start, end, isCustom: false, source: 'profile' }
+  }
+
+  if (companySettings?.expected_arrival_time || companySettings?.expected_departure_time) {
+    const start = companySettings.expected_arrival_time?.slice(0, 5) || '09:00'
+    const end = companySettings.expected_departure_time?.slice(0, 5) || '18:00'
+    return { start, end, isCustom: false, source: 'company' }
+  }
+
+  return { start: '09:00', end: '18:00', isCustom: false, source: 'default' }
+}
+

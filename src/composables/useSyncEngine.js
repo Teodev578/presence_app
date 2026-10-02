@@ -200,6 +200,16 @@ export function useSyncEngine() {
           await db.teams.bulkPut(teams)
         }
 
+        // 5. Pull des paramètres d'organisation (company_settings)
+        const { data: settings, error: settingsErr } = await supabase
+          .from('company_settings')
+          .select('*')
+          .gt('updated_at', cursor)
+
+        if (!settingsErr && settings?.length) {
+          await db.company_settings.bulkPut(settings)
+        }
+
         lastSyncTime.value = newCursor
         localStorage.setItem('last_sync_time', newCursor)
       } catch (err) {

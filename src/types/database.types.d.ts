@@ -250,6 +250,39 @@ export type Database = {
         }
         Relationships: []
       }
+      company_settings: {
+        Row: {
+          id: string
+          company_name: string
+          expected_arrival_time: string
+          expected_departure_time: string
+          late_tolerance_minutes: number
+          created_at: string
+          updated_at: string
+          deleted_at: string | null
+        }
+        Insert: {
+          id?: string
+          company_name?: string
+          expected_arrival_time?: string
+          expected_departure_time?: string
+          late_tolerance_minutes?: number
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Update: {
+          id?: string
+          company_name?: string
+          expected_arrival_time?: string
+          expected_departure_time?: string
+          late_tolerance_minutes?: number
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -276,3 +309,4 @@ export type Profile = Tables<'profiles'>
 export type Location = Tables<'locations'>
 export type Presence = Tables<'presences'>
 export type Availability = Tables<'availabilities'>
+export type CompanySettings = Tables<'company_settings'>

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from '../../router'
-import { db, useLiveQuery } from '../../lib/db'
+import { db, useLiveQuery, COMPANY_SETTINGS_ID, DEFAULT_COMPANY_SETTINGS } from '../../lib/db'
 import { generateUUIDv7 } from '../../lib/uuidv7'
 import { useAuth } from '../../composables/useAuth'
 import { useSyncEngine } from '../../composables/useSyncEngine'
@@ -76,6 +76,14 @@ const presenceRows = useLiveQuery(async () =>
 
 const teamRows = useLiveQuery(async () => db.teams.toArray(), [])
 const locationRows = useLiveQuery(async () => db.locations.toArray(), [])
+
+const companySettingsRow = useLiveQuery(
+  async () => {
+    const s = await db.company_settings.get(COMPANY_SETTINGS_ID)
+    return s || DEFAULT_COMPANY_SETTINGS
+  },
+  DEFAULT_COMPANY_SETTINGS
+)
 
 const locationsMap = computed(() => new Map((locationRows.value || []).map((loc) => [loc.id, loc])))
 
@@ -363,13 +371,17 @@ const openCellDetail = (emp, dayNumber) => {
   const location = presence?.location_id ? locationsMap.value.get(presence.location_id) : null
   const activeAvailability = getActiveAvailability(emp.id, dayNumber)
 
+  const generalSettings = companySettingsRow.value || DEFAULT_COMPANY_SETTINGS
+  const defaultStart = generalSettings.expected_arrival_time?.slice(0, 5) || '09:00'
+  const defaultEnd = generalSettings.expected_departure_time?.slice(0, 5) || '18:00'
+
   scheduleError.value = ''
   if (activeAvailability?.start_time) {
     customStartTime.value = activeAvailability.start_time.slice(0, 5)
   } else if (emp.expected_arrival_time) {
     customStartTime.value = emp.expected_arrival_time.slice(0, 5)
   } else {
-    customStartTime.value = '09:00'
+    customStartTime.value = defaultStart
   }
 
   if (activeAvailability?.end_time) {
@@ -377,7 +389,7 @@ const openCellDetail = (emp, dayNumber) => {
   } else if (emp.expected_departure_time) {
     customEndTime.value = emp.expected_departure_time.slice(0, 5)
   } else {
-    customEndTime.value = '18:00'
+    customEndTime.value = defaultEnd
   }
 
   selectedCell.value = {
@@ -510,8 +522,9 @@ const resetToDefaultSchedule = async () => {
         status: 'pending',
       })
     })
-    customStartTime.value = employee.expected_arrival_time?.slice(0, 5) || '09:00'
-    customEndTime.value = employee.expected_departure_time?.slice(0, 5) || '18:00'
+    const generalSettings = companySettingsRow.value || DEFAULT_COMPANY_SETTINGS
+    customStartTime.value = employee.expected_arrival_time?.slice(0, 5) || generalSettings.expected_arrival_time?.slice(0, 5) || '09:00'
+    customEndTime.value = employee.expected_departure_time?.slice(0, 5) || generalSettings.expected_departure_time?.slice(0, 5) || '18:00'
     toastSuccess('Horaires réinitialisés aux valeurs habituelles.')
     await refreshPendingCount()
     if (user.value?.id) {
@@ -527,14 +540,129 @@ const resetToDefaultSchedule = async () => {
 
 const getScheduledHours = (emp, dayNumber) => {
   const avail = getActiveAvailability(emp.id, dayNumber)
+  const generalSettings = companySettingsRow.value || DEFAULT_COMPANY_SETTINGS
+  const defaultStart = generalSettings.expected_arrival_time?.slice(0, 5) || '09:00'
+  const defaultEnd = generalSettings.expected_departure_time?.slice(0, 5) || '18:00'
+
   if (avail?.start_time || avail?.end_time) {
-    const start = avail.start_time ? avail.start_time.slice(0, 5) : (emp.expected_arrival_time ? emp.expected_arrival_time.slice(0, 5) : '09:00')
-    const end = avail.end_time ? avail.end_time.slice(0, 5) : (emp.expected_departure_time ? emp.expected_departure_time.slice(0, 5) : '18:00')
+    const start = avail.start_time ? avail.start_time.slice(0, 5) : (emp.expected_arrival_time ? emp.expected_arrival_time.slice(0, 5) : defaultStart)
+    const end = avail.end_time ? avail.end_time.slice(0, 5) : (emp.expected_departure_time ? emp.expected_departure_time.slice(0, 5) : defaultEnd)
     return { text: `${start} - ${end}`, isCustom: true }
   }
-  const start = emp.expected_arrival_time ? emp.expected_arrival_time.slice(0, 5) : '09:00'
-  const end = emp.expected_departure_time ? emp.expected_departure_time.slice(0, 5) : '18:00'
+  const start = emp.expected_arrival_time ? emp.expected_arrival_time.slice(0, 5) : defaultStart
+  const end = emp.expected_departure_time ? emp.expected_departure_time.slice(0, 5) : defaultEnd
   return { text: `${start} - ${end}`, isCustom: false }
+}
+
+// Configuration des horaires généraux d'entreprise (company_settings)
+const showCompanyScheduleModal = ref(false)
+const isSavingCompanySchedule = ref(false)
+const companyScheduleError = ref('')
+const companyScheduleForm = ref({
+  expected_arrival_time: '09:00',
+  expected_departure_time: '18:00',
+  sync_collaborators: true,
+})
+
+const openCompanyScheduleModal = () => {
+  const current = companySettingsRow.value || DEFAULT_COMPANY_SETTINGS
+  companyScheduleForm.value = {
+    expected_arrival_time: current.expected_arrival_time?.slice(0, 5) || '09:00',
+    expected_departure_time: current.expected_departure_time?.slice(0, 5) || '18:00',
+    sync_collaborators: true,
+  }
+  companyScheduleError.value = ''
+  showCompanyScheduleModal.value = true
+}
+
+const closeCompanyScheduleModal = () => {
+  showCompanyScheduleModal.value = false
+}
+
+const saveCompanySchedule = async () => {
+  isSavingCompanySchedule.value = true
+  companyScheduleError.value = ''
+
+  try {
+    const now = new Date().toISOString()
+    const arrivalTime = companyScheduleForm.value.expected_arrival_time.length === 5
+      ? `${companyScheduleForm.value.expected_arrival_time}:00`
+      : companyScheduleForm.value.expected_arrival_time
+    const departureTime = companyScheduleForm.value.expected_departure_time.length === 5
+      ? `${companyScheduleForm.value.expected_departure_time}:00`
+      : companyScheduleForm.value.expected_departure_time
+
+    const settingsPayload = {
+      id: COMPANY_SETTINGS_ID,
+      company_name: companySettingsRow.value?.company_name || 'Mon Entreprise',
+      expected_arrival_time: arrivalTime,
+      expected_departure_time: departureTime,
+      late_tolerance_minutes: 0,
+      created_at: companySettingsRow.value?.created_at || now,
+      updated_at: now,
+      deleted_at: null,
+    }
+
+    const clientMutationId = generateUUIDv7()
+
+    await db.transaction('rw', [db.company_settings, db.profiles, db.sync_outbox], async () => {
+      await db.company_settings.put(settingsPayload)
+      await db.sync_outbox.add({
+        id: generateUUIDv7(),
+        client_mutation_id: clientMutationId,
+        table_name: 'company_settings',
+        record_id: COMPANY_SETTINGS_ID,
+        operation: 'UPDATE',
+        payload: settingsPayload,
+        created_at: now,
+        attempts: 0,
+        status: 'pending',
+      })
+
+      if (companyScheduleForm.value.sync_collaborators) {
+        const allProfiles = await db.profiles.toArray()
+        for (const prof of allProfiles) {
+          if (!prof.deleted_at) {
+            const profPayload = {
+              ...prof,
+              expected_arrival_time: arrivalTime,
+              expected_departure_time: departureTime,
+              updated_at: now,
+            }
+            const profMutationId = generateUUIDv7()
+            await db.profiles.update(prof.id, {
+              expected_arrival_time: arrivalTime,
+              expected_departure_time: departureTime,
+              updated_at: now,
+            })
+            await db.sync_outbox.add({
+              id: generateUUIDv7(),
+              client_mutation_id: profMutationId,
+              table_name: 'profiles',
+              record_id: prof.id,
+              operation: 'UPDATE',
+              payload: profPayload,
+              created_at: now,
+              attempts: 0,
+              status: 'pending',
+            })
+          }
+        }
+      }
+    })
+
+    toastSuccess('Horaires de référence enregistrés.')
+    closeCompanyScheduleModal()
+    await refreshPendingCount()
+    if (user.value?.id) {
+      syncNow(user.value.id)
+    }
+  } catch (err) {
+    companyScheduleError.value = err.message || 'Impossible d\'enregistrer les horaires.'
+    toastError(companyScheduleError.value)
+  } finally {
+    isSavingCompanySchedule.value = false
+  }
 }
 
 const closeCellDetail = () => {
@@ -560,6 +688,20 @@ const goToPresences = (dateStr) => {
           <line x1="8" y1="2" x2="8" y2="6"></line>
           <line x1="3" y1="10" x2="21" y2="10"></line>
         </svg>
+      </template>
+
+      <template #actions>
+        <button
+          type="button"
+          class="btn btn-outline border-base-300 bg-base-100 hover:bg-base-200 text-base-content min-h-11 h-11 px-4 rounded-m3-md flex items-center gap-2 font-medium text-xs focus-visible:outline-2 focus-visible:outline-primary active:scale-95 transition-transform duration-150"
+          @click="openCompanyScheduleModal"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          <span>Horaires par défaut</span>
+        </button>
       </template>
     </ManagerPageHeader>
 
@@ -1169,6 +1311,112 @@ const goToPresences = (dateStr) => {
         </div>
       </div>
       <div class="modal-backdrop" @click="closeCellDetail"></div>
+    </div>
+
+    <!-- Modale de configuration des horaires généraux de référence (Option UI 2) -->
+    <div
+      v-if="showCompanyScheduleModal"
+      class="modal modal-open z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs transition-opacity duration-200"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="company-schedule-title"
+    >
+      <div
+        class="bg-base-100 rounded-m3-xl p-5 sm:p-6 w-full max-w-md border border-base-300 shadow-sm flex flex-col gap-5 animate-in fade-in zoom-in-95 duration-150"
+      >
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-m3-md bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+            </div>
+            <div>
+              <h3 id="company-schedule-title" class="text-base font-bold text-base-content leading-tight">
+                Horaires de référence
+              </h3>
+              <p class="text-xs text-base-content/60 mt-0.5">
+                Heures appliquées par défaut à l'ensemble de l'équipe
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            class="min-h-11 min-w-11 flex items-center justify-center rounded-m3-full text-base-content/60 hover:text-base-content hover:bg-base-200 focus-visible:outline-2 focus-visible:outline-primary transition-colors"
+            aria-label="Fermer la boîte de dialogue"
+            @click="closeCompanyScheduleModal"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <form class="flex flex-col gap-4" @submit.prevent="saveCompanySchedule">
+          <div v-if="companyScheduleError" class="p-3 rounded-m3-md bg-error/10 border border-error/20 text-xs text-error">
+            {{ companyScheduleError }}
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div class="flex flex-col gap-1.5">
+              <label for="company-arrival-time" class="text-xs font-semibold text-base-content">
+                Arrivée habituelle
+              </label>
+              <input
+                id="company-arrival-time"
+                v-model="companyScheduleForm.expected_arrival_time"
+                type="time"
+                required
+                class="input input-bordered w-full min-h-11 h-11 px-3 text-sm font-medium rounded-m3-md bg-base-200/50 border-base-300 focus-visible:outline-2 focus-visible:outline-primary"
+              />
+            </div>
+            <div class="flex flex-col gap-1.5">
+              <label for="company-departure-time" class="text-xs font-semibold text-base-content">
+                Départ habituel
+              </label>
+              <input
+                id="company-departure-time"
+                v-model="companyScheduleForm.expected_departure_time"
+                type="time"
+                required
+                class="input input-bordered w-full min-h-11 h-11 px-3 text-sm font-medium rounded-m3-md bg-base-200/50 border-base-300 focus-visible:outline-2 focus-visible:outline-primary"
+              />
+            </div>
+          </div>
+
+          <label class="flex items-start gap-2.5 p-3 rounded-m3-md bg-base-200/40 border border-base-300/60 cursor-pointer">
+            <input
+              v-model="companyScheduleForm.sync_collaborators"
+              type="checkbox"
+              class="checkbox checkbox-primary checkbox-sm mt-0.5"
+            />
+            <span class="text-xs text-base-content/80 leading-relaxed select-none">
+              Actualiser aussi l'horaire de référence des collaborateurs actifs
+            </span>
+          </label>
+
+          <div class="flex items-center justify-end gap-2 pt-2 border-t border-base-200">
+            <button
+              type="button"
+              class="btn btn-ghost min-h-11 h-11 px-4 text-xs font-medium rounded-m3-md text-base-content/70 hover:bg-base-200 active:scale-95 transition-transform"
+              @click="closeCompanyScheduleModal"
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              class="btn btn-primary min-h-11 h-11 px-4 text-xs font-semibold rounded-m3-md active:scale-95 transition-transform"
+              :disabled="isSavingCompanySchedule"
+            >
+              <span v-if="isSavingCompanySchedule" class="loading loading-spinner loading-xs mr-1"></span>
+              Enregistrer les horaires
+            </button>
+          </div>
+        </form>
+      </div>
+      <div class="modal-backdrop" @click="closeCompanyScheduleModal"></div>
     </div>
   </div>
 </template>

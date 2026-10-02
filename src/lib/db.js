@@ -17,8 +17,35 @@ class PresenceDatabase extends Dexie {
       availabilities: 'id, user_id, week_start, day_of_week, client_mutation_id, updated_at, deleted_at',
       sync_outbox: '++_localId, id, client_mutation_id, table_name, record_id, operation, status, created_at',
     })
+
+    this.version(2).stores({
+      company_settings: 'id, updated_at, deleted_at',
+    }).upgrade(async (tx) => {
+      const existing = await tx.table('company_settings').get('00000000-0000-0000-0000-000000000001')
+      if (!existing) {
+        await tx.table('company_settings').add({
+          id: '00000000-0000-0000-0000-000000000001',
+          company_name: 'Mon Entreprise',
+          expected_arrival_time: '09:00:00',
+          expected_departure_time: '18:00:00',
+          late_tolerance_minutes: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          deleted_at: null,
+        })
+      }
+    })
   }
 }
+
+export const COMPANY_SETTINGS_ID = '00000000-0000-0000-0000-000000000001'
+export const DEFAULT_COMPANY_SETTINGS = Object.freeze({
+  id: COMPANY_SETTINGS_ID,
+  company_name: 'Mon Entreprise',
+  expected_arrival_time: '09:00:00',
+  expected_departure_time: '18:00:00',
+  late_tolerance_minutes: 0,
+})
 
 // Instance unique singleton (Règle 03-local-first-and-dexie.md)
 export const db = new PresenceDatabase()

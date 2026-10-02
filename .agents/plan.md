@@ -260,4 +260,44 @@ La tâche sera déclarée achevée lorsque :
 - [x] Oracle G136 (Vérification intégrale et build) : Validé avec 100% de succès sur verify-gates.mjs --all et exit code 0 sur npm run build (117 modules).
 - [x] Cohérence des icônes : Lieux/sites harmonisés avec MapPin, équipes harmonisées avec tracé de groupe, séparation claire Collaborateurs (individuel) vs Équipes (collectif).
 
+---
+
+# Plan : Configuration des Horaires Généraux d'Entreprise (Disponibilités & company_settings)
+
+Date : 2026-10-02  
+Déclencheur : Demande utilisateur (Option UI 2 dans Disponibilités + Piste Backend A `company_settings`)  
+Statut : Terminé et Validé (Portes G137 à G142 validées, build de production conforme)
+
+## 1. Périmètre & Fichiers cibles
+- `supabase/migrations/20261002190000_create_company_settings.sql` (Migration UP)
+- `supabase/migrations/20261002190000_create_company_settings_down.sql` (Migration DOWN)
+- `src/lib/db.js` (Incrément version 2 Dexie.js + table locale `company_settings`)
+- `src/composables/useSyncEngine.js` (Pull incrémental et support outbox `company_settings`)
+- `src/types/database.types.d.ts` (Types TypeScript de la table `company_settings`)
+- `src/lib/domain.js` (Cascade d'héritage d'horaire)
+- `src/views/manager/AvailabilitiesView.vue` (Bouton d'en-tête, modale M3, réactivité locale)
+- `GATES.md` (Oracles déterministes G137 à G142)
+
+## 2. Décomposition des étapes
+1. **Étape 1 : Création et application de la migration Supabase réversible** :
+   - Table `company_settings` (singleton id fixe `'00000000-0000-0000-0000-000000000001'`).
+   - Trigger `trg_company_settings_updated_at` utilisant `public.set_updated_at()`.
+   - RLS active inconditionnellement, SELECT pour `authenticated`, UPDATE/INSERT pour managers/admins.
+   - Application via Supabase MCP `execute_sql`.
+2. **Étape 2 : Évolution du schéma Dexie.js (`src/lib/db.js`)** :
+   - Préservation stricte de `version(1)`.
+   - Déclaration de `version(2)` avec table locale `company_settings: 'id, updated_at, deleted_at'`.
+3. **Étape 3 : Moteur de synchronisation (`src/composables/useSyncEngine.js`)** :
+   - Ajout de `company_settings` dans le cycle de pull incrémental (`pullChanges`).
+4. **Étape 4 : Modélisation des types TypeScript (`src/types/database.types.d.ts`)** :
+   - Ajout de `company_settings` dans `Database['public']['Tables']`.
+5. **Étape 5 : Domaine & Cascade d'horaires (`src/lib/domain.js`)** :
+   - Utilitaires de résolution d'horaire prenant en compte `company_settings`.
+6. **Étape 6 : Interface utilisateur dans Disponibilités (`src/views/manager/AvailabilitiesView.vue`)** :
+   - Bouton « Horaires par défaut » dans l'en-tête (44px min, tokens M3).
+   - Modale accessible avec saisie `time`, option de mise à jour des collaborateurs.
+   - Transaction atomique Dexie + `sync_outbox`, notification toast, mise à jour réactive des cellules de planning.
+7. **Étape 7 : Vérification et Oracles déterministes** :
+   - Validation de G137 à G142, tests `verify-gates.mjs` et compilation `npm run build`.
+
 
