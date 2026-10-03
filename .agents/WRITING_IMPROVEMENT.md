@@ -451,6 +451,36 @@ Ce fichier enregistre le raisonnement derrière les décisions non triviales : h
   2. *Contrat Onepage-First et évitement du piège CSS flexbox* : L'utilisation de `items-center justify-center` sur un conteneur flex avec `overflow-y-auto` coupe irrémédiablement le haut de page dès que la hauteur d'écran est trop faible. En combinant un conteneur `flex flex-col items-center overflow-y-auto` avec une carte portant `my-auto`, le centrage vertical est mathématiquement parfait sans scrollbar quand l'espace suffit (onepage-first), et le défilement démarre naturellement depuis le premier pixel du haut dès que la hauteur devient restreinte.
   3. *Cohérence inter-écrans d'attente/statut* : Les vues `ArchivedAccountView.vue` et `PendingApprovalView.vue` partagent désormais la même grammaire ergonomique, les mêmes proportions d'en-tête, les mêmes cibles tactiles WCAG AA 44px (`min-h-11`) et le même pied de page sobre.
 
+### Tâche : Protection contre l'Archivage des Rôles Privilégiés (Manager, Admin)
+**Date** : 2026-10-03
+**Complexité** : Moyen
+**Proposant** : Fabien / next-level-backend & next-level-ui
+**Story liée** : —
+
+#### Pre-flight (10 min)
+1. Problème réel :
+   - L'archivage direct d'un compte administrateur ou gestionnaire comporte un risque critique d'auto-exclusion (*self-lockout*) ou d'amputation accidentelle de la gouvernance de l'équipe.
+   - Un compte privilégié doit être rétrogradé en simple collaborateur ('employee') avant de pouvoir être archivé.
+2. Contrainte principale :
+   - Intégrité multi-couche : garantie déclarative par contrainte CHECK PostgreSQL et trigger BEFORE UPDATE sur Supabase, doublée d'un garde-fou applicatif dans `EmployeesView.vue`.
+   - Clarté pédagogique de l'interface : bouton "Archiver" désactivé avec info-bulle explicite (`tooltip`) pour que le gestionnaire comprenne immédiatement l'action préalable requise.
+3. Alternatives envisagées :
+   - Option A : Masquer simplement le bouton "Archiver" sans explication -> rejetée car source de perplexité pour le gestionnaire.
+   - Option B : Vérification uniquement en frontend -> rejetée car vulnérable aux mutations directes ou requêtes API.
+   - Option C (Retenue) : Sécurité profonde (Trigger PostgreSQL + Contrainte CHECK + Refus frontend dans `requestArchive`, `confirmArchive` et `saveEmployee` + Bouton désactivé avec info-bulle explicite).
+4. Signal de fin :
+   - Migration `20261003001500_prevent_archiving_privileged_roles.sql` appliquée avec succès sur Supabase.
+   - Rejet de toute tentative SQL d'archivage d'un admin ou manager avec message d'erreur clair.
+   - Interface `EmployeesView.vue` affichant le bouton désactivé avec `tooltip` explicite pour les rôles privilégiés.
+   - Oracles G167-G168 validés à 100% et `npm run build` en sortie 0.
+5. Déclencheur KI : N
+
+#### Résultat
+- Implémenté ? O (2026-10-03)
+- Leçon tirée :
+  1. *Défense en profondeur pour les actions destructives/d'éviction* : En couplant un trigger PostgreSQL `BEFORE UPDATE` (qui lève une exception 23514 contextualisée) et une contrainte `CHECK` relationnelle, la base de données demeure hermétique face à toute dérive, même hors UI.
+  2. *Ergonomie préventive vs punitive* : Plutôt que de masquer l'action ou de laisser l'utilisateur déclencher une modale pour échouer après validation, l'affichage du bouton désactivé avec l'info-bulle "Rôle protégé : modifier en collaborateur pour archiver" guide proactivement le gestionnaire sans friction superflue.
+
 ---
 
 ## Archives

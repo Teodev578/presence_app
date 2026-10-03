@@ -1267,4 +1267,28 @@ Scope: Harmonisation responsive complète selon la compétence next-level-ui : �
     ✓ built in 965ms
     (exit code: 0)
 
+## Lot — Protection contre l'Archivage des Rôles Privilégiés (Manager, Admin)
+OWNS: src/views/manager/EmployeesView.vue, supabase/migrations/20261003001500_prevent_archiving_privileged_roles.sql, supabase/migrations/20261003001500_prevent_archiving_privileged_roles_down.sql, scripts/verify-gates.mjs, GATES.md, .agents/WRITING_IMPROVEMENT.md
+
+Scope: Interdiction stricte de placer un gestionnaire ('manager') ou un administrateur ('admin') en archive ou en sommeil. Pour archiver un profil, son rôle doit d'abord être rétrogradé en collaborateur ('employee'). Sécurité garantie par contrainte CHECK relationnelle, trigger BEFORE UPDATE sur PostgreSQL/Supabase, et contrôle frontend dans EmployeesView (bouton désactivé avec info-bulle explicite, rejets dans requestArchive, confirmArchive et saveEmployee).
+
+- [x] G167: Protection déclarative et applicative contre l'archivage des managers et admins
+  CHECK: node scripts/verify-gates.mjs --archive-protection
+  EXPECT: G167 passed: Privileged roles (manager, admin) archive protection fully verified
+  EVIDENCE:
+    $ node scripts/verify-gates.mjs --archive-protection
+    G167 passed: Privileged roles (manager, admin) archive protection fully verified
+
+- [x] G168: Validation intégrale de la suite déterministe et compilation de production
+  CHECK: node scripts/verify-gates.mjs --all && npm run build
+  EXPECT: G167 passed: Privileged roles (manager, admin) archive protection fully verified
+  EVIDENCE:
+    $ node scripts/verify-gates.mjs --all && npm run build
+    ...
+    G167 passed: Privileged roles (manager, admin) archive protection fully verified
+    vite v8.3.0 building client environment for production...
+    ✓ built in 1.12s
+    (exit code: 0)
+
+
 

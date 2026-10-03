@@ -271,6 +271,13 @@ const saveEmployee = async () => {
   isSaving.value = true
   editError.value = ''
 
+  if (editingEmployee.value.status === 'archived' && editForm.value.role !== 'employee') {
+    editError.value = "Un profil archivé ne peut pas avoir de rôle gestionnaire ou administrateur. Désarchivez-le avant de modifier son rôle."
+    toastError("Un profil archivé ne peut pas être promu.")
+    isSaving.value = false
+    return
+  }
+
   try {
     const now = new Date().toISOString()
     const id = editingEmployee.value.id
@@ -405,18 +412,29 @@ const confirmReject = async () => {
   }
 }
 
-// Action : Archiver un compte actif (délai de 30 jours)
+// Action : Archiver un compte actif (délai de 30 jours) - Rôles privilégiés protégés
 const employeeToArchive = ref(null)
 const isArchiving = ref(false)
 
 const requestArchive = (emp) => {
+  if (emp.role !== 'employee') {
+    toastError("Impossible d'archiver un gestionnaire ou un administrateur. Modifiez son rôle en collaborateur au préalable.")
+    return
+  }
   employeeToArchive.value = emp
 }
 
 const confirmArchive = async () => {
   if (!employeeToArchive.value) return
-  isArchiving.value = true
   const target = employeeToArchive.value
+
+  if (target.role !== 'employee') {
+    toastError("Action refusée : seuls les collaborateurs peuvent être archivés. Rétrogradez ce profil d'abord.")
+    employeeToArchive.value = null
+    return
+  }
+
+  isArchiving.value = true
   const now = new Date().toISOString()
   const clientMutationId = generateUUIDv7()
 
@@ -694,7 +712,7 @@ const confirmUnarchive = async () => {
                 </button>
               </template>
 
-              <!-- Si actif : Modifier & Archiver -->
+              <!-- Si actif : Modifier & Archiver (collaborateur uniquement) -->
               <template v-else-if="emp.status === 'active'">
                 <button type="button" class="btn btn-secondary btn-outline font-semibold rounded-m3-sm gap-1.5 min-h-11 px-3" @click="openEditModal(emp)">
                   <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -703,7 +721,12 @@ const confirmUnarchive = async () => {
                   </svg>
                   <span>Modifier</span>
                 </button>
-                <button type="button" class="btn btn-ghost font-semibold text-warning rounded-m3-sm min-h-11 px-3 hover:bg-warning/10" @click="requestArchive(emp)">
+                <div v-if="emp.role !== 'employee'" class="tooltip" data-tip="Rôle protégé : modifier en collaborateur pour archiver">
+                  <button type="button" class="btn btn-ghost font-semibold text-base-content/30 rounded-m3-sm min-h-11 px-3 cursor-not-allowed" disabled>
+                    Archiver
+                  </button>
+                </div>
+                <button v-else type="button" class="btn btn-ghost font-semibold text-warning rounded-m3-sm min-h-11 px-3 hover:bg-warning/10" @click="requestArchive(emp)">
                   Archiver
                 </button>
               </template>
@@ -807,12 +830,17 @@ const confirmUnarchive = async () => {
                       </button>
                     </template>
 
-                    <!-- Si actif : Modifier & Archiver -->
+                    <!-- Si actif : Modifier & Archiver (collaborateur uniquement) -->
                     <template v-else-if="emp.status === 'active'">
                       <button type="button" class="btn btn-ghost min-h-11 rounded-m3-sm font-semibold px-2.5" @click="openEditModal(emp)">
                         Modifier
                       </button>
-                      <button type="button" class="btn btn-ghost min-h-11 rounded-m3-sm font-semibold text-warning px-2.5 hover:bg-warning/10" @click="requestArchive(emp)">
+                      <div v-if="emp.role !== 'employee'" class="tooltip tooltip-left" data-tip="Rôle protégé : modifier en collaborateur pour archiver">
+                        <button type="button" class="btn btn-ghost min-h-11 rounded-m3-sm font-semibold text-base-content/30 cursor-not-allowed px-2.5" disabled>
+                          Archiver
+                        </button>
+                      </div>
+                      <button v-else type="button" class="btn btn-ghost min-h-11 rounded-m3-sm font-semibold text-warning px-2.5 hover:bg-warning/10" @click="requestArchive(emp)">
                         Archiver
                       </button>
                     </template>
