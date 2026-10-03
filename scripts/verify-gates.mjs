@@ -3545,6 +3545,50 @@ export function checkArchivedAccountSession() {
   return true;
 }
 
+/**
+ * Vérifie la responsivité fluide, l'assise onepage-first et la maîtrise des marges latérales (G165).
+ */
+export function checkResponsiveOnepageViews() {
+  const views = [
+    path.join(SRC_DIR, 'views', 'employee', 'ArchivedAccountView.vue'),
+    path.join(SRC_DIR, 'views', 'employee', 'PendingApprovalView.vue'),
+  ];
+
+  for (const viewPath of views) {
+    if (!fs.existsSync(viewPath)) {
+      console.error(`FAILURE G165: Vue introuvable: ${viewPath}`);
+      return false;
+    }
+    const content = fs.readFileSync(viewPath, 'utf8');
+
+    // Vérification du conteneur parent onepage
+    if (!content.includes('h-dvh') || !content.includes('overflow-hidden')) {
+      console.error(`FAILURE G165: Conteneur onepage manquant dans ${path.basename(viewPath)}`);
+      return false;
+    }
+
+    // Vérification du défilement sans troncature et paddings fins
+    if (!content.includes('overflow-y-auto') || !content.includes('my-auto') || !content.includes('px-2')) {
+      console.error(`FAILURE G165: Logique de scroll ou paddings fins non respectés dans ${path.basename(viewPath)}`);
+      return false;
+    }
+
+    // Vérification de la largeur noble desktop et des cibles tactiles
+    if (!content.includes('max-w-xl') && !content.includes('lg:max-w-2xl')) {
+      console.error(`FAILURE G165: Largeur maximale desktop non optimisée dans ${path.basename(viewPath)}`);
+      return false;
+    }
+
+    if (!content.includes('min-h-11')) {
+      console.error(`FAILURE G165: Cible tactile 44px (min-h-11) manquante dans ${path.basename(viewPath)}`);
+      return false;
+    }
+  }
+
+  console.log('G165 passed: Responsive onepage-first and lateral padding fully verified');
+  return true;
+}
+
 // Exécution CLI
 const arg = process.argv[2] || '--all';
 let success = true;
@@ -3683,6 +3727,8 @@ if (arg === '--emojis') {
   success = checkImmediateReject();
 } else if (arg === '--archived-session') {
   success = checkArchivedAccountSession();
+} else if (arg === '--responsive-views') {
+  success = checkResponsiveOnepageViews();
 } else if (arg === '--all') {
   const r1 = checkEmojis();
   const r2 = checkRadii();
@@ -3747,10 +3793,11 @@ if (arg === '--emojis') {
   const r156 = checkPendingNotifications();
   const r159 = checkImmediateReject();
   const r162 = checkArchivedAccountSession();
+  const r165 = checkResponsiveOnepageViews();
   const r48 = r39; // Une seule compilation sert les portes de build G39 et G48
-  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60 && r63 && r64 && r65 && r66 && r72 && r73 && r74 && r75 && r88 && r89 && r92 && r93 && r94 && r95 && r96 && r97 && r147 && r150 && r156 && r159 && r162;
+  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60 && r63 && r64 && r65 && r66 && r72 && r73 && r74 && r75 && r88 && r89 && r92 && r93 && r94 && r95 && r96 && r97 && r147 && r150 && r156 && r159 && r162 && r165;
 } else {
-  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--presences-ui|--presences-period|--presences-table|--presences-sort|--presences-localfirst|--sync-scope|--livequery-deps|--manager-dexie|--manager-grammar|--manager-responsive|--manager-nav-icons|--manager-finish|--employee-finish|--settings-page|--cross-space-gateways|--back-navigation|--notification-bell|--account-lifecycle|--pending-notifications|--immediate-reject|--archived-session|--manager-build|--sidebar-build|--build|--all]`);
+  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--presences-ui|--presences-period|--presences-table|--presences-sort|--presences-localfirst|--sync-scope|--livequery-deps|--manager-dexie|--manager-grammar|--manager-responsive|--manager-nav-icons|--manager-finish|--employee-finish|--settings-page|--cross-space-gateways|--back-navigation|--notification-bell|--account-lifecycle|--pending-notifications|--immediate-reject|--archived-session|--responsive-views|--manager-build|--sidebar-build|--build|--all]`);
   process.exit(1);
 }
 

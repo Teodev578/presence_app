@@ -1,6 +1,6 @@
 import { ref, shallowRef, computed, watch } from 'vue'
 import { supabase } from '../lib/supabase'
-import { db } from '../lib/db'
+import { db, useLiveQuery } from '../lib/db'
 import { useAuth } from './useAuth'
 
 const currentProfile = shallowRef(null)
@@ -8,6 +8,31 @@ const profileLoading = ref(false)
 
 export function useProfile() {
   const { user } = useAuth()
+
+  // 1. Souscription réactive Local-First en temps réel au profil dans Dexie
+  const liveProfile = useLiveQuery(
+    async () => {
+      const uid = user.value?.id
+      if (!uid) return null
+      try {
+        return await db.profiles.get(uid)
+      } catch (e) {
+        return null
+      }
+    },
+    undefined,
+    () => user.value?.id
+  )
+
+  watch(
+    liveProfile,
+    (newVal) => {
+      if (newVal) {
+        currentProfile.value = newVal
+      }
+    },
+    { immediate: true }
+  )
 
   const fetchProfile = async () => {
     if (!user.value) {
@@ -51,8 +76,23 @@ export function useProfile() {
           .maybeSingle()
 
         if (!error && data) {
-          currentProfile.value = data
-          await db.profiles.put(data)
+          // Protection Local-First : vérifier si une mutation locale sur ce profil est en attente
+          let hasPendingMutation = false
+          try {
+            const pending = await db.sync_outbox
+              .where('record_id')
+              .equals(userId)
+              .and((item) => item.status === 'pending' || item.status === 'syncing')
+              .count()
+            hasPendingMutation = pending > 0
+          } catch {
+            hasPendingMutation = false
+          }
+
+          if (!hasPendingMutation) {
+            currentProfile.value = data
+            await db.profiles.put(data)
+          }
         }
       } catch (err) {
         console.warn('Erreur rafraîchissement profil distant :', err)

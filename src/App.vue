@@ -87,6 +87,7 @@ watch([() => route.value.path, isManager, () => profile.value, profileLoading], 
   <!-- Écran de chargement pendant l'authentification initiale et la résolution du profil -->
   <div
     v-if="authLoading || (isAuthenticated && !profile && profileLoading)"
+    key="loading"
     class="min-h-screen flex flex-col items-center justify-center gap-3 bg-base-200 text-base-content/70 font-medium"
   >
     <span class="loading loading-spinner loading-lg text-primary"></span>
@@ -94,16 +95,16 @@ watch([() => route.value.path, isManager, () => profile.value, profileLoading], 
   </div>
 
   <!-- Cas 1 : Non authentifié ou page de login explicite -->
-  <LoginView v-else-if="!isAuthenticated || route.path === '/login'" />
+  <LoginView v-else-if="!isAuthenticated || route.path === '/login'" key="login" />
 
   <!-- Cas 2 : Compte archivé ou désactivé (accès opérationnel hermétiquement suspendu) -->
-  <ArchivedAccountView v-else-if="isArchived" />
+  <ArchivedAccountView v-else-if="isArchived" key="archived" />
 
   <!-- Cas 3 : Collaborateur en attente de validation de compte -->
-  <PendingApprovalView v-else-if="isPendingApproval" />
+  <PendingApprovalView v-else-if="isPendingApproval" key="pending" />
 
   <!-- Cas 4 : Espace Manager / Admin actif -->
-  <ManagerLayout v-else-if="isManagerRoute">
+  <ManagerLayout v-else-if="isManagerRoute" key="manager">
     <Transition name="fade-slide" mode="out-in">
       <DashboardView v-if="route.path === '/manager'" />
       <LocationsView v-else-if="route.path === '/manager/locations'" />
@@ -118,7 +119,7 @@ watch([() => route.value.path, isManager, () => profile.value, profileLoading], 
   </ManagerLayout>
 
   <!-- Cas 5 : Espace Collaborateur Mobile PWA validé et actif -->
-  <EmployeeLayout v-else>
+  <EmployeeLayout v-else key="employee">
     <Transition name="fade-slide" mode="out-in">
       <HomeView v-if="route.path === '/employee' || route.path === '/'" />
       <CheckInView v-else-if="route.path === '/employee/check-in'" />

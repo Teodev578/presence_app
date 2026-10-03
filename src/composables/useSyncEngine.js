@@ -66,11 +66,18 @@ export function useSyncEngine() {
   const processOutboxItem = async (item) => {
     const { table_name, operation, payload, record_id } = item
 
-    if (operation === 'INSERT' || operation === 'UPDATE') {
-      // Upsert déterministe s'appuyant sur l'id (UUIDv7) et le client_mutation_id
+    if (operation === 'INSERT') {
+      // Upsert déterministe s'appuyant sur l'id (UUIDv7)
       const { error } = await supabase.from(table_name).upsert(payload, {
         onConflict: 'id',
       })
+      if (error) throw error
+    } else if (operation === 'UPDATE') {
+      // Mise à jour ciblée s'appuyant sur l'id : respecte la politique RLS UPDATE sans exiger le droit d'INSERT
+      const { error } = await supabase
+        .from(table_name)
+        .update(payload)
+        .eq('id', record_id)
       if (error) throw error
     } else if (operation === 'DELETE') {
       // Propagation du tombstone

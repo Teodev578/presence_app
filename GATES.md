@@ -1244,3 +1244,27 @@ Scope: Implémentation d'une session restreinte et d'un écran dédié pour les 
     ✓ built in 1.12s
     (exit code: 0)
 
+## Lot — Refonte Responsive & Onepage-First (Archived & Pending Views)
+OWNS: src/views/employee/ArchivedAccountView.vue, src/views/employee/PendingApprovalView.vue, scripts/verify-gates.mjs, GATES.md, .agents/WRITING_IMPROVEMENT.md
+
+Scope: Harmonisation responsive complète selon la compétence next-level-ui : élimination du gaspillage de marges latérales (paddings fins px-2.5 sur mobile, assise équilibrée max-w-xl / lg:max-w-2xl sur grand écran), logique onepage-first stricte (100% visible sans scrollbar sur viewports standards) et défilement vertical fluide sur écrans étroits/courts sans coupure haute (élimination du piège CSS flexbox justify-center + overflow-y-auto via my-auto).
+
+- [x] G165: Responsivité fluide, assise onepage-first et maîtrise des paddings latéraux sur ArchivedAccountView et PendingApprovalView
+  CHECK: node scripts/verify-gates.mjs --responsive-views
+  EXPECT: G165 passed: Responsive onepage-first and lateral padding fully verified
+  EVIDENCE:
+    $ node scripts/verify-gates.mjs --responsive-views
+    G165 passed: Responsive onepage-first and lateral padding fully verified
+
+- [x] G166: Validation intégrale de la suite déterministe et compilation de production
+  CHECK: node scripts/verify-gates.mjs --all && npm run build
+  EXPECT: G165 passed: Responsive onepage-first and lateral padding fully verified
+  EVIDENCE:
+    $ node scripts/verify-gates.mjs --all && npm run build
+    ...
+    G165 passed: Responsive onepage-first and lateral padding fully verified
+    vite v8.3.0 building client environment for production...
+    ✓ built in 965ms
+    (exit code: 0)
+
+

@@ -418,6 +418,39 @@ Ce fichier enregistre le raisonnement derrière les décisions non triviales : h
   2. *Réactivité Local-First du cycle de vie* : Lorsqu'un gestionnaire désarchive un collaborateur dans Dexie, la réactivité du composable `useProfile` met immédiatement à jour `profile.value.status`, basculant le collaborateur de l'écran d'archive vers son tableau de bord opérationnel sans nécessiter de rafraîchissement complet de page.
   3. *Tonalité bienveillante et conformité M3* : Les comptes archivés bénéficient d'un traitement clair (décompte des 30 jours, réassurance sur la préservation des données historiques, démarches de contact), formulé dans le respect rigoureux de la règle 09 (aucun mot administratif proscrit) et des cibles tactiles de 44px.
 
+### Tâche : Refonte Responsive & Onepage-First (ArchivedAccountView & PendingApprovalView)
+**Date** : 2026-10-02
+**Complexité** : Moyen
+**Proposant** : Fabien / next-level-ui & responsive-adaptive-ui
+**Story liée** : —
+
+#### Pre-flight (10 min)
+1. Problème réel :
+   - *Marges latérales superflues* : sur mobile, le cumul des paddings du conteneur `main` et de la carte gaspillait entre 56px et 80px de largeur utile sur un écran de 360px ; sur desktop, la contrainte trop serrée (`max-w-md`) produisait un vide latéral disproportionné de ~700px tout en tassant le récapitulatif.
+   - *Logique Onepage-First* : sur tous les viewports normaux (smartphones 667-844px de haut, tablettes, laptops), la vue doit se tenir à 100% dans la hauteur sans barre de défilement verticale visible.
+   - *Défilement propre sur viewports étroits ou courts* : en cas de hauteur réduite (mode paysage mobile, zoom élevé), le conteneur central doit défiler verticalement sans que le centrage flexbox ne tronque le haut de la carte (élimination du piège `justify-center` + `overflow-y-auto`).
+2. Contrainte principale :
+   - Préservation stricte de la conformité WCAG AA (cibles tactiles `min-h-11 min-w-11` soit 44px).
+   - Respect absolu de la règle 09 / G30 (aucun terme proscrit).
+   - Tokens DaisyUI v5 / Tailwind v4 et échelle de formes Material 3 (`rounded-m3-xl`, `rounded-m3-md`).
+3. Alternatives envisagées :
+   - Option A : Défilement global de la page entière (`min-h-screen` classique) -> rejetée car brise la cohérence onepage PWA en faisant disparaître la navbar et le statut réseau.
+   - Option B : Carte plein écran sans bordure sur mobile -> rejetée pour préserver l'identité visuelle de carte d'information M3.
+   - Option C (Retenue) : Conteneur `h-dvh max-h-screen overflow-hidden` avec `header` et `footer` en `shrink-0`, zone centrale `flex-1 min-h-0 overflow-y-auto flex flex-col items-center px-2.5 sm:px-4 md:px-6` avec carte `my-auto w-full max-w-lg md:max-w-xl lg:max-w-2xl` et paddings adaptatifs (`p-3.5 sm:p-5 md:p-6`).
+4. Signal de fin :
+   - Affichage 100% onepage sans scrollbar sur écran standard.
+   - Scroll fluide du haut vers le bas sur écran court / étroit sans troncature.
+   - Élimination des paddings excessifs sur mobile et assise visuelle équilibrée sur grand écran.
+   - Validation 100% sur `node scripts/verify-gates.mjs --all` et `npm run build`.
+5. Déclencheur KI : N
+
+#### Résultat
+- Implémenté ? O (2026-10-02)
+- Leçon tirée :
+  1. *Éradication du gaspillage de marge latérale* : L'accumulation d'un padding extérieur de vue et d'un padding intérieur de carte (ex: `px-3` + `p-6`) détruisait l'ergonomie mobile en amputant plus de 60px sur 360px. En passant à `px-2.5 sm:px-4 md:px-6` sur le conteneur et `p-3.5 sm:p-5 md:p-6` sur la carte, la largeur utile est préservée sur smartphone, tandis que `max-w-lg md:max-w-xl lg:max-w-2xl` supprime l'îlot isolé et le vide stérile sur grand écran desktop.
+  2. *Contrat Onepage-First et évitement du piège CSS flexbox* : L'utilisation de `items-center justify-center` sur un conteneur flex avec `overflow-y-auto` coupe irrémédiablement le haut de page dès que la hauteur d'écran est trop faible. En combinant un conteneur `flex flex-col items-center overflow-y-auto` avec une carte portant `my-auto`, le centrage vertical est mathématiquement parfait sans scrollbar quand l'espace suffit (onepage-first), et le défilement démarre naturellement depuis le premier pixel du haut dès que la hauteur devient restreinte.
+  3. *Cohérence inter-écrans d'attente/statut* : Les vues `ArchivedAccountView.vue` et `PendingApprovalView.vue` partagent désormais la même grammaire ergonomique, les mêmes proportions d'en-tête, les mêmes cibles tactiles WCAG AA 44px (`min-h-11`) et le même pied de page sobre.
+
 ---
 
 ## Archives
