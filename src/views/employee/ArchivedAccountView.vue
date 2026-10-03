@@ -2,20 +2,33 @@
 import { ref, computed } from 'vue'
 import { useAuth } from '../../composables/useAuth'
 import { useProfile } from '../../composables/useProfile'
-import ConfirmModal from '../../components/shared/ConfirmModal.vue'
+import { useSyncEngine } from '../../composables/useSyncEngine'
+import { useToast } from '../../composables/useToast'
 import NotificationBell from '../../components/shared/NotificationBell.vue'
 import SyncAlert from '../../components/shared/SyncAlert.vue'
 
 const { signOut, user } = useAuth()
 const { profile, fetchProfile, profileLoading } = useProfile()
+const { syncNow } = useSyncEngine()
+const { success: toastSuccess, info: toastInfo, error: toastError } = useToast()
 
 const isChecking = ref(false)
-const showLogoutModal = ref(false)
+const isLoggingOut = ref(false)
 
 const handleCheckStatus = async () => {
   isChecking.value = true
   try {
-    await fetchProfile()
+    if (user.value?.id) {
+      await syncNow(user.value.id)
+    }
+    const updated = await fetchProfile()
+    if (updated?.status === 'active') {
+      toastSuccess('Votre profil a été réactivé.')
+    } else {
+      toastInfo('Profil toujours en attente de réactivation par la direction.')
+    }
+  } catch {
+    toastError('Impossible de joindre le serveur. Connexion réseau requise.')
   } finally {
     setTimeout(() => {
       isChecking.value = false
@@ -23,9 +36,16 @@ const handleCheckStatus = async () => {
   }
 }
 
-const confirmLogout = async () => {
-  showLogoutModal.value = false
-  await signOut()
+const handleLogout = async () => {
+  if (isLoggingOut.value) return
+  isLoggingOut.value = true
+  try {
+    await signOut()
+  } catch {
+    toastError('Impossible de finaliser la déconnexion distante.')
+  } finally {
+    isLoggingOut.value = false
+  }
 }
 
 const archivedAtFormatted = computed(() => {
@@ -60,7 +80,7 @@ const daysRemaining = computed(() => {
 </script>
 
 <template>
-  <div class="h-dvh max-h-screen bg-base-200 flex flex-col justify-between overflow-hidden">
+  <div class="h-dvh max-h-screen bg-base-200 flex flex-col overflow-hidden">
     <!-- Barre supérieure de navigation avec statut réseau et cloche de notification -->
     <header class="navbar shrink-0 bg-base-100/90 backdrop-blur-md border-b border-base-300 px-3 sm:px-6 min-h-12 sm:min-h-14 z-30 justify-between">
       <div class="flex items-center gap-2">
@@ -178,34 +198,19 @@ const daysRemaining = computed(() => {
 
           <button
             type="button"
-            class="btn btn-outline btn-error min-h-11 rounded-m3-md gap-2 text-xs sm:text-sm font-medium sm:min-w-36"
-            @click="showLogoutModal = true"
+            class="btn btn-outline btn-error min-h-11 rounded-m3-md gap-2 text-xs sm:text-sm font-medium sm:min-w-36 active:scale-95 transition-transform duration-150 motion-reduce:transform-none"
+            :disabled="isLoggingOut || isChecking"
+            @click="handleLogout"
           >
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <span v-if="isLoggingOut" class="loading loading-spinner loading-sm" aria-hidden="true"></span>
+            <svg v-else class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>
-            Se déconnecter
+            <span>{{ isLoggingOut ? 'Déconnexion...' : 'Se déconnecter' }}</span>
           </button>
         </div>
 
       </div>
     </main>
-
-    <!-- Pied de page sobre et compact -->
-    <footer class="shrink-0 py-2 sm:py-2.5 px-3 sm:px-4 text-center text-xs text-base-content/50 border-t border-base-300/60">
-      PresenceApp • Gestion de présence et pointage Local-First
-    </footer>
-
-    <!-- Modale de confirmation de déconnexion -->
-    <ConfirmModal
-      :is-open="showLogoutModal"
-      title="Se déconnecter de PresenceApp ?"
-      message="Vous pourrez vous reconnecter ultérieurement pour suivre l'évolution de votre profil."
-      confirm-text="Déconnexion"
-      cancel-text="Rester"
-      type="primary"
-      @confirm="confirmLogout"
-      @cancel="showLogoutModal = false"
-    />
   </div>
 </template>

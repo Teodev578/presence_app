@@ -156,12 +156,11 @@ export function useAuth() {
     authLoading.value = true
     try {
       await supabase.auth.signOut()
+    } catch (err) {
+      console.warn('Erreur déconnexion distante Supabase :', err)
+    } finally {
       session.value = null
       user.value = null
-      // Purge optionnelle de la session locale Dexie
-    } catch (err) {
-      console.error('Erreur déconnexion :', err)
-    } finally {
       authLoading.value = false
     }
   }

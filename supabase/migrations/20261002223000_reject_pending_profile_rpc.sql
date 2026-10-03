@@ -7,10 +7,11 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 BEGIN
-  -- Suppression physique immédiate du profil si et seulement s'il est en attente
-  DELETE FROM public.profiles
-  WHERE id = target_user_id
-    AND status = 'pending_validation';
+  -- Suppression atomique de l'utilisateur auth.users (avec cascade sur public.profiles)
+  -- si et seulement si le profil associé est en attente de confirmation
+  IF EXISTS (SELECT 1 FROM public.profiles WHERE id = target_user_id AND status = 'pending_validation') THEN
+    DELETE FROM auth.users WHERE id = target_user_id;
+  END IF;
 END;
 $$;
 

@@ -73,10 +73,11 @@ export function useSyncEngine() {
       })
       if (error) throw error
     } else if (operation === 'UPDATE') {
-      // Mise à jour ciblée s'appuyant sur l'id : respecte la politique RLS UPDATE sans exiger le droit d'INSERT
+      // Mise à jour ciblée s'appuyant sur record_id : exclut l'id primaire du corps de payload
+      const { id: _ignoredId, ...updateFields } = payload || {}
       const { error } = await supabase
         .from(table_name)
-        .update(payload)
+        .update(updateFields)
         .eq('id', record_id)
       if (error) throw error
     } else if (operation === 'DELETE') {

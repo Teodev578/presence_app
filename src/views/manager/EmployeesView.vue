@@ -440,7 +440,6 @@ const confirmArchive = async () => {
 
   try {
     const payload = {
-      id: target.id,
       status: 'archived',
       archived_at: now,
       updated_at: now,
@@ -490,7 +489,6 @@ const confirmUnarchive = async () => {
 
   try {
     const payload = {
-      id: target.id,
       status: 'active',
       is_active: true,
       archived_at: null,
