@@ -55,3 +55,5 @@ Chaque agent applique les principes d'ingénierie senior et les standards défin
  - **Intégrité des Versions** : Aucune modification de dépendance dans `package.json` n'est effectuée sans accord explicite préalable de l'utilisateur.
  - **Validation Finale Obligatoire** : Toute tâche s'achève par une compilation réussie via `npm run build`.
  - **Plan Obligatoire des Tâches Fastidieuses** : Avant toute tâche longue, répétitive ou mécanique, tu écris ton plan ordonné dans [`.agents/plan.md`](../../plan.md) et tu le tiens à jour jusqu'à sa clôture, conformément à [10-planification-taches-fastidieuses.md](../../rules/10-planification-taches-fastidieuses.md).
+ - **Brouillon de Réflexion Obligatoire (`WRITING_IMPROVEMENT.md`)** : Avant toute modification de code pour une tâche de complexité ≥ « Moyen », matérialiser son raisonnement par écrit (problème réel, contrainte, alternative rejetée obligatoire avec son motif). Clôturer à chaud avec leçon tirée et signalement KI immédiat. Ne pas créer d'entrée pour les retouches d'une ligne ou coquilles isolées.
+

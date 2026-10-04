@@ -49,9 +49,17 @@ La tenue du plan n'est pas couverte par un oracle : `node scripts/verify-gates.m
 
 ---
 
-## 6. Protocole léger — Complexité « Moyen »
+## 6. Protocole léger — Complexité « Moyen » (Brouillon de Réflexion)
 
-Les tâches de complexité « Moyen » n'atteignent pas le seuil de `unlazy` (GATES.md + plan.md), mais elles sont trop exposées pour démarrer sans réflexion. Elles passent par un **pre-flight de 10 minutes** : cinq questions auxquelles l'agent répond en prose, directement dans `.agents/WRITING_IMPROVEMENT.md` sous "Tâches actives", avant d'ouvrir un seul fichier.
+Les tâches de complexité « Moyen » n'atteignent pas le seuil de `unlazy` (GATES.md + plan.md), mais elles sont trop exposées pour démarrer sans réflexion. Elles passent par un **pre-flight de 10 minutes** consigné dans [`.agents/WRITING_IMPROVEMENT.md`](../WRITING_IMPROVEMENT.md) sous "Tâches actives".
+
+Ce fichier sert de **brouillon de réflexion persistant** : comme un élève qui pose ses calculs et analyse ses impasses sur une feuille de brouillon avant d'écrire sur sa copie, l'agent matérialise son raisonnement dialectique par écrit avant d'ouvrir ou d'éditer le moindre fichier source.
+
+### Règles d'usage du brouillon
+
+- **(Recommandé) Consigner systématiquement l'alternative rejetée et sa justification avant d'agir** : Cœur de la discipline du brouillon. L'agent doit expliciter pourquoi une solution évidente ou tentante n'a pas été retenue, neutralisant les régressions et les fausses bonnes idées.
+- **(Recommandé) Clôturer à chaud avec leçon tirée et signalement KI immédiat** : Dès l'implémentation terminée, l'agent consigne le résultat observable et la leçon apprise. Si un critère de mémoire KI est activé, la fiche est créée dans `.agents/knowledge/` sans différer.
+- **(Déconseillé) Créer une entrée pour les corrections triviales ou unilignes** : Les retouches isolées, corrections de coquilles ou ajustements cosmétiques ne doivent pas encombrer le journal afin de préserver sa valeur stratégique.
 
 ### Critères d'application
 

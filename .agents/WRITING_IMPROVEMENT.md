@@ -1,10 +1,18 @@
-# Journal d'Arbitrages — PresenceApp
+# Journal d'Arbitrages & Brouillon de Réflexion — PresenceApp
 
-Ce fichier enregistre le raisonnement derrière les décisions non triviales : hypothèses, alternatives refusées, trade-offs acceptés, leçons tirées. Il ne remplace pas `AGENTS.md` (invariants figés) ni les fiches `.agents/knowledge/` (leçons généralisées). Il documente ce qui est *en cours de décider*.
+Ce fichier sert de **brouillon de réflexion persistant** et de journal d'arbitrages : tout comme un élève pose ses calculs et hypothèses sur une feuille de brouillon avant de rédiger, l'agent ou sous-agent y matérialise son raisonnement dialectique avant de toucher au code. Il consigne les hypothèses, les contraintes, les alternatives refusées, les compromis acceptés et les leçons tirées.
 
-**Règle d'escalade** : une décision qui revient à l'identique dans deux tâches distinctes monte dans une règle `.agents/rules/`. Une leçon tirée qui répond aux déclencheurs KI (`11-apprentissage-et-memoire.md`) alimente une fiche `.agents/knowledge/` au moment de la correction, pas le lendemain.
+Il ne remplace pas `AGENTS.md` (invariants figés), `.agents/plan.md` (feuille de route séquentielle d'exécution), ni les fiches `.agents/knowledge/` (leçons durables capitalisées). Il documente ce qui est *en cours de réflexion et d'arbitrage*.
 
-**Portée** : tâches de complexité « Moyen » ou « Élevée » uniquement. Les tâches simples (correctif ponctuel, retouche isolée) ne génèrent pas d'entrée.
+### Règles d'usage du brouillon
+
+1. **(Recommandé) Consigner systématiquement l'alternative rejetée et sa justification avant d'agir** : Pour toute tâche non triviale (complexité ≥ Moyen), poser par écrit le problème réel, la contrainte principale et impérativement au moins une alternative rejetée avec le motif précis de son rejet. Ne jamais débuter l'implémentation sans avoir formalisé cette étape.
+2. **(Recommandé) Clôturer à chaud avec leçon tirée et signalement KI immédiat** : Dès que l'implémentation est achevée, renseigner le statut réel, la date et la leçon tirée. Si un déclencheur KI est rencontré (erreur répétée, temps de correction élevé), rédiger la fiche dans `.agents/knowledge/` séance tenante.
+3. **(Déconseillé) Créer une entrée pour les corrections triviales ou unilignes** : Les retouches ponctuelles, corrections de coquilles ou ajustements isolés ne doivent pas générer d'entrée afin de préserver la lisibilité et la haute valeur décisionnelle de ce journal.
+
+**Règle d'escalade** : Une décision qui revient à l'identique dans deux tâches distinctes monte dans une règle `.agents/rules/`. Une leçon tirée répondant aux critères KI (`11-apprentissage-et-memoire.md`) alimente une fiche `.agents/knowledge/` au moment de la correction, sans délai.
+
+**Portée** : Tâches de complexité « Moyen » ou « Élevée » uniquement.
 
 **Gouvernance** : Fabien valide les décisions consignées ici. Pour les arbitrages impliquant un couplage PRD↔implémentation, la validation requiert aussi confirmation de l'agent propriétaire de la story (Lucas / Nora / Marc selon domaine).
 

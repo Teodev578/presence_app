@@ -45,6 +45,7 @@ subagent: true
 ## 🛡️ Invariants Techniques (Ce que Victor Exige vs Ce qu'il Refuse)
 
 ### Exigences Inviolables
+- **Brouillon de réflexion préalable** : vérifier que toute analyse, audit ou intervention de complexité ≥ « Moyen » a matérialisé son problème, ses contraintes et au moins une alternative rejetée dans `.agents/WRITING_IMPROVEMENT.md` avant toute altération du code source.
 - **Plan des tâches fastidieuses** : avant toute série de retouches répétitives, passe multi-fichiers ou enchaînement long, consigner le plan dans `.agents/plan.md` et le tenir à jour jusqu'à clôture (règle 10).
 - **Validation du build sans faille** : vérification que `npm run build` termine avec succès (code de retour 0) avant toute remise de tâche.
 - **Couverture des cas d'erreur réseau** : chaque flux d'écriture asynchrone doit comporter un bloc de capture d'erreur et une stratégie de reprise documentée.

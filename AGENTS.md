@@ -72,11 +72,12 @@ Avant d'ouvrir un fichier source, tout agent d'implémentation vérifie :
 
 Si l'un des trois points manque, l'agent passe le statut en `needs-info` et remonte vers Fabien — il n'improvise pas.
 
-### Traces des trade-offs refusés
+### Traces des trade-offs refusés & Brouillon de réflexion
 
-Toute alternative technique examinée et rejetée pendant l'implémentation (pas seulement pendant le cadrage) est consignée dans `.agents/WRITING_IMPROVEMENT.md` sous la section "Tâches actives", champ "Alternatives envisagées". La raison du rejet doit être explicite.
-
-Ce n'est pas optionnel pour les tâches de complexité ≥ « Moyen ».
+Tout travail d'analyse ou d'implémentation de complexité ≥ « Moyen » exige la pose préalable du raisonnement dans `.agents/WRITING_IMPROVEMENT.md` (agissant comme le brouillon de réflexion de l'agent) avant d'altérer le code :
+- **(Recommandé) Alternative rejetée obligatoire** : Poser le problème réel, la contrainte principale et consigner explicitement au moins une alternative technique examinée et rejetée avec le motif de son abandon sous la section "Tâches actives".
+- **(Recommandé) Clôture à chaud & mémoire** : Enregistrer le résultat observable, la leçon tirée et rédiger séance tenante la fiche KI (`.agents/knowledge/`) en cas de motif répété ou de bug coûteux.
+- **(Déconseillé) Entrée pour tâche triviale** : Ne pas documenter les retouches d'une ligne, coquilles ou ajustements isolés afin de préserver la valeur stratégique du journal.
 
 ### Signaux remontant vers BMAD (feedback loop)
 
@@ -105,7 +106,7 @@ Pour éviter la perte de contexte entre sessions de travail :
 
 1. **Intégrité stricte des versions** : Interdiction absolue d'installer, mettre à jour ou modifier les versions des dépendances (`package.json`, `package-lock.json`) ou des outils système sans soumettre explicitement la motivation à l'utilisateur et obtenir son accord préalable.
 2. **Grand livre de vérification déterministe (`unlazy`)** : Toute tâche substantielle ou multi-fichiers exige la rédaction préalable d'un fichier `GATES.md` doté d'oracles exécutables (`CHECK:`) et de sorties attendues (`EXPECT:`). Aucune tâche n'est déclarée achevée sans preuve concrète d'exécution (`EVIDENCE:`).
-3. **Plan préalable obligatoire** : Présenter une reformulation claire et un plan d'action structuré avant toute modification architecturale, création de fichier structurant ou refactorisation transverse. Une tâche fastidieuse ou longue y est également soumise, son plan étant écrit dans `.agents/plan.md` selon la règle `10-planification-taches-fastidieuses.md`.
+3. **Plan préalable & Brouillon de réflexion obligatoires** : Présenter une reformulation claire et un plan d'action structuré avant toute modification architecturale, création de fichier structurant ou refactorisation transverse. Avant toute écriture de code pour une tâche de complexité ≥ « Moyen », consigner son raisonnement dialectique dans `.agents/WRITING_IMPROVEMENT.md` (brouillon de réflexion et journal d'arbitrages). Une tâche fastidieuse ou longue y adjoint son plan séquentiel d'exécution écrit dans `.agents/plan.md` selon la règle `10-planification-taches-fastidieuses.md`.
 4. **Validation locale systématique** : Vérifier la compilation (`npm run build`) avant de déclarer toute tâche terminée.
 5. **Navigation : parité de grammaire, repli volontaire en rail** : La sanctuarisation de la navigation employé est levée par autorisation explicite de l'utilisateur (consignée dans `GATES.md`, lots « Grammaire de Tiroir Commune », « Ancrage à 840px » et « Repli en Rail d'Icônes »). Les deux espaces partagent une seule grammaire : marque et badge d'espace en tête, sections « Navigation » et « Mon espace », barre d'accent sur l'entrée sélectionnée, passerelle neutre, pied ordonné en statut réseau, contrôle d'apparence, identité et déconnexion en icône. Sous 840px, les deux espaces naviguent par tiroir superposé, libellés complets ; à partir de 840px, la barre latérale s'ancre dans la mise en page et une poignée la replie en rail d'icônes : repli automatique entre 840px et 1024px, déploiement au delà, un clic sur la poignée ne valant que pour la bande courante et tout franchissement de seuil le révoquant au profit du seuil. Interdiction formelle d'introduire un rail sous 840px ou une barre de navigation basse. La fonctionnalité de pointage de l'espace employé ne doit pas être altérée : elle conserve sa pleine largeur sous 840px et son verrouillage onepage.
 

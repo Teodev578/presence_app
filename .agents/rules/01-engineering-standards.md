@@ -24,3 +24,12 @@ Avant toute notification de complétion ou de remise d'un changement à l'utilis
 - **Contrôle des régressions** : Évalue l'impact direct et indirect de chaque modification sur les composants connexes, l'état réactif et les schémas de stockage local.
 - **Validation du build** : Vérifie que le code compile sans avertissements bloquants via `npm run build`.
 - **Élimination des artefacts résiduels** : Supprime tout `console.log` de débogage, variable orpheline ou commentaire obsolète introduit pendant le développement.
+
+## 4. Brouillon de réflexion préalable (`WRITING_IMPROVEMENT.md`)
+
+Toute intervention d'analyse, d'audit ou d'implémentation de complexité ≥ « Moyen » requiert la matérialisation préalable du raisonnement dans [`.agents/WRITING_IMPROVEMENT.md`](../WRITING_IMPROVEMENT.md). L'agent y agit comme un élève sur son brouillon avant de rendre sa copie :
+
+- **Énonciation dialectique avant codage** : Poser le problème réel, identifier la contrainte critique et rejeter explicitement au moins une alternative technique avec son motif avant d'altérer le code.
+- **Clôture à chaud & mémoire** : Enregistrer le résultat observable, la leçon apprise et déclencher sans délai une fiche KI (`11-apprentissage-et-memoire.md`) en cas d'erreur répétée ou de friction notable.
+- **Sobriété documentaire** : Les retouches triviales, corrections de coquilles ou micro-ajustements sont exemptés d'entrée pour préserver la densité stratégique du journal.
+
