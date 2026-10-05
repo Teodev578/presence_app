@@ -1527,6 +1527,29 @@ Scope: Automatisation et renforcement de la mémoire agentique selon le plan d'a
     ✓ built in 1.38s
     (exit code: 0)
 
+### Lot : Réinitialisation de Mot de Passe par Code OTP à 6 Chiffres In-App
+
+- [x] G192: Validation OTP in-app à 6 chiffres, synchronisation de session, mise à jour optionnelle du mot de passe et cinématique 2 étapes
+  CHECK: node scripts/verify-gates.mjs --otp-recovery
+  EXPECT: G192 passed: in-app 6-digit OTP verification, reactive session sync, optional password update and M3 step flow verified
+  EVIDENCE:
+    $ node scripts/verify-gates.mjs --otp-recovery
+    G192 passed: in-app 6-digit OTP verification, reactive session sync, optional password update and M3 step flow verified
+    (exit code: 0)
+
+- [x] G193: Validation globale de la suite déterministe et compilation de production Vite
+  CHECK: node scripts/verify-gates.mjs --all && npm run build
+  EXPECT: G193 passed: all deterministic gates and vite production build succeed with exit code 0
+  EVIDENCE:
+    $ node scripts/verify-gates.mjs --all && npm run build
+    G1 passed ... G192 passed: in-app 6-digit OTP verification, reactive session sync, optional password update and M3 step flow verified
+    vite v8.3.0 building client environment for production...
+    ✓ 122 modules transformed.
+    dist/assets/index-4Cq8Z5Wc.js  69.96 kB │ gzip: 21.35 kB
+    ✓ built in 1.39s
+    (exit code: 0)
+
+
 
 
 

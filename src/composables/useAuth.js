@@ -50,6 +50,12 @@ export function useAuth() {
     if (msg.includes('Password should be at least')) {
       return 'Le mot de passe doit faire au moins 6 caractères.'
     }
+    if (msg.includes('Token has expired') || msg.includes('token is expired') || msg.includes('Token is invalid') || msg.includes('otp_expired') || msg.includes('invalid token')) {
+      return 'Code de sécurité expiré ou invalide.'
+    }
+    if (msg.includes('rate limit') || msg.includes('security purposes') || msg.includes('over_email_send_rate_limit') || msg.includes('429') || msg.includes('Too Many Requests')) {
+      return 'Trop de tentatives rapprochées. Veuillez patienter une minute avant de demander un nouveau code.'
+    }
     if (msg.includes('Failed to fetch') || !navigator.onLine) {
       return 'Impossible de joindre le serveur. Vérifiez votre accès Internet.'
     }
@@ -153,6 +159,56 @@ export function useAuth() {
     }
   }
 
+  const verifyRecoveryOtp = async (email, token, newPassword = null) => {
+    authLoading.value = true
+    authError.value = null
+    const cleanEmail = (email || '').trim().toLowerCase()
+    const cleanToken = (token || '').trim()
+
+    if (!cleanToken || cleanToken.length < 6) {
+      const msg = 'Le code de sécurité doit comporter 6 chiffres.'
+      authError.value = msg
+      authLoading.value = false
+      return { data: null, error: new Error(msg), formattedMessage: msg }
+    }
+
+    try {
+      const { data, error } = await supabase.auth.verifyOtp({
+        email: cleanEmail,
+        token: cleanToken,
+        type: 'recovery',
+      })
+      if (error) throw error
+
+      session.value = data.session
+      user.value = data.session?.user || null
+
+      const trimmedPwd = (newPassword || '').trim()
+      if (trimmedPwd) {
+        if (trimmedPwd.length < 6) {
+          const msg = 'Le nouveau mot de passe doit comporter au moins 6 caractères.'
+          authError.value = msg
+          authLoading.value = false
+          return { data, error: new Error(msg), formattedMessage: msg }
+        }
+        const { error: pwdError } = await supabase.auth.updateUser({
+          password: trimmedPwd,
+        })
+        if (pwdError) {
+          console.warn('Erreur mise à jour mot de passe après OTP :', pwdError)
+        }
+      }
+
+      return { data, error: null, formattedMessage: null }
+    } catch (err) {
+      const formatted = formatAuthError(err)
+      authError.value = formatted
+      return { data: null, error: err, formattedMessage: formatted }
+    } finally {
+      authLoading.value = false
+    }
+  }
+
   const signOut = async () => {
     authLoading.value = true
     try {
@@ -177,6 +233,7 @@ export function useAuth() {
     signUp,
     signOut,
     resetPassword,
+    verifyRecoveryOtp,
     changePassword,
   }
 }

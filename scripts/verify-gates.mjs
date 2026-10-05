@@ -4026,6 +4026,51 @@ export function checkForgotPasswordTheme() {
   return true;
 }
 
+export function checkOtpRecovery() {
+  const authFile = path.resolve('src/composables/useAuth.js');
+  const authContent = fs.readFileSync(authFile, 'utf8');
+
+  if (!authContent.includes('verifyRecoveryOtp')) {
+    console.error('FAILURE G192: useAuth.js ne déclare pas verifyRecoveryOtp');
+    return false;
+  }
+  if (!authContent.includes("type: 'recovery'") && !authContent.includes('type: "recovery"')) {
+    console.error('FAILURE G192: useAuth.js verifyRecoveryOtp n’appelle pas verifyOtp avec type: "recovery"');
+    return false;
+  }
+  if (!authContent.includes('return {') || !authContent.includes('verifyRecoveryOtp,')) {
+    console.error('FAILURE G192: useAuth.js n’exporte pas verifyRecoveryOtp');
+    return false;
+  }
+
+  const loginFile = path.resolve('src/views/auth/LoginView.vue');
+  const loginContent = fs.readFileSync(loginFile, 'utf8');
+
+  if (!loginContent.includes('verifyRecoveryOtp')) {
+    console.error('FAILURE G192: LoginView.vue n’importe pas verifyRecoveryOtp');
+    return false;
+  }
+  if (!loginContent.includes('forgotStep') || !loginContent.includes("forgotStep === 'otp'")) {
+    console.error('FAILURE G192: LoginView.vue ne gère pas le parcours en 2 étapes avec forgotStep');
+    return false;
+  }
+  if (!loginContent.includes('id="otp-code"') || !loginContent.includes('inputmode="numeric"') || !loginContent.includes('maxlength="6"')) {
+    console.error('FAILURE G192: LoginView.vue ne propose pas de champ otp-code numérique à 6 chiffres');
+    return false;
+  }
+  if (!loginContent.includes('id="new-password"')) {
+    console.error('FAILURE G192: LoginView.vue ne propose pas de champ nouveau mot de passe');
+    return false;
+  }
+  if (!loginContent.includes('Valider et accéder à mon compte')) {
+    console.error('FAILURE G192: LoginView.vue ne propose pas le bouton d’action "Valider et accéder à mon compte"');
+    return false;
+  }
+
+  console.log('G192 passed: in-app 6-digit OTP verification, reactive session sync, optional password update and M3 step flow verified');
+  return true;
+}
+
 // Exécution CLI
 const arg = process.argv[2] || '--all';
 let success = true;
@@ -4186,6 +4231,8 @@ if (arg === '--emojis') {
   success = checkLoadingMargins();
 } else if (arg === '--forgot-password-theme') {
   success = checkForgotPasswordTheme();
+} else if (arg === '--otp-recovery') {
+  success = checkOtpRecovery();
 } else if (arg === '--archive-protection') {
   success = checkPrivilegedRolesArchiveProtection();
 } else if (arg === '--knowledge-loop') {
@@ -4267,10 +4314,11 @@ if (arg === '--emojis') {
   const r186 = checkAppIdentity();
   const r188 = checkLoadingMargins();
   const r190 = checkForgotPasswordTheme();
+  const r192 = checkOtpRecovery();
   const r48 = r39; // Une seule compilation sert les portes de build G39 et G48
-  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60 && r63 && r64 && r65 && r66 && r72 && r73 && r74 && r75 && r88 && r89 && r92 && r93 && r94 && r95 && r96 && r97 && r147 && r150 && r156 && r159 && r162 && r165 && r167 && r169 && r175 && r176 && r177 && r178 && r180 && r182 && r184 && r186 && r188 && r190;
+  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60 && r63 && r64 && r65 && r66 && r72 && r73 && r74 && r75 && r88 && r89 && r92 && r93 && r94 && r95 && r96 && r97 && r147 && r150 && r156 && r159 && r162 && r165 && r167 && r169 && r175 && r176 && r177 && r178 && r180 && r182 && r184 && r186 && r188 && r190 && r192;
 } else {
-  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--presences-ui|--presences-period|--presences-table|--presences-sort|--presences-localfirst|--sync-scope|--livequery-deps|--manager-dexie|--manager-grammar|--manager-responsive|--manager-nav-icons|--manager-finish|--employee-finish|--settings-page|--cross-space-gateways|--back-navigation|--notification-bell|--account-lifecycle|--pending-notifications|--immediate-reject|--archived-session|--responsive-views|--archive-protection|--knowledge-loop|--absence-model|--absence-sync|--absence-notifications|--absence-ui|--account-feedback|--auth-transition|--app-loading|--app-identity|--loading-margins|--forgot-password-theme|--manager-build|--sidebar-build|--build|--all]`);
+  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--presences-ui|--presences-period|--presences-table|--presences-sort|--presences-localfirst|--sync-scope|--livequery-deps|--manager-dexie|--manager-grammar|--manager-responsive|--manager-nav-icons|--manager-finish|--employee-finish|--settings-page|--cross-space-gateways|--back-navigation|--notification-bell|--account-lifecycle|--pending-notifications|--immediate-reject|--archived-session|--responsive-views|--archive-protection|--knowledge-loop|--absence-model|--absence-sync|--absence-notifications|--absence-ui|--account-feedback|--auth-transition|--app-loading|--app-identity|--loading-margins|--forgot-password-theme|--otp-recovery|--manager-build|--sidebar-build|--build|--all]`);
   process.exit(1);
 }
 

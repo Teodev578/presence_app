@@ -77,6 +77,29 @@ Il ne remplace pas `AGENTS.md` (invariants figés), `.agents/plan.md` (feuille d
 
 ## Tâches actives
 
+### Tâche : Réinitialisation de Mot de Passe par Code OTP à 6 Chiffres In-App
+**Date** : 2026-10-05
+**Complexité** : Moyen
+**Proposant** : Fabien / presence-stack (Marc & Lucas & Chloé)
+**Story liée** : `.agents/plan.md`
+
+#### Pre-flight (10 min)
+1. Problème réel : Le flux de mot de passe oublié par lien magique URL échoue dès lors que l'email est consulté sur un appareil distinct du serveur de développement (par exemple un iPhone ouvrant `localhost:5173`, générant `ERR_CONNECTION_FAILED`), et risque d'ouvrir un navigateur tiers hors PWA. L'utilisateur souhaite un flux par code de sécurité OTP à 6 chiffres entièrement In-App permettant une connexion directe, avec la possibilité de changer son mot de passe immédiatement ou plus tard dans les paramètres.
+2. Contrainte principale : Exploiter l'API native `supabase.auth.verifyOtp({ email, token, type: 'recovery' })`, synchroniser la session réactive, permettre la saisie immédiate ou différée du nouveau mot de passe, préserver les standards WCAG AA et l'échelle M3, zéro modification de version de dépendances.
+3. Alternative rejetée : Imposer un lien magique universel avec déclaration de sous-réseaux IP dans les Redirect URLs Supabase (rejetée car lourde, inapplicable hors Wi-Fi local sans tunnel distant, et source de friction en PWA).
+4. Signal de fin : Composable `useAuth.js` doté de `verifyRecoveryOtp` ; écran `LoginView.vue` articulé en deux étapes fluides (1. Saisie email → 2. Saisie du code OTP à 6 chiffres avec espacement typographique M3, champ nouveau mot de passe optionnel et validation) ; oracle G192 validé et build Vite conforme.
+5. Déclencheur KI : N (sélection d'une architecture native OTP standard).
+
+#### Résultat
+- Implémenté ? O (2026-10-05) — Portes G192 et G193 validées à 100%, suite verify-gates.mjs --all et build de production conformes.
+- Leçon tirée :
+  1. *Avantage décisif du flux OTP en environnement cross-device* : Le recours à un code OTP à 6 chiffres via `supabase.auth.verifyOtp({ email, token, type: 'recovery' })` libère totalement l'application des contraintes d'URL de redirection (`localhost`, adresses IP locales, tunnels). L'utilisateur peut lire son code sur n'importe quel terminal et le saisir directement dans l'interface ouverte.
+  2. *Fluidité de la mise à jour conditionnelle du mot de passe* : Coupler la validation OTP avec la possibilité de spécifier optionnellement un nouveau mot de passe directement dans le formulaire (ou de le déléguer aux paramètres ultérieurement) élimine toute friction et permet une transition transparente vers l'espace connecté.
+- Portes franchies : G192, G193 validées (100% de succès sur `node scripts/verify-gates.mjs --all` et `npm run build`).
+- Escalade : Aucune (couverture complète dans les règles existantes).
+
+---
+
 ### Tâche : Refonte de la Lisibilité et du Thème de l'Écran de Mot de Passe Oublié
 **Date** : 2026-10-05
 **Complexité** : Moyen

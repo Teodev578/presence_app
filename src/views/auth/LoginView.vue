@@ -5,11 +5,15 @@ import { useAuth } from '../../composables/useAuth'
 import { useProfile } from '../../composables/useProfile'
 
 const { route, navigate } = useRouter()
-const { signIn, signUp, resetPassword, authLoading, authError } = useAuth()
+const { signIn, signUp, resetPassword, verifyRecoveryOtp, authLoading, authError } = useAuth()
 const { profile, fetchProfile } = useProfile()
 
 const isRegister = ref(false)
 const isForgotPassword = ref(false)
+const forgotStep = ref('email') // 'email' | 'otp'
+const otpCode = ref('')
+const newPassword = ref('')
+const showNewPassword = ref(false)
 const email = ref('')
 const password = ref('')
 const fullName = ref('')
@@ -168,7 +172,54 @@ const handleForgotPassword = async () => {
   const { error } = await resetPassword(cleanEmail)
   if (!error) {
     isForgotSuccess.value = true
+    forgotStep.value = 'otp'
   }
+}
+
+const handleVerifyOtp = async () => {
+  message.value = ''
+  authError.value = null
+
+  if (!navigator.onLine) {
+    message.value = 'Connexion Internet requise pour cette action.'
+    return
+  }
+
+  const cleanEmail = email.value.trim().toLowerCase()
+  const cleanOtp = otpCode.value.trim()
+
+  if (!cleanOtp || cleanOtp.length < 6) {
+    message.value = 'Entrez le code de sécurité à 6 chiffres.'
+    return
+  }
+
+  const { error } = await verifyRecoveryOtp(cleanEmail, cleanOtp, newPassword.value)
+  if (error) return
+
+  // Validation réussie : feedback et routage immédiat vers l'espace applicatif
+  isSuccess.value = true
+  successText.value = 'Connexion réussie'
+
+  const userProfile = await fetchProfile()
+  const role = userProfile?.role || profile.value?.role
+
+  await new Promise((r) => setTimeout(r, 500))
+
+  if (role === 'admin' || role === 'manager') {
+    navigate('/manager')
+  } else {
+    navigate('/employee')
+  }
+}
+
+const resetForgotState = () => {
+  isForgotPassword.value = false
+  forgotStep.value = 'email'
+  otpCode.value = ''
+  newPassword.value = ''
+  isForgotSuccess.value = false
+  authError.value = null
+  message.value = ''
 }
 </script>
 
@@ -229,131 +280,249 @@ const handleForgotPassword = async () => {
           <span>Vous êtes hors ligne. Connectez-vous à Internet pour vous identifier.</span>
         </div>
 
-        <!-- Mode Réinitialisation de mot de passe oublié -->
+        <!-- Mode Réinitialisation de mot de passe oublié (Parcours OTP in-app à 6 chiffres) -->
         <div v-if="isForgotPassword" class="flex flex-col gap-5">
+          <!-- En-tête avec bouton retour et marque -->
           <div class="flex items-center justify-between">
             <button
               type="button"
               class="btn btn-ghost btn-sm gap-2 text-base-content/80 hover:text-base-content hover:bg-base-200 -ml-2 rounded-m3-sm min-h-11 px-3 cursor-pointer"
-              @click="isForgotPassword = false; message = ''; authError = null; isForgotSuccess = false"
+              @click="forgotStep === 'otp' ? (forgotStep = 'email') : resetForgotState()"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <line x1="19" y1="12" x2="5" y2="12"></line>
                 <polyline points="12 19 5 12 12 5"></polyline>
               </svg>
-              <span class="font-medium">Retour</span>
+              <span class="font-medium">{{ forgotStep === 'otp' ? 'Changer d\'email' : 'Retour' }}</span>
             </button>
             <span class="text-xs font-semibold text-base-content/50 tracking-wider">PresenceApp</span>
           </div>
 
-          <div class="flex items-start gap-3">
-            <div class="w-10 h-10 rounded-m3-md bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0 mt-0.5" aria-hidden="true">
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-              </svg>
-            </div>
-            <div>
-              <h1 class="text-xl font-bold tracking-tight text-base-content">Mot de passe oublié</h1>
-              <p class="text-xs sm:text-sm text-base-content/75 mt-1 leading-relaxed">
-                Entrez votre email pour recevoir le lien de réinitialisation.
-              </p>
-            </div>
-          </div>
-
-          <form class="flex flex-col gap-4" @submit.prevent="handleForgotPassword">
-            <!-- Email professionnel pour réinitialisation -->
-            <fieldset class="fieldset">
-              <legend class="fieldset-legend text-xs font-semibold text-base-content/80">
-                Adresse email
-              </legend>
-              <input
-                id="reset-email"
-                v-model="email"
-                type="email"
-                autocomplete="email"
-                autocapitalize="none"
-                autocorrect="off"
-                spellcheck="false"
-                inputmode="email"
-                required
-                placeholder="jean.dupont@exemple.com"
-                class="input input-bordered w-full rounded-m3-sm text-sm focus:outline-none focus:border-primary bg-base-100 text-base-content placeholder:text-base-content/40"
-                :disabled="authLoading"
-                :readonly="isForgotSuccess"
-              />
-            </fieldset>
-
-            <!-- Erreur d'authentification / envoi / validation locale -->
-            <Transition name="alert-fade">
-              <div v-if="authError || message" class="alert alert-error text-xs py-2.5 rounded-m3-md flex items-center justify-between gap-2" role="alert">
-                <span>{{ authError || message }}</span>
-                <button
-                  type="button"
-                  class="btn btn-ghost btn-sm btn-circle shrink-0 hover:bg-black/10 text-error-content min-w-11 min-h-11 cursor-pointer"
-                  aria-label="Fermer le message d'erreur"
-                  @click="authError = null; message = ''"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
-                </button>
-              </div>
-            </Transition>
-
-            <!-- Message d'information et confirmation explicite avec email -->
-            <Transition name="alert-fade">
-              <div
-                v-if="isForgotSuccess"
-                class="alert alert-success border border-success/30 bg-success/15 text-base-content rounded-m3-md p-3.5 flex items-start gap-3"
-                role="status"
-              >
-                <div class="w-6 h-6 rounded-full bg-success text-success-content flex items-center justify-center shrink-0 mt-0.5 font-bold" aria-hidden="true">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                  </svg>
-                </div>
-                <div class="flex-1 text-xs leading-relaxed">
-                  <p class="font-bold text-success text-xs sm:text-sm">Lien envoyé avec succès</p>
-                  <p class="text-base-content/85 mt-1">
-                    Un email de réinitialisation a été envoyé à <strong class="text-base-content font-semibold">{{ email }}</strong>. Veuillez vérifier votre boîte de réception et vos courriers indésirables.
-                  </p>
-                </div>
-              </div>
-            </Transition>
-
-            <!-- Actions : état de succès ou bouton d'envoi -->
-            <div v-if="isForgotSuccess" class="flex flex-col gap-2.5 mt-1">
-              <div
-                class="flex items-center justify-center gap-2 py-3 px-4 rounded-m3-md border border-success/40 bg-success/10 text-success text-sm font-bold select-none"
-                aria-live="polite"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <polyline points="20 6 9 17 4 12"></polyline>
+          <!-- Étape 1 : Demande de transmission du code par email -->
+          <template v-if="forgotStep === 'email'">
+            <div class="flex items-start gap-3">
+              <div class="w-10 h-10 rounded-m3-md bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0 mt-0.5" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                 </svg>
-                <span>Lien envoyé par email</span>
               </div>
+              <div>
+                <h1 class="text-xl font-bold tracking-tight text-base-content">Mot de passe oublié</h1>
+                <p class="text-xs sm:text-sm text-base-content/75 mt-1 leading-relaxed">
+                  Entrez votre email pour recevoir votre code de sécurité à 6 chiffres.
+                </p>
+              </div>
+            </div>
+
+            <form class="flex flex-col gap-4" @submit.prevent="handleForgotPassword">
+              <!-- Email professionnel pour réinitialisation -->
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend text-xs font-semibold text-base-content/80">
+                  Adresse email
+                </legend>
+                <input
+                  id="reset-email"
+                  v-model="email"
+                  type="email"
+                  autocomplete="email"
+                  autocapitalize="none"
+                  autocorrect="off"
+                  spellcheck="false"
+                  inputmode="email"
+                  required
+                  placeholder="jean.dupont@exemple.com"
+                  class="input input-bordered w-full rounded-m3-sm text-sm focus:outline-none focus:border-primary bg-base-100 text-base-content placeholder:text-base-content/40"
+                  :disabled="authLoading"
+                />
+              </fieldset>
+
+              <!-- Erreur d'authentification / envoi / validation locale -->
+              <Transition name="alert-fade">
+                <div v-if="authError || message" class="alert alert-error text-xs py-2.5 rounded-m3-md flex items-center justify-between gap-2" role="alert">
+                  <span>{{ authError || message }}</span>
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-sm btn-circle shrink-0 hover:bg-black/10 text-error-content min-w-11 min-h-11 cursor-pointer"
+                    aria-label="Fermer le message d'erreur"
+                    @click="authError = null; message = ''"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </button>
+                </div>
+              </Transition>
+
+              <button
+                type="submit"
+                class="btn btn-primary w-full text-sm sm:text-base font-bold min-h-12 shadow-xs rounded-m3-md mt-1 active:scale-98 transition-all gap-2 cursor-pointer"
+                :disabled="authLoading"
+              >
+                <span v-if="authLoading" class="loading loading-spinner loading-sm" aria-hidden="true"></span>
+                <span v-if="authLoading">Envoi en cours...</span>
+                <span v-else>Recevoir le code à 6 chiffres</span>
+              </button>
+
               <button
                 type="button"
-                class="btn btn-primary w-full text-sm font-bold min-h-12 shadow-xs rounded-m3-md cursor-pointer transition-all active:scale-98"
-                @click="isForgotPassword = false; message = ''; authError = null; isForgotSuccess = false"
+                class="btn btn-ghost btn-sm text-xs font-semibold text-base-content/70 hover:text-base-content w-full min-h-10 cursor-pointer"
+                @click="resetForgotState"
               >
                 Retour à la connexion
               </button>
+            </form>
+          </template>
+
+          <!-- Étape 2 : Saisie du code OTP à 6 chiffres in-app et nouveau mot de passe optionnel -->
+          <template v-else-if="forgotStep === 'otp'">
+            <div class="flex items-start gap-3">
+              <div class="w-10 h-10 rounded-m3-md bg-success/15 border border-success/30 flex items-center justify-center text-success shrink-0 mt-0.5" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+              </div>
+              <div>
+                <h1 class="text-xl font-bold tracking-tight text-base-content">Code de sécurité</h1>
+                <p class="text-xs sm:text-sm text-base-content/75 mt-1 leading-relaxed">
+                  Saisissez les 6 chiffres envoyés à <strong class="text-base-content">{{ email }}</strong>.
+                </p>
+              </div>
             </div>
 
-            <button
-              v-else
-              type="submit"
-              class="btn btn-primary w-full text-sm sm:text-base font-bold min-h-12 shadow-xs rounded-m3-md mt-1 active:scale-98 transition-all gap-2 cursor-pointer"
-              :disabled="authLoading"
+            <!-- Message d'information et confirmation explicite avec email -->
+            <div
+              class="alert alert-success border border-success/30 bg-success/15 text-base-content rounded-m3-md p-3.5 flex items-start gap-3"
+              role="status"
             >
-              <span v-if="authLoading" class="loading loading-spinner loading-sm" aria-hidden="true"></span>
-              <span v-if="authLoading">Envoi en cours...</span>
-              <span v-else>Envoyer le lien</span>
-            </button>
-          </form>
+              <div class="w-6 h-6 rounded-full bg-success text-success-content flex items-center justify-center shrink-0 mt-0.5 font-bold" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </div>
+              <div class="flex-1 text-xs leading-relaxed">
+                <p class="font-bold text-success text-xs sm:text-sm">Code envoyé avec succès</p>
+                <p class="text-base-content/85 mt-0.5">
+                  Consultez votre boîte <strong class="text-base-content font-semibold">{{ email }}</strong> (et vos courriers indésirables). Saisissez votre code pour vous connecter.
+                </p>
+              </div>
+            </div>
+
+            <form class="flex flex-col gap-4" @submit.prevent="handleVerifyOtp">
+              <!-- Saisie du code à 6 chiffres -->
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend text-xs font-semibold text-base-content/80">
+                  Code de sécurité à 6 chiffres
+                </legend>
+                <input
+                  id="otp-code"
+                  v-model="otpCode"
+                  type="text"
+                  inputmode="numeric"
+                  pattern="[0-9]*"
+                  maxlength="6"
+                  autocomplete="one-time-code"
+                  required
+                  placeholder="123456"
+                  class="input input-bordered w-full rounded-m3-sm text-center text-xl font-bold tracking-widest bg-base-100 text-base-content placeholder:text-base-content/30 focus:border-primary focus:outline-none h-13"
+                  :disabled="authLoading"
+                />
+              </fieldset>
+
+              <!-- Nouveau mot de passe (optionnel) -->
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend text-xs font-semibold text-base-content/80">
+                  Nouveau mot de passe <span class="text-base-content/50 font-normal">(optionnel)</span>
+                </legend>
+                <div class="relative">
+                  <input
+                    id="new-password"
+                    v-model="newPassword"
+                    :type="showNewPassword ? 'text' : 'password'"
+                    placeholder="Au moins 6 caractères"
+                    minlength="6"
+                    autocomplete="new-password"
+                    class="input input-bordered w-full rounded-m3-sm text-sm focus:outline-none focus:border-primary bg-base-100 text-base-content placeholder:text-base-content/40 pr-10"
+                    :disabled="authLoading"
+                  />
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-xs btn-circle absolute right-2 top-1/2 -translate-y-1/2 text-base-content/60 hover:text-base-content min-w-8 min-h-8 cursor-pointer"
+                    :aria-label="showNewPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'"
+                    @click="showNewPassword = !showNewPassword"
+                  >
+                    <svg v-if="showNewPassword" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                      <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </svg>
+                    <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                  </button>
+                </div>
+              </fieldset>
+
+              <!-- Erreur d'authentification / validation -->
+              <Transition name="alert-fade">
+                <div v-if="authError || message" class="alert alert-error text-xs py-2.5 rounded-m3-md flex items-center justify-between gap-2" role="alert">
+                  <span>{{ authError || message }}</span>
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-sm btn-circle shrink-0 hover:bg-black/10 text-error-content min-w-11 min-h-11 cursor-pointer"
+                    aria-label="Fermer le message d'erreur"
+                    @click="authError = null; message = ''"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </button>
+                </div>
+              </Transition>
+
+              <!-- Validation du code et connexion -->
+              <button
+                type="submit"
+                class="btn btn-primary w-full text-sm font-bold min-h-12 shadow-xs rounded-m3-md mt-1 active:scale-98 transition-all gap-2 cursor-pointer"
+                :disabled="authLoading || otpCode.trim().length < 6"
+              >
+                <span v-if="authLoading" class="loading loading-spinner loading-sm" aria-hidden="true"></span>
+                <span v-if="authLoading">Validation en cours...</span>
+                <span v-else>Valider et accéder à mon compte</span>
+              </button>
+
+              <!-- Actions secondaires : renvoyer ou changer d'email -->
+              <div class="flex items-center justify-between pt-1 text-xs">
+                <button
+                  type="button"
+                  class="text-primary hover:underline font-semibold cursor-pointer py-1"
+                  :disabled="authLoading"
+                  @click="handleForgotPassword"
+                >
+                  Renvoyer un code
+                </button>
+                <button
+                  type="button"
+                  class="text-base-content/60 hover:text-base-content font-medium cursor-pointer py-1"
+                  @click="forgotStep = 'email'; authError = null; message = ''"
+                >
+                  Changer d'adresse email
+                </button>
+              </div>
+
+              <div class="pt-2 border-t border-base-300/60 text-center">
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-sm text-xs font-semibold text-base-content/75 hover:text-base-content w-full min-h-10 cursor-pointer"
+                  @click="resetForgotState"
+                >
+                  Retour à la connexion
+                </button>
+              </div>
+            </form>
+          </template>
         </div>
 
         <!-- Mode standard : Onglets Connexion / Inscription -->
@@ -499,7 +668,7 @@ const handleForgotPassword = async () => {
                     class="w-4 h-4"
                     aria-hidden="true"
                   >
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z" />
+                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
                     <circle cx="12" cy="12" r="3" />
                   </svg>
                 </button>

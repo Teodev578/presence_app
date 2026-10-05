@@ -1,3 +1,38 @@
+# Plan : Réinitialisation de Mot de Passe par Code OTP à 6 Chiffres In-App
+
+Date : 2026-10-05  
+Déclencheur : Demande utilisateur (passer par un code OTP à 6 chiffres in-app, avec option de mise à jour du mot de passe immédiate ou dans les paramètres)  
+Statut : Terminé et Validé (Portes G192 et G193 validées, méthode verifyRecoveryOtp opérationnelle, cinématique in-app 2 étapes active, responsive et build conformes)  
+Porte liée : G192 / G193  
+
+## 1. Périmètre
+
+### Fichiers cibles
+- `src/composables/useAuth.js` (méthode `verifyRecoveryOtp` appelant `supabase.auth.verifyOtp({ email, token, type: 'recovery' })`, synchronisation de la session, et mise à jour optionnelle du mot de passe via `updateUser`)
+- `src/views/auth/LoginView.vue` (cinématique en deux étapes : saisie de l'email → saisie du code à 6 chiffres formaté M3 + nouveau mot de passe optionnel, validation et transition directe vers l'espace applicatif)
+- `GATES.md` (portes G192 et G193)
+- `scripts/verify-gates.mjs` (oracle déterministe pour G192)
+
+---
+
+## 2. Étapes Séquentielles
+
+1. [x] **Étape 1 : Extension du composable `useAuth.js`**
+   - Implémenter `verifyRecoveryOtp(email, token, newPassword = null)` avec gestion stricte des erreurs (format de code, expiration/invalidité).
+   - Mettre à jour la session réactive et enchaîner sur `updateUser({ password })` si un nouveau mot de passe est renseigné.
+
+2. [x] **Étape 2 : Implémentation du formulaire OTP In-App dans `LoginView.vue`**
+   - Introduire l'état d'étape (`forgotStep = 'email' | 'otp'`).
+   - Étape email : saisie de l'email et envoi du code.
+   - Étape OTP : champ numérique à 6 chiffres stylisé M3 (`tracking-widest font-mono text-center`), champ nouveau mot de passe optionnel (« Nouveau mot de passe (optionnel) »), bouton d'action « Valider et accéder à mon compte », lien « Renvoyer un code » et option pour modifier l'adresse email.
+   - Routage automatique vers `/employee` ou `/manager` dès la validation réussie.
+
+3. [x] **Étape 3 : Oracle Déterministe et Validation Globale**
+   - Ajouter l'oracle G192 dans `scripts/verify-gates.mjs` (`--otp-recovery`).
+   - Valider la suite intégrale `node scripts/verify-gates.mjs --all` et la compilation Vite `npm run build`.
+
+---
+
 # Plan : Refonte de la Lisibilité et du Thème de l'Écran de Mot de Passe Oublié
 
 Date : 2026-10-05  
