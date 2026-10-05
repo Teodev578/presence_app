@@ -1,3 +1,37 @@
+# Plan : Refonte de la Lisibilité et du Thème de l'Écran de Mot de Passe Oublié
+
+Date : 2026-10-05  
+Déclencheur : Demande utilisateur (revoir la lisibilité du thème pour l'écran de mot de passe oublié)  
+Statut : Terminé et Validé (Portes G190 et G191 validées, suppression du ratio 1.1:1, bandeau de confirmation avec email, retour à la connexion fluide, build conforme)  
+Porte liée : G190 / G191  
+
+## 1. Périmètre
+
+### Fichiers cibles
+- `src/views/auth/LoginView.vue` (refonte contrastée de l'état de mot de passe oublié, suppression de l'écrasement de fond disabled, encart de confirmation explicite, CTA Retour à la connexion)
+- `GATES.md` (portes G190 et G191)
+- `scripts/verify-gates.mjs` (oracle déterministe pour G190)
+
+---
+
+## 2. Étapes Séquentielles
+
+1. [x] **Étape 1 : Refonte de l'état de confirmation et contraste du bouton (`LoginView.vue`)**
+   - Éliminer le piège `:disabled="authLoading || isForgotSuccess"` qui détruisait le fond vert au profit du fond gris disabled de DaisyUI.
+   - Utiliser un badge d'accusé de réception net avec coche verte Material 3 et le CTA principal « Retour à la connexion ».
+   - Ajouter un bandeau d'alerte de confirmation Material 3 avec l'adresse email rappelée et un message explicatif clair.
+
+2. [x] **Étape 2 : Rehaussement typographique et d'incarnation (`LoginView.vue`)**
+   - Insérer un badge visuel M3 d'en-tête (cadenas/clé) pour situer l'écran.
+   - Améliorer le contraste du bouton retour (`text-base-content`, hover franc, cible 44px).
+   - Augmenter la lisibilité du sous-titre (`text-sm text-base-content/75`).
+
+3. [x] **Étape 3 : Oracle Déterministe et Validation Globale**
+   - Implémenter l'oracle G190 dans `scripts/verify-gates.mjs` (`--forgot-password-theme`).
+   - Valider la suite intégrale `node scripts/verify-gates.mjs --all` et la compilation Vite `npm run build`.
+
+---
+
 # Plan : Éradication des Bandes et Marges Périphériques Durant le Chargement
 
 Date : 2026-10-05  

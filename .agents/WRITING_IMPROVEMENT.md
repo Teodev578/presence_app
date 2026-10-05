@@ -77,6 +77,29 @@ Il ne remplace pas `AGENTS.md` (invariants figés), `.agents/plan.md` (feuille d
 
 ## Tâches actives
 
+### Tâche : Refonte de la Lisibilité et du Thème de l'Écran de Mot de Passe Oublié
+**Date** : 2026-10-05
+**Complexité** : Moyen
+**Proposant** : Fabien / presence-stack (Chloé & Lucas)
+**Story liée** : `.agents/plan.md`
+
+#### Pre-flight (10 min)
+1. Problème réel : Sur l'écran "Mot de passe oublié" en thème sombre (`data-theme="dark"`), l'état de confirmation (« Lien envoyé par email ») est presque totalement illisible car le bouton porte l'attribut natif `:disabled`, ce qui pousse DaisyUI et le navigateur à neutraliser le fond plein `btn-success` au profit d'un gris foncé `base-200`, tout en conservant la couleur `--color-success-content` (`#00391c`, vert très sombre/presque noir). Le ratio de contraste chute à 1.1:1 (texte quasi invisible sur fond sombre). De plus, l'écran manque d'incarnation de marque (logo absent), le sous-titre est trop terne et aucun encart explicatif de confirmation n'accompagne l'envoi.
+2. Contrainte principale : Maintien strict de la conformité WCAG AA (ratio de contraste ≥ 4.5:1 sur les textes normaux), zéro dépendance de version (`package.json` intact), cohérence totale entre les modes clair et sombre.
+3. Alternative rejetée : Conserver le bouton `:disabled` en forçant des `!important` CSS sur les couleurs d'un bouton désactivé (rejetée car anti-pattern sémantique et contraire aux conventions d'accessibilité où un élément disabled ne doit pas porter de styles actifs incohérents) ; forcer une couleur de texte claire en dur `#ffffff` sans fond garanti (rejetée car brise la palette en thème clair).
+4. Signal de fin : Bouton de succès préservant son fond plein sans `:disabled` dégradant (sécurisé par `pointer-events-none aria-disabled="true"`), alerte de confirmation explicite avec adresse email rappelée, en-tête de marque avec conteneur d'icône M3, contrastes typographiques renforcés, suite déterministe et build Vite sans erreur.
+5. Déclencheur KI : O (déclencheur KI identifié : récurrence du piège de contraste `--color-success-content` sur fond sombre lorsque le fond plein est altéré par un état disabled).
+
+#### Résultat
+- Implémenté ? O (2026-10-05) — Portes G190 et G191 validées à 100%, suite verify-gates.mjs --all et build de production conformes.
+- Leçon tirée :
+  1. *Effet de bord de l'attribut natif :disabled sur les boutons d'état colorés en mode sombre* : DaisyUI et Tailwind appliquent sur `.btn:disabled` un écrasement de fond vers `base-200` semi-transparent tout en laissant subsister les classes explicites de texte (`text-success-content`). Lorsque `--color-success-content` est calibré pour un fond vert clair (`#00391c`, vert très sombre/presque noir), l'écrasement du fond par un gris foncé `#1d2024` détruit le contraste (chute à 1.1:1).
+  2. *Parcours utilisateur post-action* : Un bouton d'action ne doit pas être figé en état disabled lors d'un accusé de réception d'email. Il convient d'afficher un bandeau d'alerte sémantique dédié (`role="status"`, `alert alert-success`) rappelant l'adresse email renseignée en gras, un indicateur d'état non interactif (`aria-live="polite"`, bordure douce et vert clair contrasté), et de convertir l'action principale en « Retour à la connexion » pour guider l'utilisateur sans friction.
+- Portes franchies : G190, G191 validées (100% de succès sur `node scripts/verify-gates.mjs --all` et `npm run build`).
+- Escalade : Aucune (couverture complète dans les règles existantes).
+
+---
+
 ### Tâche : Éradication des Bandes et Marges Périphériques Durant le Chargement
 **Date** : 2026-10-05
 **Complexité** : Moyen

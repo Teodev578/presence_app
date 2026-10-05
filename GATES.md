@@ -1505,6 +1505,29 @@ Scope: Automatisation et renforcement de la mémoire agentique selon le plan d'a
     ✓ built in 1.40s
     (exit code: 0)
 
+### Lot : Lisibilité et Contrastes de l'Écran de Mot de Passe Oublié
+
+- [x] G190: Lisibilité thématique, résolution du contraste sombre (1.1:1), bandeau de statut explicite et ergonomie de retour
+  CHECK: node scripts/verify-gates.mjs --forgot-password-theme
+  EXPECT: G190 passed: forgot password screen theme readability, contrast resolution, explicit status banner, and login return path verified
+  EVIDENCE:
+    $ node scripts/verify-gates.mjs --forgot-password-theme
+    G190 passed: forgot password screen theme readability, contrast resolution, explicit status banner, and login return path verified
+    (exit code: 0)
+
+- [x] G191: Validation complète des portes déterministes et compilation de production Vite
+  CHECK: node scripts/verify-gates.mjs --all && npm run build
+  EXPECT: G191 passed: all deterministic gates and vite production build succeed with exit code 0
+  EVIDENCE:
+    $ node scripts/verify-gates.mjs --all && npm run build
+    G1 passed ... G190 passed: forgot password screen theme readability, contrast resolution, explicit status banner, and login return path verified
+    vite v8.3.0 building client environment for production...
+    ✓ 122 modules transformed.
+    dist/assets/index-c2ccrFXQ.js  69.96 kB │ gzip: 21.35 kB
+    ✓ built in 1.38s
+    (exit code: 0)
+
+
 
 
 

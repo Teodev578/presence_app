@@ -168,9 +168,6 @@ const handleForgotPassword = async () => {
   const { error } = await resetPassword(cleanEmail)
   if (!error) {
     isForgotSuccess.value = true
-    setTimeout(() => {
-      isForgotSuccess.value = false
-    }, 4000)
   }
 }
 </script>
@@ -237,29 +234,37 @@ const handleForgotPassword = async () => {
           <div class="flex items-center justify-between">
             <button
               type="button"
-              class="btn btn-ghost btn-sm gap-1.5 text-base-content/70 hover:text-base-content -ml-2 rounded-m3-sm min-h-11 px-3 cursor-pointer"
-              @click="isForgotPassword = false; message = ''; authError = null"
+              class="btn btn-ghost btn-sm gap-2 text-base-content/80 hover:text-base-content hover:bg-base-200 -ml-2 rounded-m3-sm min-h-11 px-3 cursor-pointer"
+              @click="isForgotPassword = false; message = ''; authError = null; isForgotSuccess = false"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <line x1="19" y1="12" x2="5" y2="12"></line>
                 <polyline points="12 19 5 12 12 5"></polyline>
               </svg>
-              <span>Retour</span>
+              <span class="font-medium">Retour</span>
             </button>
-            <span class="text-xs font-semibold text-base-content/40 tracking-wider">PresenceApp</span>
+            <span class="text-xs font-semibold text-base-content/50 tracking-wider">PresenceApp</span>
           </div>
 
-          <div>
-            <h1 class="text-xl font-bold tracking-tight text-base-content">Mot de passe oublié</h1>
-            <p class="text-xs text-base-content/60 mt-1">
-              Entrez votre email pour recevoir le lien de réinitialisation.
-            </p>
+          <div class="flex items-start gap-3">
+            <div class="w-10 h-10 rounded-m3-md bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0 mt-0.5" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+            </div>
+            <div>
+              <h1 class="text-xl font-bold tracking-tight text-base-content">Mot de passe oublié</h1>
+              <p class="text-xs sm:text-sm text-base-content/75 mt-1 leading-relaxed">
+                Entrez votre email pour recevoir le lien de réinitialisation.
+              </p>
+            </div>
           </div>
 
           <form class="flex flex-col gap-4" @submit.prevent="handleForgotPassword">
             <!-- Email professionnel pour réinitialisation -->
             <fieldset class="fieldset">
-              <legend class="fieldset-legend text-xs font-semibold text-base-content/70">
+              <legend class="fieldset-legend text-xs font-semibold text-base-content/80">
                 Adresse email
               </legend>
               <input
@@ -273,21 +278,23 @@ const handleForgotPassword = async () => {
                 inputmode="email"
                 required
                 placeholder="jean.dupont@exemple.com"
-                class="input input-bordered w-full rounded-m3-sm text-sm focus:outline-none focus:border-primary"
+                class="input input-bordered w-full rounded-m3-sm text-sm focus:outline-none focus:border-primary bg-base-100 text-base-content placeholder:text-base-content/40"
+                :disabled="authLoading"
+                :readonly="isForgotSuccess"
               />
             </fieldset>
 
-            <!-- Erreur d'authentification / envoi -->
+            <!-- Erreur d'authentification / envoi / validation locale -->
             <Transition name="alert-fade">
-              <div v-if="authError" class="alert alert-error text-xs py-2.5 rounded-m3-md flex items-center justify-between gap-2" role="alert">
-                <span>{{ authError }}</span>
+              <div v-if="authError || message" class="alert alert-error text-xs py-2.5 rounded-m3-md flex items-center justify-between gap-2" role="alert">
+                <span>{{ authError || message }}</span>
                 <button
                   type="button"
-                  class="btn btn-ghost btn-sm btn-circle shrink-0 hover:bg-black/10 text-error-content min-w-11 min-h-11"
+                  class="btn btn-ghost btn-sm btn-circle shrink-0 hover:bg-black/10 text-error-content min-w-11 min-h-11 cursor-pointer"
                   aria-label="Fermer le message d'erreur"
-                  @click="authError = null"
+                  @click="authError = null; message = ''"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
                     <line x1="6" y1="6" x2="18" y2="18"></line>
                   </svg>
@@ -295,25 +302,55 @@ const handleForgotPassword = async () => {
               </div>
             </Transition>
 
-            <!-- Bouton d'action réinitialisation avec feedback intégré -->
-            <button
-              type="submit"
-              class="btn w-full text-base font-bold min-h-12 shadow-xs rounded-m3-md mt-1 active:scale-98 transition-all gap-2"
-              :class="[
-                isForgotSuccess
-                  ? 'btn-success text-success-content focus-visible:ring-success'
-                  : 'btn-primary focus-visible:ring-primary'
-              ]"
-              :disabled="authLoading || isForgotSuccess"
-            >
-              <span v-if="authLoading" class="loading loading-spinner loading-sm"></span>
-              <span v-if="authLoading">Envoi en cours...</span>
-              <template v-else-if="isForgotSuccess">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <!-- Message d'information et confirmation explicite avec email -->
+            <Transition name="alert-fade">
+              <div
+                v-if="isForgotSuccess"
+                class="alert alert-success border border-success/30 bg-success/15 text-base-content rounded-m3-md p-3.5 flex items-start gap-3"
+                role="status"
+              >
+                <div class="w-6 h-6 rounded-full bg-success text-success-content flex items-center justify-center shrink-0 mt-0.5 font-bold" aria-hidden="true">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </div>
+                <div class="flex-1 text-xs leading-relaxed">
+                  <p class="font-bold text-success text-xs sm:text-sm">Lien envoyé avec succès</p>
+                  <p class="text-base-content/85 mt-1">
+                    Un email de réinitialisation a été envoyé à <strong class="text-base-content font-semibold">{{ email }}</strong>. Veuillez vérifier votre boîte de réception et vos courriers indésirables.
+                  </p>
+                </div>
+              </div>
+            </Transition>
+
+            <!-- Actions : état de succès ou bouton d'envoi -->
+            <div v-if="isForgotSuccess" class="flex flex-col gap-2.5 mt-1">
+              <div
+                class="flex items-center justify-center gap-2 py-3 px-4 rounded-m3-md border border-success/40 bg-success/10 text-success text-sm font-bold select-none"
+                aria-live="polite"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <polyline points="20 6 9 17 4 12"></polyline>
                 </svg>
                 <span>Lien envoyé par email</span>
-              </template>
+              </div>
+              <button
+                type="button"
+                class="btn btn-primary w-full text-sm font-bold min-h-12 shadow-xs rounded-m3-md cursor-pointer transition-all active:scale-98"
+                @click="isForgotPassword = false; message = ''; authError = null; isForgotSuccess = false"
+              >
+                Retour à la connexion
+              </button>
+            </div>
+
+            <button
+              v-else
+              type="submit"
+              class="btn btn-primary w-full text-sm sm:text-base font-bold min-h-12 shadow-xs rounded-m3-md mt-1 active:scale-98 transition-all gap-2 cursor-pointer"
+              :disabled="authLoading"
+            >
+              <span v-if="authLoading" class="loading loading-spinner loading-sm" aria-hidden="true"></span>
+              <span v-if="authLoading">Envoi en cours...</span>
               <span v-else>Envoyer le lien</span>
             </button>
           </form>
