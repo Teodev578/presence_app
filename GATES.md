@@ -1547,7 +1547,28 @@ Scope: Automatisation et renforcement de la mémoire agentique selon le plan d'a
     ✓ 122 modules transformed.
     dist/assets/index-4Cq8Z5Wc.js  69.96 kB │ gzip: 21.35 kB
     ✓ built in 1.39s
+### Lot : Feedback In-Button de Confirmation OTP et Épuration de l'Étape 2
+
+- [x] G194: Feedback d'envoi OTP direct dans le bouton (« Code envoyé ! » avec fond contrasté), temporisation fluide et suppression du bandeau redondant à l'étape 2
+  CHECK: node scripts/verify-gates.mjs --otp-button-feedback
+  EXPECT: G194 passed: in-button OTP request feedback, timed transition, and clean direct OTP input layout verified
+  EVIDENCE:
+    $ node scripts/verify-gates.mjs --otp-button-feedback
+    G194 passed: in-button OTP request feedback, timed transition, and clean direct OTP input layout verified
     (exit code: 0)
+
+- [x] G195: Validation globale de la suite déterministe et compilation de production Vite
+  CHECK: node scripts/verify-gates.mjs --all && npm run build
+  EXPECT: G195 passed: all deterministic gates and vite production build succeed with exit code 0
+  EVIDENCE:
+    $ node scripts/verify-gates.mjs --all && npm run build
+    G1 passed ... G194 passed: in-button OTP request feedback, timed transition, and clean direct OTP input layout verified
+    vite v8.3.0 building client environment for production...
+    ✓ 122 modules transformed.
+    dist/assets/index-hmA8FH9W.js  69.96 kB │ gzip: 21.35 kB
+    ✓ built in 1.43s
+    (exit code: 0)
+
 
 
 

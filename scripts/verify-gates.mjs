@@ -3986,9 +3986,11 @@ export function checkForgotPasswordTheme() {
     return false;
   }
 
-  // Vérification de l'alerte explicite de confirmation
-  if (!loginContent.includes('alert alert-success') || !loginContent.includes('role="status"')) {
-    console.error('FAILURE G190: LoginView.vue ne comporte pas de bandeau de statut explicite alert-success avec role="status"');
+  // Vérification de la confirmation explicite (soit bandeau role="status", soit feedback dynamique dans le bouton G194)
+  const hasStatusAlert = loginContent.includes('alert alert-success') && loginContent.includes('role="status"');
+  const hasButtonFeedback = loginContent.includes('isForgotSuccess') && loginContent.includes('Code envoyé !');
+  if (!hasStatusAlert && !hasButtonFeedback) {
+    console.error('FAILURE G190: LoginView.vue ne comporte pas de confirmation explicite d’envoi');
     return false;
   }
 
@@ -4068,6 +4070,47 @@ export function checkOtpRecovery() {
   }
 
   console.log('G192 passed: in-app 6-digit OTP verification, reactive session sync, optional password update and M3 step flow verified');
+  return true;
+}
+
+export function checkOtpButtonFeedback() {
+  const loginFile = path.resolve('src/views/auth/LoginView.vue');
+  const loginContent = fs.readFileSync(loginFile, 'utf8');
+
+  // 1. Bouton étape 1 : retour dynamique de succès avec classe btn-success et mention "Code envoyé !"
+  if (
+    !loginContent.includes("isForgotSuccess ? 'btn-success text-success-content font-bold pointer-events-none' : 'btn-primary'") &&
+    !loginContent.includes('isForgotSuccess ? "btn-success text-success-content font-bold pointer-events-none" : "btn-primary"') &&
+    !loginContent.includes("isForgotSuccess ? 'btn-success text-success-content font-bold' : 'btn-primary'")
+  ) {
+    console.error('FAILURE G194: LoginView.vue n’applique pas la bascule dynamique btn-success sur le bouton de demande OTP');
+    return false;
+  }
+
+  if (!loginContent.includes('Code envoyé !')) {
+    console.error('FAILURE G194: LoginView.vue n’affiche pas "Code envoyé !" dans le bouton de demande OTP');
+    return false;
+  }
+
+  // 2. handleForgotPassword temporise avec setTimeout pour laisser lire le feedback avant transition
+  if (!loginContent.includes('setTimeout') || !loginContent.includes('isForgotSuccess.value = true')) {
+    console.error('FAILURE G194: handleForgotPassword ne temporise pas le feedback de succès');
+    return false;
+  }
+
+  // 3. Étape 2 épurée : suppression du bandeau vert redondant alert-success
+  const otpStepIndex = loginContent.indexOf("forgotStep === 'otp'");
+  if (otpStepIndex === -1) {
+    console.error('FAILURE G194: étape OTP introuvable');
+    return false;
+  }
+  const otpSection = loginContent.slice(otpStepIndex);
+  if (otpSection.includes('alert alert-success')) {
+    console.error('FAILURE G194: l’étape OTP conserve un bandeau alert-success redondant');
+    return false;
+  }
+
+  console.log('G194 passed: in-button OTP request feedback, timed transition, and clean direct OTP input layout verified');
   return true;
 }
 
@@ -4233,6 +4276,8 @@ if (arg === '--emojis') {
   success = checkForgotPasswordTheme();
 } else if (arg === '--otp-recovery') {
   success = checkOtpRecovery();
+} else if (arg === '--otp-button-feedback') {
+  success = checkOtpButtonFeedback();
 } else if (arg === '--archive-protection') {
   success = checkPrivilegedRolesArchiveProtection();
 } else if (arg === '--knowledge-loop') {
@@ -4315,10 +4360,11 @@ if (arg === '--emojis') {
   const r188 = checkLoadingMargins();
   const r190 = checkForgotPasswordTheme();
   const r192 = checkOtpRecovery();
+  const r194 = checkOtpButtonFeedback();
   const r48 = r39; // Une seule compilation sert les portes de build G39 et G48
-  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60 && r63 && r64 && r65 && r66 && r72 && r73 && r74 && r75 && r88 && r89 && r92 && r93 && r94 && r95 && r96 && r97 && r147 && r150 && r156 && r159 && r162 && r165 && r167 && r169 && r175 && r176 && r177 && r178 && r180 && r182 && r184 && r186 && r188 && r190 && r192;
+  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60 && r63 && r64 && r65 && r66 && r72 && r73 && r74 && r75 && r88 && r89 && r92 && r93 && r94 && r95 && r96 && r97 && r147 && r150 && r156 && r159 && r162 && r165 && r167 && r169 && r175 && r176 && r177 && r178 && r180 && r182 && r184 && r186 && r188 && r190 && r192 && r194;
 } else {
-  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--presences-ui|--presences-period|--presences-table|--presences-sort|--presences-localfirst|--sync-scope|--livequery-deps|--manager-dexie|--manager-grammar|--manager-responsive|--manager-nav-icons|--manager-finish|--employee-finish|--settings-page|--cross-space-gateways|--back-navigation|--notification-bell|--account-lifecycle|--pending-notifications|--immediate-reject|--archived-session|--responsive-views|--archive-protection|--knowledge-loop|--absence-model|--absence-sync|--absence-notifications|--absence-ui|--account-feedback|--auth-transition|--app-loading|--app-identity|--loading-margins|--forgot-password-theme|--otp-recovery|--manager-build|--sidebar-build|--build|--all]`);
+  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--presences-ui|--presences-period|--presences-table|--presences-sort|--presences-localfirst|--sync-scope|--livequery-deps|--manager-dexie|--manager-grammar|--manager-responsive|--manager-nav-icons|--manager-finish|--employee-finish|--settings-page|--cross-space-gateways|--back-navigation|--notification-bell|--account-lifecycle|--pending-notifications|--immediate-reject|--archived-session|--responsive-views|--archive-protection|--knowledge-loop|--absence-model|--absence-sync|--absence-notifications|--absence-ui|--account-feedback|--auth-transition|--app-loading|--app-identity|--loading-margins|--forgot-password-theme|--otp-recovery|--otp-button-feedback|--manager-build|--sidebar-build|--build|--all]`);
   process.exit(1);
 }
 

@@ -1,3 +1,36 @@
+# Plan : Feedback de Confirmation dans le Bouton OTP & Épuration de l'Étape 2
+
+Date : 2026-10-05  
+Déclencheur : Demande utilisateur (Option 1 : afficher la notification d'envoi directement dans le bouton « Recevoir le code à 6 chiffres » puis transition fluide vers l'étape de saisie sans bandeau vert encombrant)  
+Statut : Terminé et Validé (Porte G194 validée, feedback in-button 650ms actif avec fond contrasté, étape 2 épurée, suite de vérification intégrale et build de production 100% conformes)  
+Porte liée : G194 / G195  
+
+## 1. Périmètre
+
+### Fichiers cibles
+- `src/views/auth/LoginView.vue` (gestion de l'état temporaire `isForgotSuccess` dans `handleForgotPassword`, feedback animé dans le bouton avec coche `btn-success text-success-content`, suppression du bandeau vert redondant à l'étape 2)
+- `scripts/verify-gates.mjs` (oracle G194 `--otp-button-feedback`)
+- `GATES.md` (consignation de la porte G194 et preuve d'exécution)
+- `.agents/WRITING_IMPROVEMENT.md` (clôture de l'entrée active)
+
+---
+
+## 2. Étapes Séquentielles
+
+1. [x] **Étape 1 : Modification de `LoginView.vue`**
+   - Mettre à jour `handleForgotPassword` pour déclencher `isForgotSuccess.value = true`, temporiser 650 ms, puis basculer vers `forgotStep.value = 'otp'`.
+   - Adapter le bouton de soumission de l'étape email avec style conditionnel (`btn-success` si `isForgotSuccess`) et affichage d'une coche SVG avec `Code envoyé !`.
+   - Retirer le conteneur `alert alert-success` au-dessus du formulaire à l'étape 2 pour afficher directement le champ de saisie du code OTP en tête.
+
+2. [x] **Étape 2 : Oracle Déterministe G194 dans `scripts/verify-gates.mjs`**
+   - Écrire la fonction de vérification `checkOtpButtonFeedback()`, ajouter le flag `--otp-button-feedback` et l'intégrer à `--all`.
+
+3. [x] **Étape 3 : Exécution, Preuves et Clôture**
+   - Exécuter `node scripts/verify-gates.mjs --otp-button-feedback`, puis `--all` et `npm run build`.
+   - Mettre à jour `GATES.md` et `.agents/WRITING_IMPROVEMENT.md`.
+
+---
+
 # Plan : Réinitialisation de Mot de Passe par Code OTP à 6 Chiffres In-App
 
 Date : 2026-10-05  

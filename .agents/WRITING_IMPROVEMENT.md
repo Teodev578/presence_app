@@ -77,6 +77,25 @@ Il ne remplace pas `AGENTS.md` (invariants figés), `.agents/plan.md` (feuille d
 
 ## Tâches actives
 
+### Tâche : Feedback Intégré au Bouton de Demande OTP et Épuration de l'Écran de Saisie
+**Date** : 2026-10-05
+**Complexité** : Moyen
+**Proposant** : Fabien / presence-stack (Chloé & Lucas)
+**Story liée** : `.agents/plan.md`
+
+#### Pre-flight (10 min)
+1. Problème réel : L'écran de réinitialisation de mot de passe affichait un bandeau d'information vert volumineux en haut de l'étape OTP qui alourdissait inutilement la vue et repoussait le champ du code à 6 chiffres vers le bas, particulièrement sur mobile. L'utilisateur préfère afficher le feedback de succès directement dans le bouton « Recevoir le code à 6 chiffres », puis basculer vers un écran OTP épuré.
+2. Contrainte principale : Transition fluide de 600 ms sur le bouton (animation de succès `btn-success text-success-content` avec coche et libellé `Code envoyé !`), préservation de la visibilité des erreurs détaillées en encart séparé, compacité sur mobile.
+3. Alternative rejetée : Forcer l'affichage de tous les messages (y compris les erreurs longues de 100 caractères comme le rate limit) à l'intérieur du bouton (rejetée car déforme la hauteur du bouton et dégrade l'accessibilité WCAG sur petits écrans).
+4. Signal de fin : Bouton de demande OTP intégrant le cycle de chargement et de succès avec coche ; suppression du bandeau d'alerte redondant à l'étape 2 ; champ de saisie OTP immédiatement visible en tête de formulaire ; validation par oracle G194 et build Vite réussi.
+5. Déclencheur KI : N (raffinement ergonomique et micro-interaction M3).
+
+#### Résultat
+- Implémenté ? En cours
+- Leçon tirée : (À renseigner après validation des portes)
+
+---
+
 ### Tâche : Réinitialisation de Mot de Passe par Code OTP à 6 Chiffres In-App
 **Date** : 2026-10-05
 **Complexité** : Moyen

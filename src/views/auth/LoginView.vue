@@ -172,6 +172,8 @@ const handleForgotPassword = async () => {
   const { error } = await resetPassword(cleanEmail)
   if (!error) {
     isForgotSuccess.value = true
+    await new Promise((resolve) => setTimeout(resolve, 650))
+    isForgotSuccess.value = false
     forgotStep.value = 'otp'
   }
 }
@@ -357,11 +359,18 @@ const resetForgotState = () => {
 
               <button
                 type="submit"
-                class="btn btn-primary w-full text-sm sm:text-base font-bold min-h-12 shadow-xs rounded-m3-md mt-1 active:scale-98 transition-all gap-2 cursor-pointer"
+                class="btn w-full text-sm sm:text-base font-bold min-h-12 shadow-xs rounded-m3-md mt-1 active:scale-98 transition-all gap-2 cursor-pointer"
+                :class="isForgotSuccess ? 'btn-success text-success-content font-bold pointer-events-none' : 'btn-primary'"
                 :disabled="authLoading"
               >
                 <span v-if="authLoading" class="loading loading-spinner loading-sm" aria-hidden="true"></span>
                 <span v-if="authLoading">Envoi en cours...</span>
+                <template v-else-if="isForgotSuccess">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                  <span>Code envoyé !</span>
+                </template>
                 <span v-else>Recevoir le code à 6 chiffres</span>
               </button>
 
@@ -387,24 +396,6 @@ const resetForgotState = () => {
                 <h1 class="text-xl font-bold tracking-tight text-base-content">Code de sécurité</h1>
                 <p class="text-xs sm:text-sm text-base-content/75 mt-1 leading-relaxed">
                   Saisissez les 6 chiffres envoyés à <strong class="text-base-content">{{ email }}</strong>.
-                </p>
-              </div>
-            </div>
-
-            <!-- Message d'information et confirmation explicite avec email -->
-            <div
-              class="alert alert-success border border-success/30 bg-success/15 text-base-content rounded-m3-md p-3.5 flex items-start gap-3"
-              role="status"
-            >
-              <div class="w-6 h-6 rounded-full bg-success text-success-content flex items-center justify-center shrink-0 mt-0.5 font-bold" aria-hidden="true">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-              </div>
-              <div class="flex-1 text-xs leading-relaxed">
-                <p class="font-bold text-success text-xs sm:text-sm">Code envoyé avec succès</p>
-                <p class="text-base-content/85 mt-0.5">
-                  Consultez votre boîte <strong class="text-base-content font-semibold">{{ email }}</strong> (et vos courriers indésirables). Saisissez votre code pour vous connecter.
                 </p>
               </div>
             </div>
