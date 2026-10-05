@@ -3905,6 +3905,51 @@ export function checkAppLoading() {
   return true;
 }
 
+export function checkAppIdentity() {
+  const indexFile = path.resolve('index.html');
+  const indexContent = fs.readFileSync(indexFile, 'utf8');
+  if (!indexContent.includes('<title>PresenceApp</title>')) {
+    console.error('FAILURE G186: index.html ne contient pas <title>PresenceApp</title>');
+    return false;
+  }
+  if (indexContent.includes('PresenceApp — Pointage & Disponibilités')) {
+    console.error('FAILURE G186: index.html contient encore la description "PresenceApp — Pointage & Disponibilités"');
+    return false;
+  }
+
+  const appFile = path.resolve('src/App.vue');
+  const appContent = fs.readFileSync(appFile, 'utf8');
+  if (!appContent.includes('useNotifications') || !appContent.includes('unreadCount') || !appContent.includes('document.title =')) {
+    console.error('FAILURE G186: App.vue ne synchronise pas document.title avec unreadCount');
+    return false;
+  }
+
+  const faviconFile = path.resolve('public/favicon.svg');
+  const faviconContent = fs.readFileSync(faviconFile, 'utf8');
+  if (faviconContent.includes('#863bff') || faviconContent.includes('stdDeviation="7.659"') || !faviconContent.includes('presenceBg')) {
+    console.error('FAILURE G186: public/favicon.svg contient encore le logo Vite ou manque l’identité PresenceApp');
+    return false;
+  }
+
+  for (const png of ['apple-touch-icon.png', 'pwa-192x192.png', 'pwa-512x512.png', 'pwa-maskable-512x512.png']) {
+    const pngPath = path.resolve('public', png);
+    if (!fs.existsSync(pngPath) || fs.statSync(pngPath).size < 1000) {
+      console.error(`FAILURE G186: public/${png} est absent ou corrompu (< 1000 octets)`);
+      return false;
+    }
+  }
+
+  const manifestFile = path.resolve('public/manifest.webmanifest');
+  const manifestContent = fs.readFileSync(manifestFile, 'utf8');
+  if (!manifestContent.includes('"name": "PresenceApp"') || manifestContent.includes('PresenceApp — Pointage & Disponibilités')) {
+    console.error('FAILURE G186: public/manifest.webmanifest conserve encore la description longue');
+    return false;
+  }
+
+  console.log('G186 passed: official PresenceApp svg icon, generated pwa assets, clean index title and dynamic reactive tab notifications verified');
+  return true;
+}
+
 // Exécution CLI
 const arg = process.argv[2] || '--all';
 let success = true;
@@ -4059,6 +4104,8 @@ if (arg === '--emojis') {
   success = checkAuthTransition();
 } else if (arg === '--app-loading') {
   success = checkAppLoading();
+} else if (arg === '--app-identity') {
+  success = checkAppIdentity();
 } else if (arg === '--archive-protection') {
   success = checkPrivilegedRolesArchiveProtection();
 } else if (arg === '--knowledge-loop') {
@@ -4137,10 +4184,11 @@ if (arg === '--emojis') {
   const r180 = checkAccountConfirmationFeedback();
   const r182 = checkAuthTransition();
   const r184 = checkAppLoading();
+  const r186 = checkAppIdentity();
   const r48 = r39; // Une seule compilation sert les portes de build G39 et G48
-  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60 && r63 && r64 && r65 && r66 && r72 && r73 && r74 && r75 && r88 && r89 && r92 && r93 && r94 && r95 && r96 && r97 && r147 && r150 && r156 && r159 && r162 && r165 && r167 && r169 && r175 && r176 && r177 && r178 && r180 && r182 && r184;
+  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60 && r63 && r64 && r65 && r66 && r72 && r73 && r74 && r75 && r88 && r89 && r92 && r93 && r94 && r95 && r96 && r97 && r147 && r150 && r156 && r159 && r162 && r165 && r167 && r169 && r175 && r176 && r177 && r178 && r180 && r182 && r184 && r186;
 } else {
-  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--presences-ui|--presences-period|--presences-table|--presences-sort|--presences-localfirst|--sync-scope|--livequery-deps|--manager-dexie|--manager-grammar|--manager-responsive|--manager-nav-icons|--manager-finish|--employee-finish|--settings-page|--cross-space-gateways|--back-navigation|--notification-bell|--account-lifecycle|--pending-notifications|--immediate-reject|--archived-session|--responsive-views|--archive-protection|--knowledge-loop|--absence-model|--absence-sync|--absence-notifications|--absence-ui|--account-feedback|--auth-transition|--app-loading|--manager-build|--sidebar-build|--build|--all]`);
+  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--presences-ui|--presences-period|--presences-table|--presences-sort|--presences-localfirst|--sync-scope|--livequery-deps|--manager-dexie|--manager-grammar|--manager-responsive|--manager-nav-icons|--manager-finish|--employee-finish|--settings-page|--cross-space-gateways|--back-navigation|--notification-bell|--account-lifecycle|--pending-notifications|--immediate-reject|--archived-session|--responsive-views|--archive-protection|--knowledge-loop|--absence-model|--absence-sync|--absence-notifications|--absence-ui|--account-feedback|--auth-transition|--app-loading|--app-identity|--manager-build|--sidebar-build|--build|--all]`);
   process.exit(1);
 }
 

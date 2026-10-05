@@ -77,6 +77,44 @@ Il ne remplace pas `AGENTS.md` (invariants figés), `.agents/plan.md` (feuille d
 
 ## Tâches actives
 
+### Tâche : Uniformisation de l'Identité Visuelle, Élimination des Logos Vite et Titre d'Onglet Dynamique
+**Date** : 2026-10-05
+**Complexité** : Élevée
+**Proposant** : Fabien / presence-stack (Chloé & Lucas)
+**Story liée** : `.agents/plan.md`
+
+#### Analyse
+- **Hypothèse initiale** : L'application conserve des traces de l'échafaudage initial de Vite (le favicon du navigateur et les icônes PWA sont le logo officiel de Vite, avec l'éclair violet), et le titre de l'onglet comporte une description superflue (« PresenceApp — Pointage & Disponibilités »). Le titre doit être épuré sur le seul nom « PresenceApp » et s'enrichir dynamiquement du nombre de notifications non lues entre parenthèses (`(N) PresenceApp` si N > 0, sinon `PresenceApp`), à l'instar du modèle UX de YouTube.
+- **Contraintes identifiées** :
+  - Respect strict des standards d'accessibilité et de visibilité multi-plateformes : le favicon doit être immédiatement identifiable en 16×16 px sur fond de navigateur clair comme sombre.
+  - Réactivité Local-First sans surcoût : l'abonnement au compteur de notifications non lues doit exploiter directement `useNotifications()` et son `useLiveQuery` Dexie sans ajouter d'écouteur lourd ni de polling intempestif.
+  - Zéro régression sur les portes existantes (G1 à G185) et respect inviolable des versions de dépendances (`package.json` intact).
+- **Alternatives envisagées** :
+  - *Option A (Polling setInterval sur document.title)* : **Rejetée** car contraire à l'architecture réactive de Vue 3 et source de consommation CPU inutile.
+  - *Option B (Conserver la description dans le titre en ajoutant le préfixe)* : **Rejetée** car l'utilisateur a expressément demandé d'épurer l'onglet sur le seul nom de l'application sans descriptions, afin de libérer l'espace visuel dans les onglets étroits.
+  - *Option C (Logo vectoriel officiel PresenceApp combinant cadran temporel M3 et coche de présence + génération déterministe des icônes PWA via rsvg-convert + watcher réactif unreadCount dans App.vue)* : **Retenue (recommandée)** car elle dote PresenceApp d'une identité visuelle singulière et soignée de bout en bout.
+
+#### Décision
+**Choix retenu** :
+1. Création du logo vectoriel officiel PresenceApp (symbole M3 cadran d'horloge + validation de présence, gradient bleu Material 3 `#005ac1` / `#1d4ed8`, coche contrastée) dans `public/favicon.svg`.
+2. Génération des variantes PNG (`apple-touch-icon.png`, `pwa-192x192.png`, `pwa-512x512.png`, `pwa-maskable-512x512.png`) via `rsvg-convert` pour assurer une netteté absolue.
+3. Épuration du titre initial dans `index.html` : `<title>PresenceApp</title>`.
+4. Intégration réactive dans `src/App.vue` : liaison de `unreadCount` depuis `useNotifications()` avec mise à jour immédiate de `document.title` sous la forme `(${n}) PresenceApp` ou `PresenceApp`.
+5. Nettoyage des résidus du template Vite (`src/assets/vite.svg`, `public/manifest.webmanifest`).
+
+**Trade-offs acceptés** : En l'absence de notification non lue, le titre revient sobrement à `PresenceApp`.
+
+#### Résultat
+- Implémenté ? O (2026-10-05) — Portes G186 et G187 validées à 100%, suite verify-gates.mjs --all et build de production conformes.
+- Leçon tirée :
+  1. *Élimination intégrale des assets de template* : Les projets initialisés avec des générateurs (comme Vite) conservent fréquemment des résidus visuels (favicons, icônes PWA, webmanifest) qui dégradent la perception professionnelle du produit. Une recherche exhaustive des occurrences d'icônes et de noms longs assure une cohérence de marque absolue.
+  2. *Génération vectorielle déterministe via rsvg-convert* : La production de l'ensemble des déclinaisons PNG (apple-touch-icon, PWA 192, 512 et maskable 512 avec zone de sécurité 80%) directement à partir de la source vectorielle SVG garantit une netteté irréprochable sans artefacts de compression ni dépendance npm additionnelle.
+  3. *Titre d'onglet réactif & modèle ergonomique familier* : L'intégration d'un watcher sur `unreadCount` dans `App.vue` reliant la base locale Dexie à `document.title` reproduit le modèle standard plébiscité par les utilisateurs (YouTube, Slack) : discret en l'absence d'événement (`PresenceApp`), percutant dès l'arrivée d'une notification non lue (`(N) PresenceApp`), tout en restant parfaitement synchronisé en temps réel lors de l'acquittement.
+- Portes franchies : G186, G187 validées (100% de succès sur `node scripts/verify-gates.mjs --all` et `npm run build`).
+- Escalade : Aucune (couverture complète dans les règles existantes).
+
+---
+
 ### Tâche : Visibilité et Confirmation des Comptes Employés (Navigation & Feedback)
 **Date** : 2026-10-05
 **Complexité** : Moyen

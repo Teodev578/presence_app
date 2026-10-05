@@ -1,3 +1,43 @@
+# Plan : Identité Visuelle Officielle, Élimination des Logos Vite et Titre d'Onglet Dynamique
+
+Date : 2026-10-05  
+Déclencheur : Demande utilisateur (remplacer les logos Vite, titre sobre sans description et notifications entre parenthèses façon YouTube)  
+Statut : Terminé et Validé (Portes G186 et G187 validées, logo Vite éliminé, titre dynamique réactif opérationnel, build conforme)  
+Porte liée : G186 / G187  
+
+## 1. Périmètre
+
+### Fichiers cibles
+- `public/favicon.svg` (nouveau logo officiel vectoriel PresenceApp)
+- `public/apple-touch-icon.png`, `public/pwa-192x192.png`, `public/pwa-512x512.png`, `public/pwa-maskable-512x512.png` (génération HD)
+- `public/manifest.webmanifest` (mise à jour du nom et des métadonnées PWA)
+- `index.html` (titre épuré `<title>PresenceApp</title>`)
+- `src/App.vue` (watcher réactif sur `unreadCount` pour ajuster `document.title = (N) PresenceApp` ou `PresenceApp`)
+- `src/assets/vite.svg`, `src/components/HelloWorld.vue` (nettoyage résidus template)
+- `GATES.md` (portes G186 et G187)
+- `scripts/verify-gates.mjs` (oracle déterministe pour G186)
+
+---
+
+## 2. Étapes Séquentielles
+
+1. [x] **Étape 1 : Conception du Logo Officiel SVG et Génération des Icônes PWA**
+   - Créer `public/favicon.svg` avec le cadran temporel M3, la coche de présence et le gradient `#005ac1` / `#1d4ed8`.
+   - Générer avec `rsvg-convert` les versions PNG haute résolution : `apple-touch-icon.png` (180x180), `pwa-192x192.png`, `pwa-512x512.png`, et `pwa-maskable-512x512.png`.
+   - Nettoyer les fichiers de démo Vite (`src/assets/vite.svg`, `src/components/HelloWorld.vue`).
+   - Aligner `public/manifest.webmanifest` (`"name": "PresenceApp"`).
+
+2. [x] **Étape 2 : Épuration du Titre Initial et Titre Dynamique d'Onglet**
+   - Modifier `index.html` : `<title>PresenceApp</title>`.
+   - Dans `src/App.vue` : importer `useNotifications()`, lier `unreadCount` à `document.title` avec mise à jour immédiate.
+
+3. [x] **Étape 3 : Oracle Déterministe et Validation des Portes**
+   - Implémenter l'oracle G186 dans `scripts/verify-gates.mjs` (`--app-identity`).
+   - Valider la suite intégrale `node scripts/verify-gates.mjs --all` et la compilation Vite `npm run build`.
+   - Consigner les preuves dans `GATES.md` et clôturer le journal.
+
+---
+
 # Plan : Optimisation du Chargement à Froid et de l'App Shell
 
 Date : 2026-10-05  

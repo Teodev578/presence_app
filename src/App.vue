@@ -4,6 +4,7 @@ import { useRouter } from './router'
 import { useAuth } from './composables/useAuth'
 import { useProfile } from './composables/useProfile'
 import { useSyncEngine } from './composables/useSyncEngine'
+import { useNotifications } from './composables/useNotifications'
 import { initPwaInstall } from './composables/usePwaInstall'
 
 // Layouts statiques pour fondation immédiate
@@ -33,6 +34,17 @@ const { route, navigate } = useRouter()
 const { session, user, authInitializing, initAuth } = useAuth()
 const { profile, profileLoading, fetchProfile } = useProfile()
 const { startSyncWatcher } = useSyncEngine()
+const { unreadCount } = useNotifications()
+
+// Titre d'onglet dynamique : Présence sobre sans description, enrichi du décompte des notifications non lues façon YouTube
+watch(unreadCount, (count) => {
+  const n = Number(count) || 0
+  if (n > 0) {
+    document.title = `(${n}) PresenceApp`
+  } else {
+    document.title = 'PresenceApp'
+  }
+}, { immediate: true })
 
 onMounted(async () => {
   initPwaInstall()

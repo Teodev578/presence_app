@@ -1461,6 +1461,30 @@ Scope: Automatisation et renforcement de la mémoire agentique selon le plan d'a
     ✓ built in 1.49s
     (exit code: 0)
 
+### Lot : Identité Visuelle Officielle et Titre d'Onglet Dynamique
+
+- [x] G186: Remplacement des logos Vite par l'icône officielle PresenceApp, titre épuré et notifications dynamiques entre parenthèses
+  CHECK: node scripts/verify-gates.mjs --app-identity
+  EXPECT: G186 passed: official PresenceApp svg icon, generated pwa assets, clean index title and dynamic reactive tab notifications verified
+  EVIDENCE:
+    $ node scripts/verify-gates.mjs --app-identity
+    G186 passed: official PresenceApp svg icon, generated pwa assets, clean index title and dynamic reactive tab notifications verified
+    (exit code: 0)
+
+- [x] G187: Validation intégrale de la suite et compilation Vite de production
+  CHECK: node scripts/verify-gates.mjs --all && npm run build
+  EXPECT: G187 passed: all deterministic gates and vite production build succeed with exit code 0
+  EVIDENCE:
+    $ node scripts/verify-gates.mjs --all && npm run build
+    G1 passed ... G186 passed: official PresenceApp svg icon, generated pwa assets, clean index title and dynamic reactive tab notifications verified
+    vite v8.3.0 building client environment for production...
+    ✓ 122 modules transformed.
+    dist/assets/index-CGwwdktu.js  69.94 kB │ gzip: 21.34 kB
+    ✓ built in 1.62s
+    (exit code: 0)
+
+
+
 
 
 

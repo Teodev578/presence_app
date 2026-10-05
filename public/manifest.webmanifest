@@ -1,5 +1,5 @@
 {
-  "name": "PresenceApp — Pointage & Disponibilités",
+  "name": "PresenceApp",
   "short_name": "PresenceApp",
   "description": "Application de pointage d'horaires et de gestion des disponibilités en mobilité.",
   "start_url": "/",
@@ -7,7 +7,7 @@
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#fdfcff",
-  "theme_color": "#fdfcff",
+  "theme_color": "#005ac1",
   "icons": [
     {
       "src": "/pwa-192x192.png",
