@@ -1399,6 +1399,27 @@ Scope: Automatisation et renforcement de la mémoire agentique selon le plan d'a
     ✓ built in 1.25s
     (exit code: 0)
 
+### Lot : Visibilité des Comptes en Attente et Feedback d'Activation
+
+- [x] G180: Badge réactif de comptes en attente dans la navigation manager et notification de confirmation collaborateur
+  CHECK: node scripts/verify-gates.mjs --account-feedback
+  EXPECT: G180 passed: pending accounts manager sidebar badge and employee activation feedback verified
+  EVIDENCE:
+    $ node scripts/verify-gates.mjs --account-feedback
+    G180 passed: pending accounts manager sidebar badge and employee activation feedback verified
+    (exit code: 0)
+
+- [x] G181: Validation intégrale de la suite et compilation Vite de production
+  CHECK: node scripts/verify-gates.mjs --all && npm run build
+  EXPECT: G181 passed: all deterministic gates and vite production build succeed with exit code 0
+  EVIDENCE:
+    $ node scripts/verify-gates.mjs --all && npm run build
+    G1 passed ... G180 passed: pending accounts manager sidebar badge and employee activation feedback verified
+    vite v8.3.0 building client environment for production...
+    ✓ built in 1.62s
+    (exit code: 0)
+
+
 
 
 

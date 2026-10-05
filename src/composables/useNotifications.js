@@ -171,6 +171,26 @@ export function useNotifications() {
           createdAt: profile.value?.updated_at || Date.now(),
           unread: !dismissedNotificationIds.value.has(notifId),
         })
+      } else if (profile.value?.status === 'active' && profile.value?.confirmed_at) {
+        // Notification de confirmation lorsque le profil a été validé par un responsable (pendant 30 jours)
+        const confirmedTime = new Date(profile.value.confirmed_at).getTime()
+        const isRecent = Date.now() - confirmedTime < 30 * 24 * 60 * 60 * 1000
+        if (isRecent) {
+          const notifId = `active-self-${profile.value.id || user.value?.id}`
+          items.push({
+            id: notifId,
+            type: 'account_activated',
+            title: 'Compte confirmé et actif',
+            subtitle: 'Accès opérationnel débloqué',
+            badge: 'Actif',
+            badgeClass: 'badge-success text-success-content',
+            message: 'Votre profil a été confirmé par votre responsable. Vous pouvez dès à présent pointer votre présence sur site et déclarer vos disponibilités.',
+            targetRoute: '/employee/check-in',
+            actionLabel: 'Pointer ma présence',
+            createdAt: profile.value.confirmed_at,
+            unread: !dismissedNotificationIds.value.has(notifId),
+          })
+        }
       }
 
       // Notifications relatives aux demandes d'absence de l'employé
@@ -236,6 +256,10 @@ export function useNotifications() {
     return notifications.value.filter((n) => n.unread).length
   })
 
+  const pendingAccountsCount = computed(() => {
+    return (pendingProfiles.value || []).length
+  })
+
   const markAsRead = (id) => {
     dismissedNotificationIds.value.add(id)
   }
@@ -249,6 +273,7 @@ export function useNotifications() {
   return {
     notifications,
     unreadCount,
+    pendingAccountsCount,
     markAsRead,
     markAllAsRead,
   }

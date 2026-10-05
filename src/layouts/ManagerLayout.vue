@@ -2,11 +2,13 @@
 import { ref, computed, h } from 'vue'
 import { useRouter } from '../router'
 import { useSidebarNav } from '../composables/useSidebarNav'
+import { useNotifications } from '../composables/useNotifications'
 import SyncAlert from '../components/shared/SyncAlert.vue'
 import NotificationBell from '../components/shared/NotificationBell.vue'
 
 const { currentPath, navigate } = useRouter()
 const { isRail, isDocked, toggleRail } = useSidebarNav()
+const { pendingAccountsCount } = useNotifications()
 
 const drawerOpen = ref(false)
 
@@ -255,7 +257,7 @@ const handleNav = (path) => {
                     isRail ? 'tooltip tooltip-right' : '',
                   ]"
                   :aria-label="item.label"
-                  :data-tip="isRail ? item.label : null"
+                  :data-tip="isRail ? (item.path === '/manager/employees' && pendingAccountsCount > 0 ? `${item.label} (${pendingAccountsCount} en attente)` : item.label) : null"
                   @click="handleNav(item.path)"
                 >
                   <span
@@ -263,8 +265,25 @@ const handleNav = (path) => {
                     class="absolute left-1.5 top-1/2 -translate-y-1/2 w-1 h-5 rounded-full transition-colors"
                     :class="currentPath === item.path ? 'bg-primary' : 'bg-transparent'"
                   ></span>
-                  <component :is="item.icon" />
-                  <span class="rail-hide text-sm">{{ item.label }}</span>
+                  <div class="relative shrink-0 flex items-center justify-center">
+                    <component :is="item.icon" />
+                    <!-- Pastille d'alerte en mode rail d'icônes -->
+                    <span
+                      v-if="isRail && item.path === '/manager/employees' && pendingAccountsCount > 0"
+                      class="badge badge-warning badge-xs absolute -top-1 -right-1 min-w-2.5 min-h-2.5 p-0 border border-base-200"
+                      aria-hidden="true"
+                    ></span>
+                  </div>
+                  <span class="rail-hide text-sm flex-1 flex items-center justify-between gap-2">
+                    <span>{{ item.label }}</span>
+                    <!-- Badge chiffré en mode tiroir déployé -->
+                    <span
+                      v-if="item.path === '/manager/employees' && pendingAccountsCount > 0"
+                      class="badge badge-warning text-warning-content badge-xs font-bold px-1.5 py-0.5"
+                    >
+                      {{ pendingAccountsCount }}
+                    </span>
+                  </span>
                 </button>
               </li>
             </ul>

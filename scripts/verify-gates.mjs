@@ -3810,6 +3810,30 @@ export function checkAbsenceUi() {
   return true;
 }
 
+/** Vérifie le badge de collaborateurs en attente côté manager et la confirmation d'activation collaborateur. */
+export function checkAccountConfirmationFeedback() {
+  const notifFile = path.resolve('src/composables/useNotifications.js');
+  const notifContent = fs.readFileSync(notifFile, 'utf8');
+  for (const token of ['pendingAccountsCount', 'account_activated', 'Compte confirmé et actif', 'Pointer ma présence']) {
+    if (!notifContent.includes(token)) {
+      console.error(`FAILURE G180: useNotifications.js ne contient pas ${token}`);
+      return false;
+    }
+  }
+
+  const managerLayoutFile = path.resolve('src/layouts/ManagerLayout.vue');
+  const layoutContent = fs.readFileSync(managerLayoutFile, 'utf8');
+  for (const token of ['pendingAccountsCount', '/manager/employees', 'badge badge-warning text-warning-content badge-xs font-bold']) {
+    if (!layoutContent.includes(token)) {
+      console.error(`FAILURE G180: ManagerLayout.vue ne contient pas ${token}`);
+      return false;
+    }
+  }
+
+  console.log('G180 passed: pending accounts manager sidebar badge and employee activation feedback verified');
+  return true;
+}
+
 // Exécution CLI
 const arg = process.argv[2] || '--all';
 let success = true;
@@ -3958,6 +3982,8 @@ if (arg === '--emojis') {
   success = checkAbsenceNotifications();
 } else if (arg === '--absence-ui') {
   success = checkAbsenceUi();
+} else if (arg === '--account-feedback') {
+  success = checkAccountConfirmationFeedback();
 } else if (arg === '--archive-protection') {
   success = checkPrivilegedRolesArchiveProtection();
 } else if (arg === '--knowledge-loop') {
@@ -4033,10 +4059,11 @@ if (arg === '--emojis') {
   const r176 = checkAbsenceSync();
   const r177 = checkAbsenceNotifications();
   const r178 = checkAbsenceUi();
+  const r180 = checkAccountConfirmationFeedback();
   const r48 = r39; // Une seule compilation sert les portes de build G39 et G48
-  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60 && r63 && r64 && r65 && r66 && r72 && r73 && r74 && r75 && r88 && r89 && r92 && r93 && r94 && r95 && r96 && r97 && r147 && r150 && r156 && r159 && r162 && r165 && r167 && r169 && r175 && r176 && r177 && r178;
+  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60 && r63 && r64 && r65 && r66 && r72 && r73 && r74 && r75 && r88 && r89 && r92 && r93 && r94 && r95 && r96 && r97 && r147 && r150 && r156 && r159 && r162 && r165 && r167 && r169 && r175 && r176 && r177 && r178 && r180;
 } else {
-  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--presences-ui|--presences-period|--presences-table|--presences-sort|--presences-localfirst|--sync-scope|--livequery-deps|--manager-dexie|--manager-grammar|--manager-responsive|--manager-nav-icons|--manager-finish|--employee-finish|--settings-page|--cross-space-gateways|--back-navigation|--notification-bell|--account-lifecycle|--pending-notifications|--immediate-reject|--archived-session|--responsive-views|--archive-protection|--knowledge-loop|--absence-model|--absence-sync|--absence-notifications|--absence-ui|--manager-build|--sidebar-build|--build|--all]`);
+  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--presences-ui|--presences-period|--presences-table|--presences-sort|--presences-localfirst|--sync-scope|--livequery-deps|--manager-dexie|--manager-grammar|--manager-responsive|--manager-nav-icons|--manager-finish|--employee-finish|--settings-page|--cross-space-gateways|--back-navigation|--notification-bell|--account-lifecycle|--pending-notifications|--immediate-reject|--archived-session|--responsive-views|--archive-protection|--knowledge-loop|--absence-model|--absence-sync|--absence-notifications|--absence-ui|--account-feedback|--manager-build|--sidebar-build|--build|--all]`);
   process.exit(1);
 }
 

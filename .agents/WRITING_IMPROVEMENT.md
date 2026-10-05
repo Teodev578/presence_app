@@ -77,6 +77,28 @@ Il ne remplace pas `AGENTS.md` (invariants figés), `.agents/plan.md` (feuille d
 
 ## Tâches actives
 
+### Tâche : Visibilité et Confirmation des Comptes Employés (Navigation & Feedback)
+**Date** : 2026-10-05
+**Complexité** : Moyen
+**Proposant** : Fabien / rigueur-code
+**Story liée** : —
+
+#### Pre-flight (10 min)
+1. Problème réel : Les comptes employés non validés (`pending_validation`) sont bien détectés et notifiés dans la cloche, mais manquent de visibilité directe dans la navigation latérale de l'espace manager (nécessitant de cliquer sur la cloche ou de consulter l'équipe). De plus, lorsque le gestionnaire valide le profil, l'employé ne reçoit aucune notification de confirmation positive lui confirmant l'activation de son compte dans sa cloche.
+2. Contrainte principale : Préservation stricte de la grammaire de navigation partagée et des métriques M3 / WCAG AA de `ManagerLayout.vue` (44px, tokens `py-3 px-3.5`, `rail-hide`, `rail-entry`, repli en rail 840px-1024px) sans altérer les règles de responsive ni ajouter de dépendances de version (`package.json` intact).
+3. Alternative rejetée : Imposer une pop-in/modale bloquante à chaque connexion du manager (rejetée car intrusive et perturbatrice du suivi quotidien des pointages) ou tenter d'installer un module tiers d'envoi d'e-mails sans credentials ni accord de version (rejetée par respect strict des règles de version et d'architecture PWA statique).
+4. Signal de fin : Décompte réactif `pendingAccountsCount` exposé par `useNotifications`, affiché sous forme de badge discret dans la barre latérale du `ManagerLayout` (badge chiffré en tiroir étendu, pastille d'avertissement et tooltip enrichi en rail), et notification de bienvenue/activation pour l'employé (`account_activated`) dans `useNotifications.js`. Compilation Vite `npm run build` et `node scripts/verify-gates.mjs --all` à 100% de succès.
+5. Déclencheur KI : N (application directe des patterns établis).
+
+#### Résultat
+- Implémenté ? O — 2026-10-05 (badge réactif sur l'entrée « Collaborateurs » dans ManagerLayout.vue, pastille et infobulle en mode rail, notification de confirmation d'activation collaborateur avec action directe vers le pointage dans useNotifications.js).
+- Leçon tirée :
+  1. L'alignement de la navigation latérale avec l'état réactif des profils via `useNotifications` renforce considérablement l'affordance managériale sans exiger d'ouvrir la cloche de notification.
+  2. L'adaptation responsive du badge (badge chiffré en tiroir étendu vs pastille miniature en rail replié avec tooltip contextuel `(N en attente)`) préserve scrupuleusement la géométrie du rail d'icônes et les seuils tactiles WCAG AA (44px min).
+  3. La fermeture de boucle côté collaborateur (notification de bienvenue positive avec action `Pointer ma présence` dès confirmation par le manager) supprime toute incertitude lors de la transition d'état d'un compte nouvellement validé.
+- Portes franchies : G180, G181 validées (100% de succès sur `node scripts/verify-gates.mjs --all` et `npm run build`).
+- Escalade déclenchée ? N (2 fichiers impactés : `useNotifications.js`, `ManagerLayout.vue`).
+
 ### Tâche : Demande d'Absence avec Validation Hiérarchique
 **Date** : 2026-10-05
 **Complexité** : Élevée
