@@ -1,3 +1,87 @@
+# Plan : Optimisation du Chargement à Froid et de l'App Shell
+
+Date : 2026-10-05  
+Déclencheur : Demande utilisateur (recommandations et implémentation pour le chargement de l'app)  
+Statut : Terminé et Validé (Portes G184 et G185 validées, chunk d'entrée réduit de 789 kB à 75 kB, build de production conforme)  
+Porte liée : G184 / G185  
+
+## 1. Périmètre
+
+### Fichiers cibles
+- `index.html` (Splash Screen SVG/CSS natif Frame 0, preconnect Google Fonts)
+- `src/style.css` (optimisation typographique)
+- `src/composables/useProfile.js` (résolution optimiste Dexie immédiate, stale-while-revalidate sans blocage réseau)
+- `src/App.vue` (Code-splitting dynamique `defineAsyncComponent`, écran d'attente à froid M3 stylisé)
+- `public/sw.js` (App shell precaching pour chargement instantané offline)
+- `GATES.md` (portes G184 et G185)
+- `scripts/verify-gates.mjs` (oracle déterministe pour G184)
+
+---
+
+## 2. Étapes Séquentielles
+
+1. [x] **Étape 1 : Splash Screen Frame 0 & Préconnexions (`index.html` & `style.css`)**
+   - Injecter le splash screen inline dans `<div id="app">` avec adaptation automatique au thème (`data-theme`).
+   - Ajouter `preconnect` pour Google Fonts dans `index.html` et optimiser l'import.
+
+2. [x] **Étape 2 : Résolution Optimiste Local-First (`useProfile.js`)**
+   - Restituer immédiatement le profil Dexie ou les métadonnées de session dans `fetchProfile()` sans bloquer sur l'appel Supabase distant.
+   - Laisser le rafraîchissement Supabase s'exécuter en tâche de fond.
+
+3. [x] **Étape 3 : Code-Splitting Dynamique & Écran d'attente M3 (`App.vue`)**
+   - Remplacer les 15 imports statiques par `defineAsyncComponent(() => import(...))`.
+   - Remplacer le spinner brut par un écran d'attente Material 3 avec badge de marque et typographie soignée.
+
+4. [x] **Étape 4 : App Shell Caching (`public/sw.js`)**
+   - Ajouter la mise en cache des assets statiques (HTML, CSS, JS, SVG, polices) dans CacheStorage.
+   - Préserver intact le listener Background Sync `presence-outbox-sync`.
+
+5. [x] **Étape 5 : Définition des Portes et Validation (`GATES.md` & `verify-gates.mjs`)**
+   - Écrire et exécuter l'oracle G184 (`--app-loading`).
+   - Valider la suite intégrale et la compilation Vite de production.
+
+---
+
+# Plan : Fluidification de la Transition d'Authentification
+
+Date : 2026-10-05  
+Déclencheur : Demande utilisateur (résoudre la cassure d'animation entre la loginpage et l'écran lors de la connexion)  
+Statut : Terminé et Validé (Portes G182 et G183 validées, build de production conforme)  
+Porte liée : G182 / G183  
+
+## 1. Périmètre
+
+### Fichiers cibles
+- `src/composables/useAuth.js` (découplage `authInitializing` et `authLoading`)
+- `src/App.vue` (déclenchement du loader plein écran réservé à `authInitializing`, redirection racine sur `#/login`)
+- `src/views/auth/LoginView.vue` (normalisation de route sur `#/login`, état continu `isSubmitting` pour éliminer le reset de bouton)
+- `GATES.md` (déclaration de la porte G182/G183)
+- `scripts/verify-gates.mjs` (oracle déterministe pour G182)
+
+---
+
+## 2. Étapes Séquentielles
+
+1. [x] **Étape 1 : Découplage dans `useAuth.js`**
+   - Introduire `authInitializing = ref(true)` activé uniquement pendant `initAuth()` au démarrage à froid.
+   - Conserver `authLoading = ref(false)` pour les soumissions interactives.
+   - Exporter `authInitializing` et `authLoading`.
+
+2. [x] **Étape 2 : Sécurisation du rendu dans `App.vue`**
+   - Adapter la condition du loader racine : `v-if="authInitializing || (isAuthenticated && !profile && profileLoading)"`.
+   - Normaliser les arrivées non authentifiées sur `/` vers `#/login`.
+
+3. [x] **Étape 3 : Fluidité et continuité dans `LoginView.vue`**
+   - Introduire `isSubmitting` qui reste actif pendant tout le cycle `signIn -> fetchProfile -> JIT checks -> isSuccess`.
+   - Assurer que le bouton ne subit aucun retour arrière ou saut d'état avant l'apparition de « Connexion réussie ».
+   - Normaliser l'URL sur `#/login` dès le montage.
+
+4. [x] **Étape 4 : Définition des Oracles et Portes (`GATES.md` & `verify-gates.mjs`)**
+   - Implémenter l'oracle pour G182.
+   - Valider la suite complète de gates et la compilation de production Vite.
+
+---
+
 # Plan : Demande d'Absence avec Validation Hiérarchique
 
 Date : 2026-10-05  

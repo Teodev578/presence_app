@@ -1419,6 +1419,51 @@ Scope: Automatisation et renforcement de la mémoire agentique selon le plan d'a
     ✓ built in 1.62s
     (exit code: 0)
 
+### Lot : Fluidification de la Transition d'Authentification
+
+- [x] G182: Découplage de l'initialisation auth, continuité du bouton de connexion et sanctuarisation de la transition
+  CHECK: node scripts/verify-gates.mjs --auth-transition
+  EXPECT: G182 passed: auth initialization decoupled from submission loading, unbroken login feedback and transition preserved
+  EVIDENCE:
+    $ node scripts/verify-gates.mjs --auth-transition
+    G182 passed: auth initialization decoupled from submission loading, unbroken login feedback and transition preserved
+    (exit code: 0)
+
+- [x] G183: Validation intégrale de la suite et compilation Vite de production
+  CHECK: node scripts/verify-gates.mjs --all && npm run build
+  EXPECT: G183 passed: all deterministic gates and vite production build succeed with exit code 0
+  EVIDENCE:
+    $ node scripts/verify-gates.mjs --all && npm run build
+    G1 passed ... G182 passed: auth initialization decoupled from submission loading, unbroken login feedback and transition preserved
+    vite v8.3.0 building client environment for production...
+    ✓ built in 1.52s
+    (exit code: 0)
+
+### Lot : Optimisation du Chargement à Froid et de l'App Shell
+
+- [x] G184: Splash screen natif Frame 0, code-splitting des vues, résolution optimiste Local-First et app shell caching
+  CHECK: node scripts/verify-gates.mjs --app-loading
+  EXPECT: G184 passed: native splash screen, route-level code splitting, local-first optimistic profile and app shell caching verified
+  EVIDENCE:
+    $ node scripts/verify-gates.mjs --app-loading
+    G184 passed: native splash screen, route-level code splitting, local-first optimistic profile and app shell caching verified
+    (exit code: 0)
+
+- [x] G185: Validation intégrale de la suite et compilation Vite de production
+  CHECK: node scripts/verify-gates.mjs --all && npm run build
+  EXPECT: G185 passed: all deterministic gates and vite production build succeed with exit code 0
+  EVIDENCE:
+    $ node scripts/verify-gates.mjs --all && npm run build
+    G1 passed ... G184 passed: native splash screen, route-level code splitting, local-first optimistic profile and app shell caching verified
+    vite v8.3.0 building client environment for production...
+    ✓ 122 modules transformed.
+    dist/assets/index-CBliXkER.js  75.16 kB │ gzip: 22.85 kB
+    ✓ built in 1.49s
+    (exit code: 0)
+
+
+
+
 
 
 

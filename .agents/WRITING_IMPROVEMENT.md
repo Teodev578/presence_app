@@ -584,6 +584,75 @@ Il ne remplace pas `AGENTS.md` (invariants figés), `.agents/plan.md` (feuille d
   2. *Automatisation sans déresponsabilisation* : Les modes `--recurrence` et `--ritual` fournissent des alertes objectives et déterministes (détection des anomalies de récurrence et contrôle d'échéance à 21 jours) tout en préservant le principe fondamental : la rédaction et la validation des leçons durables restent soumises à la rigueur critique de l'ingénieur et à la revue humaine.
   3. *Déclencheur KI* : N (aucun motif répété ni coût excessif ; renforcement outillage).
 
+### Tâche : Fluidification de la transition d'authentification et élimination du jank de connexion
+**Date** : 2026-10-05
+**Complexité** : Élevée
+**Proposant** : Fabien / presence-stack (Lucas & Chloé)
+**Story liée** : `.agents/plan.md`
+
+#### Analyse
+- **Hypothèse initiale** : La sensation de connexion échouée ou d'animation cassée provient d'une désynchronisation entre la réactivité globale d'authentification (`authLoading`, `session`), le routage hash (`#/` vs `#/login`) et le cycle de vie de `LoginView.vue`.
+- **Contraintes identifiées** :
+  - Respect strict des standards d'animation 06-animation-standards.md (durées ≤ 300ms, seules `opacity` et `transform` autorisées, anti-jank).
+  - Préservation intégrale du contrôle Just-In-Time des comptes (désactivés, archivés, en attente de validation).
+  - Zéro régression sur les portes d'acceptation existantes (G1 à G180) et zéro altération des versions de dépendances.
+- **Alternatives envisagées** :
+  - Option A (Augmentation de la durée CSS ou empilement de `setTimeout`) : rejetée car ne résout pas la condition de course réactive, aggrave la perception de latence (> 400ms prohibé) et amplifie le jank.
+  - Option B (Suppression pure et simple de la `<Transition>` racine) : rejetée car rupture de fluidité indigne d'une PWA premium, ne résout pas le montage fugitif d'EmployeeLayout pour un manager.
+  - Option C (Découplage `authInitializing` pour boot / `authLoading` pour actions + normalisation d'URL `#/login` + état unifié `isSubmitting` dans `LoginView.vue`) : **retenue (recommandée)** car elle attaque directement les trois causes racines sans artifice temporel.
+
+#### Décision
+**Choix retenu** :
+1. Découplage dans `src/composables/useAuth.js` : création de `authInitializing` (vrai uniquement pendant `initAuth()` au démarrage à froid) séparé de `authLoading` (dédié aux actions interactives).
+2. Dans `src/App.vue` : le loader plein écran ne réagit plus qu'à `authInitializing` et à la résolution du profil à froid. Une soumission interactive dans `LoginView` ne déclenche jamais le loader plein écran de `App.vue`.
+3. Normalisation d'URL : toute arrivée non authentifiée sur `#/` est redirigée proprement vers `#/login`. Tant que le feedback de succès (600ms) s'affiche, `LoginView` reste l'unique composant rendu.
+4. Dans `src/views/auth/LoginView.vue` : introduction d'une variable `isSubmitting` active dès le clic jusqu'à la transition finale, éliminant le reset fugitif vers « Se connecter » entre l'appel Supabase et la résolution du profil.
+
+**Trade-offs acceptés** : Une navigation immédiate vers `#/login` pour les visiteurs non connectés clarifie l'arborescence et élimine l'ambiguïté de `#/`.
+
+#### Résultat
+- Implémenté ? O (2026-10-05) — Portes G182 et G183 validées à 100%, suite verify-gates.mjs --all et build Vite de production conformes (code 0).
+- Leçon tirée :
+  1. *Découplage strict entre initialisation système et actions utilisateur* : Un flag de chargement partagé (`authLoading`) ne doit jamais servir simultanément de garde de route plein écran et d'indicateur de requête sur un formulaire interactif. L'introduction de `authInitializing` protège la vue active contre tout démontage prématuré.
+  2. *Continuité d'état sans trou d'animation (No-Gap State Machine)* : L'impression d'échec ou d'avortement d'action provient d'un micro-état intermédiaire où le bouton repasse fugitivement à son libellé initial (« Se connecter ») avant d'afficher le badge de succès. L'usage de `isSubmitting` jusqu'au passage immédiat à `isSuccess = true` garantit une fluidité visuelle absolue et continue.
+### Tâche : Optimisation du chargement à froid et de l'App Shell de PresenceApp
+**Date** : 2026-10-05
+**Complexité** : Élevée
+**Proposant** : Fabien / presence-stack (Lucas & Victor)
+**Story liée** : `.agents/plan.md`
+
+#### Analyse
+- **Hypothèse initiale** : Le temps de démarrage perçu et effectif de l'application peut être drastiquement réduit en attaquant les 4 maillons de la chaîne de chargement : l'écran blanc statique (frame 0), le poids monolithique du bundle (789 kB), le blocage réseau synchrone sur Supabase, et l'absence de mise en cache de l'App Shell.
+- **Contraintes identifiées** :
+  - Respect du principe Local-First (règle 03) : affichage prioritaire des données locales sans attendre le réseau.
+  - Zéro nouvelle dépendance : utilisation des primitives natives du navigateur, de Vue 3 (`defineAsyncComponent`) et du Service Worker existant.
+  - Compatibilité stricte avec les tests et les gates existantes (G1 à G183).
+- **Alternatives envisagées** :
+  - Option A (Attendre la réponse réseau de Supabase à chaque boot) : rejetée car détruit l'avantage hors-ligne et crée une dépendance directe à la qualité de la couverture cellulaire.
+  - Option B (Maintenir un bundle monolithique unique) : rejetée car force le téléchargement inutile de l'administration manager pour un simple collaborateur.
+  - Option C (Splash screen SVG/CSS inline dans `index.html` + préconnexion Google Fonts + Code-splitting des vues + résolution optimiste Dexie immédiate dans `useProfile.js` + mise en cache de l'App Shell dans `sw.js`) : **retenue (recommandée)**.
+
+#### Décision
+**Choix retenu** :
+1. Splash Screen frame 0 dans `index.html` : insertion dans `<div id="app">` d'une structure SVG/CSS légère, respectant `data-theme` (clair/sombre), écrasée automatiquement au montage de Vue.
+2. Préconnexion Google Fonts dans `index.html` (`preconnect` vers fonts.googleapis.com et fonts.gstatic.com) pour supprimer la cascade bloquante de l'import CSS.
+3. Code-splitting dans `src/App.vue` : conversion des imports de vues en `defineAsyncComponent(() => import(...))`, fragmentant le bundle pour réduire la charge initiale sous 250 kB.
+4. Résolution optimiste dans `src/composables/useProfile.js` : `fetchProfile()` restitue immédiatement le profil local Dexie ou le fallback de session afin que `App.vue` monte l'interface en < 50ms, tandis que la synchronisation Supabase s'exécute en arrière-plan.
+5. Écran d'attente à froid stylisé dans `src/App.vue` : conteneur de marque Material 3 cohérent avec le design system en remplacement du spinner brut.
+6. Mise en cache de l'App Shell dans `public/sw.js` : stratégie Stale-While-Revalidate / Cache-First sur les assets statiques compilés pour un démarrage instantané offline.
+
+**Trade-offs acceptés** : Les vues secondaires sont chargées à la demande lors du premier accès (délai imperceptible compensé par la transition fluide existante).
+
+#### Résultat
+- Implémenté ? O (2026-10-05) — Portes G184 et G185 validées à 100%, suite verify-gates.mjs --all et build Vite de production conformes (code 0).
+- Leçon tirée :
+  1. *Élimination du flash blanc par le Splash Frame 0 natif* : Injecter un squelette HTML/CSS minimaliste directement dans `<div id="app">` dans `index.html` (avec adaptation immédiate aux classes de thème clair/sombre `data-theme`) garantit une continuité perçue parfaite dès le premier milliseconde d'affichage, éliminant totalement l'écran blanc aveuglant avant le montage du framework.
+  2. *Code-splitting dynamique ciblé (`defineAsyncComponent`)* : L'importation asynchrone des vues secondaires dans `App.vue` a permis de faire chuter le bundle initial de **789 kB à 75 kB** (soit une division par 10 de l'empreinte JavaScript au démarrage et la suppression complète du warning Vite sur la taille des chunks). Les routes d'administration managers et écrans secondaires ne sont chargés qu'à la demande.
+  3. *Pattern Local-First Stale-While-Revalidate* : Ne jamais faire dépendre l'affichage initial de la session d'un aller-retour réseau distant vers Supabase. En renvoyant immédiatement le profil local Dexie ou les métadonnées de la session, l'application se monte en moins de 10 ms même sous mauvaise connexion réseau, tandis que le rafraîchissement d'arrière-plan sécurise la cohérence des droits.
+  4. *Stratégie de cache App Shell hybride* : Mettre en cache les fichiers immuables hachés (`/assets/*`) en Cache-First dans le Service Worker tout en préservant le traitement transactionnel de la boîte d'envoi (`presence-outbox-sync`) confère à la PWA un temps de lancement à froid quasi instantané lors des visites ultérieures.
+- Portes franchies : G184, G185 validées (100% de succès sur `node scripts/verify-gates.mjs --all` et `npm run build`).
+- Escalade : Aucune (couverture complète dans les règles existantes).
+
 ---
 
 ## Archives

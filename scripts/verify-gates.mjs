@@ -3834,6 +3834,77 @@ export function checkAccountConfirmationFeedback() {
   return true;
 }
 
+export function checkAuthTransition() {
+  const authFile = path.resolve('src/composables/useAuth.js');
+  const authContent = fs.readFileSync(authFile, 'utf8');
+  for (const token of ['authInitializing', 'authLoading', 'initAuth', 'authInitializing.value = true', 'authInitializing.value = false']) {
+    if (!authContent.includes(token)) {
+      console.error(`FAILURE G182: useAuth.js ne contient pas ${token}`);
+      return false;
+    }
+  }
+
+  const appFile = path.resolve('src/App.vue');
+  const appContent = fs.readFileSync(appFile, 'utf8');
+  for (const token of ['authInitializing', 'authInitializing || (isAuthenticated && !profile && profileLoading)', "navigate('/login')"]) {
+    if (!appContent.includes(token)) {
+      console.error(`FAILURE G182: App.vue ne contient pas ${token}`);
+      return false;
+    }
+  }
+
+  const loginFile = path.resolve('src/views/auth/LoginView.vue');
+  const loginContent = fs.readFileSync(loginFile, 'utf8');
+  for (const token of ['isSubmitting', 'isSubmitting || authLoading || isSuccess', "navigate('/login')"]) {
+    if (!loginContent.includes(token)) {
+      console.error(`FAILURE G182: LoginView.vue ne contient pas ${token}`);
+      return false;
+    }
+  }
+
+  console.log('G182 passed: auth initialization decoupled from submission loading, unbroken login feedback and transition preserved');
+  return true;
+}
+
+export function checkAppLoading() {
+  const indexFile = path.resolve('index.html');
+  const indexContent = fs.readFileSync(indexFile, 'utf8');
+  for (const token of ['preconnect', 'fonts.googleapis.com', 'app-splash-icon', 'app-splash-title', 'PresenceApp']) {
+    if (!indexContent.includes(token)) {
+      console.error(`FAILURE G184: index.html ne contient pas ${token}`);
+      return false;
+    }
+  }
+
+  const appFile = path.resolve('src/App.vue');
+  const appContent = fs.readFileSync(appFile, 'utf8');
+  for (const token of ['defineAsyncComponent', "import('./views/auth/LoginView.vue')", "import('./views/employee/HomeView.vue')", 'Initialisation de votre espace sécurisé...']) {
+    if (!appContent.includes(token)) {
+      console.error(`FAILURE G184: App.vue ne contient pas ${token}`);
+      return false;
+    }
+  }
+
+  const profileFile = path.resolve('src/composables/useProfile.js');
+  const profileContent = fs.readFileSync(profileFile, 'utf8');
+  if (!profileContent.includes('Local-First Stale-While-Revalidate') || !profileContent.includes('.maybeSingle()')) {
+    console.error('FAILURE G184: useProfile.js n’implémente pas le rafraîchissement Stale-While-Revalidate non bloquant');
+    return false;
+  }
+
+  const swFile = path.resolve('public/sw.js');
+  const swContent = fs.readFileSync(swFile, 'utf8');
+  for (const token of ['CACHE_NAME', 'PRECACHE_ASSETS', "url.pathname.startsWith('/assets/')", 'presence-outbox-sync']) {
+    if (!swContent.includes(token)) {
+      console.error(`FAILURE G184: public/sw.js ne contient pas ${token}`);
+      return false;
+    }
+  }
+
+  console.log('G184 passed: native splash screen, route-level code splitting, local-first optimistic profile and app shell caching verified');
+  return true;
+}
+
 // Exécution CLI
 const arg = process.argv[2] || '--all';
 let success = true;
@@ -3984,6 +4055,10 @@ if (arg === '--emojis') {
   success = checkAbsenceUi();
 } else if (arg === '--account-feedback') {
   success = checkAccountConfirmationFeedback();
+} else if (arg === '--auth-transition') {
+  success = checkAuthTransition();
+} else if (arg === '--app-loading') {
+  success = checkAppLoading();
 } else if (arg === '--archive-protection') {
   success = checkPrivilegedRolesArchiveProtection();
 } else if (arg === '--knowledge-loop') {
@@ -4060,10 +4135,12 @@ if (arg === '--emojis') {
   const r177 = checkAbsenceNotifications();
   const r178 = checkAbsenceUi();
   const r180 = checkAccountConfirmationFeedback();
+  const r182 = checkAuthTransition();
+  const r184 = checkAppLoading();
   const r48 = r39; // Une seule compilation sert les portes de build G39 et G48
-  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60 && r63 && r64 && r65 && r66 && r72 && r73 && r74 && r75 && r88 && r89 && r92 && r93 && r94 && r95 && r96 && r97 && r147 && r150 && r156 && r159 && r162 && r165 && r167 && r169 && r175 && r176 && r177 && r178 && r180;
+  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60 && r63 && r64 && r65 && r66 && r72 && r73 && r74 && r75 && r88 && r89 && r92 && r93 && r94 && r95 && r96 && r97 && r147 && r150 && r156 && r159 && r162 && r165 && r167 && r169 && r175 && r176 && r177 && r178 && r180 && r182 && r184;
 } else {
-  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--presences-ui|--presences-period|--presences-table|--presences-sort|--presences-localfirst|--sync-scope|--livequery-deps|--manager-dexie|--manager-grammar|--manager-responsive|--manager-nav-icons|--manager-finish|--employee-finish|--settings-page|--cross-space-gateways|--back-navigation|--notification-bell|--account-lifecycle|--pending-notifications|--immediate-reject|--archived-session|--responsive-views|--archive-protection|--knowledge-loop|--absence-model|--absence-sync|--absence-notifications|--absence-ui|--account-feedback|--manager-build|--sidebar-build|--build|--all]`);
+  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--presences-ui|--presences-period|--presences-table|--presences-sort|--presences-localfirst|--sync-scope|--livequery-deps|--manager-dexie|--manager-grammar|--manager-responsive|--manager-nav-icons|--manager-finish|--employee-finish|--settings-page|--cross-space-gateways|--back-navigation|--notification-bell|--account-lifecycle|--pending-notifications|--immediate-reject|--archived-session|--responsive-views|--archive-protection|--knowledge-loop|--absence-model|--absence-sync|--absence-notifications|--absence-ui|--account-feedback|--auth-transition|--app-loading|--manager-build|--sidebar-build|--build|--all]`);
   process.exit(1);
 }
 

@@ -4,7 +4,8 @@ import { db } from '../lib/db'
 
 const session = shallowRef(null)
 const user = shallowRef(null)
-const authLoading = ref(true)
+const authInitializing = ref(true)
+const authLoading = ref(false)
 const authError = ref(null)
 
 let authListenerInitialized = false
@@ -13,7 +14,7 @@ export function useAuth() {
   const initAuth = async () => {
     if (authListenerInitialized) return
     authListenerInitialized = true
-    authLoading.value = true
+    authInitializing.value = true
 
     try {
       const { data, error } = await supabase.auth.getSession()
@@ -24,13 +25,13 @@ export function useAuth() {
       console.error('Erreur chargement session Supabase :', err)
       authError.value = err.message
     } finally {
-      authLoading.value = false
+      authInitializing.value = false
     }
 
     supabase.auth.onAuthStateChange((_event, currentSession) => {
       session.value = currentSession
       user.value = currentSession?.user || null
-      authLoading.value = false
+      authInitializing.value = false
     })
   }
 
@@ -169,6 +170,7 @@ export function useAuth() {
     session,
     user,
     authLoading,
+    authInitializing,
     authError,
     initAuth,
     signIn,

@@ -4,7 +4,7 @@ import { useRouter } from '../../router'
 import { useAuth } from '../../composables/useAuth'
 import { useProfile } from '../../composables/useProfile'
 
-const { navigate } = useRouter()
+const { route, navigate } = useRouter()
 const { signIn, signUp, resetPassword, authLoading, authError } = useAuth()
 const { profile, fetchProfile } = useProfile()
 
@@ -16,6 +16,7 @@ const fullName = ref('')
 const showPassword = ref(false)
 const message = ref('')
 const isOnline = ref(typeof navigator !== 'undefined' ? navigator.onLine : true)
+const isSubmitting = ref(false)
 const isSuccess = ref(false)
 const successText = ref('')
 const isForgotSuccess = ref(false)
@@ -40,6 +41,9 @@ const updateOnlineStatus = () => {
 }
 
 onMounted(() => {
+  if (route.value.path === '/') {
+    navigate('/login')
+  }
   window.addEventListener('online', updateOnlineStatus)
   window.addEventListener('offline', updateOnlineStatus)
 })
@@ -69,55 +73,79 @@ const handleSubmit = async () => {
       message.value = 'Indiquez votre nom et prénom.'
       return
     }
-    const { error } = await signUp(
-      cleanEmail,
-      cleanPassword,
-      fullName.value.trim(),
-      'employee'
-    )
-    if (error) return
-
-    isSuccess.value = true
-    successText.value = 'Compte créé avec succès'
-    await new Promise((r) => setTimeout(r, 1100))
-    isSuccess.value = false
-    isRegister.value = false
-  } else {
-    const { data, error } = await signIn(cleanEmail, cleanPassword)
-    if (error) return
-
-    const userProfile = await fetchProfile()
-
-    // Contrôle Just-In-Time : compte désactivé après 30 jours
-    if (userProfile?.status === 'disabled') {
-      const { signOut } = useAuth()
-      await signOut()
-      message.value = 'Ce compte a été désactivé. Veuillez contacter votre responsable.'
-      return
-    }
-
-    // Contrôle Just-In-Time : compte non validé expiré après 7 jours
-    if (userProfile?.status === 'pending_validation' && userProfile?.created_at) {
-      const createdTime = new Date(userProfile.created_at).getTime()
-      if (Date.now() - createdTime > 7 * 24 * 60 * 60 * 1000) {
-        const { signOut } = useAuth()
-        await signOut()
-        message.value = 'Le délai de validation de 7 jours est dépassé. Ce compte a été révoqué.'
+    isSubmitting.value = true
+    try {
+      const { error } = await signUp(
+        cleanEmail,
+        cleanPassword,
+        fullName.value.trim(),
+        'employee'
+      )
+      if (error) {
+        isSubmitting.value = false
         return
       }
+
+      isSuccess.value = true
+      successText.value = 'Compte créé avec succès'
+      isSubmitting.value = false
+      await new Promise((r) => setTimeout(r, 1100))
+      isSuccess.value = false
+      isRegister.value = false
+    } catch {
+      isSubmitting.value = false
     }
+  } else {
+    isSubmitting.value = true
+    try {
+      const { data, error } = await signIn(cleanEmail, cleanPassword)
+      if (error) {
+        isSubmitting.value = false
+        return
+      }
 
-    const role = userProfile?.role || profile.value?.role || data?.user?.user_metadata?.role
+      // Maintient un continuum sans interruption visuelle pendant la résolution
+      const userProfile = await fetchProfile()
 
-    isSuccess.value = true
-    successText.value = 'Connexion réussie'
-    await new Promise((r) => setTimeout(r, 700))
+      // Contrôle Just-In-Time : compte désactivé après 30 jours
+      if (userProfile?.status === 'disabled') {
+        const { signOut } = useAuth()
+        await signOut()
+        isSubmitting.value = false
+        message.value = 'Ce compte a été désactivé. Veuillez contacter votre responsable.'
+        return
+      }
 
-    // Routage direct selon le rôle
-    if (role === 'admin' || role === 'manager') {
-      navigate('/manager')
-    } else {
-      navigate('/employee')
+      // Contrôle Just-In-Time : compte non validé expiré après 7 jours
+      if (userProfile?.status === 'pending_validation' && userProfile?.created_at) {
+        const createdTime = new Date(userProfile.created_at).getTime()
+        if (Date.now() - createdTime > 7 * 24 * 60 * 60 * 1000) {
+          const { signOut } = useAuth()
+          await signOut()
+          isSubmitting.value = false
+          message.value = 'Le délai de validation de 7 jours est dépassé. Ce compte a été révoqué.'
+          return
+        }
+      }
+
+      const role = userProfile?.role || profile.value?.role || data?.user?.user_metadata?.role
+
+      // Bascule directe vers le badge de succès sans reset intermédiaire
+      isSuccess.value = true
+      successText.value = 'Connexion réussie'
+      isSubmitting.value = false
+
+      // 500ms : durée optimale selon les règles 06 d'animation pour assimiler le succès
+      await new Promise((r) => setTimeout(r, 500))
+
+      // Routage direct selon le rôle résolu
+      if (role === 'admin' || role === 'manager') {
+        navigate('/manager')
+      } else {
+        navigate('/employee')
+      }
+    } catch {
+      isSubmitting.value = false
     }
   }
 }
@@ -468,10 +496,10 @@ const handleForgotPassword = async () => {
                   ? 'btn-success text-success-content focus-visible:ring-success'
                   : 'btn-primary focus-visible:ring-primary'
               ]"
-              :disabled="authLoading || isSuccess"
+              :disabled="isSubmitting || authLoading || isSuccess"
             >
-              <span v-if="authLoading" class="loading loading-spinner loading-sm"></span>
-              <span v-if="authLoading">
+              <span v-if="isSubmitting || authLoading" class="loading loading-spinner loading-sm"></span>
+              <span v-if="isSubmitting || authLoading">
                 {{ isRegister ? 'Création en cours...' : 'Connexion en cours...' }}
               </span>
               <template v-else-if="isSuccess">

@@ -1,36 +1,36 @@
 <script setup>
-import { onMounted, computed, watch } from 'vue'
+import { onMounted, computed, watch, defineAsyncComponent } from 'vue'
 import { useRouter } from './router'
 import { useAuth } from './composables/useAuth'
 import { useProfile } from './composables/useProfile'
 import { useSyncEngine } from './composables/useSyncEngine'
 import { initPwaInstall } from './composables/usePwaInstall'
 
-// Layouts
+// Layouts statiques pour fondation immédiate
 import EmployeeLayout from './layouts/EmployeeLayout.vue'
 import ManagerLayout from './layouts/ManagerLayout.vue'
 import ToastContainer from './components/shared/ToastContainer.vue'
 
-// Vues
-import LoginView from './views/auth/LoginView.vue'
-import HomeView from './views/employee/HomeView.vue'
-import CheckInView from './views/employee/CheckInView.vue'
-import CheckOutView from './views/employee/CheckOutView.vue'
-import EmployeeAvailabilitiesView from './views/employee/AvailabilitiesView.vue'
-import PendingApprovalView from './views/employee/PendingApprovalView.vue'
-import ArchivedAccountView from './views/employee/ArchivedAccountView.vue'
+// Vues asynchrones avec code-splitting automatique (chargées à la demande)
+const LoginView = defineAsyncComponent(() => import('./views/auth/LoginView.vue'))
+const HomeView = defineAsyncComponent(() => import('./views/employee/HomeView.vue'))
+const CheckInView = defineAsyncComponent(() => import('./views/employee/CheckInView.vue'))
+const CheckOutView = defineAsyncComponent(() => import('./views/employee/CheckOutView.vue'))
+const EmployeeAvailabilitiesView = defineAsyncComponent(() => import('./views/employee/AvailabilitiesView.vue'))
+const PendingApprovalView = defineAsyncComponent(() => import('./views/employee/PendingApprovalView.vue'))
+const ArchivedAccountView = defineAsyncComponent(() => import('./views/employee/ArchivedAccountView.vue'))
 
-import DashboardView from './views/manager/DashboardView.vue'
-import LocationsView from './views/manager/LocationsView.vue'
-import PresencesView from './views/manager/PresencesView.vue'
-import ManagerAvailabilitiesView from './views/manager/AvailabilitiesView.vue'
-import EmployeesView from './views/manager/EmployeesView.vue'
-import TeamsView from './views/manager/TeamsView.vue'
-import ExportView from './views/manager/ExportView.vue'
-import SettingsView from './views/SettingsView.vue'
+const DashboardView = defineAsyncComponent(() => import('./views/manager/DashboardView.vue'))
+const LocationsView = defineAsyncComponent(() => import('./views/manager/LocationsView.vue'))
+const PresencesView = defineAsyncComponent(() => import('./views/manager/PresencesView.vue'))
+const ManagerAvailabilitiesView = defineAsyncComponent(() => import('./views/manager/AvailabilitiesView.vue'))
+const EmployeesView = defineAsyncComponent(() => import('./views/manager/EmployeesView.vue'))
+const TeamsView = defineAsyncComponent(() => import('./views/manager/TeamsView.vue'))
+const ExportView = defineAsyncComponent(() => import('./views/manager/ExportView.vue'))
+const SettingsView = defineAsyncComponent(() => import('./views/SettingsView.vue'))
 
 const { route, navigate } = useRouter()
-const { session, user, authLoading, initAuth } = useAuth()
+const { session, user, authInitializing, initAuth } = useAuth()
 const { profile, profileLoading, fetchProfile } = useProfile()
 const { startSyncWatcher } = useSyncEngine()
 
@@ -50,6 +50,11 @@ onMounted(async () => {
       } else {
         navigate('/employee')
       }
+    }
+  } else {
+    // Normalisation proactive : diriger immédiatement un visiteur non authentifié vers /login
+    if (route.value.path === '/') {
+      navigate('/login')
     }
   }
 })
@@ -86,12 +91,31 @@ watch([() => route.value.path, isManager, () => profile.value, profileLoading], 
   <Transition name="space" mode="out-in">
   <!-- Écran de chargement pendant l'authentification initiale et la résolution du profil -->
   <div
-    v-if="authLoading || (isAuthenticated && !profile && profileLoading)"
+    v-if="authInitializing || (isAuthenticated && !profile && profileLoading)"
     key="loading"
-    class="min-h-screen flex flex-col items-center justify-center gap-3 bg-base-200 text-base-content/70 font-medium"
+    class="min-h-screen flex flex-col items-center justify-center gap-4 bg-base-100 text-base-content font-medium p-4 select-none"
   >
-    <span class="loading loading-spinner loading-lg text-primary"></span>
-    <p class="text-sm">Chargement de PresenceApp...</p>
+    <div class="w-16 h-16 rounded-m3-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-xs">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="w-8 h-8"
+        aria-hidden="true"
+      >
+        <circle cx="12" cy="12" r="10" />
+        <polyline points="12 6 12 12 16 14" />
+      </svg>
+    </div>
+    <div class="flex flex-col items-center gap-1 text-center">
+      <h1 class="text-xl font-black tracking-tight text-base-content">PresenceApp</h1>
+      <p class="text-xs text-base-content/60">Initialisation de votre espace sécurisé...</p>
+    </div>
+    <span class="loading loading-spinner loading-md text-primary mt-1"></span>
   </div>
 
   <!-- Cas 1 : Non authentifié ou page de login explicite -->

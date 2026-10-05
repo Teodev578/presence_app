@@ -66,37 +66,37 @@ export function useProfile() {
       console.warn('Erreur lecture profil local Dexie :', e)
     }
 
-    // 2. Rafraîchissement distant depuis Supabase si connecté
+    // 2. Rafraîchissement distant en tâche de fond depuis Supabase (Local-First Stale-While-Revalidate)
     if (navigator.onLine) {
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userId)
-          .maybeSingle()
+      supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle()
+        .then(async ({ data, error }) => {
+          if (!error && data) {
+            // Protection Local-First : vérifier si une mutation locale sur ce profil est en attente
+            let hasPendingMutation = false
+            try {
+              const pending = await db.sync_outbox
+                .where('record_id')
+                .equals(userId)
+                .and((item) => item.status === 'pending' || item.status === 'syncing')
+                .count()
+              hasPendingMutation = pending > 0
+            } catch {
+              hasPendingMutation = false
+            }
 
-        if (!error && data) {
-          // Protection Local-First : vérifier si une mutation locale sur ce profil est en attente
-          let hasPendingMutation = false
-          try {
-            const pending = await db.sync_outbox
-              .where('record_id')
-              .equals(userId)
-              .and((item) => item.status === 'pending' || item.status === 'syncing')
-              .count()
-            hasPendingMutation = pending > 0
-          } catch {
-            hasPendingMutation = false
+            if (!hasPendingMutation) {
+              currentProfile.value = data
+              await db.profiles.put(data)
+            }
           }
-
-          if (!hasPendingMutation) {
-            currentProfile.value = data
-            await db.profiles.put(data)
-          }
-        }
-      } catch (err) {
-        console.warn('Erreur rafraîchissement profil distant :', err)
-      }
+        })
+        .catch((err) => {
+          console.warn('Erreur rafraîchissement profil distant :', err)
+        })
     }
 
     profileLoading.value = false
