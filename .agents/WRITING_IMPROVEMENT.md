@@ -489,6 +489,39 @@ Il ne remplace pas `AGENTS.md` (invariants figés), `.agents/plan.md` (feuille d
   1. *Défense en profondeur pour les actions destructives/d'éviction* : En couplant un trigger PostgreSQL `BEFORE UPDATE` (qui lève une exception 23514 contextualisée) et une contrainte `CHECK` relationnelle, la base de données demeure hermétique face à toute dérive, même hors UI.
   2. *Ergonomie préventive vs punitive* : Plutôt que de masquer l'action ou de laisser l'utilisateur déclencher une modale pour échouer après validation, l'affichage du bouton désactivé avec l'info-bulle "Rôle protégé : modifier en collaborateur pour archiver" guide proactivement le gestionnaire sans friction superflue.
 
+### Tâche : Amélioration et Automatisation de la Boucle d'Apprentissage KI
+**Date** : 2026-10-05
+**Complexité** : Élevée
+**Proposant** : Fabien / unlazy & rigueur-code
+**Story liée** : `.agents/plans/amelioration-boucle-apprentissage.md`
+
+#### Analyse
+- **Hypothèse initiale** : La boucle KI (.agents/knowledge/) fonctionne mais dépend trop de la discipline humaine en session : la capture n'est déclenchée que manuellement, le rituel bimensuel n'a aucun rappel ni contrôle de fraîcheur, `scripts/knowledge-check.mjs` n'est invoqué par aucun script npm ni hook git, et le compteur de récurrence dans `INDEX.md` est tenu de mémoire sans détection assistée.
+- **Contraintes identifiées** :
+  - Interdiction absolue d'altérer les versions ou d'ajouter de nouvelles dépendances npm sans accord explicite (pas d'installation de Husky/lint-staged ; utilisation d'un hook git natif dans `.githooks/`).
+  - Principe inviolable : « aucun palier sans revue ». L'automatisation doit se limiter à la détection, au rappel et au signalement d'anomalies, sans jamais commiter ni rédiger de fiches de manière opaque. Les sous-agents demeurent en lecture seule sur la mémoire.
+  - Déterministe et mesurable : oracles `knowledge:check` et `verify-gates.mjs` avec preuves tangibles.
+- **Alternatives envisagées** :
+  - Option A (Génération automatique de fiches par hook) : rejetée car violerait la validation humaine, risquerait d'inonder la base de fausses leçons ou de trivialités dérivables du code.
+  - Option B (Installation de Husky et lint-staged) : rejetée car introduit des dépendances et scripts superflus alors qu'un simple hook git natif `.githooks/pre-commit` associé à `core.hooksPath` est plus léger et zéro dépendance.
+  - Option C (Statut quo avec commande /learn uniquement) : rejetée car ne résout ni l'oubli du rituel bimensuel, ni l'absence d'oracle dans package.json, ni le manque de visibilité sur les récurrences.
+  - Option D (Oracles exécutables + hook pre-commit natif + mode --recurrence + alerte de rituel 21j + protocole de clôture) : **retenue (recommandée)** car elle renforce l'outillage sans dette technique et garantit une boucle d'apprentissage vivante.
+
+#### Décision
+**Choix retenu** :
+1. Ajout de scripts `knowledge:check` et `knowledge:staleness` dans `package.json` (zéro dépendance ajoutée).
+2. Création d'un hook pre-commit natif `.githooks/pre-commit` qui exécute l'oracle quand `.agents/knowledge/` ou `.agents/rules/` est touché.
+3. Extension de `scripts/knowledge-check.mjs` avec le mode `--recurrence` (scan d'occurrences d'erreurs et contrôle d'escalade du compteur) et vérification du rituel bimensuel (alerte si délai > 21 jours).
+4. Mise à jour du README et protocole de clôture de tâche obligatoire.
+**Trade-offs acceptés** : La détection de récurrence par pattern regex/mots-clés assiste l'agent mais ne remplace pas le jugement critique de l'ingénieur sur les causes profondes.
+
+#### Résultat
+- Implémenté ? O (2026-10-05) — Portes G169 à G174 validées à 100%, scripts npm opérationnels, suite verify-gates.mjs --all et build de production conformes.
+- Leçon tirée :
+  1. *L'outillage natif avant les dépendances* : Un hook natif `.githooks/pre-commit` (activable par `git config core.hooksPath .githooks`) doublé d'un oracle en script npm (`npm run knowledge:check`) offre une protection hermétique de la mémoire agentique sans nécessiter de dépendance npm supplémentaire ni compromettre le gel des versions.
+  2. *Automatisation sans déresponsabilisation* : Les modes `--recurrence` et `--ritual` fournissent des alertes objectives et déterministes (détection des anomalies de récurrence et contrôle d'échéance à 21 jours) tout en préservant le principe fondamental : la rédaction et la validation des leçons durables restent soumises à la rigueur critique de l'ingénieur et à la revue humaine.
+  3. *Déclencheur KI* : N (aucun motif répété ni coût excessif ; renforcement outillage).
+
 ---
 
 ## Archives

@@ -3626,6 +3626,79 @@ export function checkPrivilegedRolesArchiveProtection() {
   return true;
 }
 
+/**
+ * Vérifie le renforcement et l'automatisation de la boucle d'apprentissage KI (G169 à G172).
+ */
+export function checkKnowledgeLoop() {
+  const pkgPath = path.resolve('package.json');
+  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+  const scripts = pkg.scripts || {};
+
+  // G169: Scripts npm et hook pre-commit
+  const requiredScripts = ['knowledge:check', 'knowledge:staleness', 'knowledge:recurrence', 'knowledge:ritual'];
+  for (const s of requiredScripts) {
+    if (!scripts[s]) {
+      console.error(`FAILURE G169: package.json manque le script "${s}"`);
+      return false;
+    }
+  }
+
+  const hookPath = path.resolve('.githooks/pre-commit');
+  if (!fs.existsSync(hookPath)) {
+    console.error('FAILURE G169: .githooks/pre-commit introuvable');
+    return false;
+  }
+  const hookStat = fs.statSync(hookPath);
+  const isExecutable = (hookStat.mode & 0o111) !== 0;
+  if (!isExecutable) {
+    console.error('FAILURE G169: .githooks/pre-commit n\'est pas exécutable (chmod +x requis)');
+    return false;
+  }
+
+  const hookContent = fs.readFileSync(hookPath, 'utf8');
+  if (!hookContent.includes('knowledge-check.mjs')) {
+    console.error('FAILURE G169: .githooks/pre-commit n\'exécute pas knowledge-check.mjs');
+    return false;
+  }
+  console.log('G169 passed: knowledge npm scripts and executable pre-commit hook verified');
+
+  // G170 & G171: Vérification par sous-processus de knowledge-check.mjs
+  const checkProc = spawnSync('node', ['scripts/knowledge-check.mjs', '--all'], { encoding: 'utf8' });
+  if (checkProc.status !== 0) {
+    console.error('FAILURE G170/G171: scripts/knowledge-check.mjs --all a échoué :\n' + checkProc.stdout + '\n' + checkProc.stderr);
+    return false;
+  }
+  if (!checkProc.stdout.includes('G170 passed:')) {
+    console.error('FAILURE G170: G170 passed non détecté dans knowledge-check.mjs');
+    return false;
+  }
+  console.log('G170 passed: recurrence detection and escalation counter verified');
+
+  if (!checkProc.stdout.includes('G171 passed:')) {
+    console.error('FAILURE G171: G171 passed non détecté dans knowledge-check.mjs');
+    return false;
+  }
+  console.log('G171 passed: bi-weekly ritual freshness verified');
+
+  // G172: Mise à jour documentaire
+  const readmePath = path.resolve('.agents/knowledge/README.md');
+  const readmeContent = fs.readFileSync(readmePath, 'utf8');
+  if (!readmeContent.includes('## Rituel planifié') || !readmeContent.includes('Clôture de tâche')) {
+    console.error('FAILURE G172: .agents/knowledge/README.md ne contient pas les sections de rituel planifié ou de clôture de tâche');
+    return false;
+  }
+
+  const indexPath = path.resolve('.agents/knowledge/INDEX.md');
+  const indexContent = fs.readFileSync(indexPath, 'utf8');
+  if (!indexContent.includes('## Rituel bimensuel') || !indexContent.includes('Dernière exécution :')) {
+    console.error('FAILURE G172: .agents/knowledge/INDEX.md ne contient pas le suivi du rituel bimensuel');
+    return false;
+  }
+  console.log('G172 passed: knowledge protocol documentation and task closure rules verified');
+
+  return true;
+}
+
 // Exécution CLI
 const arg = process.argv[2] || '--all';
 let success = true;
@@ -3768,6 +3841,8 @@ if (arg === '--emojis') {
   success = checkResponsiveOnepageViews();
 } else if (arg === '--archive-protection') {
   success = checkPrivilegedRolesArchiveProtection();
+} else if (arg === '--knowledge-loop') {
+  success = checkKnowledgeLoop();
 } else if (arg === '--all') {
   const r1 = checkEmojis();
   const r2 = checkRadii();
@@ -3834,10 +3909,11 @@ if (arg === '--emojis') {
   const r162 = checkArchivedAccountSession();
   const r165 = checkResponsiveOnepageViews();
   const r167 = checkPrivilegedRolesArchiveProtection();
+  const r169 = checkKnowledgeLoop();
   const r48 = r39; // Une seule compilation sert les portes de build G39 et G48
-  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60 && r63 && r64 && r65 && r66 && r72 && r73 && r74 && r75 && r88 && r89 && r92 && r93 && r94 && r95 && r96 && r97 && r147 && r150 && r156 && r159 && r162 && r165 && r167;
+  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60 && r63 && r64 && r65 && r66 && r72 && r73 && r74 && r75 && r88 && r89 && r92 && r93 && r94 && r95 && r96 && r97 && r147 && r150 && r156 && r159 && r162 && r165 && r167 && r169;
 } else {
-  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--presences-ui|--presences-period|--presences-table|--presences-sort|--presences-localfirst|--sync-scope|--livequery-deps|--manager-dexie|--manager-grammar|--manager-responsive|--manager-nav-icons|--manager-finish|--employee-finish|--settings-page|--cross-space-gateways|--back-navigation|--notification-bell|--account-lifecycle|--pending-notifications|--immediate-reject|--archived-session|--responsive-views|--archive-protection|--manager-build|--sidebar-build|--build|--all]`);
+  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--presences-ui|--presences-period|--presences-table|--presences-sort|--presences-localfirst|--sync-scope|--livequery-deps|--manager-dexie|--manager-grammar|--manager-responsive|--manager-nav-icons|--manager-finish|--employee-finish|--settings-page|--cross-space-gateways|--back-navigation|--notification-bell|--account-lifecycle|--pending-notifications|--immediate-reject|--archived-session|--responsive-views|--archive-protection|--knowledge-loop|--manager-build|--sidebar-build|--build|--all]`);
   process.exit(1);
 }
 

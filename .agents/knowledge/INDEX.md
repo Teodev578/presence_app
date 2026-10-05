@@ -24,3 +24,10 @@ Chaque reproduction d'une erreur déjà fichée s'inscrit ici, datée. Deux réc
 | Id | Réoccurrences | Dates |
 |---|---|---|
 | (aucune) | | |
+
+## Rituel bimensuel
+
+Suivi de la santé de la mémoire agentique (nettoyage, obsolescence, récurrences).
+Dernière exécution : 2026-10-01
+Prochaine échéance : 2026-10-15
+Statut : conforme (cadence bimensuelle ≤ 14 jours, alerte automatique si > 21 jours)

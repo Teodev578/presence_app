@@ -1290,5 +1290,70 @@ Scope: Interdiction stricte de placer un gestionnaire ('manager') ou un administ
     ✓ built in 1.12s
     (exit code: 0)
 
+## Lot — Amélioration et Automatisation de la Boucle d'Apprentissage KI
+OWNS: package.json, .githooks/pre-commit, scripts/knowledge-check.mjs, scripts/verify-gates.mjs, .agents/knowledge/README.md, .agents/knowledge/INDEX.md, GATES.md, .agents/WRITING_IMPROVEMENT.md
+
+Scope: Automatisation et renforcement de la mémoire agentique selon le plan d'amélioration : ajout des commandes npm sans dépendances externes, hook pre-commit natif `.githooks/pre-commit`, détection assistée de récurrence (`knowledge-check.mjs --recurrence`), alerte de péremption du rituel bimensuel (> 21 jours) et protocole d'enregistrement en fin de tâche.
+
+- [x] G169: Scripts npm déclarés (knowledge:check et knowledge:staleness) et hook pre-commit natif .githooks/pre-commit exécutable
+  CHECK: npm run knowledge:check && test -x .githooks/pre-commit
+  EXPECT: G169 passed: knowledge npm scripts and executable pre-commit hook verified
+  EVIDENCE:
+    $ npm run knowledge:check && test -x .githooks/pre-commit
+    G77 passed: knowledge base structure complete (2 entries)
+    G78 passed: all knowledge entries carry valid frontmatter (2)
+    G79 passed: index within budget and listing all live entries (34 lines)
+    G80 passed: no live entry is past its revalidation date
+    G81 passed: learning loop wired into AGENTS.md and rules
+    G82 passed: local knowledge layer ignored by git
+    G170 passed: recurrence detection and escalation counter verified
+    G171 passed: bi-weekly ritual freshness verified (4 days since last ritual on 2026-10-01)
+    (exit code: 0)
+
+- [x] G170: Détection de récurrence assistée via scripts/knowledge-check.mjs --recurrence
+  CHECK: node scripts/knowledge-check.mjs --recurrence
+  EXPECT: G170 passed: recurrence detection and escalation counter verified
+  EVIDENCE:
+    $ node scripts/knowledge-check.mjs --recurrence
+    G170 passed: recurrence detection and escalation counter verified
+
+- [x] G171: Alerte et contrôle de fraîcheur du rituel bimensuel KI (seuil de 21 jours)
+  CHECK: node scripts/knowledge-check.mjs --ritual
+  EXPECT: G171 passed: bi-weekly ritual freshness verified
+  EVIDENCE:
+    $ node scripts/knowledge-check.mjs --ritual
+    G171 passed: bi-weekly ritual freshness verified (4 days since last ritual on 2026-10-01)
+
+- [x] G172: Mise à jour documentaire du protocole KI (README.md, rituel et clôture de tâche)
+  CHECK: node scripts/verify-gates.mjs --knowledge-loop
+  EXPECT: G172 passed: knowledge protocol documentation and task closure rules verified
+  EVIDENCE:
+    $ node scripts/verify-gates.mjs --knowledge-loop
+    G169 passed: knowledge npm scripts and executable pre-commit hook verified
+    G170 passed: recurrence detection and escalation counter verified
+    G171 passed: bi-weekly ritual freshness verified
+    G172 passed: knowledge protocol documentation and task closure rules verified
+
+- [x] G173: Validation intégrale de la suite déterministe
+  CHECK: node scripts/verify-gates.mjs --all
+  EXPECT: G173 passed: all deterministic gates pass with exit code 0
+  EVIDENCE:
+    $ node scripts/verify-gates.mjs --all
+    ...
+    G169 passed: knowledge npm scripts and executable pre-commit hook verified
+    G170 passed: recurrence detection and escalation counter verified
+    G171 passed: bi-weekly ritual freshness verified
+    G172 passed: knowledge protocol documentation and task closure rules verified
+    (exit code: 0)
+
+- [x] G174: Compilation de production Vite sans erreur
+  CHECK: npm run build
+  EXPECT: G174 passed: vite build succeeds with exit code 0
+  EVIDENCE:
+    $ npm run build
+    vite v8.3.0 building client environment for production...
+    ✓ built in 1.50s
+    (exit code: 0)
+
 
 

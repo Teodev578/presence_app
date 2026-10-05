@@ -61,14 +61,35 @@ Niveau 3 type : un flag de `scripts/verify-gates.mjs`, un contrôle de `scripts/
 
 Quatre opérations, chacune en revue, en diff : `ADD`, `NARROW` (restreindre le domaine), `REPLACE` (remplacer une version), `RETIRE`. On ne réécrit pas l'historique, on le survit. Une fiche remplacée passe en `superseded` avec la référence de sa remplaçante.
 
-Rituel bimensuel, à faire porter par `bmad-retrospective` ou une passe `code-hygiene` :
-
-1. contradictions entre fiches ;
-2. doublons à fusionner ;
-3. fiches dépassées (`a-verifier`) à confirmer ou reclasser ;
-4. contenu dérivable du code à supprimer.
-
 Chaque fiche porte `revalider-avant` (date + 60 jours par défaut). L'oracle `node scripts/knowledge-check.mjs --staleness` refuse une fiche active périmée.
+
+## Rituel planifié
+
+Le rituel bimensuel maintient la vivacité et la salubrité de la base de connaissances.
+Cadence : toutes les deux semaines (14 jours).
+Commandes d'inspection :
+- `npm run knowledge:check` (structure, validité, liaisons et récurrences)
+- `npm run knowledge:staleness` (fraîcheur des fiches actives)
+- `npm run knowledge:recurrence` (détection d'erreurs récurrentes)
+- `npm run knowledge:ritual` (contrôle d'échéance du rituel)
+
+Points de contrôle du rituel :
+1. Contradictions éventuelles entre fiches ;
+2. Doublons à fusionner ;
+3. Fiches dépassées (`a-verifier`) à confirmer ou reclasser ;
+4. Contenu dérivable du code à supprimer ;
+5. Analyse des récurrences signalées par `--recurrence`.
+
+Garde-fou automatique : si le délai depuis le dernier rituel enregistré dans `INDEX.md` excède 21 jours, l'oracle `knowledge:ritual` lève une erreur bloquante. La date du dernier rituel dans `INDEX.md` est actualisée à chaque clôture de rituel, et les conclusions sont consignées dans `.agents/WRITING_IMPROVEMENT.md`.
+
+## Clôture de tâche (protocole de fin de session)
+
+À l'achèvement de toute tâche d'implémentation de complexité ≥ « Moyen » :
+1. L'agent principal consulte les déclencheurs officiels (même erreur deux fois, bug > 1h, remarque répétée).
+2. L'agent formule obligatoirement dans son rapport ou ses évidences de validation :
+   - soit l'attestation explicite : `Déclencheur KI : N (aucun motif répété ni coût > 1h)` ;
+   - soit l'enregistrement immédiat : création de la fiche `KI-XXXX` avec son frontmatter et inscription dans `INDEX.md`.
+3. Cette conformité garantit que l'apprentissage ne s'érode pas au fil des sessions.
 
 ## Frontière de promotion
 

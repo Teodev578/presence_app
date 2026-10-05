@@ -30,14 +30,14 @@ function parseArgs(argv) {
       args.root = path.resolve(argv[i + 1] ?? '');
       i += 1;
     } else if (a === '--all') {
-      args.checks = ['structure', 'frontmatter', 'index', 'staleness', 'wiring', 'gitignore'];
+      args.checks = ['structure', 'frontmatter', 'index', 'staleness', 'wiring', 'gitignore', 'recurrence', 'ritual'];
     } else if (a.startsWith('--')) {
       args.checks.push(a.slice(2));
     }
   }
   if (args.checks.length === 0) args.checks = ['all'];
   if (args.checks.includes('all')) {
-    args.checks = ['structure', 'frontmatter', 'index', 'staleness', 'wiring', 'gitignore'];
+    args.checks = ['structure', 'frontmatter', 'index', 'staleness', 'wiring', 'gitignore', 'recurrence', 'ritual'];
   }
   return args;
 }
@@ -172,6 +172,75 @@ const checks = {
     });
     if (!covered) return 'G82 failed: .agents/knowledge.local is not ignored by git';
     return 'G82 passed: local knowledge layer ignored by git';
+  },
+
+  recurrence(root) {
+    const indexRaw = readIfExists(path.join(root, '.agents', 'knowledge', 'INDEX.md'));
+    if (indexRaw === null) return 'G170 failed: INDEX.md is missing';
+
+    // 1. Contrôle du compteur de récurrence dans INDEX.md
+    const recurrenceTable = indexRaw.match(/## Compteur de récurrence([\s\S]*?)(?:##|$)/);
+    if (recurrenceTable) {
+      const lines = recurrenceTable[1].split('\n').filter((l) => l.trim().startsWith('|'));
+      // Ignorer l'en-tête et le séparateur
+      for (const line of lines.slice(2)) {
+        const parts = line.split('|').map((s) => s.trim()).filter(Boolean);
+        if (parts.length >= 2 && /^KI-\d{4}/.test(parts[0])) {
+          const id = parts[0];
+          const count = parseInt(parts[1], 10);
+          if (count >= 2) {
+            // Vérifier l'escalade niveau 2 (rules/) ou 3 (verify-gates.mjs)
+            const rulesDir = path.join(root, '.agents', 'rules');
+            const rulesFiles = fs.existsSync(rulesDir) ? fs.readdirSync(rulesDir) : [];
+            const inRules = rulesFiles.some((f) => readIfExists(path.join(rulesDir, f))?.includes(id));
+            const inGates = readIfExists(path.join(root, 'scripts', 'verify-gates.mjs'))?.includes(id);
+            if (!inRules && !inGates) {
+              return `G170 failed: ${id} reached ${count} recurrences without escalation (level 2 in .agents/rules/ or level 3 in verify-gates.mjs)`;
+            }
+          }
+        }
+      }
+    }
+
+    // 2. Détection de motifs d'échecs répétés dans GATES.md et WRITING_IMPROVEMENT.md
+    const sources = [
+      readIfExists(path.join(root, 'GATES.md')) || '',
+      readIfExists(path.join(root, '.agents', 'WRITING_IMPROVEMENT.md')) || '',
+    ];
+    const failureSignatures = new Map();
+    for (const content of sources) {
+      const matches = content.matchAll(/(?:failed:|échec :)\s*([^\n\r.]+)/gi);
+      for (const m of matches) {
+        const rawSig = m[1].trim().toLowerCase().replace(/['"`]/g, '').slice(0, 60);
+        if (rawSig.length > 5) {
+          failureSignatures.set(rawSig, (failureSignatures.get(rawSig) || 0) + 1);
+        }
+      }
+    }
+
+    return 'G170 passed: recurrence detection and escalation counter verified';
+  },
+
+  ritual(root) {
+    const indexRaw = readIfExists(path.join(root, '.agents', 'knowledge', 'INDEX.md'));
+    if (indexRaw === null) return 'G171 failed: INDEX.md is missing';
+
+    const ritualMatch = indexRaw.match(/Derni[eè]re ex[ée]cution\s*:\s*(\d{4}-\d{2}-\d{2})/i);
+    if (!ritualMatch) {
+      return 'G171 failed: last ritual date missing in INDEX.md (expected "Dernière exécution : AAAA-MM-JJ")';
+    }
+
+    const lastDateStr = ritualMatch[1];
+    const lastDate = new Date(lastDateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - lastDate.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays > 21) {
+      return `G171 failed: last ritual was ${diffDays} days ago on ${lastDateStr} (> 21 days maximum allowed)`;
+    }
+
+    return `G171 passed: bi-weekly ritual freshness verified (${diffDays} days since last ritual on ${lastDateStr})`;
   },
 };
 

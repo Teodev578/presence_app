@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Hook pre-commit natif pour PresenceApp
+# Déclenché lors d'un commit git pour valider l'intégrité de la mémoire agentique.
+
+set -e
+
+# Vérifie si le commit inclut des modifications dans la mémoire d'équipe ou les règles permanentes
+CHANGED_FILES=$(git diff --cached --name-only)
+
+if echo "$CHANGED_FILES" | grep -E '^(\.agents/knowledge/|\.agents/rules/)' > /dev/null 2>&1; then
+  echo "==> Contrôle d'intégrité de la mémoire agentique (.agents/knowledge/ ou .agents/rules/ modifiés)..."
+  if ! node scripts/knowledge-check.mjs --all; then
+    echo ""
+    echo "❌ ÉCHEC DU CONTRÔLE PRE-COMMIT :"
+    echo "   La structure, le frontmatter ou les dépendances de la mémoire agentique sont non conformes."
+    echo "   Consultez .agents/knowledge/README.md pour respecter le contrat."
+    exit 1
+  fi
+  echo "✓ Intégrité de la mémoire agentique validée."
+fi
+
+exit 0
