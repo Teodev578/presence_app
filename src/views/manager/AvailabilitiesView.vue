@@ -1663,9 +1663,9 @@ const goToPresences = (dateStr) => {
     <!-- Modale de validation d'une demande d'absence avec message d'accompagnement optionnel -->
     <div
       v-if="showValidateModal"
-      class="modal modal-open modal-bottom sm:modal-middle"
+      class="modal modal-open modal-middle"
     >
-      <div class="modal-box rounded-m3-xl p-5 sm:p-6 bg-base-100 border border-base-300 shadow-sm max-w-md flex flex-col gap-4">
+      <div class="modal-box rounded-m3-xl p-5 sm:p-6 bg-base-100 border border-base-300 shadow-sm w-11/12 max-w-md flex flex-col gap-4">
         <div class="flex items-center justify-between pb-3 border-b border-base-200">
           <div class="flex items-center gap-2">
             <div class="w-8 h-8 rounded-full bg-success/20 text-success flex items-center justify-center shrink-0">
@@ -1735,9 +1735,9 @@ const goToPresences = (dateStr) => {
     <!-- Modale de refus motivé d'une demande d'absence -->
     <div
       v-if="showRefuseModal"
-      class="modal modal-open modal-bottom sm:modal-middle"
+      class="modal modal-open modal-middle"
     >
-      <div class="modal-box rounded-m3-xl p-5 sm:p-6 bg-base-100 border border-base-300 shadow-sm max-w-md flex flex-col gap-4">
+      <div class="modal-box rounded-m3-xl p-5 sm:p-6 bg-base-100 border border-base-300 shadow-sm w-11/12 max-w-md flex flex-col gap-4">
         <div class="flex items-center justify-between pb-3 border-b border-base-200">
           <div class="flex items-center gap-2">
             <div class="w-8 h-8 rounded-full bg-error/15 text-error flex items-center justify-center shrink-0">
