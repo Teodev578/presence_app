@@ -1483,6 +1483,30 @@ Scope: Automatisation et renforcement de la mémoire agentique selon le plan d'a
     ✓ built in 1.62s
     (exit code: 0)
 
+### Lot : Éradication des Bandes et Marges Périphériques Durant le Chargement
+
+- [x] G188: Normalisation de Frame 0 sans marges natives, suppression du scale(0.995) et adhérence totale au viewport
+  CHECK: node scripts/verify-gates.mjs --loading-margins
+  EXPECT: G188 passed: frame 0 html/body reset, synchronized background color, scale-free space transition and full viewport adhesion verified
+  EVIDENCE:
+    $ node scripts/verify-gates.mjs --loading-margins
+    G188 passed: frame 0 html/body reset, synchronized background color, scale-free space transition and full viewport adhesion verified
+    (exit code: 0)
+
+- [x] G189: Validation intégrale de la suite et compilation Vite de production
+  CHECK: node scripts/verify-gates.mjs --all && npm run build
+  EXPECT: G189 passed: all deterministic gates and vite production build succeed with exit code 0
+  EVIDENCE:
+    $ node scripts/verify-gates.mjs --all && npm run build
+    G1 passed ... G188 passed: frame 0 html/body reset, synchronized background color, scale-free space transition and full viewport adhesion verified
+    vite v8.3.0 building client environment for production...
+    ✓ 122 modules transformed.
+    dist/assets/index-ChFR34zi.js  69.96 kB │ gzip: 21.35 kB
+    ✓ built in 1.40s
+    (exit code: 0)
+
+
+
 
 
 

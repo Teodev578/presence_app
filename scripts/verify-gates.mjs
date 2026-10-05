@@ -3950,6 +3950,33 @@ export function checkAppIdentity() {
   return true;
 }
 
+export function checkLoadingMargins() {
+  const indexFile = path.resolve('index.html');
+  const indexContent = fs.readFileSync(indexFile, 'utf8');
+  if (!indexContent.includes('html, body') || !indexContent.includes('margin: 0') || !indexContent.includes('padding: 0')) {
+    console.error('FAILURE G188: index.html ne réinitialise pas html, body avec margin: 0 et padding: 0 en inline');
+    return false;
+  }
+  if (!indexContent.includes('#111318')) {
+    console.error('FAILURE G188: index.html ne synchronise pas la couleur de fond sombre du body en inline');
+    return false;
+  }
+
+  const appFile = path.resolve('src/App.vue');
+  const appContent = fs.readFileSync(appFile, 'utf8');
+  if (appContent.includes('scale(') && appContent.includes('.space-enter-from')) {
+    console.error('FAILURE G188: App.vue applique encore une transformation scale() dans la transition space');
+    return false;
+  }
+  if (!appContent.includes('translateY(6px)') && !appContent.includes('translateY(-6px)')) {
+    console.error('FAILURE G188: App.vue n’applique pas la translation verticale fluide sans scale');
+    return false;
+  }
+
+  console.log('G188 passed: frame 0 html/body reset, synchronized background color, scale-free space transition and full viewport adhesion verified');
+  return true;
+}
+
 // Exécution CLI
 const arg = process.argv[2] || '--all';
 let success = true;
@@ -4106,6 +4133,8 @@ if (arg === '--emojis') {
   success = checkAppLoading();
 } else if (arg === '--app-identity') {
   success = checkAppIdentity();
+} else if (arg === '--loading-margins') {
+  success = checkLoadingMargins();
 } else if (arg === '--archive-protection') {
   success = checkPrivilegedRolesArchiveProtection();
 } else if (arg === '--knowledge-loop') {
@@ -4185,10 +4214,11 @@ if (arg === '--emojis') {
   const r182 = checkAuthTransition();
   const r184 = checkAppLoading();
   const r186 = checkAppIdentity();
+  const r188 = checkLoadingMargins();
   const r48 = r39; // Une seule compilation sert les portes de build G39 et G48
-  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60 && r63 && r64 && r65 && r66 && r72 && r73 && r74 && r75 && r88 && r89 && r92 && r93 && r94 && r95 && r96 && r97 && r147 && r150 && r156 && r159 && r162 && r165 && r167 && r169 && r175 && r176 && r177 && r178 && r180 && r182 && r184 && r186;
+  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60 && r63 && r64 && r65 && r66 && r72 && r73 && r74 && r75 && r88 && r89 && r92 && r93 && r94 && r95 && r96 && r97 && r147 && r150 && r156 && r159 && r162 && r165 && r167 && r169 && r175 && r176 && r177 && r178 && r180 && r182 && r184 && r186 && r188;
 } else {
-  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--presences-ui|--presences-period|--presences-table|--presences-sort|--presences-localfirst|--sync-scope|--livequery-deps|--manager-dexie|--manager-grammar|--manager-responsive|--manager-nav-icons|--manager-finish|--employee-finish|--settings-page|--cross-space-gateways|--back-navigation|--notification-bell|--account-lifecycle|--pending-notifications|--immediate-reject|--archived-session|--responsive-views|--archive-protection|--knowledge-loop|--absence-model|--absence-sync|--absence-notifications|--absence-ui|--account-feedback|--auth-transition|--app-loading|--app-identity|--manager-build|--sidebar-build|--build|--all]`);
+  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--presences-ui|--presences-period|--presences-table|--presences-sort|--presences-localfirst|--sync-scope|--livequery-deps|--manager-dexie|--manager-grammar|--manager-responsive|--manager-nav-icons|--manager-finish|--employee-finish|--settings-page|--cross-space-gateways|--back-navigation|--notification-bell|--account-lifecycle|--pending-notifications|--immediate-reject|--archived-session|--responsive-views|--archive-protection|--knowledge-loop|--absence-model|--absence-sync|--absence-notifications|--absence-ui|--account-feedback|--auth-transition|--app-loading|--app-identity|--loading-margins|--manager-build|--sidebar-build|--build|--all]`);
   process.exit(1);
 }
 

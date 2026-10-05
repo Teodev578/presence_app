@@ -105,7 +105,7 @@ watch([() => route.value.path, isManager, () => profile.value, profileLoading], 
   <div
     v-if="authInitializing || (isAuthenticated && !profile && profileLoading)"
     key="loading"
-    class="min-h-screen flex flex-col items-center justify-center gap-4 bg-base-100 text-base-content font-medium p-4 select-none"
+    class="w-full min-h-screen min-h-dvh flex flex-col items-center justify-center gap-4 bg-base-100 text-base-content font-medium p-4 select-none"
   >
     <div class="w-16 h-16 rounded-m3-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-xs">
       <svg
@@ -199,11 +199,11 @@ watch([() => route.value.path, isManager, () => profile.value, profileLoading], 
 
 .space-enter-from {
   opacity: 0;
-  transform: translateY(10px) scale(0.995);
+  transform: translateY(6px);
 }
 
 .space-leave-to {
   opacity: 0;
-  transform: translateY(-10px) scale(0.995);
+  transform: translateY(-6px);
 }
 </style>

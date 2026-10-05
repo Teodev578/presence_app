@@ -77,6 +77,29 @@ Il ne remplace pas `AGENTS.md` (invariants figés), `.agents/plan.md` (feuille d
 
 ## Tâches actives
 
+### Tâche : Éradication des Bandes et Marges Périphériques Durant le Chargement
+**Date** : 2026-10-05
+**Complexité** : Moyen
+**Proposant** : Fabien / presence-stack (Chloé & Lucas)
+**Story liée** : `.agents/plan.md`
+
+#### Pre-flight (10 min)
+1. Problème réel : Durant le chargement de l'application, des bandes périphériques apparaissent autour de la page. Elles sont causées par la marge native de 8px sur `body` en Frame 0 avant le chargement du reset Tailwind (provoquant un débordement de `100dvh + 16px` et une scrollbar fugitive), combinée à la transformation `scale(0.995)` dans `src/App.vue` qui décolle physiquement la vue des bords de la fenêtre durant les 250 ms de transition entre l'écran d'attente et l'écran applicatif.
+2. Contrainte principale : Maintien du responsive sans figer `overflow: hidden` sur `body` (pour ne pas casser le défilement naturel des vues longues), respect strict de la courbe M3 sans jank, zéro nouvelle dépendance.
+3. Alternative rejetée : Forcer `overflow: hidden` permanent sur `body` (rejetée car bloquerait le défilement sur les listes longues et tronquerait l'affichage sur mobile de faible hauteur) ; étendre artificiellement la durée du splash screen (rejetée car dégrade les performances perçues).
+4. Signal de fin : `html, body { margin: 0; padding: 0; width: 100%; min-height: 100%; }` déclaré inline dans `index.html` avec fonds synchronisés `#fdfcff` / `#111318` ; suppression de `scale(0.995)` au profit de `translateY(6px)` fluide dans `src/App.vue` ; validation par oracle G188 et compilation de production Vite sans erreur.
+5. Déclencheur KI : N (application rigoureuse du reset CSS et des règles d'animation plein écran).
+
+#### Résultat
+- Implémenté ? O (2026-10-05) — Portes G188 et G189 validées à 100%, suite verify-gates.mjs --all et build de production conformes.
+- Leçon tirée :
+  1. *Couplage du reset inline et de la hauteur dynamique 100dvh* : Dès lors qu'un élément du splash screen applique `min-height: 100dvh`, le `body` doit obligatoirement avoir `margin: 0; padding: 0;` déclaré dans le CSS inline du HTML initial. Omettre ce reset entraîne une addition `100dvh + 16px` qui fait jaillir une barre de défilement fugitive et décolle les éléments de 8 pixels sur tout le pourtour.
+  2. *Proscription des transformations scale() sur les conteneurs racines plein écran* : L'animation de transition entre vues racines (`App.vue`) ne doit jamais altérer la propriété `scale` (`scale(0.995)`), car elle contracte physiquement les dimensions de la page et expose le fond du viewport sous forme de bandes périphériques disgracieuses. Une translation pure `translateY(6px)` / `-6px` combinée à `opacity` préserve l'adhérence totale aux bords d'écran avec une fluidité irréprochable.
+- Portes franchies : G188, G189 validées (100% de succès sur `node scripts/verify-gates.mjs --all` et `npm run build`).
+- Escalade : Aucune (couverture complète dans les règles existantes).
+
+---
+
 ### Tâche : Uniformisation de l'Identité Visuelle, Élimination des Logos Vite et Titre d'Onglet Dynamique
 **Date** : 2026-10-05
 **Complexité** : Élevée

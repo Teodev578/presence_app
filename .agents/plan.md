@@ -1,3 +1,37 @@
+# Plan : Éradication des Bandes et Marges Périphériques Durant le Chargement
+
+Date : 2026-10-05  
+Déclencheur : Demande utilisateur (résoudre la cause des bandes autour de la page durant le chargement)  
+Statut : Terminé et Validé (Portes G188 et G189 validées, reset Frame 0 html/body actif, scale(0.995) éliminé, adhérence viewport parfaite, build conforme)  
+Porte liée : G188 / G189  
+
+## 1. Périmètre
+
+### Fichiers cibles
+- `index.html` (reset inline `html, body { margin: 0; padding: 0; width: 100%; min-height: 100%; }` et fonds `#fdfcff` / `#111318`)
+- `src/App.vue` (suppression de `scale(0.995)` dans `.space`, `w-full min-h-dvh` sur l'écran d'attente)
+- `GATES.md` (portes G188 et G189)
+- `scripts/verify-gates.mjs` (oracle déterministe pour G188)
+
+---
+
+## 2. Étapes Séquentielles
+
+1. [x] **Étape 1 : Normalisation CSS Frame 0 (`index.html`)**
+   - Réinitialiser `html, body` à `margin: 0; padding: 0; width: 100%; min-height: 100%;`.
+   - Déclarer la couleur de fond native sur `html, body` et `[data-theme="dark"]` (`#fdfcff` et `#111318`).
+   - Supprimer tout risque de débordement de 16px sur la hauteur du viewport.
+
+2. [x] **Étape 2 : Suppression du `scale(0.995)` dans la transition d'espace (`src/App.vue`)**
+   - Remplacer `scale(0.995)` par une translation verticale pure `translateY(6px)` / `-6px`.
+   - Garantir le maintien de la vue bord-à-bord contre le viewport sans décollement durant les 250 ms.
+
+3. [x] **Étape 3 : Oracle Déterministe et Validation Globale**
+   - Implémenter l'oracle G188 dans `scripts/verify-gates.mjs` (`--loading-margins`).
+   - Valider la suite intégrale `node scripts/verify-gates.mjs --all` et la compilation Vite `npm run build`.
+
+---
+
 # Plan : Identité Visuelle Officielle, Élimination des Logos Vite et Titre d'Onglet Dynamique
 
 Date : 2026-10-05  
