@@ -392,20 +392,21 @@ html, body {
    ========================================================================== */
 @media (width >= 768px) and (max-height: 760px) {
   .employee-onepage {
-    height: auto;
-    max-height: none;
-    overflow-y: auto;
+    height: 100vh;
+    height: 100dvh;
+    max-height: 100vh;
+    max-height: 100dvh;
+    overflow: hidden;
   }
 
   .employee-onepage > main {
-    overflow: visible;
+    overflow-y: auto;
     min-height: 0;
   }
 
   .employee-onepage > main > * {
     height: auto;
     max-height: none;
-    overflow: visible;
   }
 }
 

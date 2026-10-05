@@ -479,7 +479,7 @@ export function checkPastDaysDisabled() {
     console.error('FAILURE G10: WeekGrid.vue does not calculate or check isPast for days');
     return false;
   }
-  if (!content.includes(':disabled="d.isPast"')) {
+  if (!content.includes(':disabled="d.isPast"') && !content.includes(':disabled="d.isPast || d.isToday"')) {
     console.error('FAILURE G10: WeekGrid.vue does not disable checkbox toggle for past days');
     return false;
   }

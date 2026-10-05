@@ -99,8 +99,9 @@ watch(
 )
 
 const toggleDay = (day) => {
-  // Verrouille toute modification sur un jour déjà passé ou si la demande est déjà validée
+  // Verrouille toute modification sur un jour déjà passé, sur le jour en cours ou si la demande est déjà validée
   if (day.isPast) return
+  if (day.isToday) return
   if (isRequestValidated.value) return
 
   const dayId = day.id
@@ -135,6 +136,10 @@ const handleSubmit = () => {
   if (isEntireWeekPast.value) return
   if (!selectedDays.value.length) {
     toastError('Sélectionnez au moins une journée d’absence.')
+    return
+  }
+  if (!note.value.trim()) {
+    toastError('Indiquez le motif de votre absence.')
     return
   }
   showConfirmSubmitModal.value = true
@@ -300,12 +305,12 @@ const executeCancel = async () => {
         :key="d.id"
         role="checkbox"
         :aria-checked="isDayRequested(d.id)"
-        :aria-disabled="d.isPast || isRequestValidated"
-        :aria-label="`${d.label} ${d.dateFormatted}, ${isDayRequested(d.id) ? 'Jour d’absence sélectionné' : 'Jour ordinaire'}${d.isPast ? ', passé et non modifiable' : ''}`"
-        :tabindex="d.isPast || isRequestValidated ? -1 : 0"
+        :aria-disabled="d.isPast || d.isToday || isRequestValidated"
+        :aria-label="`${d.label} ${d.dateFormatted}, ${isDayRequested(d.id) ? 'Jour d’absence sélectionné' : 'Jour ordinaire'}${d.isPast ? ', passé et non modifiable' : d.isToday ? ', aujourd’hui et non modifiable' : ''}`"
+        :tabindex="d.isPast || d.isToday || isRequestValidated ? -1 : 0"
         class="card border p-3.5 sm:p-4 rounded-m3-md flex flex-row md:flex-col items-center md:items-start justify-between min-h-[76px] md:min-h-[112px] gap-2.5 transition-all select-none !outline-none shadow-xs"
         :class="[
-          d.isPast
+          d.isPast || d.isToday
             ? 'bg-base-300/40 border-base-300/40 cursor-not-allowed opacity-60'
             : isRequestValidated && isDayRequested(d.id)
               ? 'border-success border-2 bg-success/15 ring-2 ring-success/30 shadow-xs cursor-default'
@@ -321,11 +326,11 @@ const executeCancel = async () => {
       >
         <div class="flex flex-col">
           <div class="font-bold text-xs sm:text-sm text-base-content flex items-center gap-1.5">
-            <span :class="d.isPast ? 'text-base-content/60' : ''">{{ d.label }}</span>
+            <span :class="d.isPast || d.isToday ? 'text-base-content/60' : ''">{{ d.label }}</span>
             <span v-if="d.isPast" class="badge badge-ghost badge-xs text-xs text-base-content/50 rounded-m3-xs py-0.5 px-1.5">Passé</span>
+            <span v-else-if="d.isToday" class="badge badge-ghost badge-xs text-xs text-base-content/60 font-semibold rounded-m3-xs py-0.5 px-1.5">Aujourd'hui</span>
             <span v-else-if="isRequestValidated && isDayRequested(d.id)" class="badge badge-success text-success-content badge-xs font-bold rounded-m3-xs">Validé</span>
             <span v-else-if="isRequestSubmitted && isDayRequested(d.id)" class="badge badge-warning text-warning-content badge-xs font-semibold rounded-m3-xs">En attente</span>
-            <span v-else-if="d.isToday" class="badge badge-primary badge-xs font-bold rounded-m3-xs">Aujourd'hui</span>
           </div>
           <div class="text-xs text-base-content/50 mt-0.5">{{ d.dateFormatted }}</div>
         </div>
@@ -346,31 +351,36 @@ const executeCancel = async () => {
           v-else
           type="checkbox"
           class="toggle toggle-primary pointer-events-none md:mt-auto"
-          :class="d.isPast ? 'opacity-40' : ''"
+          :class="d.isPast || d.isToday ? 'opacity-40' : ''"
           :checked="isDayRequested(d.id)"
-          :disabled="d.isPast"
+          :disabled="d.isPast || d.isToday"
           tabindex="-1"
           aria-hidden="true"
         />
       </div>
     </div>
 
-    <!-- Précision / Note pour le responsable -->
+    <!-- Motif obligatoire pour le responsable -->
     <div class="bg-base-100/70 border border-base-300/40 rounded-m3-lg p-3 sm:p-3.5 flex flex-col gap-1.5 shadow-xs">
-      <label for="week-note" class="text-xs font-semibold text-base-content/75 flex items-center gap-1.5">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-        </svg>
-        Précision ou motif de votre absence (optionnel)
-      </label>
+      <div class="flex items-center justify-between">
+        <label for="week-note" class="text-xs font-semibold text-base-content/75 flex items-center gap-1.5">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+          </svg>
+          <span>Motif de votre absence</span>
+          <span class="text-error font-bold" aria-hidden="true">*</span>
+        </label>
+        <span class="badge badge-xs badge-neutral rounded-m3-xs font-semibold">Obligatoire</span>
+      </div>
       <textarea
         id="week-note"
         v-model="note"
         rows="2"
+        required
         class="textarea textarea-bordered w-full rounded-m3-sm text-xs sm:text-sm py-2 px-3 bg-base-200 border-base-300 text-base-content placeholder:text-base-content/50 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary"
         :disabled="isEntireWeekPast || isRequestValidated"
-        :placeholder="isEntireWeekPast ? 'Semaine archivée' : 'Ex : Congés, obligation personnelle, formation...'"
+        :placeholder="isEntireWeekPast ? 'Semaine archivée' : 'Indiquez le motif de votre absence (congés, impératif familial, formation...)'"
       ></textarea>
     </div>
 
@@ -409,7 +419,7 @@ const executeCancel = async () => {
             ? 'btn-success text-success-content focus-visible:ring-success'
             : 'btn-primary focus-visible:ring-primary'
         ]"
-        :disabled="isSubmitting || isEntireWeekPast || selectedDays.length === 0"
+        :disabled="isSubmitting || isEntireWeekPast || selectedDays.length === 0 || !note.trim()"
         :aria-label="`Demande d'absence : ${availabilitySummary.label}`"
         @click="handleSubmit"
       >

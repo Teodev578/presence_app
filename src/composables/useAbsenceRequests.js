@@ -62,6 +62,7 @@ export function useAbsenceRequests(weekStartRef = null) {
   const submitRequest = async ({ weekStart, days, note = '' }) => {
     if (!user.value?.id) throw new Error('Utilisateur non authentifié.')
     if (!days || !days.length) throw new Error('Sélectionnez au moins un jour.')
+    if (!note || !note.trim()) throw new Error('Indiquez le motif de votre absence.')
 
     const userId = user.value.id
     const nowIso = new Date().toISOString()

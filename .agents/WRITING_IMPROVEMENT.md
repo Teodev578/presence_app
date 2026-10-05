@@ -106,13 +106,15 @@ Il ne remplace pas `AGENTS.md` (invariants figés), `.agents/plan.md` (feuille d
 7. Section de gestion dans `src/views/manager/AvailabilitiesView.vue` pour arbitrer les demandes (validation ou refus avec motif optionnel).
 
 #### Résultat
-- Implémenté ? O — 2026-10-05 (ajustements thème M3, notification de soumission employé et modale de validation avec message d'accompagnement inclus)
+- Implémenté ? O — 2026-10-05 (ajustements thème M3, notification de soumission employé, modales de validation et annulation centrées sur mobile avec motif d'accompagnement, verrouillage du jour en cours et motif d'absence obligatoire)
 - Leçon tirée :
   1. Dériver les notifications in-app directement depuis les requêtes réactives Dexie (`useLiveQuery` sur `absence_requests`) s'avère supérieur à une table de messages push tierce : synchronisation temps réel sans latence, zéro notification fantôme et cohérence transactionnelle locale garantie.
   2. L'encapsulation des mutations dans la Transactional Outbox avec UUIDv7 et `client_mutation_id` permet un fonctionnement hors-ligne complet (soumission et annulation côté employé, arbitrage côté manager), avec réconciliation idempotente transparente sur Supabase.
   3. Contraste et tokens de couleur On-Color : ne jamais combiner `text-warning-content` ou `text-success-content` (qui sont blancs en thème clair) avec un fond à faible opacité (`bg-warning/10` ou `bg-success/10`), sous peine de rendre le texte totalement illisible. Préférer une surface container M3 neutre `bg-base-200` avec bordure d'accentuation, pastille pleine `bg-warning text-warning-content` pour l'icône, et texte principal en `text-base-content`.
   4. L'arbitrage managérial gagne à être systématiquement doté d'un canal d'expression optionnel (message d'accompagnement lors de la validation tout autant que motif lors du refus), répercuté directement dans les notifications et sur le planning de l'employé.
-- Portes franchies : G175, G176, G177, G178, G179 validées (100% de succès sur `node scripts/verify-gates.mjs --all` et `npm run build`).
+  5. Règle métier temporelle sur l'absence : l'invalidation du jour courant (`isToday`) couplée aux jours passés (`isPast`) renforce l'intégrité de l'application en évitant les demandes d'absence rétroactives ou le jour même. La contrainte sur le motif d'absence obligatoire responsabilise l'employé et fournit immédiatement au manager le contexte indispensable pour statuer.
+  6. Ergonomie du bandeau supérieur fixe multi-formats : pour garantir que le bandeau reste ancré en haut sur desktop et tablette comme sur mobile sans rompre le contexte `position: sticky; top: 0`, le conteneur principal `employee-onepage` doit conserver sa hauteur bornée (`100dvh` / `overflow: hidden`) et déléguer le défilement vertical interne à `<main class="overflow-y-auto">`. Remplacer l'ancien `height: auto; overflow-y: auto;` global par cette structure élimine l'éjection du bandeau vers le haut lors du scroll sur les écrans de faible hauteur verticale (≤ 760px).
+- Portes franchies : G10, G43, G94, G175, G176, G177, G178, G179 validées (100% de succès sur `node scripts/verify-gates.mjs --all` et `npm run build`).
 - Escalade : Aucune (couverture complète dans les règles existantes).
 
 ### Tâche : Audit next-level-ui — 2026-10-02
