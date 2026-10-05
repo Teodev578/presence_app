@@ -46,6 +46,10 @@ class PresenceDatabase extends Dexie {
         }
       })
     })
+
+    this.version(4).stores({
+      absence_requests: 'id, user_id, week_start, status, client_mutation_id, updated_at, deleted_at',
+    })
   }
 }
 

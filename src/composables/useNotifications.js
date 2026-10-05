@@ -2,6 +2,7 @@ import { ref, computed } from 'vue'
 import { db, useLiveQuery } from '../lib/db'
 import { useAuth } from './useAuth'
 import { useProfile } from './useProfile'
+import { formatWeekLabel } from './useAvailabilities'
 
 const dismissedNotificationIds = ref(new Set())
 
@@ -26,6 +27,45 @@ export function useNotifications() {
       return []
     }
   }, [isManager])
+
+  // 1bis. Demandes d'absence en attente pour les superviseurs
+  const pendingAbsenceRequests = useLiveQuery(async () => {
+    if (!isManager.value) return []
+    try {
+      return await db.absence_requests
+        .where('status')
+        .equals('submitted')
+        .filter((r) => !r.deleted_at)
+        .toArray()
+    } catch (e) {
+      console.warn('Erreur lecture demandes absence Dexie :', e)
+      return []
+    }
+  }, [isManager])
+
+  // 1ter. Profils pour joindre le nom du demandeur
+  const allProfiles = useLiveQuery(async () => {
+    try {
+      return await db.profiles.toArray()
+    } catch {
+      return []
+    }
+  }, [])
+
+  // 1quater. Demandes d'absence personnelles du collaborateur connecté
+  const myAbsenceRequests = useLiveQuery(async () => {
+    if (!user.value?.id) return []
+    try {
+      return await db.absence_requests
+        .where('user_id')
+        .equals(user.value.id)
+        .filter((r) => !r.deleted_at && (r.status === 'submitted' || r.status === 'validated' || r.status === 'refused'))
+        .toArray()
+    } catch (e) {
+      console.warn('Erreur lecture demandes personnelles Dexie :', e)
+      return []
+    }
+  }, [() => user.value?.id])
 
   // 2. Calcul des notifications actives
   const notifications = computed(() => {
@@ -52,6 +92,29 @@ export function useNotifications() {
           actionLabel: 'Examiner dans l’équipe',
           profileId: p.id,
           createdAt: p.created_at,
+          unread: !dismissedNotificationIds.value.has(notifId),
+        })
+      }
+
+      // Demandes d'absence soumises par l'équipe
+      const profilesMap = new Map((allProfiles.value || []).map((p) => [p.id, p]))
+      const absenceList = pendingAbsenceRequests.value || []
+      for (const req of absenceList) {
+        const p = profilesMap.get(req.user_id)
+        const notifId = `pending-absence-${req.id}`
+        const daysCount = (req.days || []).length
+        const daysLabel = daysCount > 1 ? `${daysCount} jours` : '1 jour'
+        items.push({
+          id: notifId,
+          type: 'absence_request_pending',
+          title: 'Demande d’absence en attente',
+          subtitle: p?.full_name ? `${p.full_name}` : 'Collaborateur',
+          badge: 'À traiter',
+          badgeClass: 'badge-warning text-warning-content',
+          message: `${p?.full_name || 'Un collaborateur'} sollicite une absence pour la semaine du ${formatWeekLabel(req.week_start, { short: true })} (${daysLabel}).`,
+          targetRoute: '/manager/availabilities',
+          actionLabel: 'Examiner les demandes',
+          createdAt: req.created_at,
           unread: !dismissedNotificationIds.value.has(notifId),
         })
       }
@@ -108,6 +171,61 @@ export function useNotifications() {
           createdAt: profile.value?.updated_at || Date.now(),
           unread: !dismissedNotificationIds.value.has(notifId),
         })
+      }
+
+      // Notifications relatives aux demandes d'absence de l'employé
+      const myAbsences = myAbsenceRequests.value || []
+      for (const req of myAbsences) {
+        const notifId = `my-absence-${req.id}-${req.status}`
+        const daysCount = (req.days || []).length
+        const daysLabel = daysCount > 1 ? `${daysCount} jours` : '1 jour'
+        const weekLabel = formatWeekLabel(req.week_start, { short: true })
+
+        if (req.status === 'submitted') {
+          items.push({
+            id: notifId,
+            type: 'absence_request_submitted',
+            title: 'Demande d’absence transmise',
+            subtitle: `Semaine du ${weekLabel}`,
+            badge: 'En attente',
+            badgeClass: 'badge-warning text-warning-content',
+            message: `Votre demande d’absence (${daysLabel}) a été transmise à votre responsable et est en cours d’examen.`,
+            targetRoute: '/employee/availabilities',
+            actionLabel: 'Consulter ma demande',
+            createdAt: req.created_at,
+            unread: !dismissedNotificationIds.value.has(notifId),
+          })
+        } else if (req.status === 'validated') {
+          const noteText = req.decision_note ? ` Message du responsable : « ${req.decision_note} »` : ''
+          items.push({
+            id: notifId,
+            type: 'absence_request_response',
+            title: 'Demande d’absence accordée',
+            subtitle: `Semaine du ${weekLabel}`,
+            badge: 'Accordée',
+            badgeClass: 'badge-success text-success-content',
+            message: `Votre responsable a validé votre absence pour la semaine (${daysLabel}). Les jours accordés sont signalés en vert sur votre planning.${noteText}`,
+            targetRoute: '/employee/availabilities',
+            actionLabel: 'Consulter mon planning',
+            createdAt: req.decided_at || req.updated_at,
+            unread: !dismissedNotificationIds.value.has(notifId),
+          })
+        } else if (req.status === 'refused') {
+          const noteText = req.decision_note ? ` Motif : « ${req.decision_note} »` : ''
+          items.push({
+            id: notifId,
+            type: 'absence_request_response',
+            title: 'Demande d’absence refusée',
+            subtitle: `Semaine du ${weekLabel}`,
+            badge: 'Refusée',
+            badgeClass: 'badge-error text-error-content',
+            message: `Votre demande d’absence pour la semaine (${daysLabel}) n’a pas été accordée.${noteText}`,
+            targetRoute: '/employee/availabilities',
+            actionLabel: 'Consulter mon planning',
+            createdAt: req.decided_at || req.updated_at,
+            unread: !dismissedNotificationIds.value.has(notifId),
+          })
+        }
       }
     }
 

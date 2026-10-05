@@ -1355,5 +1355,51 @@ Scope: Automatisation et renforcement de la mémoire agentique selon le plan d'a
     ✓ built in 1.50s
     (exit code: 0)
 
+### Lot : Demande d'Absence et Validation Hiérarchique
+
+- [x] G175: Modèle Supabase, types TypeScript et schéma Dexie v4 pour absence_requests
+  CHECK: node scripts/verify-gates.mjs --absence-model
+  EXPECT: G175 passed: absence_requests supabase migration, types, and Dexie v4 store verified
+  EVIDENCE:
+    $ node scripts/verify-gates.mjs --absence-model
+    G175 passed: absence_requests supabase migration, types, and Dexie v4 store verified
+    (exit code: 0)
+
+- [x] G176: Synchronisation Outbox, Pull par rôle et composable useAbsenceRequests
+  CHECK: node scripts/verify-gates.mjs --absence-sync
+  EXPECT: G176 passed: absence requests sync engine integration and composable logic verified
+  EVIDENCE:
+    $ node scripts/verify-gates.mjs --absence-sync
+    G176 passed: absence requests sync engine integration and composable logic verified
+    (exit code: 0)
+
+- [x] G177: Notifications croisées réactives pour gestionnaires et collaborateurs
+  CHECK: node scripts/verify-gates.mjs --absence-notifications
+  EXPECT: G177 passed: absence request notification reactive queries and bell integration verified
+  EVIDENCE:
+    $ node scripts/verify-gates.mjs --absence-notifications
+    G177 passed: absence request notification reactive queries and bell integration verified
+    (exit code: 0)
+
+- [x] G178: Ergonomie employé (demande/annulation/contour vert) et arbitrage manager
+  CHECK: node scripts/verify-gates.mjs --absence-ui
+  EXPECT: G178 passed: absence employee and manager UI interactions and M3 styling verified
+  EVIDENCE:
+    $ node scripts/verify-gates.mjs --absence-ui
+    G178 passed: absence employee and manager UI interactions and M3 styling verified
+    (exit code: 0)
+
+- [x] G179: Validation intégrale de la suite et compilation de production Vite
+  CHECK: node scripts/verify-gates.mjs --all && npm run build
+  EXPECT: G179 passed: all deterministic gates and vite production build succeed with exit code 0
+  EVIDENCE:
+    $ node scripts/verify-gates.mjs --all && npm run build
+    G1 passed ... G178 passed: absence employee and manager UI interactions and M3 styling verified
+    vite v8.3.0 building client environment for production...
+    ✓ built in 1.25s
+    (exit code: 0)
+
+
+
 
 

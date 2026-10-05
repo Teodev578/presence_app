@@ -77,6 +77,44 @@ Il ne remplace pas `AGENTS.md` (invariants figés), `.agents/plan.md` (feuille d
 
 ## Tâches actives
 
+### Tâche : Demande d'Absence avec Validation Hiérarchique
+**Date** : 2026-10-05
+**Complexité** : Élevée
+**Proposant** : Fabien / unlazy & rigueur-code
+**Story liée** : `.scratch/absence-requests/issues/01-demande-absence.md`
+
+#### Analyse
+- **Hypothèse initiale** : L'enregistrement purement déclaratif des disponibilités par l'employé doit évoluer vers un système formel de demande d'absence avec arbitrage par les gestionnaires/administrateurs. L'action principale devient « Demande d'absence », avec faculté d'annulation pour le collaborateur. Dès validation par le supérieur, les jours accordés se parent d'un indicateur naturel vert (contour et tonalité `success` M3). Les deux parties bénéficient de notifications in-app automatiques réactives à chaque transition d'état.
+- **Contraintes identifiées** :
+  - Respect de l'architecture Local-First : persistance IndexedDB immédiate dans Dexie v4, passage par l'outbox transactionnelle avec UUIDv7 et `client_mutation_id`, pull incrémental s'appuyant sur le rôle (l'employé ne pull que ses demandes, le manager s'en remet à la RLS de son équipe/organisation).
+  - RLS PostgreSQL étanche sur Supabase : l'employé ne peut ni valider ses propres demandes, ni modifier une demande déjà arbitrée (hormis annulation autorisée) ; le manager ne peut pas usurper l'identité d'un collaborateur pour soumettre une demande.
+  - Interdiction stricte de toucher aux versions de dépendances du projet (`package.json`, `package-lock.json`).
+  - Sanctuarisation de la navigation : le bouton retour, les règles de responsive et le flux de pointage employé doivent rester strictement intacts.
+- **Alternatives envisagées** :
+  - *Option A (Surcharger la table existante `availabilities` avec un booléen `is_approved`)* : **Rejetée** car elle introduit une confusion sémantique grave entre les jours où l'employé est présent/disponible sur site et les périodes où il sollicite un congé ou une absence autorisée. De plus, cela polluerait l'historique des déclarations hebdomadaires existantes et compliquerait la gestion des refus et des motifs d'arbitrage.
+  - *Option B (Table dédiée `notifications` avec déclencheurs push complexes)* : **Rejetée** car surdimensionnée pour ce besoin. La règle de sobriété technique et le pattern éprouvé dans `useNotifications.js` démontrent que dériver les alertes de l'état réel des tables métiers (`absence_requests` et `profiles`) via `useLiveQuery` offre une réactivité sans faille et élimine tout risque de désynchronisation entre les alertes et les données sous-jacentes.
+  - *Option C (Création d'une table dédiée `absence_requests` avec cycle d'états complet, notifications dérivées et synergie Dexie/Supabase)* : **Retenue (recommandée)** car elle isole nettement le concept d'absence réglementée, conserve la traçabilité des décisions managériales (`decided_by`, `decided_at`, `decision_note`), préserve l'intégrité de la table `availabilities` et permet une UX limpide (contour vert naturel `success` sur les jours validés, bouton d'annulation contextuel).
+
+#### Décision
+**Choix retenu** :
+1. Migration Supabase `20261005170000_create_absence_requests.sql` avec typage strict, index B-Tree, RLS protectrice et écoute Realtime CDC.
+2. Version 4 de Dexie.js dans `src/lib/db.js` ajoutant la table `absence_requests`.
+3. Composable métier `src/composables/useAbsenceRequests.js` avec outbox transactionnelle et réactivité `useLiveQuery`.
+4. Intégration dans `useSyncEngine.js` (pull incrémental par rôle et réplication push outbox).
+5. Notification in-app dans `useNotifications.js` : le manager est alerté des demandes `submitted` et des annulations ; l'employé est alerté lors de la validation ou du refus.
+6. Refonte UX dans `src/views/employee/AvailabilitiesView.vue` et `src/components/employee/WeekGrid.vue` : libellé « Demande d'absence », bouton « Annuler ma demande » si une demande est active, indicateur visuel naturel vert sur les jours validés.
+7. Section de gestion dans `src/views/manager/AvailabilitiesView.vue` pour arbitrer les demandes (validation ou refus avec motif optionnel).
+
+#### Résultat
+- Implémenté ? O — 2026-10-05 (ajustements thème M3, notification de soumission employé et modale de validation avec message d'accompagnement inclus)
+- Leçon tirée :
+  1. Dériver les notifications in-app directement depuis les requêtes réactives Dexie (`useLiveQuery` sur `absence_requests`) s'avère supérieur à une table de messages push tierce : synchronisation temps réel sans latence, zéro notification fantôme et cohérence transactionnelle locale garantie.
+  2. L'encapsulation des mutations dans la Transactional Outbox avec UUIDv7 et `client_mutation_id` permet un fonctionnement hors-ligne complet (soumission et annulation côté employé, arbitrage côté manager), avec réconciliation idempotente transparente sur Supabase.
+  3. Contraste et tokens de couleur On-Color : ne jamais combiner `text-warning-content` ou `text-success-content` (qui sont blancs en thème clair) avec un fond à faible opacité (`bg-warning/10` ou `bg-success/10`), sous peine de rendre le texte totalement illisible. Préférer une surface container M3 neutre `bg-base-200` avec bordure d'accentuation, pastille pleine `bg-warning text-warning-content` pour l'icône, et texte principal en `text-base-content`.
+  4. L'arbitrage managérial gagne à être systématiquement doté d'un canal d'expression optionnel (message d'accompagnement lors de la validation tout autant que motif lors du refus), répercuté directement dans les notifications et sur le planning de l'employé.
+- Portes franchies : G175, G176, G177, G178, G179 validées (100% de succès sur `node scripts/verify-gates.mjs --all` et `npm run build`).
+- Escalade : Aucune (couverture complète dans les règles existantes).
+
 ### Tâche : Audit next-level-ui — 2026-10-02
 **Date** : 2026-10-02
 **Complexité** : Élevée

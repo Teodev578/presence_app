@@ -15,7 +15,7 @@ const { navigate } = useRouter()
       </div>
 
       <p class="text-xs sm:text-sm text-base-content/65 leading-relaxed shrink-0">
-        Indiquez vos jours de présence prévus sur site pour faciliter la coordination avec votre équipe.
+        Indiquez vos jours d'absence prévus pour transmettre votre demande à votre responsable. Les jours validés apparaîtront en vert sur votre planning.
       </p>
 
       <!-- Grille de saisie hebdomadaire -->

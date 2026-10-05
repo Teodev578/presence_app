@@ -8,6 +8,7 @@ import { useSyncEngine } from '../../composables/useSyncEngine'
 import { useToast } from '../../composables/useToast'
 import { getLocalDateString, formatTime, formatWorkDate, calculateWorkDuration, getPublicHoliday } from '../../lib/dateUtils'
 import { getMonday, formatWeekLabel } from '../../composables/useAvailabilities'
+import { useAbsenceRequests } from '../../composables/useAbsenceRequests'
 import ManagerPageHeader from '../../components/manager/ManagerPageHeader.vue'
 import ManagerKpiCard from '../../components/manager/ManagerKpiCard.vue'
 import ManagerEmptyState from '../../components/manager/ManagerEmptyState.vue'
@@ -16,6 +17,7 @@ const { navigate } = useRouter()
 const { user } = useAuth()
 const { refreshPendingCount, syncNow } = useSyncEngine()
 const { success: toastSuccess, error: toastError } = useToast()
+const { validateRequest, refuseRequest } = useAbsenceRequests()
 
 const selectedWeekStart = ref(getMonday())
 const todayStr = getLocalDateString()
@@ -76,6 +78,130 @@ const presenceRows = useLiveQuery(async () =>
 
 const teamRows = useLiveQuery(async () => db.teams.toArray(), [])
 const locationRows = useLiveQuery(async () => db.locations.toArray(), [])
+
+// Demandes d'absence de la semaine affichée
+const absenceRequestRows = useLiveQuery(
+  async () => {
+    try {
+      return await db.absence_requests
+        .where('week_start')
+        .equals(selectedWeekStart.value)
+        .filter((r) => !r.deleted_at)
+        .toArray()
+    } catch {
+      return []
+    }
+  },
+  [],
+  () => selectedWeekStart.value
+)
+
+// Toutes les demandes d'absence en attente d'arbitrage
+const pendingAbsenceRows = useLiveQuery(
+  async () => {
+    try {
+      return await db.absence_requests
+        .where('status')
+        .equals('submitted')
+        .filter((r) => !r.deleted_at)
+        .toArray()
+    } catch {
+      return []
+    }
+  },
+  []
+)
+
+const isProcessingAbsence = ref(false)
+const showValidateModal = ref(false)
+const absenceToValidate = ref(null)
+const validateNote = ref('')
+
+const showRefuseModal = ref(false)
+const absenceToRefuse = ref(null)
+const refuseNote = ref('')
+
+const getEmployeeName = (userId) => {
+  const emp = (employeeRows.value || []).find((p) => p.id === userId)
+  return emp?.full_name || 'Collaborateur'
+}
+
+const getEmployeeTeamName = (userId) => {
+  const emp = (employees.value || []).find((p) => p.id === userId)
+  return emp?.teams?.name || 'Sans équipe'
+}
+
+const formatRequestDays = (daysArray, weekStart) => {
+  if (!daysArray || !daysArray.length) return ''
+  const base = new Date(`${weekStart}T12:00:00`)
+  return daysArray.map((dayNum) => {
+    const d = new Date(base)
+    d.setDate(base.getDate() + (dayNum - 1))
+    return d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
+  }).join(', ')
+}
+
+const openValidateModal = (req) => {
+  absenceToValidate.value = req
+  validateNote.value = ''
+  showValidateModal.value = true
+}
+
+const closeValidateModal = () => {
+  showValidateModal.value = false
+  absenceToValidate.value = null
+  validateNote.value = ''
+}
+
+const handleConfirmValidate = async () => {
+  if (!absenceToValidate.value) return
+  isProcessingAbsence.value = true
+  try {
+    await validateRequest({
+      requestId: absenceToValidate.value.id,
+      decisionNote: validateNote.value.trim(),
+    })
+    toastSuccess('La demande d’absence a été validée.')
+    closeValidateModal()
+  } catch (err) {
+    toastError(`Erreur : ${err.message}`)
+  } finally {
+    isProcessingAbsence.value = false
+  }
+}
+
+const handleValidateAbsence = (req) => {
+  openValidateModal(req)
+}
+
+const openRefuseModal = (req) => {
+  absenceToRefuse.value = req
+  refuseNote.value = ''
+  showRefuseModal.value = true
+}
+
+const closeRefuseModal = () => {
+  showRefuseModal.value = false
+  absenceToRefuse.value = null
+  refuseNote.value = ''
+}
+
+const handleConfirmRefuse = async () => {
+  if (!absenceToRefuse.value) return
+  isProcessingAbsence.value = true
+  try {
+    await refuseRequest({
+      requestId: absenceToRefuse.value.id,
+      decisionNote: refuseNote.value.trim(),
+    })
+    toastSuccess('La demande d’absence a été refusée.')
+    closeRefuseModal()
+  } catch (err) {
+    toastError(`Erreur : ${err.message}`)
+  } finally {
+    isProcessingAbsence.value = false
+  }
+}
 
 const companySettingsRow = useLiveQuery(
   async () => {
@@ -213,9 +339,15 @@ const dayState = (empId, dayNumber) => {
   const presence = getActualPresence(empId, dayNumber) || null
   const isExplicitlyUnavailable = configured && !activeRecord
 
+  const validatedAbsence = (absenceRequestRows.value || []).find(
+    (r) => r.user_id === empId && r.status === 'validated' && (r.days || []).includes(dayNumber)
+  )
+
   let type = 'future_planned'
   if (presence) {
     type = 'present'
+  } else if (validatedAbsence) {
+    type = 'validated_absence'
   } else if (isHoliday) {
     type = 'holiday'
   } else if (isExplicitlyUnavailable) {
@@ -241,6 +373,7 @@ const dayState = (empId, dayNumber) => {
     locationName,
     isHoliday,
     holidayName,
+    validatedAbsence,
   }
 }
 
@@ -274,7 +407,7 @@ const stats = computed(() => {
   for (const emp of filteredEmployees.value) {
     for (const d of allWeekDays) {
       const state = dayState(emp.id, d.id)
-      if (state.type === 'absent' || state.type === 'future_absent') {
+      if (state.type === 'absent' || state.type === 'future_absent' || state.type === 'validated_absence') {
         absentCount++
       } else if (state.type !== 'holiday') {
         totalPlanned++
@@ -282,7 +415,7 @@ const stats = computed(() => {
     }
     for (const d of pastOrTodayDays) {
       const state = dayState(emp.id, d.id)
-      if (state.type !== 'absent' && state.type !== 'holiday') {
+      if (state.type !== 'absent' && state.type !== 'future_absent' && state.type !== 'validated_absence' && state.type !== 'holiday') {
         expectedElapsed++
         if (state.presence) {
           pointedCount++
@@ -727,6 +860,94 @@ const goToPresences = (dateStr) => {
       />
     </div>
 
+    <!-- Demandes d'absence de l'équipe à arbitrer -->
+    <div
+      v-if="pendingAbsenceRows && pendingAbsenceRows.length > 0"
+      class="card bg-base-200 border border-warning/40 shadow-xs rounded-m3-lg p-4 sm:p-5 flex flex-col gap-3.5"
+    >
+      <div class="flex items-center justify-between pb-2 border-b border-base-300/60">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-full bg-warning text-warning-content flex items-center justify-center shrink-0">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+          </div>
+          <div>
+            <h3 class="font-bold text-sm sm:text-base text-base-content leading-tight">
+              Demandes d’absence à traiter
+            </h3>
+            <p class="text-xs text-base-content/60">
+              {{ pendingAbsenceRows.length > 1 ? `${pendingAbsenceRows.length} demandes en attente d’arbitrage` : '1 demande en attente d’arbitrage' }}
+            </p>
+          </div>
+        </div>
+        <span class="badge badge-warning badge-sm font-semibold rounded-m3-xs">
+          {{ pendingAbsenceRows.length }}
+        </span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div
+          v-for="req in pendingAbsenceRows"
+          :key="req.id"
+          class="p-3.5 rounded-m3-md border border-base-300 bg-base-100 flex flex-col justify-between gap-3 shadow-2xs hover:border-primary/40 transition-colors"
+        >
+          <div class="flex flex-col gap-1.5">
+            <div class="flex items-start justify-between gap-2">
+              <div class="flex flex-col">
+                <span class="font-bold text-xs sm:text-sm text-base-content">
+                  {{ getEmployeeName(req.user_id) }}
+                </span>
+                <span class="text-xs text-base-content/60">
+                  {{ getEmployeeTeamName(req.user_id) }}
+                </span>
+              </div>
+              <span class="badge badge-warning badge-xs font-semibold rounded-m3-xs">
+                En attente
+              </span>
+            </div>
+
+            <div class="text-xs text-base-content/85 flex flex-wrap items-center gap-1.5 mt-0.5">
+              <span class="font-medium text-primary">
+                {{ formatWeekLabel(req.week_start, { short: true }) }}
+              </span>
+              <span>·</span>
+              <span class="font-semibold">
+                {{ formatRequestDays(req.days, req.week_start) }}
+              </span>
+            </div>
+
+            <p v-if="req.note" class="text-xs text-base-content/70 italic bg-base-300/40 p-2 rounded-m3-xs border border-base-300/40">
+              « {{ req.note }} »
+            </p>
+          </div>
+
+          <div class="flex items-center justify-end gap-2 pt-2 border-t border-base-200">
+            <button
+              type="button"
+              class="btn btn-ghost min-h-11 px-3.5 text-xs text-error hover:bg-error/10 font-semibold rounded-m3-sm active:scale-95 transition-transform"
+              :disabled="isProcessingAbsence"
+              @click="openRefuseModal(req)"
+            >
+              Refuser
+            </button>
+            <button
+              type="button"
+              class="btn btn-success min-h-11 px-4 text-xs text-success-content font-bold rounded-m3-sm active:scale-95 transition-transform gap-1.5"
+              :disabled="isProcessingAbsence"
+              @click="handleValidateAbsence(req)"
+            >
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              <span>Valider la demande</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Filtres & Légende épurée -->
     <div class="card bg-base-200 border border-base-300 shadow-xs rounded-m3-lg p-4 flex flex-col gap-3.5">
       <div class="flex flex-col sm:flex-row sm:items-end gap-3">
@@ -905,6 +1126,15 @@ const goToPresences = (dateStr) => {
                 </span>
               </div>
 
+              <div v-else-if="dayState(emp.id, d.id).type === 'validated_absence'" class="flex items-center gap-1">
+                <span class="badge badge-sm badge-success text-success-content font-bold rounded-m3-xs gap-1">
+                  <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                  <span>Absence validée</span>
+                </span>
+              </div>
+
               <div v-else-if="dayState(emp.id, d.id).type === 'missing'" class="flex items-center gap-1">
                 <span class="badge badge-sm badge-warning text-warning-content font-semibold rounded-m3-xs gap-1">
                   <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1040,6 +1270,17 @@ const goToPresences = (dateStr) => {
                       <span class="text-xs text-base-content/60 truncate max-w-[100px]">
                         {{ dayState(emp.id, d.id).isHoliday ? `${dayState(emp.id, d.id).locationName || 'Pointé'} (Férié)` : (dayState(emp.id, d.id).locationName || 'Pointé') }}
                       </span>
+                    </template>
+
+                    <!-- Absence validée par le supérieur (indicateur vert naturel) -->
+                    <template v-else-if="dayState(emp.id, d.id).type === 'validated_absence'">
+                      <span class="badge badge-sm badge-success text-success-content font-bold rounded-m3-xs gap-1">
+                        <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        <span>Absence validée</span>
+                      </span>
+                      <span class="text-xs text-success/80 font-medium">Accordée</span>
                     </template>
 
                     <!-- Férié chômé : pas d'anomalie, état neutre informatif -->
@@ -1417,6 +1658,148 @@ const goToPresences = (dateStr) => {
         </form>
       </div>
       <div class="modal-backdrop" @click="closeCompanyScheduleModal"></div>
+    </div>
+
+    <!-- Modale de validation d'une demande d'absence avec message d'accompagnement optionnel -->
+    <div
+      v-if="showValidateModal"
+      class="modal modal-open modal-bottom sm:modal-middle"
+    >
+      <div class="modal-box rounded-m3-xl p-5 sm:p-6 bg-base-100 border border-base-300 shadow-sm max-w-md flex flex-col gap-4">
+        <div class="flex items-center justify-between pb-3 border-b border-base-200">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full bg-success/20 text-success flex items-center justify-center shrink-0">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+            <h3 class="font-bold text-base text-base-content">Valider la demande d’absence</h3>
+          </div>
+          <button
+            type="button"
+            class="btn btn-ghost btn-circle min-h-11 min-w-11"
+            aria-label="Fermer"
+            @click="closeValidateModal"
+          >
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <p class="text-xs sm:text-sm text-base-content/80 leading-relaxed">
+          Vous vous apprêtez à valider la demande d’absence de
+          <strong>{{ getEmployeeName(absenceToValidate?.user_id) }}</strong> pour la semaine du
+          {{ formatWeekLabel(absenceToValidate?.week_start, { short: true }) }}
+          <template v-if="absenceToValidate?.days && absenceToValidate.days.length">
+            ({{ formatRequestDays(absenceToValidate.days, absenceToValidate.week_start) }})
+          </template>.
+        </p>
+
+        <div class="flex flex-col gap-1.5">
+          <label for="validate-note" class="text-xs font-semibold text-base-content/70">
+            Message d’accompagnement pour le collaborateur (optionnel)
+          </label>
+          <textarea
+            id="validate-note"
+            v-model="validateNote"
+            rows="3"
+            class="textarea textarea-bordered w-full text-xs sm:text-sm rounded-m3-sm bg-base-200/50 text-base-content placeholder:text-base-content/50"
+            placeholder="Ex : Validé, bon repos ! / Accordé, pense à passer le relais..."
+          ></textarea>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-base-200">
+          <button
+            type="button"
+            class="btn btn-ghost min-h-11 px-4 text-xs font-semibold rounded-m3-sm active:scale-95 transition-transform"
+            @click="closeValidateModal"
+          >
+            Annuler
+          </button>
+          <button
+            type="button"
+            class="btn btn-success text-success-content min-h-11 px-4 text-xs font-bold rounded-m3-sm active:scale-95 transition-transform"
+            :disabled="isProcessingAbsence"
+            @click="handleConfirmValidate"
+          >
+            <span v-if="isProcessingAbsence" class="loading loading-spinner loading-xs mr-1"></span>
+            <span>Confirmer la validation</span>
+          </button>
+        </div>
+      </div>
+      <div class="modal-backdrop" @click="closeValidateModal"></div>
+    </div>
+
+    <!-- Modale de refus motivé d'une demande d'absence -->
+    <div
+      v-if="showRefuseModal"
+      class="modal modal-open modal-bottom sm:modal-middle"
+    >
+      <div class="modal-box rounded-m3-xl p-5 sm:p-6 bg-base-100 border border-base-300 shadow-sm max-w-md flex flex-col gap-4">
+        <div class="flex items-center justify-between pb-3 border-b border-base-200">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full bg-error/15 text-error flex items-center justify-center shrink-0">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </div>
+            <h3 class="font-bold text-base text-base-content">Refuser la demande d’absence</h3>
+          </div>
+          <button
+            type="button"
+            class="btn btn-ghost btn-circle min-h-11 min-w-11"
+            aria-label="Fermer"
+            @click="closeRefuseModal"
+          >
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <p class="text-xs sm:text-sm text-base-content/80 leading-relaxed">
+          Vous êtes sur le point de refuser la demande d’absence de
+          <strong>{{ getEmployeeName(absenceToRefuse?.user_id) }}</strong> pour la semaine du
+          {{ formatWeekLabel(absenceToRefuse?.week_start, { short: true }) }}.
+        </p>
+
+        <div class="flex flex-col gap-1.5">
+          <label for="refuse-note" class="text-xs font-semibold text-base-content/70">
+            Motif ou explication (optionnel)
+          </label>
+          <textarea
+            id="refuse-note"
+            v-model="refuseNote"
+            rows="3"
+            class="textarea textarea-bordered w-full text-xs sm:text-sm rounded-m3-sm bg-base-200/50"
+            placeholder="Ex : Effectif insuffisant, période de forte activité..."
+          ></textarea>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-base-200">
+          <button
+            type="button"
+            class="btn btn-ghost min-h-11 px-4 text-xs font-semibold rounded-m3-sm active:scale-95 transition-transform"
+            @click="closeRefuseModal"
+          >
+            Annuler
+          </button>
+          <button
+            type="button"
+            class="btn btn-error text-error-content min-h-11 px-4 text-xs font-bold rounded-m3-sm active:scale-95 transition-transform"
+            :disabled="isProcessingAbsence"
+            @click="handleConfirmRefuse"
+          >
+            <span v-if="isProcessingAbsence" class="loading loading-spinner loading-xs mr-1"></span>
+            <span>Confirmer le refus</span>
+          </button>
+        </div>
+      </div>
+      <div class="modal-backdrop" @click="closeRefuseModal"></div>
     </div>
   </div>
 </template>

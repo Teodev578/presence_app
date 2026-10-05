@@ -179,6 +179,15 @@ export function useSyncEngine() {
           await db.availabilities.bulkPut(avails)
         }
 
+        // 2bis. Pull des demandes d'absence
+        let absenceQuery = supabase.from('absence_requests').select('*').gt('updated_at', cursor)
+        if (!isSupervisor) absenceQuery = absenceQuery.eq('user_id', userId)
+        const { data: absences, error: absErr } = await absenceQuery
+
+        if (!absErr && absences?.length) {
+          await db.absence_requests.bulkPut(absences)
+        }
+
         // 3. Pull des sites (locations)
         const { data: locs, error: locErr } = await supabase
           .from('locations')
@@ -270,6 +279,10 @@ export function useSyncEngine() {
           scheduleRealtimePull(uid)
         })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'availabilities' }, () => {
+          const uid = typeof getUserId === 'function' ? getUserId() : null
+          scheduleRealtimePull(uid)
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'absence_requests' }, () => {
           const uid = typeof getUserId === 'function' ? getUserId() : null
           scheduleRealtimePull(uid)
         })

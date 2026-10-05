@@ -1,3 +1,76 @@
+# Plan : Demande d'Absence avec Validation Hiérarchique
+
+Date : 2026-10-05  
+Déclencheur : Demande utilisateur (remplacer l'enregistrement simple par une demande d'absence, validation manager, indicateur vert sur jours accordés, notifications croisées)  
+Statut : Terminé et Validé (Portes G175 à G179 validées, build de production conforme)  
+Artifact Antigravity : `plan_demande_absence.md`
+
+## 1. Périmètre
+
+### Fichiers cibles
+- `supabase/migrations/20261005170000_create_absence_requests.sql` (création)
+- `src/types/database.types.d.ts` (types TypeScript de la table)
+- `src/lib/db.js` (Dexie v4 store absence_requests)
+- `src/composables/useSyncEngine.js` (pull incrémental et canal Realtime CDC)
+- `src/composables/useAbsenceRequests.js` (création : composable métier employé & manager)
+- `src/composables/useNotifications.js` (notifications in-app dérivées pour employé et manager)
+- `src/components/shared/NotificationBell.vue` (support des badges de notification d'absence)
+- `src/views/employee/AvailabilitiesView.vue` (titre et présentation adaptés au nouveau rôle)
+- `src/components/employee/WeekGrid.vue` (action « Demande d'absence » / « Annuler ma demande », indicateur vert M3 sur jours validés)
+- `src/views/manager/AvailabilitiesView.vue` (section d'examen et d'arbitrage des demandes)
+- `GATES.md` (portes G175 à G179)
+- `scripts/verify-gates.mjs` (oracles d'acceptation déterministes)
+
+---
+
+## 2. Étapes Séquentielles
+
+1. [x] **Étape 1 : Migration Supabase & Types**
+   - Rédiger `20261005170000_create_absence_requests.sql` avec table `absence_requests`, index B-Tree, RLS étanche et Realtime.
+   - Compléter `src/types/database.types.d.ts`.
+   - *Vérification* : Syntaxe SQL propre, types TypeScript alignés.
+
+2. [x] **Étape 2 : Dexie v4 & Moteur de Synchro**
+   - Ajouter `absence_requests` en version 4 dans `src/lib/db.js`.
+   - Étendre `useSyncEngine.js` : pull incrémental par rôle (`user_id` pour employé, RLS pour superviseurs) et souscription CDC Realtime.
+   - *Vérification* : Vérification de non-régression sur le singleton Dexie et `useLiveQuery`.
+
+3. [x] **Étape 3 : Composable `useAbsenceRequests.js`**
+   - Implémenter les méthodes `submitRequest`, `cancelRequest`, `validateRequest`, `refuseRequest`.
+   - Intégrer la boîte d'envoi transactionnelle Dexie (`sync_outbox`) avec UUIDv7.
+   - Dériver la demande de la semaine en cours via `useLiveQuery`.
+   - *Vérification* : Résolution réactive sans fuite mémoire.
+
+4. [x] **Étape 4 : Notifications Croisées (`useNotifications.js` & `NotificationBell.vue`)**
+   - Étendre `useNotifications.js` :
+     - Pour les managers : alerte sur toute demande `submitted` de l'équipe et sur les annulations.
+     - Pour les collaborateurs : alerte sur le passage à `validated` ou `refused`.
+   - Adapter `NotificationBell.vue` pour afficher les badges d'état (« En attente », « Validée », « Refusée », « Annulée »).
+   - *Vérification* : Comptage exact des notifications non lues, navigation ciblée vers la vue appropriée.
+
+5. [x] **Étape 5 : Refonte UX Collaborateur (`WeekGrid.vue` & `AvailabilitiesView.vue`)**
+   - Bouton d'action principale :
+     - Si aucune demande active : « Demande d'absence » (sélection des jours à poser en absence).
+     - Si une demande est soumise : « Annuler ma demande » (permet d'annuler sa demande en attente).
+     - Si la demande est validée : bouton d'annulation disponible si autorisé, affichage d'un bandeau informatif vert.
+   - Jours de la semaine : outline et fond vert naturel `success` (M3 `border-success bg-success/10`) pour les jours dont la demande a été validée.
+   - Prise en charge des notes et des retours explicatifs en cas de refus.
+   - *Vérification* : Cibles tactiles 44px, zéro emoji brut, transitions GPU sans saccade.
+
+6. [x] **Étape 6 : Section Arbitrage Manager (`src/views/manager/AvailabilitiesView.vue`)**
+   - Insérer une section claire et sobre dédiée aux demandes d'absence de l'équipe.
+   - Liste des demandes avec statut, employé, jours demandés, note éventuelle.
+   - Actions directes : Valider (immédiat) ou Refuser (modale avec motif optionnel).
+   - *Vérification* : Grammaire M3 et DaisyUI v5 conforme, zéro jargon corporate.
+
+7. [x] **Étape 7 : Portes d'Acceptation & Validation Globale**
+   - Ajouter les portes G175 à G179 dans `GATES.md`.
+   - Câbler les oracles d'absence dans `scripts/verify-gates.mjs`.
+   - Exécuter `node scripts/verify-gates.mjs --all` et `npm run build`.
+   - Consigner le bilan dans `.agents/WRITING_IMPROVEMENT.md`.
+
+---
+
 # Plan : Refonte Éditoriale Stop-Slop de l'Espace Gestionnaire
 
 Date : 2026-10-01  

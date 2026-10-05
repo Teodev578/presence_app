@@ -12,6 +12,62 @@ export type Database = {
   }
   public: {
     Tables: {
+      absence_requests: {
+        Row: {
+          client_mutation_id: string
+          created_at: string
+          days: number[]
+          decided_at: string | null
+          decided_by: string | null
+          decision_note: string | null
+          deleted_at: string | null
+          id: string
+          note: string | null
+          status: 'submitted' | 'validated' | 'refused' | 'cancelled'
+          updated_at: string
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          client_mutation_id: string
+          created_at?: string
+          days: number[]
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          deleted_at?: string | null
+          id: string
+          note?: string | null
+          status?: 'submitted' | 'validated' | 'refused' | 'cancelled'
+          updated_at?: string
+          user_id: string
+          week_start: string
+        }
+        Update: {
+          client_mutation_id?: string
+          created_at?: string
+          days?: number[]
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          deleted_at?: string | null
+          id?: string
+          note?: string | null
+          status?: 'submitted' | 'validated' | 'refused' | 'cancelled'
+          updated_at?: string
+          user_id?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "absence_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       availabilities: {
         Row: {
           client_mutation_id: string

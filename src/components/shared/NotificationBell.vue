@@ -142,14 +142,40 @@ onUnmounted(() => {
         >
           <div class="flex items-start justify-between gap-2">
             <div class="flex items-center gap-2">
-              <div class="w-6 h-6 rounded-full bg-warning/15 text-warning flex items-center justify-center shrink-0">
-                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <div
+                class="w-6 h-6 rounded-full flex items-center justify-center shrink-0"
+                :class="[
+                  item.badgeClass && item.badgeClass.includes('badge-success')
+                    ? 'bg-success/15 text-success'
+                    : item.badgeClass && item.badgeClass.includes('badge-error')
+                      ? 'bg-error/15 text-error'
+                      : 'bg-warning/15 text-warning'
+                ]"
+              >
+                <svg v-if="item.badgeClass && item.badgeClass.includes('badge-success')" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <svg v-else-if="item.badgeClass && item.badgeClass.includes('badge-error')" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+                <svg v-else class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
               </div>
               <span class="font-bold text-xs text-base-content">{{ item.title }}</span>
             </div>
-            <span class="badge badge-warning badge-xs shrink-0 font-medium">
+            <span
+              v-if="item.badge"
+              class="badge badge-xs shrink-0 font-medium py-0.5 px-1.5"
+              :class="item.badgeClass || 'badge-warning'"
+            >
+              {{ item.badge }}
+            </span>
+            <span
+              v-else-if="item.daysRemaining !== undefined"
+              class="badge badge-warning badge-xs shrink-0 font-medium"
+            >
               J-{{ item.daysRemaining }}
             </span>
           </div>
