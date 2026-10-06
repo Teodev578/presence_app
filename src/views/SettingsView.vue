@@ -42,6 +42,17 @@ onUnmounted(() => {
 const ROLE_LABELS = { employee: 'Employé', manager: 'Manager', admin: 'Administrateur' }
 const roleLabel = computed(() => ROLE_LABELS[profile.value?.role] || 'Employé')
 
+const userInitials = computed(() => {
+  if (profile.value?.first_name && profile.value?.last_name) {
+    return `${profile.value.first_name[0]}${profile.value.last_name[0]}`.toUpperCase()
+  }
+  const parts = (profile.value?.full_name || '').trim().split(/\s+/).filter(Boolean)
+  if (!parts.length) return 'U'
+  const first = parts[0][0]
+  const last = parts.length > 1 ? parts[parts.length - 1][0] : ''
+  return `${first}${last}`.toUpperCase()
+})
+
 const geoLabel = computed(() => {
   switch (geoStatus.value) {
     case 'granted': return 'Autorisé'
@@ -162,7 +173,7 @@ const handleLogout = async () => {
       <div class="flex items-center gap-3">
         <div class="avatar placeholder shrink-0" aria-hidden="true">
           <div class="bg-primary/15 text-primary rounded-full w-14 h-14 font-bold text-lg flex items-center justify-center ring-1 ring-primary/20">
-            <span>{{ (profile?.full_name || 'U').trim()[0].toUpperCase() }}</span>
+            <span>{{ userInitials }}</span>
           </div>
         </div>
         <div class="min-w-0">
