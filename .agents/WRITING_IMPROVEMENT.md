@@ -91,8 +91,29 @@ Il ne remplace pas `AGENTS.md` (invariants figés), `.agents/plan.md` (feuille d
 5. Déclencheur KI : N (raffinement ergonomique et micro-interaction M3).
 
 #### Résultat
-- Implémenté ? En cours
-- Leçon tirée : (À renseigner après validation des portes)
+- Implémenté ? O — 2026-10-05
+- Leçon tirée : Le feedback direct dans le bouton avec temporisation de 650 ms améliore la lisibilité sur mobile et dispense d'un bandeau redondant.
+- Escalade : aucune (2 fichiers touchés, oracles G194 et build validés).
+
+---
+
+### Tâche : Relais des Erreurs Auth/OTP dans le Terminal et Logs Détaillés
+**Date** : 2026-10-06
+**Complexité** : Moyen
+**Proposant** : Fabien / presence-stack (Lucas & Marc)
+**Story liée** : —
+
+#### Pre-flight (10 min)
+1. Problème réel : Lors des échecs d'envoi ou de validation OTP/Auth (notamment rejets SMTP Resend ou erreurs Supabase), le client n'affiche qu'un libellé synthétique et aucun log n'est transmis au terminal exécutant Vite, obligeant à chercher manuellement dans les DevTools ou le dashboard distant. L'utilisateur souhaite voir l'erreur exacte directement dans la console du terminal.
+2. Contrainte principale : Transmettre les erreurs en temps réel dans le terminal d'exécution Vite en mode dev avec formatage contrasté (statut, message, code, contexte email), tout en conservant le logging console du navigateur, sans ajout de dépendance (`package.json`) et avec zéro régression sur les 195 portes de `GATES.md` et le build de production.
+3. Alternative rejetée : Installer un package npm de transport de log distant (ex: `winston` ou librairie WebSocket ad-hoc) — rejetée car la règle n°1 proscrit toute altération des dépendances sans accord, et un middleware dev natif Vite `/api/__terminal-log` remplit la mission de façon minimale et robuste.
+4. Signal de fin : Middleware de logging actif dans `vite.config.js` ; fonction de relais intégrée dans `src/composables/useAuth.js` ; oracles `node scripts/verify-gates.mjs --all` et `npm run build` avec exit code 0.
+5. Déclencheur KI : N (outillage de diagnostic de développement).
+
+#### Résultat
+- Implémenté ? O — 2026-10-06
+- Leçon tirée : L'intégration d'un middleware dev Vite léger (`/api/__terminal-log`) couplée à un fetch conditionnel (`import.meta.env.DEV`) permet de faire remonter instantanément les erreurs du client SPA dans le terminal de développement sans aucune dépendance tierce.
+- Escalade : aucune (2 fichiers touchés, oracles G192/G194 et build Vite 100 % validés).
 
 ---
 

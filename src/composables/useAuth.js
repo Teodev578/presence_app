@@ -35,6 +35,44 @@ export function useAuth() {
     })
   }
 
+  function logAuthError(tag, error, context = {}) {
+    console.error(`[PresenceApp - ${tag}]`, {
+      message: error?.message,
+      status: error?.status,
+      code: error?.code,
+      name: error?.name,
+      context,
+      rawError: error,
+    })
+
+    if (import.meta.env?.DEV) {
+      try {
+        fetch('/api/__terminal-log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tag,
+            message: error?.message || String(error),
+            status: error?.status || null,
+            code: error?.code || null,
+            name: error?.name || null,
+            context,
+            raw: error
+              ? {
+                  message: error.message,
+                  status: error.status,
+                  code: error.code,
+                  name: error.name,
+                }
+              : null,
+          }),
+        }).catch(() => {})
+      } catch {
+        // Ignorer
+      }
+    }
+  }
+
   const formatAuthError = (err) => {
     if (!err) return null
     const msg = err.message || ''
@@ -78,6 +116,7 @@ export function useAuth() {
       user.value = data.user
       return { data, error: null }
     } catch (err) {
+      logAuthError('Connexion (signIn)', err, { email: cleanEmail })
       authError.value = formatAuthError(err)
       return { data: null, error: err }
     } finally {
@@ -106,6 +145,7 @@ export function useAuth() {
       if (error) throw error
       return { data, error: null }
     } catch (err) {
+      logAuthError('Inscription (signUp)', err, { email: cleanEmail })
       authError.value = formatAuthError(err)
       return { data: null, error: err }
     } finally {
@@ -125,6 +165,7 @@ export function useAuth() {
       if (error) throw error
       return { data, error: null }
     } catch (err) {
+      logAuthError('Demande OTP / Réinitialisation (resetPassword)', err, { email: cleanEmail })
       authError.value = formatAuthError(err)
       return { data: null, error: err }
     } finally {
@@ -151,6 +192,7 @@ export function useAuth() {
       if (error) throw error
       return { data, error: null }
     } catch (err) {
+      logAuthError('Mise à jour mot de passe (changePassword)', err)
       const formatted = formatAuthError(err)
       authError.value = formatted
       return { data: null, error: err, formattedMessage: formatted }
@@ -195,12 +237,17 @@ export function useAuth() {
           password: trimmedPwd,
         })
         if (pwdError) {
+          logAuthError('Mise à jour mot de passe post-OTP (updateUser)', pwdError)
           console.warn('Erreur mise à jour mot de passe après OTP :', pwdError)
         }
       }
 
       return { data, error: null, formattedMessage: null }
     } catch (err) {
+      logAuthError('Validation OTP (verifyRecoveryOtp)', err, {
+        email: cleanEmail,
+        tokenLength: cleanToken.length,
+      })
       const formatted = formatAuthError(err)
       authError.value = formatted
       return { data: null, error: err, formattedMessage: formatted }

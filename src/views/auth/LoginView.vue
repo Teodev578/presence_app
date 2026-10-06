@@ -27,16 +27,18 @@ const isForgotSuccess = ref(false)
 
 let messageTimer = null
 
-// Disparition automatique des messages de notification après 4,5 secondes
-watch(message, (newVal) => {
+// Disparition automatique des messages et erreurs d'authentification après 5 secondes
+watch([message, authError], ([newMsg, newErr]) => {
   if (messageTimer) {
     clearTimeout(messageTimer)
     messageTimer = null
   }
-  if (newVal) {
+  if (newMsg || newErr) {
     messageTimer = setTimeout(() => {
       message.value = ''
-    }, 4500)
+      authError.value = null
+      messageTimer = null
+    }, 5000)
   }
 })
 
@@ -215,6 +217,10 @@ const handleVerifyOtp = async () => {
 }
 
 const resetForgotState = () => {
+  if (messageTimer) {
+    clearTimeout(messageTimer)
+    messageTimer = null
+  }
   isForgotPassword.value = false
   forgotStep.value = 'email'
   otpCode.value = ''
