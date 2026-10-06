@@ -131,9 +131,9 @@ export function useNotifications() {
         items.push({
           id: notifId,
           type: 'account_activation_required',
-          title: 'Compte en attente d’activation',
-          subtitle: 'Accès opérationnel suspendu',
-          message: `Votre compte n'est pas encore activé. Il sera supprimé dans ${daysRemaining} jour${daysRemaining > 1 ? 's' : ''} sans confirmation. Pensez à solliciter vos supérieurs pour l'activation de votre compte.`,
+          title: 'Compte en attente de confirmation',
+          subtitle: `Confirmation requise d'ici ${daysRemaining} jour${daysRemaining > 1 ? 's' : ''}`,
+          message: `Votre compte est bien enregistré. Pensez à contacter votre supérieur d'ici ${daysRemaining} jour${daysRemaining > 1 ? 's' : ''} afin de confirmer votre compte. Sinon, il sera supprimé.`,
           daysRemaining,
           actionLabel: null,
           createdAt: d,

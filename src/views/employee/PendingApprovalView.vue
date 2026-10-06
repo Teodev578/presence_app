@@ -127,12 +127,12 @@ const daysRemaining = computed(() => {
           </svg>
           <div class="space-y-0.5">
             <p>
-              Si votre compte n'est pas activé dans un délai de
-              <strong class="font-semibold text-base-content">{{ daysRemaining }} jour{{ daysRemaining > 1 ? 's' : '' }}</strong>,
-              il sera automatiquement supprimé par mesure de sécurité.
+              Votre compte est bien enregistré. Pensez à contacter votre supérieur d'ici
+              <strong class="font-semibold text-base-content">{{ daysRemaining }} jour{{ daysRemaining > 1 ? 's' : '' }}</strong>
+              afin de confirmer votre compte.
             </p>
             <p class="font-medium text-base-content/90">
-              Pensez à solliciter vos supérieurs pour l'activation de votre compte.
+              Sinon, il sera supprimé après 7 jours.
             </p>
           </div>
         </div>

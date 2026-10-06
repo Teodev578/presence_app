@@ -136,8 +136,8 @@ watch([() => route.value.path, isManager, () => profile.value, profileLoading], 
   <!-- Cas 2 : Compte archivé ou désactivé (accès opérationnel hermétiquement suspendu) -->
   <ArchivedAccountView v-else-if="isArchived" key="archived" />
 
-  <!-- Cas 3 : Collaborateur en attente de validation de compte -->
-  <PendingApprovalView v-else-if="isPendingApproval" key="pending" />
+  <!-- Cas 3 : Page explicite de récapitulatif de validation (accès direct à l'espace par défaut) -->
+  <PendingApprovalView v-else-if="route.path === '/pending-approval'" key="pending" />
 
   <!-- Cas 4 : Espace Manager / Admin actif -->
   <ManagerLayout v-else-if="isManagerRoute" key="manager">
