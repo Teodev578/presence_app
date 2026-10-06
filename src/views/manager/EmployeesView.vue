@@ -996,7 +996,7 @@ const confirmUnarchive = async () => {
     <ConfirmModal
       :open="!!employeeToValidate"
       title="Valider ce collaborateur ?"
-      :message="`Le compte de « ${employeeToValidate?.full_name || ''} » sera validé et pourra immédiatement enregistrer ses pointages.`"
+      :message="`Le compte de « ${employeeToValidate?.full_name || ''} » sera validé, vous pouvez ignorer la notification, et ce compte ne sera pas supprimé automatiquement au bout de 7 jours.`"
       confirm-text="Valider le compte"
       confirm-class="btn-primary"
       :loading="isValidating"
