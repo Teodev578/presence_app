@@ -1,3 +1,64 @@
+# Plan : Séparation Prénom et Nom à l'Inscription & Gestion Collaborateur (Pattern Dual-Field)
+
+Date : 2026-10-06  
+Déclencheur : Demande utilisateur (séparer le prénom et le nom lors de la création de compte et de l'édition du profil, sans bousculer l'architecture de l'application)  
+Statut : Terminé et Validé (Portes G196 et G197 validées, séparation prénom/nom active, schéma Supabase et Dexie v5 synchronisés, oracles et build Vite 100% conformes)  
+Portes liées : G196 / G197  
+
+## 1. Périmètre
+
+### Fichiers cibles
+- `supabase/migrations/20261006170000_add_first_and_last_name_to_profiles.sql` (nouvelle migration SQL : colonnes `first_name` et `last_name`, backfill des profils existants, trigger `handle_new_user()`)
+- `supabase/migrations/20261006170000_add_first_and_last_name_to_profiles_down.sql` (migration rollback correspondante)
+- `src/types/database.types.d.ts` (mise à jour des définitions TypeScript pour `profiles`)
+- `src/lib/db.js` (schéma Dexie v5 avec migration des enregistrements locaux)
+- `src/composables/useAuth.js` (méthode `signUp` supportant prénom et nom distincts)
+- `src/composables/useProfile.js` (exposition réactive de `first_name` et `last_name`)
+- `src/views/auth/LoginView.vue` (deux champs M3 « Prénom » et « Nom » avec responsive adaptatif et validation)
+- `src/views/manager/EmployeesView.vue` (modale d'édition collaborateur avec champs séparés Prénom et Nom)
+- `src/views/employee/HomeView.vue` (salutation basée directement sur `profile.first_name`)
+- `scripts/verify-gates.mjs` (oracles G196 `--user-names-split` et intégration à `--all`)
+- `GATES.md` (consignation des portes G196 et G197 avec oracles et preuves)
+- `.agents/WRITING_IMPROVEMENT.md` (clôture à chaud et consolidation KI)
+
+---
+
+## 2. Étapes Séquentielles
+
+1. [x] **Étape 1 : Migration Supabase & Schémas de Données**
+   - Écrire la migration montante `20261006170000_add_first_and_last_name_to_profiles.sql` :
+     - Ajout de `first_name TEXT DEFAULT ''` et `last_name TEXT DEFAULT ''`.
+     - Backfill des comptes existants à partir de `full_name`.
+     - Mise à jour du trigger `handle_new_user()` pour extraire `first_name` et `last_name` depuis `raw_user_meta_data`, tout en garantissant `full_name`.
+   - Écrire la migration rollback `20261006170000_add_first_and_last_name_to_profiles_down.sql`.
+   - Mettre à jour `src/types/database.types.d.ts`.
+   - Incrémenter la version Dexie (v5) dans `src/lib/db.js` avec mise à niveau pour découper `full_name` sur les profils en cache local.
+
+2. [x] **Étape 2 : Composables Applicatifs (`useAuth.js`, `useProfile.js`)**
+   - Adapter `signUp(email, password, nameInput, role)` dans `useAuth.js` :
+     - Gérer le cas où `nameInput` est un objet `{ firstName, lastName }` ou une chaîne unique `fullName`.
+     - Transmettre `first_name`, `last_name` et `full_name` dans `options.data`.
+   - Mettre à jour `useProfile.js` pour inclure `first_name` et `last_name` dans l'état réactif et le fallback à froid.
+
+3. [x] **Étape 3 : Écran d'Inscription (`LoginView.vue`)**
+   - Remplacer le champ unique `#reg-name` par deux champs distincts :
+     - Prénom (`firstName`, `autocomplete="given-name"`, `placeholder="Jean"`).
+     - Nom (`lastName`, `autocomplete="family-name"`, `placeholder="Dupont"`).
+   - Intégrer une grille M3 ergonomique (`grid grid-cols-1 sm:grid-cols-2 gap-3`) respectant les cibles tactiles 44px.
+   - Contrôler la saisie obligatoire des deux champs avant l'appel à `signUp`.
+
+4. [x] **Étape 4 : Gestion Collaborateurs (`EmployeesView.vue`) & Salutation (`HomeView.vue`)**
+   - Dans `EmployeesView.vue` : scinder le champ « Nom complet » de la modale d'édition en deux champs « Prénom » et « Nom », et synchroniser le `full_name` dans le payload Dexie et Outbox.
+   - Dans `HomeView.vue` : simplifier la salutation en utilisant directement `profile.value?.first_name` avec repli sur `profile.value?.full_name`.
+
+5. [x] **Étape 5 : Oracles Déterministes, Vérification Globale & Clôture**
+   - Ajouter l'oracle G196 dans `scripts/verify-gates.mjs` (`--user-names-split`).
+   - Mettre à jour `GATES.md` avec les oracles et sorties attendues.
+   - Exécuter la suite déterministe complète (`node scripts/verify-gates.mjs --all`) et valider la compilation Vite (`npm run build`).
+   - Clôturer l'entrée dans `.agents/WRITING_IMPROVEMENT.md`.
+
+---
+
 # Plan : Feedback de Confirmation dans le Bouton OTP & Épuration de l'Étape 2
 
 Date : 2026-10-05  

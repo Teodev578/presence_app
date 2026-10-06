@@ -245,7 +245,8 @@ const getArchivedDaysRemaining = (archivedAt) => {
 // Modal d'édition
 const editingEmployee = ref(null)
 const editForm = ref({
-  full_name: '',
+  first_name: '',
+  last_name: '',
   role: 'employee',
   team_id: '',
   expected_arrival_time: '09:00:00',
@@ -257,8 +258,18 @@ const editError = ref('')
 const openEditModal = (emp) => {
   editingEmployee.value = emp
   editError.value = ''
+
+  let fName = emp.first_name || ''
+  let lName = emp.last_name || ''
+  if (!fName && !lName && emp.full_name) {
+    const parts = (emp.full_name || '').trim().split(/\s+/)
+    fName = parts[0] || ''
+    lName = parts.slice(1).join(' ') || ''
+  }
+
   editForm.value = {
-    full_name: emp.full_name || '',
+    first_name: fName,
+    last_name: lName,
     role: emp.role || 'employee',
     team_id: emp.team_id || '',
     expected_arrival_time: emp.expected_arrival_time || '09:00:00',
@@ -281,9 +292,15 @@ const saveEmployee = async () => {
   try {
     const now = new Date().toISOString()
     const id = editingEmployee.value.id
+    const cleanFirst = (editForm.value.first_name || '').trim()
+    const cleanLast = (editForm.value.last_name || '').trim()
+    const computedFull = `${cleanFirst} ${cleanLast}`.trim()
+
     const payload = {
       id,
-      full_name: editForm.value.full_name,
+      first_name: cleanFirst,
+      last_name: cleanLast,
+      full_name: computedFull,
       role: editForm.value.role,
       team_id: editForm.value.team_id || null,
       expected_arrival_time: editForm.value.expected_arrival_time,
@@ -879,15 +896,27 @@ const confirmUnarchive = async () => {
         </p>
 
         <form v-if="editingEmployee" @submit.prevent="saveEmployee" class="flex flex-col gap-4">
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend text-xs font-semibold text-base-content/80">Nom complet</legend>
-            <input
-              v-model="editForm.full_name"
-              type="text"
-              class="input input-bordered w-full rounded-m3-md min-h-11 text-sm"
-              required
-            />
-          </fieldset>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend text-xs font-semibold text-base-content/80">Prénom</legend>
+              <input
+                v-model="editForm.first_name"
+                type="text"
+                class="input input-bordered w-full rounded-m3-md min-h-11 text-sm"
+                required
+              />
+            </fieldset>
+
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend text-xs font-semibold text-base-content/80">Nom</legend>
+              <input
+                v-model="editForm.last_name"
+                type="text"
+                class="input input-bordered w-full rounded-m3-md min-h-11 text-sm"
+                required
+              />
+            </fieldset>
+          </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <fieldset class="fieldset">

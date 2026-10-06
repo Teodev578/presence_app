@@ -16,9 +16,10 @@ const {
 } = usePresences()
 
 const displayName = computed(() => {
+  if (profile.value?.first_name) return profile.value.first_name.trim()
   if (!profile.value?.full_name) return ''
   const parts = profile.value.full_name.trim().split(' ')
-  return parts[0]
+  return parts[0] || ''
 })
 </script>
 

@@ -95,6 +95,51 @@ Il ne remplace pas `AGENTS.md` (invariants figés), `.agents/plan.md` (feuille d
 - Leçon tirée : Le feedback direct dans le bouton avec temporisation de 650 ms améliore la lisibilité sur mobile et dispense d'un bandeau redondant.
 - Escalade : aucune (2 fichiers touchés, oracles G194 et build validés).
 
+### Tâche : Séparation Prénom et Nom à l'Inscription & Gestion Collaborateur (Pattern Dual-Field)
+**Date** : 2026-10-06
+**Complexité** : Élevée
+**Proposant** : Fabien / presence-stack (Lucas & Marc & Chloé)
+**Story liée** : `.agents/plan.md`
+
+#### Analyse
+- **Hypothèse initiale** : L'enregistrement du prénom et du nom de façon dissociée lors de la création de compte et de l'édition du profil collaborateur permet d'assainir les données RH, fiabiliser les exports et personnaliser la salutation sur l'accueil, tout en évitant toute régression sur les nombreuses vues de consultation si le champ `full_name` est conservé et synchronisé.
+- **Contraintes identifiées** :
+  - Respect strict du principe Local-First et de la boîte d'envoi Dexie (règles 03 et 04).
+  - Rétrocompatibilité absolue avec les comptes existants en base et les vues de consultation sans altérer les 195 portes de vérification.
+  - Zéro modification de dépendances ou d'outils système (règle n°1 inviolable).
+  - Ergonomie responsive mobile-first et conformité Material 3 / DaisyUI v5 (cibles tactiles 44px, tokens M3).
+- **Alternatives envisagées** :
+  - Option A (Remplacement destructif en supprimant `full_name`) : rejetée car elle forcerait la refonte synchrone de plus de 20 composants de lecture (pointages, tableaux de bord, planning, notifications) et multiplierait les risques de régressions.
+  - Option B (Maintien d'un champ unique avec concaténation purement client sans colonnes dédiées en base) : rejetée car constitue une dette technique persistante qui corrompt le tri par nom de famille et échoue sur les noms composés.
+  - Option C (Pattern Dual-Field : colonnes `first_name` et `last_name` ajoutées en base + `full_name` conservé et maintenu automatiquement + rétro-remplissage des comptes existants + formulaire à 2 champs M3) : **retenue (recommandée)**.
+
+#### Décision
+**Choix retenu** :
+1. Migration Supabase `20261006170000_add_first_and_last_name_to_profiles.sql` :
+   - Ajout des colonnes `first_name` et `last_name` sur `public.profiles`.
+   - Backfill SQL déterministe pour extraire prénom et nom à partir de l'actuel `full_name` pour tous les profils existants.
+   - Mise à jour du trigger `handle_new_user()` pour alimenter `first_name`, `last_name` et `full_name`.
+   - Migration down correspondante.
+2. Évolution du schéma Dexie (v5) dans `src/lib/db.js` et types TypeScript dans `src/types/database.types.d.ts`.
+3. Adaptation de `src/composables/useAuth.js` (`signUp` accepte `{ firstName, lastName }` ou un objet) et `src/composables/useProfile.js` (hydratation de `first_name` et `last_name`).
+4. Refonte ergonomique du formulaire d'inscription dans `src/views/auth/LoginView.vue` :
+   - Deux champs M3 « Prénom » (`autocomplete="given-name"`) et « Nom » (`autocomplete="family-name"`).
+   - Disposition adaptative responsive.
+5. Évolution de la modale d'édition collaborateur dans `src/views/manager/EmployeesView.vue` :
+   - Deux champs dédiés « Prénom » et « Nom » pour éditer précisément un collaborateur.
+6. Optimisation de la salutation dans `src/views/employee/HomeView.vue` :
+   - Exploitation directe de `profile.first_name` avec repli gracieux.
+
+**Trade-offs acceptés** : Maintenir `full_name` aux côtés de `first_name` et `last_name` crée une redondance contrôlée de données en base, mais garantit une non-régression à 100% sur l'ensemble des 15+ vues de consultation existantes.
+
+#### Résultat
+- Implémenté ? O (2026-10-06) — Portes G196 et G197 validées à 100%, suite verify-gates.mjs --all et build Vite de production conformes (code 0).
+- Leçons tirées :
+  1. *Efficacité du pattern Dual-Field (Non-Régression & Rétrocompatibilité)* : Conserver `full_name` calculé/synchronisé tout en stockant séparément `first_name` et `last_name` a permis de moderniser la saisie et l'exploitation des noms sans devoir réécrire les 15+ composants de consultation historiques (plannings, présences, exports, notifications).
+  2. *Résilience de la migration avec Backfill SQL déterministe* : Injecter la logique de séparation à la source dans le trigger Supabase (`handle_new_user`) et dans la mise à niveau locale Dexie (v5) garantit une cohérence absolue des profils existants et futurs, tant en ligne que hors-ligne.
+- Portes franchies : G196, G197 validées (100% de succès sur `node scripts/verify-gates.mjs --all` et `npm run build`).
+- Escalade : Aucune.
+
 ---
 
 ### Tâche : Relais des Erreurs Auth/OTP dans le Terminal et Logs Détaillés

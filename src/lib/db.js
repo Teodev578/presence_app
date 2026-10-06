@@ -50,6 +50,23 @@ class PresenceDatabase extends Dexie {
     this.version(4).stores({
       absence_requests: 'id, user_id, week_start, status, client_mutation_id, updated_at, deleted_at',
     })
+
+    this.version(5).stores({
+      profiles: 'id, team_id, email, role, status, updated_at, deleted_at',
+    }).upgrade(async (tx) => {
+      // Découpage automatique de full_name pour rétrocompatibilité locale
+      await tx.table('profiles').toCollection().modify((profile) => {
+        if (profile.full_name && (!profile.first_name || !profile.last_name)) {
+          const parts = (profile.full_name || '').trim().split(/\s+/)
+          if (!profile.first_name) {
+            profile.first_name = parts[0] || ''
+          }
+          if (!profile.last_name) {
+            profile.last_name = parts.slice(1).join(' ') || ''
+          }
+        }
+      })
+    })
   }
 }
 

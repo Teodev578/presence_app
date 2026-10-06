@@ -4114,12 +4114,76 @@ export function checkOtpButtonFeedback() {
   return true;
 }
 
+export function checkUserNamesSplit() {
+  const migFile = path.resolve('supabase/migrations/20261006170000_add_first_and_last_name_to_profiles.sql');
+  if (!fs.existsSync(migFile)) {
+    console.error('FAILURE G196: migration SQL pour first_name et last_name introuvable');
+    return false;
+  }
+  const migContent = fs.readFileSync(migFile, 'utf8');
+  if (!migContent.includes('first_name TEXT') || !migContent.includes('last_name TEXT')) {
+    console.error('FAILURE G196: colonnes first_name ou last_name absentes de la migration');
+    return false;
+  }
+  if (!migContent.includes('v_first_name') || !migContent.includes('v_last_name')) {
+    console.error('FAILURE G196: trigger handle_new_user() n’extrait pas v_first_name / v_last_name');
+    return false;
+  }
+
+  const typesFile = path.resolve('src/types/database.types.d.ts');
+  const typesContent = fs.readFileSync(typesFile, 'utf8');
+  if (!typesContent.includes('first_name: string') || !typesContent.includes('last_name: string')) {
+    console.error('FAILURE G196: types TypeScript pour first_name ou last_name manquants');
+    return false;
+  }
+
+  const dbFile = path.resolve('src/lib/db.js');
+  const dbContent = fs.readFileSync(dbFile, 'utf8');
+  if (!dbContent.includes('this.version(5)') || !dbContent.includes('profile.first_name')) {
+    console.error('FAILURE G196: Dexie db.js ne déclare pas la version 5 avec migration');
+    return false;
+  }
+
+  const authFile = path.resolve('src/composables/useAuth.js');
+  const authContent = fs.readFileSync(authFile, 'utf8');
+  if (!authContent.includes('first_name: firstName') || !authContent.includes('last_name: lastName')) {
+    console.error('FAILURE G196: useAuth.js signUp ne transmet pas first_name et last_name');
+    return false;
+  }
+
+  const loginFile = path.resolve('src/views/auth/LoginView.vue');
+  const loginContent = fs.readFileSync(loginFile, 'utf8');
+  if (!loginContent.includes('id="reg-firstname"') || !loginContent.includes('id="reg-lastname"')) {
+    console.error('FAILURE G196: LoginView.vue ne propose pas les champs reg-firstname et reg-lastname');
+    return false;
+  }
+
+  const empFile = path.resolve('src/views/manager/EmployeesView.vue');
+  const empContent = fs.readFileSync(empFile, 'utf8');
+  if (!empContent.includes('editForm.first_name') || !empContent.includes('editForm.last_name')) {
+    console.error('FAILURE G196: EmployeesView.vue ne gère pas first_name et last_name dans sa modale d’édition');
+    return false;
+  }
+
+  const homeFile = path.resolve('src/views/employee/HomeView.vue');
+  const homeContent = fs.readFileSync(homeFile, 'utf8');
+  if (!homeContent.includes('profile.value?.first_name')) {
+    console.error('FAILURE G196: HomeView.vue n’utilise pas profile.value?.first_name dans displayName');
+    return false;
+  }
+
+  console.log('G196 passed: first_name and last_name split across migration, types, Dexie v5, auth and UI verified');
+  return true;
+}
+
 // Exécution CLI
 const arg = process.argv[2] || '--all';
 let success = true;
 
 if (arg === '--emojis') {
   success = checkEmojis();
+} else if (arg === '--user-names-split') {
+  success = checkUserNamesSplit();
 } else if (arg === '--radii') {
   success = checkRadii();
 } else if (arg === '--shadows') {
@@ -4361,10 +4425,11 @@ if (arg === '--emojis') {
   const r190 = checkForgotPasswordTheme();
   const r192 = checkOtpRecovery();
   const r194 = checkOtpButtonFeedback();
+  const r196 = checkUserNamesSplit();
   const r48 = r39; // Une seule compilation sert les portes de build G39 et G48
-  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60 && r63 && r64 && r65 && r66 && r72 && r73 && r74 && r75 && r88 && r89 && r92 && r93 && r94 && r95 && r96 && r97 && r147 && r150 && r156 && r159 && r162 && r165 && r167 && r169 && r175 && r176 && r177 && r178 && r180 && r182 && r184 && r186 && r188 && r190 && r192 && r194;
+  success = r1 && r2 && r3 && r4 && r5 && r6 && r7 && r8 && r9 && r10 && r11 && r12 && r13 && r14 && r15 && r16 && r17 && r18 && r19 && r20 && r21 && r25 && r26 && r27 && r28 && r29 && r30 && r31 && r32 && r33 && r34 && r35 && r36 && r37 && r39 && r40 && r43 && r45 && r49 && r48 && r56 && r58 && r60 && r63 && r64 && r65 && r66 && r72 && r73 && r74 && r75 && r88 && r89 && r92 && r93 && r94 && r95 && r96 && r97 && r147 && r150 && r156 && r159 && r162 && r165 && r167 && r169 && r175 && r176 && r177 && r178 && r180 && r182 && r184 && r186 && r188 && r190 && r192 && r194 && r196;
 } else {
-  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--presences-ui|--presences-period|--presences-table|--presences-sort|--presences-localfirst|--sync-scope|--livequery-deps|--manager-dexie|--manager-grammar|--manager-responsive|--manager-nav-icons|--manager-finish|--employee-finish|--settings-page|--cross-space-gateways|--back-navigation|--notification-bell|--account-lifecycle|--pending-notifications|--immediate-reject|--archived-session|--responsive-views|--archive-protection|--knowledge-loop|--absence-model|--absence-sync|--absence-notifications|--absence-ui|--account-feedback|--auth-transition|--app-loading|--app-identity|--loading-margins|--forgot-password-theme|--otp-recovery|--otp-button-feedback|--manager-build|--sidebar-build|--build|--all]`);
+  console.error(`Usage: node scripts/verify-gates.mjs [--emojis|--radii|--shadows|--targets|--layout|--employee-desktop|--responsive|--card-desktop|--past-days|--theme-placement|--theme-css|--theme-emojis|--theme-radii|--theme-shadows|--theme-targets|--sync-indicator-preserved|--open-session-wiring|--open-session-conformance|--header-deduplication|--ux-conformance|--drawer-settings-layout|--appearance-control-markup|--sync-badge-truncation|--check-overlay-markup|--check-feedback-wiring|--check-week-summary-wiring|--motion-conformance|--employee-feedback-conformance|--voice-conformance|--tone-rule-registered|--manager-ramp|--drawer-parity|--manager-nav-targets|--drawer-footer|--gateway-neutral|--manager-tonal-ramp|--drawer-shared-grammar|--nav-docking|--sidebar-handle|--sidebar-rail|--locations-form|--locations-cards|--locations-filters|--presences-ui|--presences-period|--presences-table|--presences-sort|--presences-localfirst|--sync-scope|--livequery-deps|--manager-dexie|--manager-grammar|--manager-responsive|--manager-nav-icons|--manager-finish|--employee-finish|--settings-page|--cross-space-gateways|--back-navigation|--notification-bell|--account-lifecycle|--pending-notifications|--immediate-reject|--archived-session|--responsive-views|--archive-protection|--knowledge-loop|--absence-model|--absence-sync|--absence-notifications|--absence-ui|--account-feedback|--auth-transition|--app-loading|--app-identity|--loading-margins|--forgot-password-theme|--otp-recovery|--otp-button-feedback|--user-names-split|--manager-build|--sidebar-build|--build|--all]`);
   process.exit(1);
 }
 

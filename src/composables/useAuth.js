@@ -124,12 +124,26 @@ export function useAuth() {
     }
   }
 
-  const signUp = async (email, password, fullName, role = 'employee') => {
+  const signUp = async (email, password, nameInput, role = 'employee') => {
     authLoading.value = true
     authError.value = null
     const cleanEmail = (email || '').trim().toLowerCase()
     const cleanPassword = (password || '').trim()
-    const cleanName = (fullName || '').trim()
+
+    let firstName = ''
+    let lastName = ''
+    let fullName = ''
+
+    if (nameInput && typeof nameInput === 'object') {
+      firstName = (nameInput.firstName || nameInput.first_name || '').trim()
+      lastName = (nameInput.lastName || nameInput.last_name || '').trim()
+      fullName = (nameInput.fullName || nameInput.full_name || `${firstName} ${lastName}`).trim()
+    } else if (typeof nameInput === 'string') {
+      fullName = nameInput.trim()
+      const parts = fullName.split(/\s+/)
+      firstName = parts[0] || ''
+      lastName = parts.slice(1).join(' ') || ''
+    }
 
     try {
       const { data, error } = await supabase.auth.signUp({
@@ -137,7 +151,9 @@ export function useAuth() {
         password: cleanPassword,
         options: {
           data: {
-            full_name: cleanName,
+            first_name: firstName,
+            last_name: lastName,
+            full_name: fullName,
             role,
           },
         },

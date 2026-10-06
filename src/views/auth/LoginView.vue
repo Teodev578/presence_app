@@ -16,7 +16,8 @@ const newPassword = ref('')
 const showNewPassword = ref(false)
 const email = ref('')
 const password = ref('')
-const fullName = ref('')
+const firstName = ref('')
+const lastName = ref('')
 const showPassword = ref(false)
 const message = ref('')
 const isOnline = ref(typeof navigator !== 'undefined' ? navigator.onLine : true)
@@ -75,8 +76,11 @@ const handleSubmit = async () => {
   const cleanPassword = password.value.trim()
 
   if (isRegister.value) {
-    if (!fullName.value.trim()) {
-      message.value = 'Indiquez votre nom et prénom.'
+    const cleanFirstName = firstName.value.trim()
+    const cleanLastName = lastName.value.trim()
+
+    if (!cleanFirstName || !cleanLastName) {
+      message.value = 'Indiquez votre prénom et votre nom.'
       return
     }
     isSubmitting.value = true
@@ -84,7 +88,10 @@ const handleSubmit = async () => {
       const { error } = await signUp(
         cleanEmail,
         cleanPassword,
-        fullName.value.trim(),
+        {
+          firstName: cleanFirstName,
+          lastName: cleanLastName,
+        },
         'employee'
       )
       if (error) {
@@ -98,6 +105,8 @@ const handleSubmit = async () => {
       await new Promise((r) => setTimeout(r, 1100))
       isSuccess.value = false
       isRegister.value = false
+      firstName.value = ''
+      lastName.value = ''
     } catch {
       isSubmitting.value = false
     }
@@ -563,23 +572,42 @@ const resetForgotState = () => {
               class="flex flex-col gap-4"
               @submit.prevent="handleSubmit"
             >
-            <!-- Nom complet uniquement lors de la création de compte -->
-            <fieldset v-if="isRegister" class="fieldset">
-              <legend class="fieldset-legend text-xs font-semibold text-base-content/70">
-                Nom et prénom
-              </legend>
-              <input
-                id="reg-name"
-                v-model="fullName"
-                type="text"
-                required
-                autocomplete="name"
-                autocapitalize="words"
-                spellcheck="false"
-                placeholder="Jean Dupont"
-                class="input input-bordered w-full rounded-m3-sm text-sm focus:outline-none focus:border-primary"
-              />
-            </fieldset>
+            <!-- Prénom et Nom distincts lors de la création de compte -->
+            <div v-if="isRegister" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend text-xs font-semibold text-base-content/70">
+                  Prénom
+                </legend>
+                <input
+                  id="reg-firstname"
+                  v-model="firstName"
+                  type="text"
+                  required
+                  autocomplete="given-name"
+                  autocapitalize="words"
+                  spellcheck="false"
+                  placeholder="Jean"
+                  class="input input-bordered w-full rounded-m3-sm text-sm focus:outline-none focus:border-primary"
+                />
+              </fieldset>
+
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend text-xs font-semibold text-base-content/70">
+                  Nom
+                </legend>
+                <input
+                  id="reg-lastname"
+                  v-model="lastName"
+                  type="text"
+                  required
+                  autocomplete="family-name"
+                  autocapitalize="words"
+                  spellcheck="false"
+                  placeholder="Dupont"
+                  class="input input-bordered w-full rounded-m3-sm text-sm focus:outline-none focus:border-primary"
+                />
+              </fieldset>
+            </div>
 
             <!-- Email professionnel -->
             <fieldset class="fieldset">

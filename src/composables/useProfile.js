@@ -49,6 +49,8 @@ export function useProfile() {
         id: userId,
         email: user.value.email || '',
         role: initialRole,
+        first_name: user.value.user_metadata?.first_name || '',
+        last_name: user.value.user_metadata?.last_name || '',
         full_name: user.value.user_metadata?.full_name || '',
         status: initialRole === 'admin' ? 'active' : 'pending_validation',
       }

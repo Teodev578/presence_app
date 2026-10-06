@@ -1569,6 +1569,28 @@ Scope: Automatisation et renforcement de la mémoire agentique selon le plan d'a
     ✓ built in 1.43s
     (exit code: 0)
 
+### Lot : Séparation Prénom et Nom à l'Inscription & Gestion Collaborateur (Pattern Dual-Field)
+
+- [x] G196: Séparation stricte de first_name et last_name à travers la migration Supabase, les types TypeScript, le schéma Dexie v5, le flux auth, l'écran d'inscription et la gestion collaborateur
+  CHECK: node scripts/verify-gates.mjs --user-names-split
+  EXPECT: G196 passed: first_name and last_name split across migration, types, Dexie v5, auth and UI verified
+  EVIDENCE:
+    $ node scripts/verify-gates.mjs --user-names-split
+    G196 passed: first_name and last_name split across migration, types, Dexie v5, auth and UI verified
+    (exit code: 0)
+
+- [x] G197: Validation globale de la suite déterministe et compilation de production Vite
+  CHECK: node scripts/verify-gates.mjs --all && npm run build
+  EXPECT: G197 passed: all deterministic gates and vite production build succeed with exit code 0
+  EVIDENCE:
+    $ node scripts/verify-gates.mjs --all && npm run build
+    G1 passed ... G196 passed: first_name and last_name split across migration, types, Dexie v5, auth and UI verified
+    vite v8.3.0 building client environment for production...
+    ✓ 122 modules transformed.
+    dist/assets/index-kABFveC_.js  70.05 kB │ gzip: 21.37 kB
+    ✓ built in 1.31s
+    (exit code: 0)
+
 
 
 

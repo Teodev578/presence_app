@@ -238,9 +238,11 @@ export type Database = {
           email: string
           expected_arrival_time: string
           expected_departure_time: string
+          first_name: string
           full_name: string
           id: string
           is_active: boolean
+          last_name: string
           role: 'employee' | 'manager' | 'admin'
           status: 'pending_validation' | 'active' | 'archived' | 'disabled'
           team_id: string | null
@@ -254,9 +256,11 @@ export type Database = {
           email: string
           expected_arrival_time?: string
           expected_departure_time?: string
+          first_name?: string
           full_name: string
           id: string
           is_active?: boolean
+          last_name?: string
           role: 'employee' | 'manager' | 'admin'
           status?: 'pending_validation' | 'active' | 'archived' | 'disabled'
           team_id?: string | null
@@ -270,9 +274,11 @@ export type Database = {
           email?: string
           expected_arrival_time?: string
           expected_departure_time?: string
+          first_name?: string
           full_name?: string
           id?: string
           is_active?: boolean
+          last_name?: string
           role?: 'employee' | 'manager' | 'admin'
           status?: 'pending_validation' | 'active' | 'archived' | 'disabled'
           team_id?: string | null
