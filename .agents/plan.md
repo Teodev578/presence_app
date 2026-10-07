@@ -1,28 +1,30 @@
-# Plan : Restructuration par Domaine de `src/composables/`
+# Plan : Restructuration par Domaine de `src/composables/` (Unicité de `index.js` à la racine)
 
 Date : 2026-10-07  
-Déclencheur : Demande utilisateur (« J'aimerais aussi pour rendre le code plus compréhensible placer tous ces fichiers dans des dossiers »)  
-Statut : Terminé et Validé (14 composables redistribués dans 4 sous-dossiers thématiques auth/, domain/, infra/, ui/, point d'accès unifié index.js créé, façades de rétrocompatibilité préservées à la racine, oracles G1-G196 et tests unitaires 100% verts, build Vite réussi)  
-Complexité : Élevée (restructuration du code de production réactif, adaptation des cross-imports, transparence totale pour les 65 composants existants)  
+Déclencheur : Demandes utilisateur (« J'aimerais aussi pour rendre le code plus compréhensible placer tous ces fichiers dans des dossiers » puis « gardé le fichier "src/composables/index.js" uniquement à la racine me semble une meilleure pratique que de le garder lui et tous les autres à la racine du dossier »)  
+Statut : Terminé et Validé (14 composables redistribués dans 4 sous-dossiers thématiques auth/, domain/, infra/, ui/, unique fichier index.js conservé à la racine de src/composables/, 14 façades useX.js racine supprimées, 25 composants/vues migrés vers l'import unifié, oracles G1-G196 et tests unitaires 100% verts, build Vite réussi)  
+Complexité : Élevée (restructuration du code de production réactif, adaptation des cross-imports, migration directe de l'ensemble des 25 composants et vues sans régression)  
 Portes liées : G1 à G196, G18, G73, G154, G163  
 
 ## 1. Périmètre
 
-### Architecture cible :
+### Architecture finale :
 - `src/composables/auth/` : `useAuth.js`, `useProfile.js`
 - `src/composables/domain/` : `usePresences.js`, `useAbsenceRequests.js`, `useAvailabilities.js`, `useLocations.js`
 - `src/composables/infra/` : `useSyncEngine.js`, `useGeolocation.js`, `useDevicePermissions.js`, `usePwaInstall.js`
 - `src/composables/ui/` : `useTheme.js`, `useSidebarNav.js`, `useNotifications.js`, `useToast.js`
-- `src/composables/index.js` : Point d'accès unifié et barrel export complet
-- `src/composables/useX.js` : 14 façades réexportatrices préservant les 65 imports existants et les contrats de tests
+- `src/composables/index.js` : Unique fichier à la racine de `src/composables/`, point d'accès unifié et barrel export complet
+- Les 14 fichiers façades racine `use*.js` ont été complètement purgés ; tous les imports applicatifs (`App.vue`, composants, vues, layouts) ciblent le dossier unifié `composables`.
 
 ## 2. Étapes Séquentielles
 
 1. [x] **Étape 1 : Création des 4 sous-dossiers thématiques (`auth/`, `domain/`, `infra/`, `ui/`) et déplacement des fichiers**.
 2. [x] **Étape 2 : Ajustement des chemins d'importation internes** (remontée vers `../../lib/` et cross-imports entre domaines).
-3. [x] **Étape 3 : Création du point d'entrée unifié `src/composables/index.js` et des façades de rétrocompatibilité**.
-4. [x] **Étape 4 : Adaptation des oracles de vérification pour suivre dynamiquement les réexports**.
-5. [x] **Étape 5 : Validation intégrale de non-régression** (`npm run build`, `node scripts/verify-gates.mjs --all`, `node scripts/tests/runner.mjs`, `npm run knowledge:check`).
+3. [x] **Étape 3 : Création du point d'entrée unifié `src/composables/index.js`**.
+4. [x] **Étape 4 : Migration de l'ensemble des 25 composants et vues** pour importer directement depuis `composables` (résolution automatique vers `index.js`).
+5. [x] **Étape 5 : Suppression définitive des 14 fichiers réexportateurs `use*.js` à la racine de `src/composables/`**.
+6. [x] **Étape 6 : Adaptation des oracles de vérification et des tests unitaires** pour cibler directement les sous-dossiers ou `index.js`.
+7. [x] **Étape 7 : Validation intégrale de non-régression** (`npm run build`, `node scripts/verify-gates.mjs --all`, `node scripts/tests/runner.mjs`, `npm run knowledge:check`).
 
 ---
 

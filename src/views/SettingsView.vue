@@ -1,14 +1,14 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from '../router'
-import { useAuth } from '../composables/useAuth'
-import { useProfile } from '../composables/useProfile'
-import { useSyncEngine } from '../composables/useSyncEngine'
-import { useToast } from '../composables/useToast'
+import { useAuth } from '../composables'
+import { useProfile } from '../composables'
+import { useSyncEngine } from '../composables'
+import { useToast } from '../composables'
 import ThemeToggle from '../components/shared/ThemeToggle.vue'
 import PwaInstallCard from '../components/shared/PwaInstallCard.vue'
 import ConfirmModal from '../components/shared/ConfirmModal.vue'
-import { useDevicePermissions } from '../composables/useDevicePermissions'
+import { useDevicePermissions } from '../composables'
 
 const { navigate } = useRouter()
 const { user, signOut, changePassword } = useAuth()

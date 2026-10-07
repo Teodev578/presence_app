@@ -2,8 +2,8 @@
 import { ref, computed } from 'vue'
 import { db, useLiveQuery } from '../../lib/db'
 import { getLocalDateString, getMonday, formatWorkDate } from '../../lib/dateUtils'
-import { formatWeekLabel } from '../../composables/useAvailabilities'
-import { useToast } from '../../composables/useToast'
+import { formatWeekLabel } from '../../composables'
+import { useToast } from '../../composables'
 import ManagerPageHeader from '../../components/manager/ManagerPageHeader.vue'
 import ManagerKpiCard from '../../components/manager/ManagerKpiCard.vue'
 

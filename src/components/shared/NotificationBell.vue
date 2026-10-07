@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
-import { useNotifications } from '../../composables/useNotifications'
+import { useNotifications } from '../../composables'
 import { useRouter } from '../../router'
 
 const isOpen = ref(false)

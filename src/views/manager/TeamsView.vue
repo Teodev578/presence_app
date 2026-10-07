@@ -2,12 +2,12 @@
 import { ref, computed } from 'vue'
 import { db, useLiveQuery } from '../../lib/db'
 import { generateUUIDv7 } from '../../lib/uuidv7'
-import { useAuth } from '../../composables/useAuth'
-import { useSyncEngine } from '../../composables/useSyncEngine'
+import { useAuth } from '../../composables'
+import { useSyncEngine } from '../../composables'
 import ConfirmModal from '../../components/shared/ConfirmModal.vue'
 import ManagerPageHeader from '../../components/manager/ManagerPageHeader.vue'
 import ManagerEmptyState from '../../components/manager/ManagerEmptyState.vue'
-import { useToast } from '../../composables/useToast'
+import { useToast } from '../../composables'
 
 const { user } = useAuth()
 const { refreshPendingCount, syncNow } = useSyncEngine()

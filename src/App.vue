@@ -1,11 +1,11 @@
 <script setup>
 import { onMounted, computed, watch, defineAsyncComponent } from 'vue'
 import { useRouter } from './router'
-import { useAuth } from './composables/useAuth'
-import { useProfile } from './composables/useProfile'
-import { useSyncEngine } from './composables/useSyncEngine'
-import { useNotifications } from './composables/useNotifications'
-import { initPwaInstall } from './composables/usePwaInstall'
+import { useAuth } from './composables'
+import { useProfile } from './composables'
+import { useSyncEngine } from './composables'
+import { useNotifications } from './composables'
+import { initPwaInstall } from './composables'
 
 // Layouts statiques pour fondation immédiate
 import EmployeeLayout from './layouts/EmployeeLayout.vue'

@@ -177,7 +177,7 @@ export function checkThemeCss() {
 const OPEN_SESSION_SCOPE_FILES = [
   'src/lib/dateUtils.js',
   'src/components/employee/WeekSummaryCard.vue',
-  'src/composables/usePresences.js',
+  'src/composables/domain/usePresences.js',
   'src/views/manager/PresencesView.vue',
 ];
 

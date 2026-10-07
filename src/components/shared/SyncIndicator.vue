@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useSyncEngine } from '../../composables/useSyncEngine'
-import { useAuth } from '../../composables/useAuth'
+import { useSyncEngine } from '../../composables'
+import { useAuth } from '../../composables'
 
 const props = defineProps({
   compact: {

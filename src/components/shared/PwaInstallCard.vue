@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import { usePwaInstall } from '../../composables/usePwaInstall'
+import { usePwaInstall } from '../../composables'
 
 const {
   isInstalled,

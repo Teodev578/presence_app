@@ -1,8 +1,8 @@
 <script setup>
 import { ref, computed, h } from 'vue'
 import { useRouter } from '../router'
-import { useProfile } from '../composables/useProfile'
-import { useSidebarNav } from '../composables/useSidebarNav'
+import { useProfile } from '../composables'
+import { useSidebarNav } from '../composables'
 import SyncAlert from '../components/shared/SyncAlert.vue'
 import NotificationBell from '../components/shared/NotificationBell.vue'
 

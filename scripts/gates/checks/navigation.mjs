@@ -43,7 +43,7 @@ export function checkSyncIndicatorPreserved() {
 const OPEN_SESSION_SCOPE_FILES = [
   'src/lib/dateUtils.js',
   'src/components/employee/WeekSummaryCard.vue',
-  'src/composables/usePresences.js',
+  'src/composables/domain/usePresences.js',
   'src/views/manager/PresencesView.vue',
 ];
 
@@ -86,7 +86,7 @@ export function checkOpenSessionWiring() {
       forbidden: [forbiddenToken],
     },
     {
-      file: 'src/composables/usePresences.js',
+      file: 'src/composables/domain/usePresences.js',
       must: ['resolveSessionMinutes'],
       forbidden: [forbiddenToken],
     },

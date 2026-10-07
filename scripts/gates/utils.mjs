@@ -8,7 +8,7 @@ export const THEME_SCOPE_FILES = [
   'src/components/shared/ThemeToggle.vue',
   'src/layouts/ManagerLayout.vue',
   'src/layouts/EmployeeLayout.vue',
-  'src/composables/useTheme.js',
+  'src/composables/ui/useTheme.js',
 ];
 
 export function getAllSourceFiles(dir, extensions = ['.vue', '.js', '.html']) {

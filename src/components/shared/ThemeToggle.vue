@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, h } from 'vue'
-import { useTheme } from '../../composables/useTheme'
-import { useSidebarNav } from '../../composables/useSidebarNav'
+import { useTheme } from '../../composables'
+import { useSidebarNav } from '../../composables'
 
 // `inline` active le mode vignettes de prévisualisation (page Paramètres).
 const props = defineProps({

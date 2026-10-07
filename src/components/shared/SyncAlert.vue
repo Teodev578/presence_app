@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { useSyncEngine } from '../../composables/useSyncEngine'
-import { useAuth } from '../../composables/useAuth'
+import { useSyncEngine } from '../../composables'
+import { useAuth } from '../../composables'
 
 const { isSyncing, pendingCount, syncNow } = useSyncEngine()
 const { user } = useAuth()

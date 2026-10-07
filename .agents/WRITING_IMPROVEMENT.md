@@ -79,32 +79,35 @@ Il ne remplace pas `AGENTS.md` (invariants figés), `.agents/plan.md` (feuille d
 
 ## Tâches actives
 
-### Tâche : Restructuration par Domaine de `src/composables/`
+### Tâche : Restructuration par Domaine de `src/composables/` (Unicité de `index.js` à la racine)
 **Date** : 2026-10-07
 **Complexité** : Élevée
 **Proposant** : Fabien / presence-stack (Lucas & Victor)
 **Story liée** : `.agents/plan.md`
 
 #### Analyse
-- **Hypothèse initiale** : Organiser les 14 composables dans 4 sous-dossiers thématiques (`auth/`, `domain/`, `infra/`, `ui/`) couplés à un point d'entrée unifié `index.js` et à 14 façades de rétrocompatibilité clarifie la sémantique architecturale sans briser aucun des 65 imports existants dans les composants Vue.
+- **Hypothèse initiale** : Organiser les 14 composables dans 4 sous-dossiers thématiques (`auth/`, `domain/`, `infra/`, `ui/`). Initialement dotée de façades temporaires, la structure a été épurée à la demande de Fabien pour ne conserver à la racine que le point d'accès unifié `index.js` et migrer directement les 25 composants et vues.
 - **Contraintes identifiées** :
-  - Rétrocompatibilité absolue pour tous les imports relatifs des 65 fichiers d'interface (`src/views/`, `src/components/`, `src/layouts/`).
+  - Unicité stricte à la racine de `src/composables/` : uniquement `index.js`, zéro fichier façade `useX.js` résiduel.
+  - Migration propre et rigoureuse de l'ensemble des 25 composants, vues et layouts consommant les composables.
+  - Résolution d'import Vite (`from './composables'`, `from '../composables'`, `from '../../composables'`) exploitant nativement la convention `index.js`.
   - Passage à 100% de la suite de compilation Vite, des 10 tests unitaires et des oracles déterministes G1 à G196.
   - Zéro dépendance externe supplémentaire.
 - **Alternatives envisagées (Design it Twice — Chap. 11)** :
-  - Option A (Déplacement direct et réécriture brute de 65 composants) : rejetée car risquée et intrusive pour le code de production.
-  - Option B (Sous-dossiers thématiques + barrel `index.js` + façades racine transparentes) : **retenue (recommandée)** car elle allie clarté structurelle, masquage de l'information (*Information Hiding*) et robustesse totale.
+  - Option A (Maintenir 14 façades à la racine aux côtés de `index.js`) : **rejetée (déconseillée)** car elle encombre la racine du répertoire et dilue le bénéfice visuel et organisationnel du sous-dossier.
+  - Option B (Point d'accès unique `src/composables/index.js` à la racine, 4 sous-dossiers thématiques, et migration directe des 25 composants) : **retenue (recommandée)** car elle offre la surface la plus propre, un couplage minimal et une architecture limpide pour les développeurs comme pour les outils de bundling.
 
 #### Décision
 **Choix retenu** :
 1. Partition en 4 sous-dossiers : `auth/`, `domain/`, `infra/`, `ui/`.
 2. Création de `src/composables/index.js` réexportant l'ensemble de la logique d'état par domaine.
-3. Conservation de 14 façades racine ultra-légères (`src/composables/useX.js`) assurant la transition transparente.
-4. Mise à niveau de `readScopeFile` dans les oracles pour suivre nativement les réexports.
+3. Suppression complète des 14 façades racine `use*.js` dans `src/composables/`.
+4. Migration des 25 composants/vues vers l'import unifié `composables`.
+5. Adaptation des tests unitaires dynamiques (`sidebar-nav.mjs`, `theme-toggle.mjs`, etc.) pour cibler directement leurs modules d'implémentation respectifs afin de préserver l'invalidation de cache Node ESM.
 
 #### Résultat
 - Implémenté ? O — 2026-10-07
-- Leçon tirée : Le pattern *Sous-dossiers + Façades + Barrel Index* permet de refondre l'architecture physique interne des composables sans provoquer de séisme sur les consommateurs existants. C'est l'application directe du principe de module profond : l'interface externe reste stable et simple, tandis que l'organisation interne gagne en cohésion.
+- Leçon tirée : L'élimination des façades racine au profit du seul `index.js` simplifie radicalement la structure cognitive du répertoire. L'import unifié via le barrel (`from '@/composables'` ou relatif) rationalise les en-têtes des composants en remplaçant de multiples lignes d'import par une seule instruction déstructurée.
 - Escalade : Non requise. 100% oracles G1-G196 verts, 10/10 tests unitaires réussis, build Vite 100% conforme.
 
 ---

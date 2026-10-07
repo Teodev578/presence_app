@@ -79,9 +79,7 @@ import CheckConfirmationOverlay from '../src/components/employee/CheckConfirmati
 import AvailabilitySummary from '../src/components/employee/AvailabilitySummary.vue'
 import LocationsView from '../src/views/manager/LocationsView.vue'
 import { db } from '../src/lib/db.js'
-import { getLocalDateString, resolveSessionMinutes } from '../src/lib/dateUtils.js'
-import { useSyncEngine } from '../src/composables/useSyncEngine.js'
-import { useSidebarNav } from '../src/composables/useSidebarNav.js'
+import { useSyncEngine, useSidebarNav } from '../src/composables/index.js'
 
 // Jeu de sites semé pour les vérifications de l'espace gestionnaire : un actif, un inactif.
 const PROBE_LOCATIONS = [

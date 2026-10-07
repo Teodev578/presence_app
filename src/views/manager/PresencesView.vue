@@ -2,10 +2,10 @@
 import { ref, computed } from 'vue'
 import { db, useLiveQuery } from '../../lib/db'
 import { generateUUIDv7 } from '../../lib/uuidv7'
-import { useAuth } from '../../composables/useAuth'
-import { useProfile } from '../../composables/useProfile'
-import { useSyncEngine } from '../../composables/useSyncEngine'
-import { useToast } from '../../composables/useToast'
+import { useAuth } from '../../composables'
+import { useProfile } from '../../composables'
+import { useSyncEngine } from '../../composables'
+import { useToast } from '../../composables'
 import {
   getLocalDateString,
   getMonday,
@@ -15,7 +15,7 @@ import {
   resolveSessionState,
   resolveSessionMinutes,
 } from '../../lib/dateUtils'
-import { formatWeekLabel } from '../../composables/useAvailabilities'
+import { formatWeekLabel } from '../../composables'
 import StatusBadge from '../../components/shared/StatusBadge.vue'
 import ManagerPageHeader from '../../components/manager/ManagerPageHeader.vue'
 import ManagerKpiCard from '../../components/manager/ManagerKpiCard.vue'
