@@ -50,19 +50,17 @@ export function checkAbsenceModel() {
  * G176 : Synchronisation Outbox, Pull par rôle et composable useAbsenceRequests
  */
 export function checkAbsenceSync() {
-  const syncFile = path.resolve('src/composables/useSyncEngine.js');
-  const syncContent = fs.readFileSync(syncFile, 'utf8');
-  if (!syncContent.includes("from('absence_requests')") || !syncContent.includes("table: 'absence_requests'")) {
+  const syncContent = readScopeFile('src/composables/useSyncEngine.js');
+  if (!syncContent || !syncContent.includes("from('absence_requests')") || !syncContent.includes("table: 'absence_requests'")) {
     console.error('FAILURE G176: useSyncEngine.js n’intègre pas le pull et realtime de absence_requests');
     return false;
   }
 
-  const composableFile = path.resolve('src/composables/useAbsenceRequests.js');
-  if (!fs.existsSync(composableFile)) {
+  const composableContent = readScopeFile('src/composables/useAbsenceRequests.js');
+  if (!composableContent) {
     console.error('FAILURE G176: useAbsenceRequests.js introuvable');
     return false;
   }
-  const composableContent = fs.readFileSync(composableFile, 'utf8');
   for (const method of ['submitRequest', 'cancelRequest', 'validateRequest', 'refuseRequest', 'currentWeekRequest']) {
     if (!composableContent.includes(method)) {
       console.error(`FAILURE G176: useAbsenceRequests.js manque la méthode ${method}`);
@@ -78,9 +76,8 @@ export function checkAbsenceSync() {
  * G177 : Notifications croisées réactives pour gestionnaires et collaborateurs
  */
 export function checkAbsenceNotifications() {
-  const notifFile = path.resolve('src/composables/useNotifications.js');
-  const notifContent = fs.readFileSync(notifFile, 'utf8');
-  if (!notifContent.includes('absence_requests') || !notifContent.includes('Demande d’absence en attente') || !notifContent.includes('myAbsenceRequests')) {
+  const notifContent = readScopeFile('src/composables/useNotifications.js');
+  if (!notifContent || !notifContent.includes('absence_requests') || !notifContent.includes('Demande d’absence en attente') || !notifContent.includes('myAbsenceRequests')) {
     console.error('FAILURE G177: useNotifications.js n’intègre pas les notifications réactives d’absence');
     return false;
   }

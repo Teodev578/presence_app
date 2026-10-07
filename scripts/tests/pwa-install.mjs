@@ -72,8 +72,10 @@ if (existsSync(swPath)) {
 }
 
 console.log('\n--- 4. Composable usePwaInstall ---')
-const composablePath = resolve(root, 'src/composables/usePwaInstall.js')
-assert(existsSync(composablePath), 'src/composables/usePwaInstall.js existe')
+const composablePath = existsSync(resolve(root, 'src/composables/infra/usePwaInstall.js'))
+  ? resolve(root, 'src/composables/infra/usePwaInstall.js')
+  : resolve(root, 'src/composables/usePwaInstall.js')
+assert(existsSync(composablePath), 'src/composables/infra/usePwaInstall.js existe')
 if (existsSync(composablePath)) {
   const compContent = readFileSync(composablePath, 'utf8')
   assert(compContent.includes('beforeinstallprompt'), 'Interception de beforeinstallprompt présente')

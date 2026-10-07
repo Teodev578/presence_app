@@ -16,7 +16,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
-const MODULE_URL = new URL('../../src/composables/useTheme.js', import.meta.url).href
+const MODULE_URL = new URL('../../src/composables/ui/useTheme.js', import.meta.url).href
 const LIGHT_SURFACE = '#fdfcff'
 const DARK_SURFACE = '#111318'
 

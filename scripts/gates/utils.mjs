@@ -149,7 +149,27 @@ export function reportIssues(issues, label, heading, formatter) {
 export const countOccurrences = (text, needle) => text.split(needle).length - 1;
 
 export const readScopeFile = (file) => {
-  const resolved = path.resolve(file);
+  let resolved = path.resolve(file);
+  if (!fs.existsSync(resolved)) {
+    if (file.startsWith('src/composables/')) {
+      const base = path.basename(file);
+      for (const sub of ['auth', 'domain', 'infra', 'ui']) {
+        const candidate = path.resolve('src/composables', sub, base);
+        if (fs.existsSync(candidate)) {
+          resolved = candidate;
+          break;
+        }
+      }
+    }
+  }
   if (!fs.existsSync(resolved)) return null;
-  return fs.readFileSync(resolved, 'utf8');
+  const content = fs.readFileSync(resolved, 'utf8');
+  const reexportMatch = content.match(/export\s+\*\s+from\s+['"]\.\/([^'"]+)['"]/);
+  if (reexportMatch) {
+    const target = path.resolve(path.dirname(resolved), reexportMatch[1]);
+    if (fs.existsSync(target)) {
+      return fs.readFileSync(target, 'utf8');
+    }
+  }
+  return content;
 };

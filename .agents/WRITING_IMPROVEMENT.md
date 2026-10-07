@@ -79,6 +79,36 @@ Il ne remplace pas `AGENTS.md` (invariants figés), `.agents/plan.md` (feuille d
 
 ## Tâches actives
 
+### Tâche : Restructuration par Domaine de `src/composables/`
+**Date** : 2026-10-07
+**Complexité** : Élevée
+**Proposant** : Fabien / presence-stack (Lucas & Victor)
+**Story liée** : `.agents/plan.md`
+
+#### Analyse
+- **Hypothèse initiale** : Organiser les 14 composables dans 4 sous-dossiers thématiques (`auth/`, `domain/`, `infra/`, `ui/`) couplés à un point d'entrée unifié `index.js` et à 14 façades de rétrocompatibilité clarifie la sémantique architecturale sans briser aucun des 65 imports existants dans les composants Vue.
+- **Contraintes identifiées** :
+  - Rétrocompatibilité absolue pour tous les imports relatifs des 65 fichiers d'interface (`src/views/`, `src/components/`, `src/layouts/`).
+  - Passage à 100% de la suite de compilation Vite, des 10 tests unitaires et des oracles déterministes G1 à G196.
+  - Zéro dépendance externe supplémentaire.
+- **Alternatives envisagées (Design it Twice — Chap. 11)** :
+  - Option A (Déplacement direct et réécriture brute de 65 composants) : rejetée car risquée et intrusive pour le code de production.
+  - Option B (Sous-dossiers thématiques + barrel `index.js` + façades racine transparentes) : **retenue (recommandée)** car elle allie clarté structurelle, masquage de l'information (*Information Hiding*) et robustesse totale.
+
+#### Décision
+**Choix retenu** :
+1. Partition en 4 sous-dossiers : `auth/`, `domain/`, `infra/`, `ui/`.
+2. Création de `src/composables/index.js` réexportant l'ensemble de la logique d'état par domaine.
+3. Conservation de 14 façades racine ultra-légères (`src/composables/useX.js`) assurant la transition transparente.
+4. Mise à niveau de `readScopeFile` dans les oracles pour suivre nativement les réexports.
+
+#### Résultat
+- Implémenté ? O — 2026-10-07
+- Leçon tirée : Le pattern *Sous-dossiers + Façades + Barrel Index* permet de refondre l'architecture physique interne des composables sans provoquer de séisme sur les consommateurs existants. C'est l'application directe du principe de module profond : l'interface externe reste stable et simple, tandis que l'organisation interne gagne en cohésion.
+- Escalade : Non requise. 100% oracles G1-G196 verts, 10/10 tests unitaires réussis, build Vite 100% conforme.
+
+---
+
 ### Tâche : Restructuration Complète et Cloisonnement du Répertoire `scripts/`
 **Date** : 2026-10-07
 **Complexité** : Élevée

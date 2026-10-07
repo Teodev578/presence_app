@@ -120,9 +120,8 @@ export function checkAppLoading() {
     }
   }
 
-  const profileFile = path.resolve('src/composables/useProfile.js');
-  const profileContent = fs.readFileSync(profileFile, 'utf8');
-  if (!profileContent.includes('Local-First Stale-While-Revalidate') || !profileContent.includes('.maybeSingle()')) {
+  const profileContent = readScopeFile('src/composables/useProfile.js');
+  if (!profileContent || !profileContent.includes('Local-First Stale-While-Revalidate') || !profileContent.includes('.maybeSingle()')) {
     console.error('FAILURE G184: useProfile.js n’implémente pas le rafraîchissement Stale-While-Revalidate non bloquant');
     return false;
   }

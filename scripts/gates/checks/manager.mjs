@@ -537,12 +537,12 @@ export function checkSyncScope() {
     return false;
   }
 
-  const file = path.join(SRC_DIR, 'composables', 'useSyncEngine.js');
-  if (!fs.existsSync(file)) {
+  const syncContent = readScopeFile('src/composables/useSyncEngine.js');
+  if (!syncContent) {
     console.error('FAILURE G73: useSyncEngine.js introuvable');
     return false;
   }
-  const gaps = scopeGaps(fs.readFileSync(file, 'utf8'));
+  const gaps = scopeGaps(syncContent);
   if (gaps.length > 0) {
     console.error(`FAILURE G73: le pull reste incomplet -> ${[...new Set(gaps)].join(', ')}`);
     return false;

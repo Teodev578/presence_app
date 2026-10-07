@@ -21,9 +21,10 @@ function assert(condition, message) {
   }
 }
 
-console.log('\n--- 1. Vérification du composable useAuth.js ---')
-const authPath = resolve(root, 'src/composables/useAuth.js')
-assert(existsSync(authPath), 'src/composables/useAuth.js existe')
+const authPath = existsSync(resolve(root, 'src/composables/auth/useAuth.js'))
+  ? resolve(root, 'src/composables/auth/useAuth.js')
+  : resolve(root, 'src/composables/useAuth.js')
+assert(existsSync(authPath), 'src/composables/auth/useAuth.js existe')
 
 if (existsSync(authPath)) {
   const authContent = readFileSync(authPath, 'utf8')

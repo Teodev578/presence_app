@@ -94,13 +94,12 @@ export function checkOpenSessionWiring() {
 
   let ok = true;
   for (const { file, must = [], forbidden = [] } of requirements) {
-    const resolved = path.resolve(file);
-    if (!fs.existsSync(resolved)) {
+    const content = readScopeFile(file);
+    if (!content) {
       console.error(`FAILURE G18: ${file} introuvable`);
       ok = false;
       continue;
     }
-    const content = fs.readFileSync(resolved, 'utf8');
     for (const token of must) {
       if (!content.includes(token)) {
         console.error(`FAILURE G18: ${file} ne référence pas ${token}`);

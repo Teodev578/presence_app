@@ -106,9 +106,8 @@ export function checkAccountLifecycle() {
     return false;
   }
 
-  const profilePath = path.join(SRC_DIR, 'composables', 'useProfile.js');
-  const profileContent = fs.readFileSync(profilePath, 'utf8');
-  if (!profileContent.includes('isPendingApproval') || !profileContent.includes('isArchived') || !profileContent.includes('isDisabled')) {
+  const profileContent = readScopeFile('src/composables/useProfile.js');
+  if (!profileContent || !profileContent.includes('isPendingApproval') || !profileContent.includes('isArchived') || !profileContent.includes('isDisabled')) {
     console.error('FAILURE G154: useProfile.js n\'expose pas les helpers de cycle de vie');
     return false;
   }
@@ -121,12 +120,11 @@ export function checkAccountLifecycle() {
  * Vérifie le système de notifications pour les comptes en attente de validation (G156-G158).
  */
 export function checkPendingNotifications() {
-  const notifComposablePath = path.join(SRC_DIR, 'composables', 'useNotifications.js');
-  if (!fs.existsSync(notifComposablePath)) {
+  const notifContent = readScopeFile('src/composables/useNotifications.js');
+  if (!notifContent) {
     console.error('FAILURE G156: src/composables/useNotifications.js introuvable');
     return false;
   }
-  const notifContent = fs.readFileSync(notifComposablePath, 'utf8');
   if (
     !notifContent.includes('pending_validation') ||
     !notifContent.includes('notifications') ||
@@ -220,9 +218,8 @@ export function checkArchivedAccountSession() {
     return false;
   }
 
-  const notifPath = path.join(SRC_DIR, 'composables', 'useNotifications.js');
-  const notifContent = fs.readFileSync(notifPath, 'utf8');
-  if (!notifContent.includes('account_archived')) {
+  const notifContent = readScopeFile('src/composables/useNotifications.js');
+  if (!notifContent || !notifContent.includes('account_archived')) {
     console.error('FAILURE G163: useNotifications.js n\'intègre pas la notification de compte archivé');
     return false;
   }
@@ -274,8 +271,7 @@ export function checkPrivilegedRolesArchiveProtection() {
  */
 
 export function checkAccountConfirmationFeedback() {
-  const notifFile = path.resolve('src/composables/useNotifications.js');
-  const notifContent = fs.readFileSync(notifFile, 'utf8');
+  const notifContent = readScopeFile('src/composables/useNotifications.js');
   for (const token of ['pendingAccountsCount', 'account_activated', 'Compte confirmé et actif', 'Pointer ma présence']) {
     if (!notifContent.includes(token)) {
       console.error(`FAILURE G180: useNotifications.js ne contient pas ${token}`);
@@ -297,8 +293,7 @@ export function checkAccountConfirmationFeedback() {
 }
 
 export function checkAuthTransition() {
-  const authFile = path.resolve('src/composables/useAuth.js');
-  const authContent = fs.readFileSync(authFile, 'utf8');
+  const authContent = readScopeFile('src/composables/useAuth.js');
   for (const token of ['authInitializing', 'authLoading', 'initAuth', 'authInitializing.value = true', 'authInitializing.value = false']) {
     if (!authContent.includes(token)) {
       console.error(`FAILURE G182: useAuth.js ne contient pas ${token}`);
@@ -330,8 +325,7 @@ export function checkAuthTransition() {
 
 
 export function checkOtpRecovery() {
-  const authFile = path.resolve('src/composables/useAuth.js');
-  const authContent = fs.readFileSync(authFile, 'utf8');
+  const authContent = readScopeFile('src/composables/useAuth.js');
 
   if (!authContent.includes('verifyRecoveryOtp')) {
     console.error('FAILURE G192: useAuth.js ne déclare pas verifyRecoveryOtp');
@@ -445,9 +439,8 @@ export function checkUserNamesSplit() {
     return false;
   }
 
-  const authFile = path.resolve('src/composables/useAuth.js');
-  const authContent = fs.readFileSync(authFile, 'utf8');
-  if (!authContent.includes('first_name: firstName') || !authContent.includes('last_name: lastName')) {
+  const authContent = readScopeFile('src/composables/useAuth.js');
+  if (!authContent || !authContent.includes('first_name: firstName') || !authContent.includes('last_name: lastName')) {
     console.error('FAILURE G196: useAuth.js signUp ne transmet pas first_name et last_name');
     return false;
   }

@@ -1,3 +1,31 @@
+# Plan : Restructuration par Domaine de `src/composables/`
+
+Date : 2026-10-07  
+Déclencheur : Demande utilisateur (« J'aimerais aussi pour rendre le code plus compréhensible placer tous ces fichiers dans des dossiers »)  
+Statut : Terminé et Validé (14 composables redistribués dans 4 sous-dossiers thématiques auth/, domain/, infra/, ui/, point d'accès unifié index.js créé, façades de rétrocompatibilité préservées à la racine, oracles G1-G196 et tests unitaires 100% verts, build Vite réussi)  
+Complexité : Élevée (restructuration du code de production réactif, adaptation des cross-imports, transparence totale pour les 65 composants existants)  
+Portes liées : G1 à G196, G18, G73, G154, G163  
+
+## 1. Périmètre
+
+### Architecture cible :
+- `src/composables/auth/` : `useAuth.js`, `useProfile.js`
+- `src/composables/domain/` : `usePresences.js`, `useAbsenceRequests.js`, `useAvailabilities.js`, `useLocations.js`
+- `src/composables/infra/` : `useSyncEngine.js`, `useGeolocation.js`, `useDevicePermissions.js`, `usePwaInstall.js`
+- `src/composables/ui/` : `useTheme.js`, `useSidebarNav.js`, `useNotifications.js`, `useToast.js`
+- `src/composables/index.js` : Point d'accès unifié et barrel export complet
+- `src/composables/useX.js` : 14 façades réexportatrices préservant les 65 imports existants et les contrats de tests
+
+## 2. Étapes Séquentielles
+
+1. [x] **Étape 1 : Création des 4 sous-dossiers thématiques (`auth/`, `domain/`, `infra/`, `ui/`) et déplacement des fichiers**.
+2. [x] **Étape 2 : Ajustement des chemins d'importation internes** (remontée vers `../../lib/` et cross-imports entre domaines).
+3. [x] **Étape 3 : Création du point d'entrée unifié `src/composables/index.js` et des façades de rétrocompatibilité**.
+4. [x] **Étape 4 : Adaptation des oracles de vérification pour suivre dynamiquement les réexports**.
+5. [x] **Étape 5 : Validation intégrale de non-régression** (`npm run build`, `node scripts/verify-gates.mjs --all`, `node scripts/tests/runner.mjs`, `npm run knowledge:check`).
+
+---
+
 # Plan : Restructuration Complète et Cloisonnement de `scripts/`
 
 Date : 2026-10-07  

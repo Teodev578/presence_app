@@ -12,7 +12,7 @@
 
 import assert from 'node:assert/strict'
 
-const MODULE_URL = new URL('../../src/composables/useSidebarNav.js', import.meta.url).href
+const MODULE_URL = new URL('../../src/composables/ui/useSidebarNav.js', import.meta.url).href
 const DOCKED_QUERY = '(min-width: 840px)'
 const AUTO_RAIL_QUERY = '(min-width: 840px) and (max-width: 1023.98px)'
 const STORAGE_KEY = 'presence_nav_collapsed'
