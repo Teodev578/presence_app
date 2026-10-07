@@ -4,12 +4,12 @@ import { useRouter } from '../../router'
 import { db, useLiveQuery } from '../../lib/db'
 import { generateUUIDv7 } from '../../lib/uuidv7'
 import { supabase } from '../../lib/supabase'
-import { useAuth } from '../../composables'
-import { useSyncEngine } from '../../composables'
+import { useAuth } from '../../composables/auth/useAuth.js'
+import { useSyncEngine } from '../../composables/infra/useSyncEngine.js'
+import { useToast } from '../../composables/ui/useToast.js'
 import ConfirmModal from '../../components/shared/ConfirmModal.vue'
 import ManagerPageHeader from '../../components/manager/ManagerPageHeader.vue'
 import ManagerEmptyState from '../../components/manager/ManagerEmptyState.vue'
-import { useToast } from '../../composables'
 
 const { route } = useRouter()
 const { user } = useAuth()

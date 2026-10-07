@@ -1,8 +1,8 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { useAvailabilities, formatWeekLabel } from '../../composables'
-import { useAbsenceRequests } from '../../composables'
-import { useToast } from '../../composables'
+import { useAbsenceRequests } from '../../composables/domain/useAbsenceRequests.js'
+import { useAvailabilities, formatWeekLabel } from '../../composables/domain/useAvailabilities.js'
+import { useToast } from '../../composables/ui/useToast.js'
 import { summarizeAvailability } from '../../lib/availabilitySummary'
 import AvailabilitySummary from './AvailabilitySummary.vue'
 

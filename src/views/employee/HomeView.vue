@@ -1,8 +1,8 @@
 <script setup>
 import { computed } from 'vue'
 import { useRouter } from '../../router'
-import { useProfile } from '../../composables'
-import { usePresences } from '../../composables'
+import { useProfile } from '../../composables/auth/useProfile.js'
+import { usePresences } from '../../composables/domain/usePresences.js'
 import DayCard from '../../components/employee/DayCard.vue'
 import WeekSummaryCard from '../../components/employee/WeekSummaryCard.vue'
 

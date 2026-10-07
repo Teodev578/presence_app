@@ -1,8 +1,8 @@
 <script setup>
 import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter } from '../../router'
-import { useAuth } from '../../composables'
-import { useProfile } from '../../composables'
+import { useAuth } from '../../composables/auth/useAuth.js'
+import { useProfile } from '../../composables/auth/useProfile.js'
 
 const { route, navigate } = useRouter()
 const { signIn, signUp, resetPassword, verifyRecoveryOtp, authLoading, authError } = useAuth()

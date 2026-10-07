@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
-import { useAuth } from '../../composables'
-import { useProfile } from '../../composables'
+import { useAuth } from '../../composables/auth/useAuth.js'
+import { useProfile } from '../../composables/auth/useProfile.js'
 import ConfirmModal from '../../components/shared/ConfirmModal.vue'
 import NotificationBell from '../../components/shared/NotificationBell.vue'
 import SyncAlert from '../../components/shared/SyncAlert.vue'

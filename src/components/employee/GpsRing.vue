@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import { formatDistance } from '../../composables'
+import { formatDistance } from '../../composables/infra/useGeolocation.js'
 
 const props = defineProps({
   inPerimeter: {

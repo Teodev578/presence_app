@@ -1,9 +1,9 @@
-# Plan : Restructuration par Domaine de `src/composables/` (Unicité de `index.js` à la racine)
+# Plan : Suppression de `src/composables/index.js` et Adoption d'Imports Directs par Domaine
 
 Date : 2026-10-07  
-Déclencheur : Demandes utilisateur (« J'aimerais aussi pour rendre le code plus compréhensible placer tous ces fichiers dans des dossiers » puis « gardé le fichier "src/composables/index.js" uniquement à la racine me semble une meilleure pratique que de le garder lui et tous les autres à la racine du dossier »)  
-Statut : Terminé et Validé (14 composables redistribués dans 4 sous-dossiers thématiques auth/, domain/, infra/, ui/, unique fichier index.js conservé à la racine de src/composables/, 14 façades useX.js racine supprimées, 25 composants/vues migrés vers l'import unifié, oracles G1-G196 et tests unitaires 100% verts, build Vite réussi)  
-Complexité : Élevée (restructuration du code de production réactif, adaptation des cross-imports, migration directe de l'ensemble des 25 composants et vues sans régression)  
+Déclencheur : Demande utilisateur (« Finalement on va supprimer aussi le fichier "src/composables/index.js", utiliser juste ce fichier enfaite pour le projet empêche la compréhension du code Car au final on ne sait pas réellement quel fichier est utilisé pour un composant par exemple »)  
+Statut : Terminé et Validé (src/composables/ ne contient plus que 4 sous-dossiers et 0 fichier à la racine, barrel index.js supprimé, les 25 composants et vues importent directement depuis auth/, domain/, infra/, ui/, oracles G1-G196 et tests unitaires 100% verts, build Vite réussi)  
+Complexité : Élevée (suppression du point d'accès unifié, réécriture de tous les imports applicatifs vers les sous-dossiers exacts, préservation du code-splitting et validation de tous les oracles)  
 Portes liées : G1 à G196, G18, G73, G154, G163  
 
 ## 1. Périmètre
@@ -13,18 +13,16 @@ Portes liées : G1 à G196, G18, G73, G154, G163
 - `src/composables/domain/` : `usePresences.js`, `useAbsenceRequests.js`, `useAvailabilities.js`, `useLocations.js`
 - `src/composables/infra/` : `useSyncEngine.js`, `useGeolocation.js`, `useDevicePermissions.js`, `usePwaInstall.js`
 - `src/composables/ui/` : `useTheme.js`, `useSidebarNav.js`, `useNotifications.js`, `useToast.js`
-- `src/composables/index.js` : Unique fichier à la racine de `src/composables/`, point d'accès unifié et barrel export complet
-- Les 14 fichiers façades racine `use*.js` ont été complètement purgés ; tous les imports applicatifs (`App.vue`, composants, vues, layouts) ciblent le dossier unifié `composables`.
+- `src/composables/` (racine) : **0 fichier** (ni façades, ni `index.js`).
+- Tous les composants (`src/App.vue`, `src/components/`, `src/views/`, `src/layouts/`) importent expressément depuis le sous-répertoire concerné (ex. `import { useAuth } from '../../composables/auth/useAuth.js'`).
 
 ## 2. Étapes Séquentielles
 
-1. [x] **Étape 1 : Création des 4 sous-dossiers thématiques (`auth/`, `domain/`, `infra/`, `ui/`) et déplacement des fichiers**.
-2. [x] **Étape 2 : Ajustement des chemins d'importation internes** (remontée vers `../../lib/` et cross-imports entre domaines).
-3. [x] **Étape 3 : Création du point d'entrée unifié `src/composables/index.js`**.
-4. [x] **Étape 4 : Migration de l'ensemble des 25 composants et vues** pour importer directement depuis `composables` (résolution automatique vers `index.js`).
-5. [x] **Étape 5 : Suppression définitive des 14 fichiers réexportateurs `use*.js` à la racine de `src/composables/`**.
-6. [x] **Étape 6 : Adaptation des oracles de vérification et des tests unitaires** pour cibler directement les sous-dossiers ou `index.js`.
-7. [x] **Étape 7 : Validation intégrale de non-régression** (`npm run build`, `node scripts/verify-gates.mjs --all`, `node scripts/tests/runner.mjs`, `npm run knowledge:check`).
+1. [x] **Étape 1 : Cartographie et migration des 25 fichiers d'interface** pour remplacer les imports depuis le barrel par des imports directs et précis vers leurs sous-dossiers respectifs (`auth/`, `domain/`, `infra/`, `ui/`).
+2. [x] **Étape 2 : Mise à jour de l'oracle de simulation navigateur** (`scripts/browser/verify.mjs`) pour consommer directement `infra/useSyncEngine.js` et `ui/useSidebarNav.js`.
+3. [x] **Étape 3 : Suppression physique du fichier `src/composables/index.js`**.
+4. [x] **Étape 4 : Validation intégrale de non-régression** (`npm run build`, `node scripts/verify-gates.mjs --all`, `node scripts/tests/runner.mjs`, `npm run knowledge:check`).
+5. [x] **Étape 5 : Mise à jour du journal d'arbitrages et rapport sobre sans commit non sollicité**.
 
 ---
 

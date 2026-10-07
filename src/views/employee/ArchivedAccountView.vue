@@ -1,9 +1,9 @@
 <script setup>
 import { ref, computed } from 'vue'
-import { useAuth } from '../../composables'
-import { useProfile } from '../../composables'
-import { useSyncEngine } from '../../composables'
-import { useToast } from '../../composables'
+import { useAuth } from '../../composables/auth/useAuth.js'
+import { useProfile } from '../../composables/auth/useProfile.js'
+import { useSyncEngine } from '../../composables/infra/useSyncEngine.js'
+import { useToast } from '../../composables/ui/useToast.js'
 import NotificationBell from '../../components/shared/NotificationBell.vue'
 import SyncAlert from '../../components/shared/SyncAlert.vue'
 

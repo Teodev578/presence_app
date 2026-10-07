@@ -79,35 +79,32 @@ Il ne remplace pas `AGENTS.md` (invariants figés), `.agents/plan.md` (feuille d
 
 ## Tâches actives
 
-### Tâche : Restructuration par Domaine de `src/composables/` (Unicité de `index.js` à la racine)
+### Tâche : Suppression de `src/composables/index.js` et Adoption d'Imports Directs par Domaine
 **Date** : 2026-10-07
 **Complexité** : Élevée
 **Proposant** : Fabien / presence-stack (Lucas & Victor)
 **Story liée** : `.agents/plan.md`
 
 #### Analyse
-- **Hypothèse initiale** : Organiser les 14 composables dans 4 sous-dossiers thématiques (`auth/`, `domain/`, `infra/`, `ui/`). Initialement dotée de façades temporaires, la structure a été épurée à la demande de Fabien pour ne conserver à la racine que le point d'accès unifié `index.js` et migrer directement les 25 composants et vues.
+- **Hypothèse initiale** : L'utilisation d'un barrel unifié `index.js` à la racine de `src/composables/` masquait la provenance réelle des composables pour les composants consommateurs (`auth/`, `domain/`, `infra/`, `ui/`). Supprimer le fichier `index.js` et imposer des imports explicites ciblés par domaine rend l'architecture immédiatement lisible et supprime toute ambiguïté sur les dépendances réelles d'un composant.
 - **Contraintes identifiées** :
-  - Unicité stricte à la racine de `src/composables/` : uniquement `index.js`, zéro fichier façade `useX.js` résiduel.
-  - Migration propre et rigoureuse de l'ensemble des 25 composants, vues et layouts consommant les composables.
-  - Résolution d'import Vite (`from './composables'`, `from '../composables'`, `from '../../composables'`) exploitant nativement la convention `index.js`.
-  - Passage à 100% de la suite de compilation Vite, des 10 tests unitaires et des oracles déterministes G1 à G196.
-  - Zéro dépendance externe supplémentaire.
+  - Éradication totale de `src/composables/index.js` : le répertoire `src/composables/` ne contient plus que 4 sous-dossiers et 0 fichier à sa racine.
+  - Migration rigoureuse de l'ensemble des 25 composants, vues et layouts consommant les composables.
+  - Zéro régression sur le build Vite, sur les 10 suites de tests unitaires et sur les 81 oracles de validation G1 à G196.
 - **Alternatives envisagées (Design it Twice — Chap. 11)** :
-  - Option A (Maintenir 14 façades à la racine aux côtés de `index.js`) : **rejetée (déconseillée)** car elle encombre la racine du répertoire et dilue le bénéfice visuel et organisationnel du sous-dossier.
-  - Option B (Point d'accès unique `src/composables/index.js` à la racine, 4 sous-dossiers thématiques, et migration directe des 25 composants) : **retenue (recommandée)** car elle offre la surface la plus propre, un couplage minimal et une architecture limpide pour les développeurs comme pour les outils de bundling.
+  - Option A (Conserver un barrel `index.js` global) : **rejetée (déconseillée)** car elle crée une indirection inutile, masque le domaine fonctionnel d'où provient chaque composable et favorise des couplages implicites.
+  - Option B (Imports directs et explicites par sous-domaine `auth/`, `domain/`, `infra/`, `ui/` sans aucun barrel racine) : **retenue (recommandée)** car elle offre une clarté maximale : à la lecture d'un composant, ses dépendances fonctionnelles et d'infrastructure sautent aux yeux.
 
 #### Décision
 **Choix retenu** :
-1. Partition en 4 sous-dossiers : `auth/`, `domain/`, `infra/`, `ui/`.
-2. Création de `src/composables/index.js` réexportant l'ensemble de la logique d'état par domaine.
-3. Suppression complète des 14 façades racine `use*.js` dans `src/composables/`.
-4. Migration des 25 composants/vues vers l'import unifié `composables`.
-5. Adaptation des tests unitaires dynamiques (`sidebar-nav.mjs`, `theme-toggle.mjs`, etc.) pour cibler directement leurs modules d'implémentation respectifs afin de préserver l'invalidation de cache Node ESM.
+1. Suppression physique de `src/composables/index.js`.
+2. Réécriture des imports dans les 25 fichiers d'interface de `src/` pour pointer directement vers `../../composables/{domaine}/{useComposable}.js`.
+3. Mise à jour de `scripts/browser/verify.mjs` pour importer directement les composables ciblés.
+4. Validation intégrale de non-régression.
 
 #### Résultat
 - Implémenté ? O — 2026-10-07
-- Leçon tirée : L'élimination des façades racine au profit du seul `index.js` simplifie radicalement la structure cognitive du répertoire. L'import unifié via le barrel (`from '@/composables'` ou relatif) rationalise les en-têtes des composants en remplaçant de multiples lignes d'import par une seule instruction déstructurée.
+- Leçon tirée : L'import explicite par sous-dossier de domaine renforce la lisibilité architecturale (*Explicit is better than implicit*). En examinant la section d'imports d'un composant ou d'une vue, un développeur identifie immédiatement ses dépendances réelles (sécurité via `auth/`, état local via `domain/`, capacités matérielles via `infra/` ou interactions via `ui/`).
 - Escalade : Non requise. 100% oracles G1-G196 verts, 10/10 tests unitaires réussis, build Vite 100% conforme.
 
 ---

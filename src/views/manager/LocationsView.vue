@@ -1,11 +1,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useLocations, isLocationActive } from '../../composables'
-import { useGeolocation } from '../../composables'
+import { useLocations, isLocationActive } from '../../composables/domain/useLocations.js'
+import { useGeolocation } from '../../composables/infra/useGeolocation.js'
+import { useToast } from '../../composables/ui/useToast.js'
 import { parseGeoInput, parseAndResolveGeoInput } from '../../lib/geoParser'
 import ConfirmModal from '../../components/shared/ConfirmModal.vue'
 import ManagerPageHeader from '../../components/manager/ManagerPageHeader.vue'
-import { useToast } from '../../composables'
 
 const { locations, ensureLoaded, createLocation, updateLocation, deleteLocation } = useLocations()
 const { currentCoords, isLocating, gpsError, startWatching, stopWatching } = useGeolocation()

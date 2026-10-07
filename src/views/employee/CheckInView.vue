@@ -1,10 +1,10 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from '../../router'
-import { useGeolocation, formatDistance } from '../../composables'
-import { usePresences } from '../../composables'
-import { useProfile } from '../../composables'
-import { useLocations, isLocationActive } from '../../composables'
+import { useProfile } from '../../composables/auth/useProfile.js'
+import { useLocations, isLocationActive } from '../../composables/domain/useLocations.js'
+import { usePresences } from '../../composables/domain/usePresences.js'
+import { useGeolocation, formatDistance } from '../../composables/infra/useGeolocation.js'
 import GpsRing from '../../components/employee/GpsRing.vue'
 import CheckConfirmationOverlay from '../../components/employee/CheckConfirmationOverlay.vue'
 

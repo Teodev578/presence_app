@@ -1,5 +1,5 @@
 <script setup>
-import { useToast } from '../../composables'
+import { useToast } from '../../composables/ui/useToast.js'
 
 const { toasts, dismissToast } = useToast()
 </script>
