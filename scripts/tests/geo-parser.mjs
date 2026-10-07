@@ -1,5 +1,5 @@
 import assert from 'node:assert';
-import { parseGeoInput, parseAndResolveGeoInput, isValidLatLng } from '../src/lib/geoParser.js';
+import { parseGeoInput, parseAndResolveGeoInput, isValidLatLng } from '../../src/lib/geoParser.js';
 
 console.log('🧪 Lancement des tests de validation pour geoParser...');
 

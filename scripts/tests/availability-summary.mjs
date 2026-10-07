@@ -9,7 +9,7 @@
  */
 
 import assert from 'node:assert/strict'
-import { summarizeAvailability, describeAvailabilityCount } from '../src/lib/availabilitySummary.js'
+import { summarizeAvailability, describeAvailabilityCount } from '../../src/lib/availabilitySummary.js'
 
 const DAYS = [
   { id: 1, label: 'Lundi', short: 'Lun' },

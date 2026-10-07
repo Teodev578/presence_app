@@ -25,10 +25,10 @@ Projet web monopage réactif avec persistance locale et synchronisation distante
 Le répertoire `.agents/` héberge les directives et compétences modulaires pour éviter la surcharge cognitive du contexte :
 
 - `.agents/rules/` : Règles permanentes de qualité logicielle et d'intégrité architecturale. Consulter systématiquement :
-  - `01-engineering-standards.md` : standards généraux, hygiène stop-slop, sobriété & YAGNI.
+  - `01-engineering-standards.md` : standards généraux, hygiène stop-slop, sobriété, YAGNI & philosophie de conception logicielle d'Ousterhout (programmation stratégique, deep modules, anti-tactical tornado).
   - `02-frontend-conventions.md` : conventions Vue 3, SFC, Composition API & DaisyUI.
-  - `03-local-first-and-dexie.md` : intégrité IndexedDB, microtask boundary & UUIDv7.
-  - `04-sync-engine-and-outbox.md` : Transactional Outbox, idempotence & tombstones.
+  - `03-local-first-and-dexie.md` : intégrité IndexedDB, microtask boundary, UUIDv7 & erreurs hors de l'existence.
+  - `04-sync-engine-and-outbox.md` : Transactional Outbox, idempotence, tombstones & masquage de l'indisponibilité réseau.
   - `05-supabase-rls-and-schema.md` : sécurité Row Level Security, indexation B-Tree & pull incrémental.
   - `06-animation-standards.md` : fluidité GPU, anti-jank et prefers-reduced-motion.
   - `07-design-system.md` : synergie Material 3 & DaisyUI v5, tokens et hiérarchie de formes.
@@ -39,6 +39,7 @@ Le répertoire `.agents/` héberge les directives et compétences modulaires pou
 - `.agents/skills/` : Protocoles procéduraux déclenchés sur demande ou selon le besoin technique. Le périmètre des compétences actives et inactives est consigné dans [`.agents/skills-scope.md`](.agents/skills-scope.md).
   - Déclencheur discipline & grand livre (`unlazy`) : invoquer obligatoirement avant toute intervention substantielle, refactoring transverse ou correctif multi-fichiers pour établir et prouver les gates d'acceptation dans `GATES.md`.
   - Déclencheur communication & prose (`stop-slop`) : invoquer pour tout texte rédigé, commentaire de code, documentation ou réponse utilisateur afin de bannir le jargon artificiel, les adverbes superflus et les tirets cadratins.
+  - Déclencheur architecture & profondeur modulaire (`codebase-design`) : invoquer pour concevoir des modules profonds (*deep modules*), éliminer la complexité accidentelle, proscrire la décomposition temporelle et auditer les 14 Red Flags d'Ousterhout.
   - Déclencheur responsive & adaptatif (`responsive-adaptive-ui`) : invoquer pour tout composant Card/List Item/Grid, toute navigation (Bottom Nav, Sidebar), les règles de breakpoints (600px, 840px, 1200px), de zones tactiles (44x44px min / 56dp mobile) et de typographie fluide.
   - Déclencheur UI/UX & Design System (`ui-ux-pro-max`) : invoquer pour tout nouveau composant graphique, refonte d'écran ou définition de tokens/layouts M3.
   - Déclencheur animations fluides (`vue-animation`) : invoquer lors de l'implémentation de transitions de routes, volets ou feedbacks tactiles accélérés GPU.

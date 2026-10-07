@@ -7,7 +7,7 @@ import {
   createAvailabilityRecord,
   validateAvailability,
   createOutboxEntry,
-} from '../src/lib/domain.js'
+} from '../../src/lib/domain.js'
 
 console.log('--- Test du module de domaine PresenceApp ---')
 

@@ -30,9 +30,10 @@ Il ne remplace pas `AGENTS.md` (invariants figés), `.agents/plan.md` (feuille d
 #### Pre-flight (10 min)
 1. Problème réel : …
 2. Contrainte principale : …
-3. Alternative rejetée : … — rejetée parce que …
-4. Signal de fin : …
-5. Déclencheur KI : O/N
+3. Alternatives examinées (Design it Twice) : Option A (…) vs Option B (…) — rejet de l'option B parce que …
+4. Contrôle Red Flags (Ousterhout) : Vérification absence de module superficiel (shallow), fuite d'information ou pass-through.
+5. Signal de fin : …
+6. Déclencheur KI : O/N
 
 #### Résultat
 - Implémenté ? O/N — [date si oui]
@@ -56,9 +57,10 @@ Il ne remplace pas `AGENTS.md` (invariants figés), `.agents/plan.md` (feuille d
 #### Analyse
 - **Hypothèse initiale** : …
 - **Contraintes identifiées** : …
-- **Alternatives envisagées** :
-  - Option A — [description] → rejetée parce que …
-  - Option B — [description] → rejetée parce que …
+- **Alternatives envisagées (Design it Twice — Chap. 11)** :
+  - Option A — [description de l'abstraction/interface] → retenue parce que …
+  - Option B — [description de l'abstraction concurrente] → rejetée parce que …
+- **Contrôle des Red Flags (Ousterhout)** : Shallow Module ? Non. Information Leakage ? Non. Define Errors Out of Existence ? Oui/Non.
 
 #### Décision
 **Choix retenu** : …
@@ -76,6 +78,103 @@ Il ne remplace pas `AGENTS.md` (invariants figés), `.agents/plan.md` (feuille d
 ---
 
 ## Tâches actives
+
+### Tâche : Restructuration Complète et Cloisonnement du Répertoire `scripts/`
+**Date** : 2026-10-07
+**Complexité** : Élevée
+**Proposant** : Fabien / presence-stack (Victor & Lucas)
+**Story liée** : `.agents/plan.md`
+
+#### Analyse
+- **Hypothèse initiale** : Le répertoire `scripts/` comporte 14 fichiers à la racine (10 tests comportementaux, 2 vérificateurs de surface et 2 outils de gouvernance). Le regrouper en 4 sous-dossiers fonctionnels étanches (`gates/`, `tests/`, `browser/`, `tools/`) avec un exécuteur de tests unifié et 3 façades ultra-légères préserve la rétrocompatibilité tout en éliminant l'encombrement visuel et architectural.
+- **Contraintes identifiées** :
+  - Zéro dépendance externe supplémentaire (`package.json` intact).
+  - Préservation des invocations documentées et des hooks git (`node scripts/verify-gates.mjs`, `node scripts/knowledge-check.mjs`, `node scripts/verify-browser.mjs`).
+  - Passage à 100% de la suite de tests et des oracles sans régression.
+- **Alternatives envisagées (Design it Twice — Chap. 11)** :
+  - Option A (Suppression totale des fichiers à la racine) : rejetée car elle briserait `package.json` (`scripts.knowledge:*`), `.githooks/pre-commit`, `GATES.md` et les conventions établies.
+  - Option B (Cloisonnement en 4 sous-dossiers avec 3 façades minimales de rétrocompatibilité à la racine) : **retenue (recommandée)**.
+
+#### Décision
+**Choix retenu** :
+1. `scripts/tests/` : regroupe les 10 tests comportementaux (`auto-detect-location.mjs`, `availability-summary.mjs`, etc.) débarrassés du préfixe `test-`, accompagnés d'un exécuteur global `runner.mjs`.
+2. `scripts/browser/` : héberge la suite CDP navigateur `verify.mjs` (avec façade racine `scripts/verify-browser.mjs`).
+3. `scripts/tools/` : héberge `knowledge-check.mjs` et `mcp-check.mjs` (avec façades racine pour les commandes existantes).
+4. `scripts/gates/` : conserve la suite complète d'oracles statiques (runner, utils, checks).
+
+#### Résultat
+- Implémenté ? O — 2026-10-07
+- Leçon tirée : L'éradication des 14 fichiers éparpillés à la racine de `scripts/` au profit de 4 sous-dossiers hautement cohésifs (`gates/`, `tests/`, `browser/`, `tools/`) et de 4 façades ultra-légères préserve la simplicité cognitive pour les développeurs, standardise l'exécution de la suite de tests (`node scripts/tests/runner.mjs`), et maintient une rétrocompatibilité absolue sans toucher à aucune dépendance ni rompre de contrat CI/githook.
+- Escalade : Non requise. 10/10 tests unitaires verts, 100% oracles G1-G196 validés, build conforme.
+
+---
+
+### Tâche : Intégration de la Philosophie d'Ingénierie d'Ousterhout (A Philosophy of Software Design)
+**Date** : 2026-10-07
+**Complexité** : Élevée
+**Proposant** : Fabien / presence-stack (Victor & Lucas)
+**Story liée** : `.agents/plan.md`
+
+#### Analyse
+- **Hypothèse initiale** : Transposer les principes fondamentaux de *A Philosophy of Software Design* (John Ousterhout) dans le cadre agentique de PresenceApp permet de vacciner le projet contre le syndrome du « Tactical Tornado » (programmation purement tactique et superficielle des LLM), d'imposer des modules profonds (deep modules) et d'éliminer la prolifération de cas d'erreurs artificiels.
+- **Contraintes identifiées** :
+  - Zéro dépendance externe supplémentaire.
+  - Cohérence totale avec les standards existants (Stop-slop, Unlazy, Local-First, DaisyUI v5/M3).
+  - Clarté opérationnelle : les règles doivent guider les agents lors de chaque arbitrage de code.
+- **Alternatives envisagées (Design it Twice — Chap. 11)** :
+  - Option A (Métriques statiques automatisées via regex aveugles sur la taille des fonctions) : rejetée car conduit à la *Classitis* et à des micro-fonctions artificielles creuses.
+  - Option B (Intégration normative aux règles permanentes `01`, `03`, `04`, refonte du skill `codebase-design` et enrichissement de `code-hygiene`) : **retenue (recommandée)** car elle offre un cadre méthodologique profond et directement actionnable.
+
+#### Décision
+**Choix retenu** :
+1. Mise à jour de `.agents/rules/01-engineering-standards.md` : section dédiée à la programmation stratégique, modules profonds vs superficiels, et catalogue des Red Flags d'Ousterhout.
+2. Mise à niveau de `.agents/skills/codebase-design/SKILL.md` : playbook de référence (Information Hiding, Temporal Decomposition proscrite, General-Purpose vs Special-Purpose, Define Errors Out of Existence).
+3. Intégration dans `.agents/rules/03-local-first-and-dexie.md` et `04-sync-engine-and-outbox.md` du principe « Définir les erreurs hors de l'existence » pour le mode déconnecté et l'idempotence.
+4. Ajout d'un contrôle de profondeur dans le skill `.agents/skills/code-hygiene/SKILL.md`.
+
+#### Résultat
+- Implémenté ? O — 2026-10-07
+- Leçon tirée : L'injection explicite de la philosophie d'Ousterhout (programmation stratégique, modules profonds, 14 Red Flags, et erreurs hors de l'existence) crée un barrage robuste contre le biais naturel des LLM à agir en « Tactical Tornado ». Les agents disposent désormais d'une doctrine architecturale unifiée et d'invariants opérationnels clairs.
+- Escalade : Intégration permanente dans les règles `01`, `03`, `04`, les compétences `codebase-design` et `code-hygiene`, et le grand livre.
+
+### Tâche : Modularisation et Refactoring de `scripts/verify-gates.mjs`
+**Date** : 2026-10-07
+**Complexité** : Élevée
+**Proposant** : Fabien / presence-stack (Victor & Lucas)
+**Story liée** : `.agents/plan.md`
+
+#### Analyse
+- **Hypothèse initiale** : L'éclatement du fichier monolithique `scripts/verify-gates.mjs` (4 437 lignes, 81 fonctions de contrôle, échelle de plus de 80 `else if`) en sous-modules thématiques sous `scripts/gates/` couplés à un runner à registre dynamique élimine la dette spaghetti sans briser aucun contrat CLI, aucun oracle consigné dans `GATES.md`, et sans aucune dépendance additionnelle.
+- **Contraintes identifiées** :
+  - Respect inviolable de la règle de gel des versions : zéro ajout ou mise à jour de dépendance dans `package.json`.
+  - Rétrocompatibilité stricte à 100% avec toutes les invocations CLI existantes (`--all`, `--theme-*`, `--absence-*`, etc.) et codes de retour (0 / 1).
+  - Préservation intégrale des signatures de messages (`G1 passed: ...`, etc.) pour les assertions de tests et audits.
+  - Maintien des exports de fonctions pour tout import tiers potentiel.
+- **Alternatives envisagées** :
+  - Option A (Migration vers un framework de test standard Vitest/Playwright) : rejetée car violerait la règle d'intégrité stricte des versions et entraînerait un coût de migration disproportionné.
+  - Option B (Statu quo ou découpage superficiel en 2 gros fichiers) : rejetée car perpétue le couplage fort et le dispatcheur linéaire illisible.
+  - Option C (Architecture modulaire : `scripts/gates/` avec `runner.mjs`, `utils.mjs`, et 7 modules thématiques spécialisés + façade `verify-gates.mjs` préservée) : **retenue (recommandée)**.
+
+#### Décision
+**Choix retenu** :
+1. Création de `scripts/gates/utils.mjs` : extraction des utilitaires d'analyse statique et détecteurs purs (parsage de classes, templates, astuces AST regex, reporting).
+2. Création de sous-modules thématiques dans `scripts/gates/checks/` :
+   - `ui.mjs` : emojis, radii M3, ombres, cibles 44px, adaptabilité responsive, animations GPU, voice conformance.
+   - `theme.mjs` : commutateur de thème, tokens CSS, contrastes, mot de passe oublié.
+   - `navigation.mjs` : tiroir, ancrage à 840px, repli en rail, poignée, grammaire unifiée.
+   - `manager.mjs` : gestion des sites, présences, planning, équipes, Dexie local-first, livequery.
+   - `auth-accounts.mjs` : cycle de vie, cloche de notifications, statuts, archivage, transition auth, otp, split prénom/nom.
+   - `absence.mjs` : demandes d'absence, synchronisation outbox, notifications, UI.
+   - `system.mjs` : compilation Vite, app shell/splash screen, favicon/pwa, cycle de connaissances.
+3. Création de `scripts/gates/runner.mjs` : dispatcheur basé sur une table de correspondance (`Map`) des 80+ flags vers leurs contrôles, runner `--all` ordonné, aide dynamique unifiée.
+4. Réduction de `scripts/verify-gates.mjs` à une façade élégante réexportant les fonctions et déléguant l'exécution au runner.
+
+**Trade-offs acceptés** : Multiplier les fichiers de vérification sous `scripts/gates/` augmente le nombre de fichiers physiques, mais réduit la complexité cyclomatique à 1 par module et rend la maintenance triviale pour les humains et les futurs agents.
+
+#### Résultat
+- Implémenté ? O — 2026-10-07
+- Leçon tirée : Découper le monolithe en sous-modules thématiques (`scripts/gates/checks/`) reliés par un runner déclaratif (`scripts/gates/runner.mjs`) et une façade épurée (`scripts/verify-gates.mjs` de 31 lignes) préserve 100% de rétrocompatibilité fonctionnelle tout en éradiquant l'anti-pattern du switch/else if géant.
+- Escalade : Aucune régression (100% des 81 oracles validés, build Vite conforme, zéro dépendance ajoutée).
 
 ### Tâche : Feedback Intégré au Bouton de Demande OTP et Épuration de l'Écran de Saisie
 **Date** : 2026-10-05

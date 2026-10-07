@@ -1,3 +1,64 @@
+# Plan : Restructuration Complète et Cloisonnement de `scripts/`
+
+Date : 2026-10-07  
+Déclencheur : Demande utilisateur (« Dans le dossier 'scripts/' il y a juste trop de fichier à la racine. Il faudrait refaire un refactoring, mais dans des dossiers bien nommés cette fois » — Option 1)  
+Statut : Terminé et Validé (Dossier scripts/ restructuré en 4 répertoires cohérents, 10 suites de tests unitaires exécutées via runner.mjs, oracles et build 100% conformes, zéro dépendance altérée)  
+Complexité : Élevée (14 fichiers à la racine redistribués en 4 sous-dossiers thématiques, création d'un runner de tests unifiés, façades minimales de rétrocompatibilité, zéro régression sur les oracles, zéro altération de dépendances)  
+Portes liées : G1 à G196, G77 à G82, G169 à G172  
+
+## 1. Périmètre
+
+### Architecture cible :
+- `scripts/gates/` : Oracles statiques et conformité design system (G1 à G196), runner déclaratif et checks.
+- `scripts/tests/` : Tests unitaires et comportementaux isolés (10 fichiers `test-*.mjs` renommés sans préfixe redondant + nouveau runner `runner.mjs`).
+- `scripts/browser/` : Validation visuelle et simulations navigateur CDP (`verify.mjs`).
+- `scripts/tools/` : Outillage de gouvernance mémoire et diagnostic (`knowledge-check.mjs`, `mcp-check.mjs`).
+- `scripts/` (racine) : 4 façades minimales de compatibilité descendante (`verify-gates.mjs`, `verify-browser.mjs`, `knowledge-check.mjs`, `mcp-check.mjs`).
+
+## 2. Étapes Séquentielles
+
+1. [x] **Étape 1 : Création de `scripts/tests/` et migration des 10 tests comportementaux** (avec runner global `runner.mjs` et ajustement des chemins d'importation).
+2. [x] **Étape 2 : Création de `scripts/browser/` et migration de `verify-browser.mjs` vers `verify.mjs`** (avec façade minimale à la racine).
+3. [x] **Étape 3 : Création de `scripts/tools/` et migration de `knowledge-check.mjs` et `mcp-check.mjs`** (avec façade minimale pour `knowledge-check.mjs` et `mcp-check.mjs`).
+4. [x] **Étape 4 : Validation intégrale de non-régression** (`npm run build`, `node scripts/verify-gates.mjs --all`, `npm run knowledge:check`, `node scripts/tests/runner.mjs`).
+5. [x] **Étape 5 : Mise à jour du journal d'arbitrages et revue sans commit non sollicité**.
+
+---
+
+# Plan : Refactoring et Modularisation de `scripts/verify-gates.mjs`
+
+Date : 2026-10-07  
+Déclencheur : Demande utilisateur (« Met en place en attendant tes recommandations » — Option 1 : Modularisation interne du dossier scripts/)  
+Statut : Terminé et Validé (Suite intégrale 100% verte sur node scripts/verify-gates.mjs --all, 84 flags CLI préservés, build Vite conforme, verify-gates.mjs réduit de 4 437 à 31 lignes)  
+Complexité : Élevée (refactoring de 4 437 lignes sans régression, zéro modification de dépendances, 81 oracles préservés)  
+Portes liées : G1 à G196 (maintien à 100% du passage de toute la suite déterministe)  
+
+## 1. Périmètre
+
+### Nouveaux fichiers créés :
+- `scripts/gates/utils.mjs` (utilitaires partagés : parsing templates, extraction classes, styles, astuces AST regex, reporting)
+- `scripts/gates/checks/ui.mjs` (contrôles d'interface : emojis, radii, ombres, touch targets, animations GPU, voice conformance, responsive cards)
+- `scripts/gates/checks/theme.mjs` (contrôles de thème, CSS binaire compilé, contrastes)
+- `scripts/gates/checks/navigation.mjs` (navigation, tiroirs unifiés, docking 840px, repli rail d'icônes, poignée)
+- `scripts/gates/checks/manager.mjs` (gestion des sites, présences, planning, équipes, Dexie local-first, livequery)
+- `scripts/gates/checks/auth-accounts.mjs` (cycle de vie comptes, statut, notifications, archivage, transition auth, OTP, split prénom/nom)
+- `scripts/gates/checks/absence.mjs` (demandes d'absence, modèle, synchronisation, UI)
+- `scripts/gates/checks/system.mjs` (build de production, splash screen, marges, identité PWA, boucle de connaissances)
+- `scripts/gates/runner.mjs` (registre dynamique Map, dispatcheur CLI, agrégation ordonnée `--all`, gestion de l'aide et codes de sortie)
+
+### Fichier refactorisé :
+- `scripts/verify-gates.mjs` (point d'entrée conservé, réexportant les 81 fonctions check et déléguant au runner)
+
+## 2. Étapes Séquentielles
+
+1. [x] **Étape 1 : Extraction des Utilitaires Partagés (`scripts/gates/utils.mjs`)**
+2. [x] **Étape 2 : Découpage Thématique des 81 Oracles dans `scripts/gates/checks/`**
+3. [x] **Étape 3 : Création du Registre Dynamique et Runner (`scripts/gates/runner.mjs`)**
+4. [x] **Étape 4 : Refonte de la Façade `scripts/verify-gates.mjs`**
+5. [x] **Étape 5 : Validation Intégrale de Non-Régression & Clôture**
+
+---
+
 # Plan : Séparation Prénom et Nom à l'Inscription & Gestion Collaborateur (Pattern Dual-Field)
 
 Date : 2026-10-06  

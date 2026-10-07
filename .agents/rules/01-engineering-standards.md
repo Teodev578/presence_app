@@ -33,3 +33,22 @@ Toute intervention d'analyse, d'audit ou d'implémentation de complexité ≥ «
 - **Clôture à chaud & mémoire** : Enregistrer le résultat observable, la leçon apprise et déclencher sans délai une fiche KI (`11-apprentissage-et-memoire.md`) en cas d'erreur répétée ou de friction notable.
 - **Sobriété documentaire** : Les retouches triviales, corrections de coquilles ou micro-ajustements sont exemptés d'entrée pour préserver la densité stratégique du journal.
 
+## 5. Philosophie de conception & Réduction de la complexité (John Ousterhout)
+
+Tout agent intervenant sur le code applique les principes d'*A Philosophy of Software Design* (Stanford University) :
+
+- **Programmation stratégique vs Programmation tactique** : Un code qui fonctionne ne suffit pas (*Working code isn't enough*). L'agent a l'interdiction d'agir en *Tactical Tornado* (produire du code vite en accumulant des raccourcis tactiques). Il investit systématiquement 10 à 20 % de son effort dans la solidité de la conception, la simplification des abstractions et le nettoyage préventif.
+- **La complexité est incrémentale** : La dette logicielle ne provient pas d'une erreur unique, mais de l'empilement de micro-compromis tolérés au fil des tâches. L'approche « zéro tolérance » s'impose pour toute rustine non refactorisée.
+- **Modules profonds (*Deep Modules*)** : Concevoir des modules à interface étroite et simple dissimulant une implémentation riche et complète (*Information Hiding*). Bannir les modules superficiels (*Shallow Modules*) et le syndrome de découpage artificiel en micro-fichiers creux (*Classitis*).
+- **Proscription de la décomposition temporelle (*Temporal Decomposition*)** : Ne jamais découper le code selon l'ordre chronologique d'exécution des étapes (ex: un module pour lire, un module pour traiter, un module pour sauvegarder). Regrouper les fonctions par cohésion de connaissance partagée.
+- **Définir les erreurs hors de l'existence (*Define Errors Out of Existence*)** : Structurer la sémantique des opérations afin que les cas particuliers et limites (collections vides, plages tronquées, suppressions d'éléments inexistants) soient des états nominaux légitimes et absorbés par le flux normal, sans prolifération d'exceptions artificielles.
+- **Catalogue des signaux d'alerte (*Red Flags d'Ousterhout*)** : Tout agent ou audit technique refuse le code présentant l'un de ces symptômes :
+  1. *Shallow Module* : L'interface est presque aussi complexe que l'implémentation masquée.
+  2. *Information Leakage* : Une même décision de conception ou format est dupliqué dans plusieurs modules.
+  3. *Temporal Decomposition* : L'ordre d'exécution détermine la structure au détriment de l'encapsulation.
+  4. *Pass-Through Method / Variable* : Une fonction ou variable traverse des couches sans être consommée ni transformée.
+  5. *Special-General Mixture* : Un composant généraliste intègre du code spécialisé pour un cas d'usage unique.
+  6. *Conjoined Methods* : Deux méthodes distinctes ne peuvent être comprises ou modifiées isolément.
+  7. *Hard to Describe* : Une interface ou un composable dont le contrat est long et difficile à formuler en prose claire dissimule une mauvaise abstraction.
+
+

@@ -22,6 +22,8 @@ Passer en revue les sources selon les axes suivants :
 - **Traces de débogage et code commenté** : Blocs d'instructions commentées sans justification documentaire, instructions `console.log`, `debugger` ou clauses temporaires.
 - **Cohérence des signatures et des types** : Types implicites ambigus, discordance entre les props Vue / événements émis et leur usage réel, non-respect des contrats de modèles de données (Dexie / Supabase).
 - **Formatage et conventions stylistiques** : Indentation irrégulière, structures conditionnelles redondantes, nommage non canonique.
+- **Audit de profondeur & Red Flags d'Ousterhout** : Détection des modules superficiels (*Shallow Modules*), des méthodes de simple relais (*Pass-Through*), de la décomposition temporelle (*Temporal Decomposition*) et des fuites d'information (*Information Leakage*) entre composants et composables.
+
 
 ### Étape 3 : Correction isolée et chirurgicale
 

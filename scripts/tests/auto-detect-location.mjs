@@ -3,7 +3,7 @@ import {
   calculateHaversineDistance,
   formatDistance,
   findMatchingLocation,
-} from '../src/composables/useGeolocation.js';
+} from '../../src/composables/useGeolocation.js';
 
 console.log('🧪 Lancement des tests de validation pour la détection automatique de sites...');
 

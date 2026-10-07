@@ -4,7 +4,7 @@ import {
   calculateWorkDuration,
   calculateElapsedTime,
   formatTime,
-} from '../src/lib/dateUtils.js';
+} from '../../src/lib/dateUtils.js';
 
 console.log('🧪 Lancement des tests de robustesse des présences et des dates...');
 

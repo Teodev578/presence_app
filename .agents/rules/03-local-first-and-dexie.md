@@ -50,3 +50,12 @@ IndexedDB applique un contrôle strict de version. Une altération imprudente du
 
 - **Export d'un singleton unique** : La classe héritant de `Dexie` doit être instanciée une seule fois dans `src/db/` et réexportée pour l'ensemble de l'application.
 - **Interdiction des instances multiples** : Ne jamais exécuter `new Dexie()` de manière ad-hoc dans un composant ou un composable. Les instances multiples génèrent des conflits de verrous IndexedDB et désynchronisent les observateurs réactifs.
+
+---
+
+## 5. Définir les Erreurs Hors de l'Existence dans la Logique Locale (Define Errors Out of Existence)
+
+- **Collections et fallbacks nominaux** : Les requêtes Dexie et les composables de données doivent restituer des tableaux vides `[]` ou des objets par défaut stables plutôt que de lever des exceptions d'absence d'éléments pour des lectures légitimes.
+- **Idempotence des mutations** : La mise à jour avec un état déjà en vigueur ou la suppression logique d'un enregistrement déjà tombstoné doit réussir silencieusement et de façon idempotente, sans générer d'erreur.
+- **Composables profonds (*Deep Composables*)** : Les composables d'accès aux données locales absorbent la complexité des transactions IndexedDB, de l'Outbox et des index. L'interface exposée à l'UI Vue reste compacte et déclarative (ex : `usePresences()` expose `presences`, `recordPresence()`), masquant les détails d'implémentation.
+

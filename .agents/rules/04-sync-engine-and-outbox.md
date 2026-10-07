@@ -54,3 +54,12 @@ Chaque entrée de la table locale d'outbox doit impérativement comporter les at
 - **Séparation des types d'erreurs** :
   - **Erreurs transitoires (réseau indisponible, timeout, 5xx)** : l'élément reste dans l'outbox avec `status: 'pending'`, et sera rejoué lors du rétablissement du réseau avec un backoff exponentiel.
   - **Erreurs permanentes (4xx, rejet de contrainte RLS, format invalide)** : l'élément ne doit pas bloquer indéfiniment la synchronisation des mutations suivantes. Il doit être basculé vers `status: 'failed'` ou déplacé dans une table de rejet (Dead Letter Queue) pour alerte de l'utilisateur ou inspection.
+
+---
+
+## 6. Masquage de l'Indisponibilité Réseau (Define Errors Out of Existence)
+
+- **L'absence de connexion n'est pas une exception** : Pour l'utilisateur et les composants d'interface, la déconnexion réseau est un état nominal et non une condition d'erreur. Les opérations de pointage et d'édition réussissent immédiatement en local et sont sérialisées dans l'Outbox. Aucun message d'erreur d'échec d'envoi ne doit interrompre le parcours nominal sur une simple indisponibilité réseau.
+- **Masquage de la résilience réseau (Exception Masking)** : Le moteur de synchronisation encapsule la détection réseau, l'ordonnancement de l'Outbox et le backoff exponentiel. Les appelants n'ont pas à gérer les retries.
+- **Résolution déterministe des conflits** : Les conflits de réplication sont absorbés silencieusement côté serveur et client par des politiques d'idempotence et d'arbitrage automatique (`updated_at`), sans propager de dilemme vers l'utilisateur.
+

@@ -41,7 +41,8 @@ Ce document cartographie les compétences agentiques (skills) autorisées et mob
 
 ### 5. Modélisation du Domaine & Architecture
 - `domain-modeling` : maintien du glossaire `CONTEXT.md` et alignement sémantique du code.
-- `codebase-design` : structuration modulaire des composables et des couches de données.
+- `codebase-design` : conception de modules profonds (*deep modules*), élimination de la complexité accidentelle et audit des 14 Red Flags d'Ousterhout.
+
 
 ### 6. Git & Cycle de Vie
 - `pr` : formalisation des descriptions de pull request.

@@ -13,7 +13,7 @@ import {
   resolveSessionState,
   resolveSessionMinutes,
   formatSessionDuration,
-} from '../src/lib/dateUtils.js'
+} from '../../src/lib/dateUtils.js'
 
 let assertionCount = 0
 
