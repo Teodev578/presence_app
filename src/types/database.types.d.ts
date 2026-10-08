@@ -247,6 +247,7 @@ export type Database = {
           status: 'pending_validation' | 'active' | 'archived' | 'disabled'
           team_id: string | null
           updated_at: string
+          weekly_schedule: Json | null
         }
         Insert: {
           archived_at?: string | null
@@ -261,10 +262,11 @@ export type Database = {
           id: string
           is_active?: boolean
           last_name?: string
-          role: 'employee' | 'manager' | 'admin'
+          role?: 'employee' | 'manager' | 'admin'
           status?: 'pending_validation' | 'active' | 'archived' | 'disabled'
           team_id?: string | null
           updated_at?: string
+          weekly_schedule?: Json | null
         }
         Update: {
           archived_at?: string | null
@@ -283,6 +285,7 @@ export type Database = {
           status?: 'pending_validation' | 'active' | 'archived' | 'disabled'
           team_id?: string | null
           updated_at?: string
+          weekly_schedule?: Json | null
         }
         Relationships: [
           {

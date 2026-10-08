@@ -216,38 +216,71 @@ export function createOutboxEntry({
 
 /**
  * Résout déterministement les heures théoriques d'un collaborateur selon la cascade :
- * 1. Créneau spécifique du jour dans les disponibilités (start_time, end_time)
- * 2. Horaire individuel personnalisé de l'employé (s'il est spécifiquement défini)
- * 3. Horaire de référence général de l'entreprise (companySettings)
- * 4. Repli canonique de secours ('09:00' - '18:00')
+ * 1. Créneau spécifique ponctuel du jour dans les disponibilités (availability.start_time, end_time)
+ * 2. Semaine type récurrente du profil pour ce jour précis (profile.weekly_schedule)
+ * 3. Horaire individuel de base de l'employé (profile.expected_arrival_time, expected_departure_time)
+ * 4. Horaire de référence général de l'entreprise (companySettings)
+ * 5. Repli canonique de secours ('09:00' - '18:00')
  *
  * @param {Object} [params]
  * @param {Object|null} [params.availability] - Disponibilité éventuelle du jour
  * @param {Object|null} [params.profile] - Profil du collaborateur
  * @param {Object|null} [params.companySettings] - Paramètres généraux d'organisation
- * @returns {{ start: string, end: string, isCustom: boolean, source: 'slot' | 'profile' | 'company' | 'default' }}
+ * @param {number|null} [params.dayOfWeek] - Jour de la semaine (1 = Lundi, ... 5 = Vendredi, 7 = Dimanche)
+ * @param {string|Date|null} [params.date] - Date ISO ou objet Date pour déduire le jour de la semaine
+ * @returns {{ start: string|null, end: string|null, isWorking: boolean, isCustom: boolean, source: 'slot' | 'weekly_schedule' | 'profile' | 'company' | 'default' }}
  */
-export function resolveSchedule({ availability = null, profile = null, companySettings = null } = {}) {
+export function resolveSchedule({ availability = null, profile = null, companySettings = null, dayOfWeek = null, date = null } = {}) {
+  let targetDay = dayOfWeek
+  if (!targetDay && date) {
+    const d = typeof date === 'string' ? new Date(`${date.slice(0, 10)}T12:00:00`) : new Date(date)
+    const day = d.getDay()
+    targetDay = day === 0 ? 7 : day
+  }
+
+  // 1. Dérogation ponctuelle (créneau availability spécifique du jour)
   if (availability?.start_time || availability?.end_time) {
     const fallbackStart = profile?.expected_arrival_time?.slice(0, 5) || companySettings?.expected_arrival_time?.slice(0, 5) || '09:00'
     const fallbackEnd = profile?.expected_departure_time?.slice(0, 5) || companySettings?.expected_departure_time?.slice(0, 5) || '18:00'
     const start = availability.start_time ? availability.start_time.slice(0, 5) : fallbackStart
     const end = availability.end_time ? availability.end_time.slice(0, 5) : fallbackEnd
-    return { start, end, isCustom: true, source: 'slot' }
+    return { start, end, isWorking: true, isCustom: true, source: 'slot' }
   }
 
+  // 2. Semaine type récurrente du profil pour ce jour précis
+  if (targetDay && profile?.weekly_schedule) {
+    const dayKey = String(targetDay)
+    const dayConfig = profile.weekly_schedule[dayKey] || profile.weekly_schedule[targetDay]
+    if (dayConfig) {
+      if (dayConfig.is_working === false) {
+        return { start: null, end: null, isWorking: false, isCustom: true, source: 'weekly_schedule' }
+      }
+      if (dayConfig.start_time || dayConfig.end_time) {
+        const fallbackStart = profile?.expected_arrival_time?.slice(0, 5) || companySettings?.expected_arrival_time?.slice(0, 5) || '09:00'
+        const fallbackEnd = profile?.expected_departure_time?.slice(0, 5) || companySettings?.expected_departure_time?.slice(0, 5) || '18:00'
+        const start = dayConfig.start_time ? dayConfig.start_time.slice(0, 5) : fallbackStart
+        const end = dayConfig.end_time ? dayConfig.end_time.slice(0, 5) : fallbackEnd
+        return { start, end, isWorking: true, isCustom: true, source: 'weekly_schedule' }
+      }
+    }
+  }
+
+  // 3. Horaire de référence habituel du profil
   if (profile?.expected_arrival_time || profile?.expected_departure_time) {
     const start = profile.expected_arrival_time?.slice(0, 5) || companySettings?.expected_arrival_time?.slice(0, 5) || '09:00'
     const end = profile.expected_departure_time?.slice(0, 5) || companySettings?.expected_departure_time?.slice(0, 5) || '18:00'
-    return { start, end, isCustom: false, source: 'profile' }
+    return { start, end, isWorking: true, isCustom: false, source: 'profile' }
   }
 
+  // 4. Paramètres de l'entreprise
   if (companySettings?.expected_arrival_time || companySettings?.expected_departure_time) {
     const start = companySettings.expected_arrival_time?.slice(0, 5) || '09:00'
     const end = companySettings.expected_departure_time?.slice(0, 5) || '18:00'
-    return { start, end, isCustom: false, source: 'company' }
+    return { start, end, isWorking: true, isCustom: false, source: 'company' }
   }
 
-  return { start: '09:00', end: '18:00', isCustom: false, source: 'default' }
+  // 5. Repli par défaut
+  return { start: '09:00', end: '18:00', isWorking: true, isCustom: false, source: 'default' }
 }
+
 

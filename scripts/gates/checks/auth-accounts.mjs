@@ -470,3 +470,68 @@ export function checkUserNamesSplit() {
   return true;
 }
 
+export function checkWeeklySchedule() {
+  const migFile = path.resolve('supabase/migrations/20261008110000_add_weekly_schedule_to_profiles.sql');
+  if (!fs.existsSync(migFile)) {
+    console.error('FAILURE G198: migration SQL pour weekly_schedule introuvable');
+    return false;
+  }
+  const migContent = fs.readFileSync(migFile, 'utf8');
+  if (!migContent.includes('weekly_schedule JSONB')) {
+    console.error('FAILURE G198: colonne weekly_schedule JSONB absente de la migration');
+    return false;
+  }
+
+  const downFile = path.resolve('supabase/migrations/20261008110000_add_weekly_schedule_to_profiles_down.sql');
+  if (!fs.existsSync(downFile)) {
+    console.error('FAILURE G198: migration down pour weekly_schedule introuvable');
+    return false;
+  }
+
+  const typesFile = path.resolve('src/types/database.types.d.ts');
+  const typesContent = fs.readFileSync(typesFile, 'utf8');
+  if (!typesContent.includes('weekly_schedule: Json | null') && !typesContent.includes('weekly_schedule?: Json | null')) {
+    console.error('FAILURE G198: types TypeScript pour weekly_schedule manquants');
+    return false;
+  }
+
+  const dbFile = path.resolve('src/lib/db.js');
+  const dbContent = fs.readFileSync(dbFile, 'utf8');
+  if (!dbContent.includes('this.version(6)') || !dbContent.includes('profile.weekly_schedule')) {
+    console.error('FAILURE G198: Dexie db.js ne déclare pas la version 6 avec weekly_schedule');
+    return false;
+  }
+
+  const domainFile = path.resolve('src/lib/domain.js');
+  const domainContent = fs.readFileSync(domainFile, 'utf8');
+  if (!domainContent.includes('profile.weekly_schedule') || !domainContent.includes('dayConfig.is_working')) {
+    console.error('FAILURE G198: domain.js resolveSchedule ne traite pas weekly_schedule');
+    return false;
+  }
+
+  const empFile = path.resolve('src/views/manager/EmployeesView.vue');
+  const empContent = fs.readFileSync(empFile, 'utf8');
+  if (!empContent.includes('WEEK_DAYS') || !empContent.includes('weekly_schedule') || !empContent.includes('Semaine type récurrente')) {
+    console.error('FAILURE G198: EmployeesView.vue ne gère pas la semaine type dans son formulaire');
+    return false;
+  }
+
+  const checkInFile = path.resolve('src/views/employee/CheckInView.vue');
+  const checkInContent = fs.readFileSync(checkInFile, 'utf8');
+  if (!checkInContent.includes('resolveSchedule')) {
+    console.error('FAILURE G198: CheckInView.vue n’utilise pas resolveSchedule');
+    return false;
+  }
+
+  const availFile = path.resolve('src/views/manager/AvailabilitiesView.vue');
+  const availContent = fs.readFileSync(availFile, 'utf8');
+  if (!availContent.includes('resolveSchedule')) {
+    console.error('FAILURE G198: AvailabilitiesView.vue n’utilise pas resolveSchedule');
+    return false;
+  }
+
+  console.log('G198 passed: weekly_schedule model, resolution cascade, manager UI and check-in evaluation verified');
+  return true;
+}
+
+

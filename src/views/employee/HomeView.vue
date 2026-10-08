@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useRouter } from '../../router'
 import { useProfile } from '../../composables/auth/useProfile.js'
 import { usePresences } from '../../composables/domain/usePresences.js'
+import { resolveSchedule } from '../../lib/domain.js'
 import DayCard from '../../components/employee/DayCard.vue'
 import WeekSummaryCard from '../../components/employee/WeekSummaryCard.vue'
 
@@ -20,6 +21,24 @@ const displayName = computed(() => {
   if (!profile.value?.full_name) return ''
   const parts = profile.value.full_name.trim().split(' ')
   return parts[0] || ''
+})
+
+const todaySchedule = computed(() => {
+  return resolveSchedule({ profile: profile.value, date: new Date() })
+})
+
+const todayExpectedArrival = computed(() => {
+  if (todaySchedule.value?.start) {
+    return todaySchedule.value.start.length === 5 ? `${todaySchedule.value.start}:00` : todaySchedule.value.start
+  }
+  return profile.value?.expected_arrival_time || '09:00:00'
+})
+
+const todayExpectedDeparture = computed(() => {
+  if (todaySchedule.value?.end) {
+    return todaySchedule.value.end.length === 5 ? `${todaySchedule.value.end}:00` : todaySchedule.value.end
+  }
+  return profile.value?.expected_departure_time || '18:00:00'
 })
 </script>
 
@@ -42,8 +61,8 @@ const displayName = computed(() => {
       <div class="order-2 md:order-1 md:col-span-6 lg:col-span-7 flex flex-col min-h-0">
         <DayCard
           :presence="todayPresence"
-          :expected-arrival-time="profile?.expected_arrival_time || '09:00:00'"
-          :expected-departure-time="profile?.expected_departure_time || '18:00:00'"
+          :expected-arrival-time="todayExpectedArrival"
+          :expected-departure-time="todayExpectedDeparture"
           @check-in="navigate('/employee/check-in')"
           @check-out="navigate('/employee/check-out')"
           @open-availabilities="navigate('/employee/availabilities')"

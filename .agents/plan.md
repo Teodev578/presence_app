@@ -1,3 +1,60 @@
+# Plan : Semaine Type Récurrente et Horaires Personnalisés par Profil (Option 1)
+
+Date : 2026-10-08  
+Déclencheur : Demande utilisateur (« Seul les admins et managers pourront modifié les heures de pointages personnalisé des employés. Mais pour évité de le faire tous les jours. ce sera possible de personnalisé pour certains jours et en général pour certains employés ? » — « Nous partirons sur l'option 1. »)  
+Statut : Terminé (Toutes les étapes vérifiées avec succès)  
+Complexité : Élevée (migration Supabase, types TS, schéma Dexie, domaine pur avec cascade de résolution, UI modale collaborateur, intégration check-in et planning, oracles déterministes G198-G199)  
+Portes liées : G198, G199  
+
+## 1. Périmètre
+
+### Architecture cible :
+- `supabase/migrations/20261008110000_add_weekly_schedule_to_profiles.sql` : ajout de la colonne `weekly_schedule JSONB DEFAULT NULL` à `public.profiles`.
+- `supabase/migrations/20261008110000_add_weekly_schedule_to_profiles_down.sql` : rollback associé.
+- `src/types/database.types.d.ts` : synchronisation du type `profiles` (Row, Insert, Update) avec `weekly_schedule`.
+- `src/lib/db.js` : déclaration Dexie version 6 de `weekly_schedule` sur les profils en cache local.
+- `src/lib/domain.js` : fonction pure `resolveSchedule({ availability, profile, companySettings, dayOfWeek, date })` traitant la cascade sans régression.
+- `scripts/tests/expected-schedule.mjs` : suite de tests unitaires pour la cascade de résolution horaire.
+- `src/views/manager/EmployeesView.vue` : modale d'édition enrichie pour gérer la semaine type (Lundi à Vendredi : horaires habituels ou personnalisés, jour de repos) avec cibles tactiles 44px et grammaire M3.
+- `src/views/employee/CheckInView.vue` : détection du retard basée sur l'horaire résolu du jour pour l'employé connecté.
+- `src/views/employee/HomeView.vue` : transmission des horaires prévus résolus de la journée vers DayCard.
+- `src/views/manager/AvailabilitiesView.vue` : affichage des horaires de la semaine type dans la grille par défaut.
+- `scripts/gates/checks/auth-accounts.mjs` : oracle G198 validant la conformité du modèle et de l'UI.
+- `GATES.md` : consignation des portes G198 et G199 avec oracles et preuves.
+
+### Hors périmètre :
+- Aucune altération des dépendances externes (`package.json` intact).
+- Aucun cron ou tâche asynchrone de duplication de lignes.
+
+## 2. Étapes Séquentielles
+
+1. [x] **Étape 1 : Migration Supabase & Schémas de Données**
+   - Écrire `20261008110000_add_weekly_schedule_to_profiles.sql` et son rollback.
+   - Mettre à jour `src/types/database.types.d.ts` pour refléter `weekly_schedule`.
+   - Ajuster `src/lib/db.js` (version 6 Dexie) pour assurer la cohérence IndexedDB.
+
+2. [x] **Étape 2 : Fonction de Domaine & Tests Unitaires**
+   - Développer `resolveSchedule()` dans `src/lib/domain.js` (cascade : dérogation ponctuelle > semaine type > habituel profil > entreprise).
+   - Écrire la suite de tests unitaires `scripts/tests/expected-schedule.mjs` et l'intégrer au runner global `scripts/tests/runner.mjs`.
+
+3. [x] **Étape 3 : Interface Gestionnaire (`EmployeesView.vue`)**
+   - Dans la modale d'édition collaborateur (réservée admin/manager), intégrer la configuration de la semaine type du lundi au vendredi.
+   - Respecter les cibles tactiles 44px, la rampe tonale M3 et les fieldsets DaisyUI v5.
+   - Sauvegarder dans Dexie et dans `sync_outbox` avec synchronisation réseau en arrière-plan.
+
+4. [x] **Étape 4 : Consommation Applicative (`CheckInView.vue`, `HomeView.vue`, `AvailabilitiesView.vue`)**
+   - Raccorder la vérification de l'heure d'arrivée lors du pointage à `resolveSchedule()`.
+   - Mettre à jour l'affichage sur la carte du jour employé.
+   - Mettre à jour l'affichage des horaires par défaut dans la matrice du planning manager.
+
+5. [x] **Étape 5 : Oracles Déterministes & Validation Globale**
+   - Implémenter l'oracle G198 dans `scripts/gates/checks/auth-accounts.mjs`.
+   - Documenter G198 et G199 dans `GATES.md`.
+   - Exécuter la suite complète : `node scripts/tests/runner.mjs`, `node scripts/verify-gates.mjs --all`, `npm run build`, `npm run knowledge:check`.
+   - Clôturer le journal dans `.agents/WRITING_IMPROVEMENT.md`.
+
+---
+
 # Plan : Suppression de `src/composables/index.js` et Adoption d'Imports Directs par Domaine
 
 Date : 2026-10-07  

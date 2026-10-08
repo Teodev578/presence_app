@@ -79,6 +79,47 @@ Il ne remplace pas `AGENTS.md` (invariants figés), `.agents/plan.md` (feuille d
 
 ## Tâches actives
 
+### Tâche : Semaine Type Récurrente et Horaires Personnalisés par Profil (Option 1)
+**Date** : 2026-10-08
+**Complexité** : Élevée
+**Proposant** : Fabien / presence-stack (Lucas & Nora)
+**Story liée** : `.agents/plan.md`
+
+#### Analyse
+- **Hypothèse initiale** : Les gestionnaires et administrateurs doivent pouvoir personnaliser les horaires de travail de certains employés non seulement de façon générale (déjà en place via `expected_arrival_time` / `expected_departure_time`), mais aussi de façon récurrente pour certains jours de la semaine (ex. temps partiel à 80 %, fin de journée avancée le vendredi, matinée seule le mercredi), sans avoir à saisir manuellement une dérogation chaque semaine dans le planning.
+- **Contraintes identifiées** :
+  - Seuls les managers et administrateurs ont le droit de modifier les horaires personnalisés des employés (contrôle RLS Supabase et restrictions UI).
+  - Principe Local-First et résilience hors-ligne : la structure doit persister dans IndexedDB (`db.profiles`) et se synchroniser via `sync_outbox` (UUIDv7).
+  - Éviter la prolifération de lignes superflues en base (rejet de la duplication d'enregistrements d'une semaine sur l'autre).
+  - Cascade de résolution déterministe : dérogation ponctuelle (`availabilities`) > jour personnalisé de la semaine type (`weekly_schedule[day]`) > horaire général du profil (`profiles.expected_*`) > défaut entreprise (`company_settings`).
+  - Accessibilité WCAG AA, design tokens M3, cibles tactiles de 44 px, zéro emoji brut.
+  - Zéro modification de dépendance externe (`package.json` inviolable).
+- **Alternatives envisagées (Design it Twice — Chap. 11)** :
+  - Option A (Semaine type stockée dans `profiles.weekly_schedule` JSONB) : **retenue (recommandée)** car elle rattache directement le contrat hebdomadaire à la fiche collaborateur, évite la multiplication de tables ou de lignes pour des horaires récurrents, résout instantanément les horaires du jour hors-ligne et supprime toute action récurrente pour le gestionnaire.
+  - Option B (Reconduction / clonage automatique des disponibilités `availabilities` chaque semaine) : **rejetée (déconseillée)** car elle gonfle artificiellement le volume de données IndexedDB/Postgres, requiert des crons ou hooks de génération et complique la détection des conflits en mode hors-ligne.
+  - Option C (Moteur de cycles horaires multi-semaines et conventions) : **rejetée (déconseillée)** car surdimensionnée pour les besoins actuels de l'application (violation de YAGNI et d'Ousterhout).
+- **Contrôle des Red Flags (Ousterhout)** :
+  - Shallow Module ? Non. Création d'une fonction de domaine profonde `resolveExpectedSchedule()` encapsulant l'ensemble de la cascade et masquant la complexité aux consommateurs UI (`CheckInView`, `DayCard`, `AvailabilitiesView`).
+  - Information Leakage ? Non. La cascade d'horaires et les replis sont entièrement logés dans le domaine.
+  - Define Errors Out of Existence ? Oui. Si `weekly_schedule` est nul ou incomplet pour un jour donné, repli gracieux et transparent vers les horaires habituels du profil sans jamais lever d'exception.
+
+#### Décision
+**Choix retenu** :
+1. Migration Supabase `20261008110000_add_weekly_schedule_to_profiles.sql` (colonne `weekly_schedule JSONB DEFAULT NULL` sur `public.profiles`).
+2. Migration down correspondante.
+3. Mise à jour des définitions TypeScript `src/types/database.types.d.ts` et du schéma Dexie (`src/lib/db.js`).
+4. Module de domaine pur `resolveExpectedSchedule()` dans `src/lib/domain.js` testé unitairement.
+5. Interface gestionnaire dans `src/views/manager/EmployeesView.vue` : modale d'édition enrichie d'une section de semaine type permettant d'ajuster l'arrivée/départ de chaque jour (Lundi à Vendredi) ou de marquer le jour non travaillé.
+6. Prise en compte dans `src/views/employee/CheckInView.vue` (évaluation de retard basée sur l'horaire résolu du jour), `src/components/employee/DayCard.vue` (affichage de l'horaire prévu du jour) et `src/views/manager/AvailabilitiesView.vue` (affichage des horaires personnalisés par défaut dans la grille hebdomadaire).
+7. Oracles G198 et G199 dans `scripts/gates/checks/` et `GATES.md`.
+
+#### Résultat
+- Implémenté ? O — 2026-10-08
+- Leçon tirée : Le rattachement de la semaine type récurrente directement au profil utilisateur (`profiles.weekly_schedule`) combiné à une fonction de résolution déterministe dans le domaine pur (`resolveSchedule`) élimine le besoin d'engendrer des écritures récurrentes superflues ou des tâches d'arrière-plan de duplication de plannings. Le système résout les horaires attendus à la volée tant pour le calcul de retard au pointage employé que pour le quadrillage visuel du planning gestionnaire, en garantissant un fonctionnement hors-ligne immédiat et une intégrité transactionnelle totale.
+- Escalade : Protocole unlazy honoré avec succès : portes G198 et G199 vérifiées par oracles déterministes, 11/11 suites de tests unitaires réussies, build de production Vite sans erreur (code retour 0).
+
+---
+
 ### Tâche : Suppression de `src/composables/index.js` et Adoption d'Imports Directs par Domaine
 **Date** : 2026-10-07
 **Complexité** : Élevée

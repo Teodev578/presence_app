@@ -9,6 +9,7 @@ import { useAvailabilities, getMonday, formatWeekLabel } from '../../composables
 import { useSyncEngine } from '../../composables/infra/useSyncEngine.js'
 import { useToast } from '../../composables/ui/useToast.js'
 import { getLocalDateString, formatTime, formatWorkDate, calculateWorkDuration, getPublicHoliday } from '../../lib/dateUtils'
+import { resolveSchedule } from '../../lib/domain.js'
 import ManagerPageHeader from '../../components/manager/ManagerPageHeader.vue'
 import ManagerKpiCard from '../../components/manager/ManagerKpiCard.vue'
 import ManagerEmptyState from '../../components/manager/ManagerEmptyState.vue'
@@ -509,21 +510,14 @@ const openCellDetail = (emp, dayNumber) => {
   const defaultEnd = generalSettings.expected_departure_time?.slice(0, 5) || '18:00'
 
   scheduleError.value = ''
-  if (activeAvailability?.start_time) {
-    customStartTime.value = activeAvailability.start_time.slice(0, 5)
-  } else if (emp.expected_arrival_time) {
-    customStartTime.value = emp.expected_arrival_time.slice(0, 5)
-  } else {
-    customStartTime.value = defaultStart
-  }
-
-  if (activeAvailability?.end_time) {
-    customEndTime.value = activeAvailability.end_time.slice(0, 5)
-  } else if (emp.expected_departure_time) {
-    customEndTime.value = emp.expected_departure_time.slice(0, 5)
-  } else {
-    customEndTime.value = defaultEnd
-  }
+  const resolved = resolveSchedule({
+    availability: activeAvailability,
+    profile: emp,
+    dayOfWeek: dayNumber,
+    companySettings: generalSettings,
+  })
+  customStartTime.value = resolved.start || defaultStart
+  customEndTime.value = resolved.end || defaultEnd
 
   selectedCell.value = {
     employee: emp,
@@ -674,17 +668,17 @@ const resetToDefaultSchedule = async () => {
 const getScheduledHours = (emp, dayNumber) => {
   const avail = getActiveAvailability(emp.id, dayNumber)
   const generalSettings = companySettingsRow.value || DEFAULT_COMPANY_SETTINGS
-  const defaultStart = generalSettings.expected_arrival_time?.slice(0, 5) || '09:00'
-  const defaultEnd = generalSettings.expected_departure_time?.slice(0, 5) || '18:00'
+  const schedule = resolveSchedule({
+    availability: avail,
+    profile: emp,
+    dayOfWeek: dayNumber,
+    companySettings: generalSettings,
+  })
 
-  if (avail?.start_time || avail?.end_time) {
-    const start = avail.start_time ? avail.start_time.slice(0, 5) : (emp.expected_arrival_time ? emp.expected_arrival_time.slice(0, 5) : defaultStart)
-    const end = avail.end_time ? avail.end_time.slice(0, 5) : (emp.expected_departure_time ? emp.expected_departure_time.slice(0, 5) : defaultEnd)
-    return { text: `${start} - ${end}`, isCustom: true }
+  if (!schedule.isWorking) {
+    return { text: 'Repos', isCustom: true }
   }
-  const start = emp.expected_arrival_time ? emp.expected_arrival_time.slice(0, 5) : defaultStart
-  const end = emp.expected_departure_time ? emp.expected_departure_time.slice(0, 5) : defaultEnd
-  return { text: `${start} - ${end}`, isCustom: false }
+  return { text: `${schedule.start} - ${schedule.end}`, isCustom: schedule.isCustom }
 }
 
 // Configuration des horaires généraux d'entreprise (company_settings)

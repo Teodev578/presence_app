@@ -242,6 +242,40 @@ const getArchivedDaysRemaining = (archivedAt) => {
   }
 }
 
+const WEEK_DAYS = [
+  { id: 1, label: 'Lundi' },
+  { id: 2, label: 'Mardi' },
+  { id: 3, label: 'Mercredi' },
+  { id: 4, label: 'Jeudi' },
+  { id: 5, label: 'Vendredi' },
+]
+
+const createDefaultWeeklyScheduleForm = (existingWeeklySchedule = null, defaultStart = '09:00', defaultEnd = '18:00') => {
+  const form = {}
+  for (const day of WEEK_DAYS) {
+    const config = existingWeeklySchedule?.[String(day.id)] || existingWeeklySchedule?.[day.id]
+    if (config) {
+      if (config.is_working === false) {
+        form[day.id] = { mode: 'off', start_time: defaultStart, end_time: defaultEnd }
+      } else {
+        form[day.id] = {
+          mode: 'custom',
+          start_time: config.start_time ? config.start_time.slice(0, 5) : defaultStart,
+          end_time: config.end_time ? config.end_time.slice(0, 5) : defaultEnd,
+        }
+      }
+    } else {
+      form[day.id] = { mode: 'default', start_time: defaultStart, end_time: defaultEnd }
+    }
+  }
+  return form
+}
+
+const hasWeeklySchedule = (emp) => {
+  if (!emp?.weekly_schedule) return false
+  return Object.values(emp.weekly_schedule).some((cfg) => cfg && (cfg.is_working === false || cfg.start_time || cfg.end_time))
+}
+
 // Modal d'édition
 const editingEmployee = ref(null)
 const editForm = ref({
@@ -251,6 +285,7 @@ const editForm = ref({
   team_id: '',
   expected_arrival_time: '09:00:00',
   expected_departure_time: '18:00:00',
+  weekly_schedule: createDefaultWeeklyScheduleForm(),
 })
 const isSaving = ref(false)
 const editError = ref('')
@@ -267,6 +302,9 @@ const openEditModal = (emp) => {
     lName = parts.slice(1).join(' ') || ''
   }
 
+  const defStart = emp.expected_arrival_time?.slice(0, 5) || '09:00'
+  const defEnd = emp.expected_departure_time?.slice(0, 5) || '18:00'
+
   editForm.value = {
     first_name: fName,
     last_name: lName,
@@ -274,6 +312,7 @@ const openEditModal = (emp) => {
     team_id: emp.team_id || '',
     expected_arrival_time: emp.expected_arrival_time || '09:00:00',
     expected_departure_time: emp.expected_departure_time || '18:00:00',
+    weekly_schedule: createDefaultWeeklyScheduleForm(emp.weekly_schedule, defStart, defEnd),
   }
 }
 
@@ -296,6 +335,26 @@ const saveEmployee = async () => {
     const cleanLast = (editForm.value.last_name || '').trim()
     const computedFull = `${cleanFirst} ${cleanLast}`.trim()
 
+    let computedWeeklySchedule = null
+    const daysObj = {}
+    let hasCustomDay = false
+
+    for (const day of WEEK_DAYS) {
+      const dayState = editForm.value.weekly_schedule?.[day.id]
+      if (dayState?.mode === 'off') {
+        daysObj[String(day.id)] = { is_working: false }
+        hasCustomDay = true
+      } else if (dayState?.mode === 'custom') {
+        const sTime = dayState.start_time ? (dayState.start_time.length === 5 ? `${dayState.start_time}:00` : dayState.start_time) : null
+        const eTime = dayState.end_time ? (dayState.end_time.length === 5 ? `${dayState.end_time}:00` : dayState.end_time) : null
+        daysObj[String(day.id)] = { is_working: true, start_time: sTime, end_time: eTime }
+        hasCustomDay = true
+      }
+    }
+    if (hasCustomDay) {
+      computedWeeklySchedule = daysObj
+    }
+
     const payload = {
       id,
       first_name: cleanFirst,
@@ -305,6 +364,7 @@ const saveEmployee = async () => {
       team_id: editForm.value.team_id || null,
       expected_arrival_time: editForm.value.expected_arrival_time,
       expected_departure_time: editForm.value.expected_departure_time,
+      weekly_schedule: computedWeeklySchedule,
       updated_at: now,
     }
     const clientMutationId = generateUUIDv7()
@@ -684,8 +744,11 @@ const confirmUnarchive = async () => {
             <div class="flex flex-wrap items-center gap-2">
               <span class="badge badge-sm font-semibold capitalize rounded-m3-xs" :class="roleClass(emp.role)">{{ roleLabel(emp.role) }}</span>
               <span class="badge badge-soft badge-sm rounded-m3-xs">{{ emp.teams?.name || 'Non assigné' }}</span>
-              <span class="font-mono text-xs font-semibold text-base-content/80">
-                Arrivée {{ emp.expected_arrival_time?.slice(0, 5) || '—' }} - Départ {{ emp.expected_departure_time?.slice(0, 5) || '—' }}
+              <span class="font-mono text-xs font-semibold text-base-content/80 inline-flex items-center gap-1.5">
+                <span>Arrivée {{ emp.expected_arrival_time?.slice(0, 5) || '—' }} - Départ {{ emp.expected_departure_time?.slice(0, 5) || '—' }}</span>
+                <span v-if="hasWeeklySchedule(emp)" class="badge badge-xs badge-outline rounded-m3-xs font-semibold text-primary" title="Semaine type personnalisée">
+                  Semaine type
+                </span>
               </span>
             </div>
 
@@ -820,7 +883,12 @@ const confirmUnarchive = async () => {
                   </div>
                 </td>
                 <td class="font-mono text-xs font-semibold text-base-content/80">
-                  {{ emp.expected_arrival_time?.slice(0, 5) || '—' }} - {{ emp.expected_departure_time?.slice(0, 5) || '—' }}
+                  <div class="flex items-center gap-1.5">
+                    <span>{{ emp.expected_arrival_time?.slice(0, 5) || '—' }} - {{ emp.expected_departure_time?.slice(0, 5) || '—' }}</span>
+                    <span v-if="hasWeeklySchedule(emp)" class="badge badge-xs badge-outline rounded-m3-xs font-semibold text-primary" title="Semaine type personnalisée">
+                      Semaine type
+                    </span>
+                  </div>
                 </td>
                 <td class="text-right">
                   <div class="inline-flex items-center gap-1.5">
@@ -887,7 +955,7 @@ const confirmUnarchive = async () => {
 
     <!-- Modal d'édition collaborateur -->
     <dialog class="modal" :class="{ 'modal-open': !!editingEmployee }">
-      <div class="modal-box rounded-m3-xl max-w-lg border border-base-300 bg-base-100 p-6 flex flex-col gap-4">
+      <div class="modal-box rounded-m3-xl max-w-lg max-h-[90vh] overflow-y-auto border border-base-300 bg-base-100 p-6 flex flex-col gap-4">
         <h3 class="font-bold text-lg text-base-content">
           Modifier « {{ editingEmployee?.full_name }} »
         </h3>
@@ -961,6 +1029,75 @@ const confirmUnarchive = async () => {
               />
               <span class="fieldset-label text-xs text-base-content/60">Sert de repère pour la fin de journée.</span>
             </fieldset>
+          </div>
+
+          <!-- Section Semaine Type Récurrente -->
+          <div class="border-t border-base-200 pt-3 flex flex-col gap-2.5">
+            <div class="flex flex-col gap-0.5">
+              <span class="text-xs font-bold uppercase tracking-wider text-base-content/80">Semaine type récurrente</span>
+              <p class="text-xs text-base-content/60">
+                Personnalisez certains jours pour ce collaborateur (ex. temps partiel, horaires décalés). Les jours non configurés suivront les horaires habituels.
+              </p>
+            </div>
+
+            <div class="space-y-2">
+              <div
+                v-for="day in WEEK_DAYS"
+                :key="day.id"
+                class="p-2.5 rounded-m3-md border border-base-300 bg-base-200/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+              >
+                <div class="flex items-center gap-2 min-w-28">
+                  <span class="text-xs font-bold text-base-content">{{ day.label }}</span>
+                  <span
+                    v-if="editForm.weekly_schedule[day.id]?.mode === 'off'"
+                    class="badge badge-warning badge-xs rounded-m3-xs font-semibold"
+                  >
+                    Repos
+                  </span>
+                  <span
+                    v-else-if="editForm.weekly_schedule[day.id]?.mode === 'custom'"
+                    class="badge badge-primary badge-xs rounded-m3-xs font-semibold"
+                  >
+                    Spécifique
+                  </span>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2">
+                  <select
+                    v-model="editForm.weekly_schedule[day.id].mode"
+                    class="select select-bordered rounded-m3-sm min-h-11 text-xs"
+                    :aria-label="`Mode pour ${day.label}`"
+                  >
+                    <option value="default">Horaires habituels</option>
+                    <option value="custom">Horaires spécifiques</option>
+                    <option value="off">Non travaillé (repos)</option>
+                  </select>
+
+                  <div
+                    v-if="editForm.weekly_schedule[day.id]?.mode === 'custom'"
+                    class="flex items-center gap-1.5"
+                  >
+                    <input
+                      v-model="editForm.weekly_schedule[day.id].start_time"
+                      type="time"
+                      step="60"
+                      class="input input-bordered rounded-m3-sm min-h-11 text-xs w-28"
+                      :aria-label="`Heure d'arrivée ${day.label}`"
+                      required
+                    />
+                    <span class="text-xs text-base-content/40">à</span>
+                    <input
+                      v-model="editForm.weekly_schedule[day.id].end_time"
+                      type="time"
+                      step="60"
+                      class="input input-bordered rounded-m3-sm min-h-11 text-xs w-28"
+                      :aria-label="`Heure de départ ${day.label}`"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div v-if="editError" class="alert alert-error text-xs rounded-m3-md py-2">

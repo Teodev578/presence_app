@@ -83,6 +83,7 @@ import {
   checkOtpRecovery,
   checkOtpButtonFeedback,
   checkUserNamesSplit,
+  checkWeeklySchedule,
 } from './checks/auth-accounts.mjs';
 
 import {
@@ -186,6 +187,7 @@ export const ORACLES_MAP = new Map([
   ['--otp-recovery', checkOtpRecovery],
   ['--otp-button-feedback', checkOtpButtonFeedback],
   ['--archive-protection', checkPrivilegedRolesArchiveProtection],
+  ['--weekly-schedule', checkWeeklySchedule],
   ['--knowledge-loop', checkKnowledgeLoop],
 ]);
 
@@ -272,6 +274,7 @@ export function runAll() {
   const r192 = checkOtpRecovery();
   const r194 = checkOtpButtonFeedback();
   const r196 = checkUserNamesSplit();
+  const r198 = checkWeeklySchedule();
   const r48 = r39; // Une seule compilation sert les portes de build G39 et G48
 
   return (
@@ -283,7 +286,7 @@ export function runAll() {
     r75 && r88 && r89 && r92 && r93 && r94 && r95 && r96 && r97 && r147 &&
     r150 && r156 && r159 && r162 && r165 && r167 && r169 && r175 && r176 &&
     r177 && r178 && r180 && r182 && r184 && r186 && r188 && r190 && r192 &&
-    r194 && r196
+    r194 && r196 && r198
   );
 }
 

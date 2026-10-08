@@ -67,6 +67,16 @@ class PresenceDatabase extends Dexie {
         }
       })
     })
+
+    this.version(6).stores({
+      profiles: 'id, team_id, email, role, status, updated_at, deleted_at',
+    }).upgrade(async (tx) => {
+      await tx.table('profiles').toCollection().modify((profile) => {
+        if (profile.weekly_schedule === undefined) {
+          profile.weekly_schedule = null
+        }
+      })
+    })
   }
 }
 

@@ -1591,6 +1591,30 @@ Scope: Automatisation et renforcement de la mémoire agentique selon le plan d'a
     ✓ built in 1.31s
     (exit code: 0)
 
+### Lot : Semaine Type Récurrente et Horaires Personnalisés par Profil (Option 1)
+
+- [x] G198: Prise en charge de la semaine type personnalisée (weekly_schedule) à travers la migration Supabase, les types TypeScript, la fonction de domaine pure, la modale d'édition collaborateur et l'évaluation des pointages
+  CHECK: node scripts/verify-gates.mjs --weekly-schedule
+  EXPECT: G198 passed: weekly_schedule model, resolution cascade, manager UI and check-in evaluation verified
+  EVIDENCE:
+    $ node scripts/verify-gates.mjs --weekly-schedule
+    G198 passed: weekly_schedule model, resolution cascade, manager UI and check-in evaluation verified
+    (exit code: 0)
+
+- [x] G199: Validation globale de la suite déterministe et compilation de production Vite
+  CHECK: node scripts/verify-gates.mjs --all && npm run build
+  EXPECT: G199 passed: all deterministic gates and vite production build succeed with exit code 0
+  EVIDENCE:
+    $ node scripts/verify-gates.mjs --all && npm run build
+    G1 passed ... G198 passed: weekly_schedule model, resolution cascade, manager UI and check-in evaluation verified
+    vite v8.3.0 building client environment for production...
+    ✓ 123 modules transformed.
+    dist/assets/index-vyedkz_k.js  70.00 kB │ gzip: 21.34 kB
+    ✓ built in 1.08s
+    (exit code: 0)
+
+
+
 
 
 

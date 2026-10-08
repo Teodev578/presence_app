@@ -5,6 +5,7 @@ import { useProfile } from '../../composables/auth/useProfile.js'
 import { useLocations, isLocationActive } from '../../composables/domain/useLocations.js'
 import { usePresences } from '../../composables/domain/usePresences.js'
 import { useGeolocation, formatDistance } from '../../composables/infra/useGeolocation.js'
+import { resolveSchedule } from '../../lib/domain.js'
 import GpsRing from '../../components/employee/GpsRing.vue'
 import CheckConfirmationOverlay from '../../components/employee/CheckConfirmationOverlay.vue'
 
@@ -110,11 +111,19 @@ const handleConfirmCheckIn = async () => {
   errorMessage.value = ''
 
   try {
+    const todaySchedule = resolveSchedule({
+      profile: profile.value,
+      date: new Date(),
+    })
+    const resolvedArrival = todaySchedule.start
+      ? (todaySchedule.start.length === 5 ? `${todaySchedule.start}:00` : todaySchedule.start)
+      : (profile.value?.expected_arrival_time || '09:00:00')
+
     await checkIn({
       locationId: selectedLocation.value.id,
       coords: currentCoords.value,
       accuracy: gpsAccuracy.value,
-      expectedArrivalTime: profile.value?.expected_arrival_time || '09:00:00',
+      expectedArrivalTime: resolvedArrival,
     })
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
       navigator.vibrate(40)
