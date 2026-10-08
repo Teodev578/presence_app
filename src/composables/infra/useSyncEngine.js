@@ -1,10 +1,12 @@
 import { ref } from 'vue'
 import { db, setOutboxListener } from '../../lib/db'
 import { supabase } from '../../lib/supabase'
+import { computeInstanceFingerprint, reconcileQuarantinedMutation } from '../../lib/domain'
 
 const isSyncing = ref(false)
 const pendingCount = ref(0)
 const lastSyncTime = ref(localStorage.getItem('last_sync_time') || null)
+const instanceFingerprint = ref(localStorage.getItem('db_instance_fingerprint') || null)
 
 let syncInterval = null
 let realtimeChannel = null
@@ -236,6 +238,132 @@ export function useSyncEngine() {
   }
 
   /**
+   * Vérifie la continuité de l'instance de base de données distante.
+   * Si une divergence est constatée, sauvegarde l'Outbox dans quarantine_mutations,
+   * purge le cache de lecture local et remet à zéro le curseur de synchronisation.
+   */
+  const ensureInstanceContinuity = async () => {
+    if (!navigator.onLine) return { changed: false }
+
+    try {
+      const { data: settings, error } = await supabase
+        .from('company_settings')
+        .select('created_at')
+        .limit(1)
+        .maybeSingle()
+
+      if (error && error.code !== 'PGRST116') {
+        return { changed: false }
+      }
+
+      const genesis = settings?.created_at || 'genesis'
+      const remoteFp = computeInstanceFingerprint({
+        supabaseUrl: supabase.supabaseUrl,
+        genesisTimestamp: genesis,
+      })
+
+      const storedFp = instanceFingerprint.value || (typeof localStorage !== 'undefined' ? localStorage.getItem('db_instance_fingerprint') : null)
+
+      if (!storedFp) {
+        instanceFingerprint.value = remoteFp
+        if (typeof localStorage !== 'undefined') localStorage.setItem('db_instance_fingerprint', remoteFp)
+        return { changed: false }
+      }
+
+      if (storedFp === remoteFp) {
+        return { changed: false }
+      }
+
+      // RUPTURE DE CONTINUITÉ DÉTECTÉE
+      console.warn(`[SyncEngine] Rupture de continuité d'instance distante détectée : ${storedFp} -> ${remoteFp}`)
+
+      // 1. Évacuation atomique de sync_outbox vers quarantine_mutations
+      const pendingItems = await db.sync_outbox.toArray()
+      if (pendingItems.length > 0) {
+        const quarantineEntries = pendingItems.map(item => ({
+          id: item.id || item.client_mutation_id,
+          client_mutation_id: item.client_mutation_id,
+          table_name: item.table_name,
+          record_id: item.record_id,
+          operation: item.operation,
+          payload: item.payload,
+          original_instance_id: storedFp,
+          quarantined_at: new Date().toISOString(),
+          status: 'stashed',
+        }))
+        await db.transaction('rw', db.quarantine_mutations, db.sync_outbox, async () => {
+          await db.quarantine_mutations.bulkAdd(quarantineEntries)
+          await db.sync_outbox.clear()
+        })
+      }
+
+      // 2. Purge du cache de lecture local
+      await Promise.all([
+        db.presences.clear(),
+        db.availabilities.clear(),
+        db.absence_requests.clear(),
+        db.locations.clear(),
+        db.teams.clear(),
+        db.company_settings.clear(),
+        db.profiles.clear(),
+      ])
+
+      // 3. Réinitialisation des curseurs
+      lastSyncTime.value = null
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('last_sync_time')
+        localStorage.setItem('db_instance_fingerprint', remoteFp)
+      }
+      instanceFingerprint.value = remoteFp
+
+      return { changed: true, quarantinedCount: pendingItems.length }
+    } catch (err) {
+      console.warn('[SyncEngine] Erreur vérification empreinte instance :', err)
+      return { changed: false }
+    }
+  }
+
+  /**
+   * Tente de réconcilier les mutations en quarantaine vers le nouveau profil utilisateur.
+   */
+  const reconcileQuarantine = async (userId) => {
+    if (!userId) return
+
+    try {
+      const stashed = await db.quarantine_mutations.where('status').equals('stashed').toArray()
+      if (!stashed.length) return
+
+      for (const item of stashed) {
+        const result = reconcileQuarantinedMutation(item, userId)
+        if (result.canReconcile) {
+          await db.transaction('rw', db.sync_outbox, db.quarantine_mutations, async () => {
+            await db.sync_outbox.add({
+              id: item.id,
+              client_mutation_id: item.client_mutation_id,
+              table_name: item.table_name,
+              record_id: item.record_id,
+              operation: item.operation,
+              payload: result.updatedPayload,
+              created_at: new Date().toISOString(),
+              attempts: 0,
+              status: 'pending',
+            })
+            await db.quarantine_mutations.update(item._localId, {
+              status: 'reconciled',
+            })
+          })
+        } else {
+          await db.quarantine_mutations.update(item._localId, {
+            status: 'orphaned',
+          })
+        }
+      }
+    } catch (err) {
+      console.warn('[SyncEngine] Erreur réconciliation quarantaine :', err)
+    }
+  }
+
+  /**
    * Exécute un cycle complet de synchronisation.
    */
   const syncNow = async (userId) => {
@@ -243,9 +371,19 @@ export function useSyncEngine() {
     isSyncing.value = true
 
     try {
+      // 1. Contrôle d'intégrité et de continuité de la base distante
+      const { changed } = await ensureInstanceContinuity()
+
+      // 2. Si l'instance a changé, réhydratation prioritaire puis réconciliation
+      if (changed && userId) {
+        await pullChanges(userId)
+        await reconcileQuarantine(userId)
+      }
+
       await pushOutbox()
       if (userId) {
         await pullChanges(userId)
+        await reconcileQuarantine(userId)
       }
     } finally {
       isSyncing.value = false
@@ -380,8 +518,11 @@ export function useSyncEngine() {
     isSyncing,
     pendingCount,
     lastSyncTime,
+    instanceFingerprint,
     refreshPendingCount,
     syncNow,
     startSyncWatcher,
+    ensureInstanceContinuity,
+    reconcileQuarantine,
   }
 }

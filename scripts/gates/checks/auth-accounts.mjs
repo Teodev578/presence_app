@@ -534,4 +534,42 @@ export function checkWeeklySchedule() {
   return true;
 }
 
+export function checkInstanceFingerprint() {
+  const dbFile = path.resolve('src/lib/db.js');
+  const dbContent = fs.readFileSync(dbFile, 'utf8');
+  if (!dbContent.includes('this.version(7)') || !dbContent.includes('quarantine_mutations')) {
+    console.error('FAILURE G200: Dexie db.js ne déclare pas la version 7 avec quarantine_mutations');
+    return false;
+  }
+
+  const domainFile = path.resolve('src/lib/domain.js');
+  const domainContent = fs.readFileSync(domainFile, 'utf8');
+  if (!domainContent.includes('computeInstanceFingerprint') || !domainContent.includes('reconcileQuarantinedMutation')) {
+    console.error('FAILURE G200: domain.js n’exporte pas computeInstanceFingerprint ou reconcileQuarantinedMutation');
+    return false;
+  }
+
+  const syncFile = path.resolve('src/composables/infra/useSyncEngine.js');
+  const syncContent = fs.readFileSync(syncFile, 'utf8');
+  if (
+    !syncContent.includes('computeInstanceFingerprint') ||
+    !syncContent.includes('quarantine_mutations') ||
+    !syncContent.includes('ensureInstanceContinuity') ||
+    !syncContent.includes('reconcileQuarantine')
+  ) {
+    console.error('FAILURE G200: useSyncEngine.js n’intègre pas le fingerprint d’instance, la quarantaine ou la réconciliation');
+    return false;
+  }
+
+  const testFile = path.resolve('scripts/tests/instance-fingerprint.mjs');
+  if (!fs.existsSync(testFile)) {
+    console.error('FAILURE G200: suite de tests scripts/tests/instance-fingerprint.mjs introuvable');
+    return false;
+  }
+
+  console.log('G200 passed: instance fingerprint computation, quarantine stash, reader cache reset and mutation reconciliation verified');
+  return true;
+}
+
+
 

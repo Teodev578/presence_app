@@ -79,6 +79,47 @@ Il ne remplace pas `AGENTS.md` (invariants figés), `.agents/plan.md` (feuille d
 
 ## Tâches actives
 
+### Tâche : Détection de Changement de Base Distante (Fingerprint) & Quarantaine des Mutations (Option A)
+**Date** : 2026-10-08
+**Complexité** : Élevée
+**Proposant** : Fabien / presence-stack (Marc, Nora & Lucas)
+**Story liée** : `.agents/plan.md`
+
+#### Analyse
+- **Hypothèse initiale** : Lorsque la base de données distante change (nouveau projet Supabase, reset total ou changement d'URL), le stockage local Dexie conserve silencieusement les anciennes données et un curseur `last_sync_time` faussé, tandis que `sync_outbox` tente de pousser des mutations contenant des clés étrangères orphelines. Le moteur de synchronisation doit détecter automatiquement toute rupture de continuité via une empreinte immuable de l'instance distante (*Database Instance Fingerprint*), mettre en sûreté les mutations non synchronisées dans un sas de quarantaine local (`quarantine_mutations`), réinitialiser le cache de lecture pour forcer un *pull* propre, puis réconcilier automatiquement les pointages si le profil utilisateur correspond.
+- **Contraintes identifiées** :
+  - **Zéro perte de données de travail** : Les pointages saisis hors-ligne ne doivent jamais être purgés silencieusement sans sauvegarde.
+  - **Frontière des microtâches Dexie** : Aucune promesse réseau ou externe dans les transactions Dexie (`db.transaction('rw', ...)`).
+  - **Idempotence & résilience** : L'empreinte doit être robuste et dérivable sans nécessiter de droits privilégiés (ex. combinaison du host Supabase et du timestamp de création de `company_settings`).
+  - **Schéma Dexie incrémental** : Déclaration de la version 7 de Dexie pour la table `quarantine_mutations`.
+  - **Zéro modification de package.json** : Aucune dépendance externe ajoutée.
+- **Alternatives envisagées (Design it Twice — Chap. 11)** :
+  - Option A (Empreinte distante + Quarantaine et Réconciliation automatique) : **retenue (recommandée)** car elle préserve les pointages hors-ligne, protège l'intégrité de la nouvelle base de données contre les rejets de clés étrangères et offre une reprise de synchronisation totalement transparente pour l'utilisateur.
+  - Option B (Purge silencieuse de l'Outbox au changement de base) : **rejetée (déconseillée)** car elle entraîne une perte sèche inacceptable de données de présence et d'heures travaillées saisies par le collaborateur en mode hors-ligne.
+  - Option C (Rejeu forcé des mutations sans quarantaine) : **rejetée (déconseillée)** car les clés primaires et étrangères (`user_id`, `location_id`) étant incompatibles, les requêtes échouent en boucle sur des erreurs de contraintes relationnelles Postgres, bloquant la file d'attente.
+- **Contrôle des Red Flags (Ousterhout)** :
+  - Shallow Module ? Non. Création de fonctions de domaine profondes (`computeInstanceFingerprint`, `reconcileMutation`) encapsulant les règles d'intégrité et masquant la complexité technique aux composants d'interface.
+  - Information Leakage ? Non. La mécanique d'isolation et de réconciliation est entièrement confinée au sous-domaine de synchronisation d'infrastructure (`useSyncEngine`).
+  - Define Errors Out of Existence ? Oui. En l'absence de divergence ou si aucune mutation n'est en attente, le cycle nominal s'exécute sans friction ni message d'erreur bloquant.
+
+#### Décision
+**Choix retenu** :
+1. Mise à niveau du schéma local Dexie vers la version 7 dans `src/lib/db.js` (`quarantine_mutations`).
+2. Fonctions de domaine pures dans `src/lib/domain.js` pour le calcul d'empreinte d'instance et la réconciliation unitaire de mutation.
+3. Intégration dans `src/composables/infra/useSyncEngine.js` :
+   - Étape de vérification d'empreinte avant synchronisation.
+   - Si divergence détectée : transfert atomique des éléments de `sync_outbox` vers `quarantine_mutations` avec statut `'stashed'`, purge des tables de lecture locales, remise à zéro de `last_sync_time`, enregistrement de la nouvelle empreinte.
+   - Post-pull : tentative de réconciliation automatique des pointages de présence vers le nouveau profil actif.
+4. Suite de tests unitaires `scripts/tests/instance-fingerprint.mjs`.
+5. Oracles déterministes G200 et G201 dans `GATES.md`.
+
+#### Résultat
+- Implémenté ? O — 2026-10-08
+- Leçon tirée : L'introduction d'un sas de quarantaine local (`quarantine_mutations` en Dexie v7) combiné au calcul d'empreinte d'instance distante (`computeInstanceFingerprint`) résout élégamment le dilemme du changement de base de données : le cache de lecture local est assaini sans ambiguïté pour forcer une réhydratation propre, tandis que les données saisies hors-ligne ne sont jamais détruites et peuvent être réconciliées automatiquement vers le compte utilisateur actif sans rupture opérationnelle.
+- Escalade : Protocole unlazy respecté avec succès : portes G200 et G201 validées, 12 suites de tests unitaires réussies (100%), compilation de production Vite sans erreur (code retour 0).
+
+---
+
 ### Tâche : Semaine Type Récurrente et Horaires Personnalisés par Profil (Option 1)
 **Date** : 2026-10-08
 **Complexité** : Élevée

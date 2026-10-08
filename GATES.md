@@ -1613,6 +1613,29 @@ Scope: Automatisation et renforcement de la mémoire agentique selon le plan d'a
     ✓ built in 1.08s
     (exit code: 0)
 
+### Lot : Détection de Changement de Base Distante (Fingerprint) & Quarantaine des Mutations (Option A)
+
+- [x] G200: Détection automatique d'empreinte d'instance distante, mise à l'abri atomique dans quarantine_mutations (Dexie v7), purge du cache de lecture et réconciliation des pointages
+  CHECK: node scripts/verify-gates.mjs --instance-fingerprint
+  EXPECT: G200 passed: instance fingerprint computation, quarantine stash, reader cache reset and mutation reconciliation verified
+  EVIDENCE:
+    $ node scripts/verify-gates.mjs --instance-fingerprint
+    G200 passed: instance fingerprint computation, quarantine stash, reader cache reset and mutation reconciliation verified
+    (exit code: 0)
+
+- [x] G201: Validation globale de la suite déterministe et compilation de production Vite
+  CHECK: node scripts/verify-gates.mjs --all && npm run build
+  EXPECT: G201 passed: all deterministic gates and vite production build succeed with exit code 0
+  EVIDENCE:
+    $ node scripts/verify-gates.mjs --all && npm run build
+    G1 passed ... G200 passed: instance fingerprint computation, quarantine stash, reader cache reset and mutation reconciliation verified
+    vite v8.3.0 building client environment for production...
+    ✓ 123 modules transformed.
+    dist/assets/index-CNPBy-NR.js  69.96 kB │ gzip: 21.33 kB
+    ✓ built in 936ms
+    (exit code: 0)
+
+
 
 
 

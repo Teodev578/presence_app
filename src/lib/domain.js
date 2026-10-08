@@ -283,4 +283,57 @@ export function resolveSchedule({ availability = null, profile = null, companySe
   return { start: '09:00', end: '18:00', isWorking: true, isCustom: false, source: 'default' }
 }
 
+/**
+ * Calcule l'empreinte déterministe d'une instance de base de données distante.
+ * Combine l'hôte du projet Supabase et l'horodatage immuable de genèse de l'instance.
+ *
+ * @param {Object} [params]
+ * @param {string} [params.supabaseUrl=''] - URL du projet Supabase
+ * @param {string} [params.genesisTimestamp=''] - Horodatage de création de company_settings
+ * @returns {string} Empreinte normalisée (ex: "pvquzkpfdjrequbwnhur.supabase.co#2026-10-02T19:00:00Z")
+ */
+export function computeInstanceFingerprint({ supabaseUrl = '', genesisTimestamp = '' } = {}) {
+  let host = 'localhost'
+  try {
+    if (supabaseUrl) {
+      const parsed = new URL(supabaseUrl)
+      host = parsed.hostname || parsed.host || 'localhost'
+    }
+  } catch {
+    host = String(supabaseUrl || 'localhost')
+  }
+  const genesis = String(genesisTimestamp || 'default').trim()
+  return `${host}#${genesis}`
+}
+
+/**
+ * Évalue et réconcilie une mutation mise en quarantaine vers le nouveau profil utilisateur cible.
+ *
+ * @param {Object} mutation - Objet mutation de quarantaine
+ * @param {string} targetUserId - UUID de l'utilisateur actif sur la nouvelle base
+ * @returns {{ canReconcile: boolean, status: 'reconciled' | 'orphaned', updatedPayload: Object|null }}
+ */
+export function reconcileQuarantinedMutation(mutation, targetUserId) {
+  if (!mutation || !targetUserId) {
+    return { canReconcile: false, status: 'orphaned', updatedPayload: null }
+  }
+
+  const payload = mutation.payload ? { ...mutation.payload } : null
+  if (!payload) {
+    return { canReconcile: false, status: 'orphaned', updatedPayload: null }
+  }
+
+  if (['presences', 'availabilities', 'absence_requests'].includes(mutation.table_name)) {
+    payload.user_id = targetUserId
+    return {
+      canReconcile: true,
+      status: 'reconciled',
+      updatedPayload: payload,
+    }
+  }
+
+  return { canReconcile: false, status: 'orphaned', updatedPayload: payload }
+}
+
+
 

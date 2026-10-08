@@ -77,6 +77,10 @@ class PresenceDatabase extends Dexie {
         }
       })
     })
+
+    this.version(7).stores({
+      quarantine_mutations: '++_localId, id, client_mutation_id, table_name, original_instance_id, quarantined_at, status',
+    })
   }
 }
 

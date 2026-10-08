@@ -1,3 +1,51 @@
+# Plan : Détection de Changement de Base Distante (Fingerprint) & Quarantaine des Mutations (Option A)
+
+Date : 2026-10-08  
+Déclencheur : Demande utilisateur (« C'est possible avec la logique de synchronisation si necessaire de gérer celà ? quand la base de donnée distante a changée ? » — « Pour le moment, nous partirons sur l'option A »)  
+Statut : Terminé (Validé par oracles déterministes, 12 suites de tests et compilation Vite)  
+Complexité : Élevée (Schéma Dexie v7, table `quarantine_mutations`, logique de domaine d'empreinte d'instance, stash atomique dans `useSyncEngine`, réinitialisation du cache de lecture, réconciliation automatique des pointages, tests unitaires, oracles G200-G201)  
+Portes liées : G200, G201  
+
+## 1. Périmètre
+
+### Architecture cible :
+- `src/lib/db.js` : mise à niveau Dexie vers la version 7 ajoutant la table `quarantine_mutations` (`++_localId, id, client_mutation_id, table_name, original_instance_id, quarantined_at, status`).
+- `src/lib/domain.js` : fonctions pures `computeInstanceFingerprint(supabaseUrl, genesisDate)` et `reconcileMutation(mutation, targetProfile)`.
+- `src/composables/infra/useSyncEngine.js` :
+  - Détection de rupture de continuité d'empreinte au démarrage de la synchronisation.
+  - Procédure de mise en quarantaine atomique (`stashPendingMutations`) : transfert des éléments de `sync_outbox` vers `quarantine_mutations`, puis purge de `sync_outbox`.
+  - Réinitialisation propre des tables métier locales de lecture (`presences`, `availabilities`, `absence_requests`, `locations`, `teams`, `company_settings`, `profiles`) et remise à zéro de `last_sync_time`.
+  - Mémorisation de la nouvelle empreinte dans `localStorage`.
+  - Exécution du pull initial complet.
+  - Procédure de réconciliation (`reconcileQuarantinedMutations`) : réassignation des présences au profil actif et réinjection dans l'Outbox.
+- `scripts/tests/instance-fingerprint.mjs` : suite de tests unitaires couvrant l'empreinte, la quarantaine et la réconciliation unitaire.
+- `scripts/gates/checks/auth-accounts.mjs` : oracle G200 vérifiant le modèle Dexie v7, les fonctions de domaine et le câblage du moteur de synchronisation.
+- `GATES.md` : consignation des portes G200 et G201.
+
+### Hors périmètre :
+- Aucune altération des dépendances externes (`package.json` intact).
+- Aucun changement de contrat sur les composants UI existants.
+
+## 2. Étapes Séquentielles
+
+1. [x] **Étape 1 : Schéma Dexie v7 (`src/lib/db.js`)**
+   - Déclarer `this.version(7).stores({ quarantine_mutations: '++_localId, id, client_mutation_id, table_name, original_instance_id, quarantined_at, status' })`.
+2. [x] **Étape 2 : Fonctions Pures de Domaine (`src/lib/domain.js`)**
+   - Écrire `computeInstanceFingerprint(supabaseUrl, genesisDate)` et `reconcileMutation(mutation, targetProfile)`.
+   - Écrire la suite de tests unitaires `scripts/tests/instance-fingerprint.mjs` et l'enregistrer dans `scripts/tests/runner.mjs`.
+3. [x] **Étape 3 : Moteur de Synchronisation (`src/composables/infra/useSyncEngine.js`)**
+   - Intégrer l'oracle de vérification d'empreinte au lancement de la synchronisation.
+   - Implémenter le stash atomique, la purge sélective du cache de lecture et la réconciliation post-pull.
+4. [x] **Étape 4 : Oracles Déterministes & Portes d'Acceptation (`GATES.md`, `scripts/gates/`)**
+   - Implémenter la fonction de contrôle G200 dans `scripts/gates/checks/auth-accounts.mjs`.
+   - Câbler le flag `--instance-fingerprint` dans `scripts/gates/runner.mjs`.
+   - Renseigner G200 et G201 dans `GATES.md`.
+5. [x] **Étape 5 : Validation Globale & Preuves d'Exécution**
+   - Exécuter la suite complète : tests unitaires, portes déterministes, build Vite et vérification de la mémoire.
+   - Clôturer le journal dans `.agents/WRITING_IMPROVEMENT.md`.
+
+---
+
 # Plan : Semaine Type Récurrente et Horaires Personnalisés par Profil (Option 1)
 
 Date : 2026-10-08  
