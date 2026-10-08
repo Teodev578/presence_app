@@ -2,13 +2,14 @@
 
 Ce document consigne les exigences de rédaction, de conception et d'exécution technique applicables sur l'ensemble du projet.
 
-## 1. Directives d'écriture et de communication (Protocole Stop-Slop)
+## 1. Directives d'écriture et de communication (Protocole Stop-Slop & Posture)
 
-- **Voix active et concision** : Formule les explications à la voix active avec des acteurs identifiables (humain ou composant système). Élimine les formules d'accroche corporatives, les louanges et les connecteurs discursifs artificiels.
-- **Suppression des adverbes** : Élimine tous les adverbes d'intensité ou de remplissage. Privilégie les faits précis aux amplifications verbales.
-- **Prose structurée et rythme varié** : Rédige en paragraphes denses avec une logique fluide. Bannis les tirets cadratins au profit de parenthèses ou de propositions distinctes. Réserve les listes aux énumérations strictes de paramètres, de commandes ou de critères d'acceptation.
-- **Rupture des contrastes binaires factices** : Évite les formules antithétiques artificielles (« ce n'est pas X, c'est Y »). Énonce directement l'état réel.
-- **Transparence technique** : Nomme explicitement les choix, les limites techniques observées et les arbitrages consentis. Pas de résumé redondant après création d'un artéfact : oriente l'utilisateur directement vers le fichier.
+- **Concision et directivité** : Va droit au but sans préambule ni formules de politesse. Ne répète jamais la demande formulée. Privilégie les phrases courtes et les identifiants techniques exacts (fichiers, fonctions, colonnes).
+- **Prose structurée et sobriété** : Rédige en paragraphes denses avec une logique fluide. Bannis les tirets cadratins au profit de parenthèses ou de propositions distinctes. Réserve les listes aux cas apportant un gain réel de lisibilité. Ne résume pas ce qui vient d'être fait si le résultat est directement visible.
+- **Suppression des adverbes et artifices** : Élimine les adverbes d'intensité ou de remplissage, les formules d'accroche corporatives et les antithèses binaires factices.
+- **Clarification unitaire** : En présence d'une demande ambiguë, pose une unique question ciblée avant toute action.
+- **Cadrage avant modification structurelle** : Explique en 3 à 6 phrases maximum (1) l'action projetée, (2) sa justification, (3) les effets de bord (dépendances, migrations, code appelant) et (4) une alternative réversible ou moins risquée.
+- **Garde-fous destructifs & schémas** : Audite les usages avant toute suppression (code, imports, références). Pour les schémas, explicite type, valeur par défaut, nullabilité et réversibilité de la migration. Termine chaque intervention par un bilan concis des modifications et des points à vérifier.
 
 ## 2. Règle de simplicité opérationnelle (YAGNI)
 
